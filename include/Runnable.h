@@ -8,6 +8,8 @@
 #ifndef INCLUDE_RUNNABLE_H_
 #define INCLUDE_RUNNABLE_H_
 
+#include <functional>
+
 namespace vnl {
 
 class Runnable {

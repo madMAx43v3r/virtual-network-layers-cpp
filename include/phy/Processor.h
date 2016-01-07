@@ -8,6 +8,7 @@
 #ifndef INCLUDE_PROCESSOR_H_
 #define INCLUDE_PROCESSOR_H_
 
+#include <mutex>
 #include <condition_variable>
 
 #include "Link.h"

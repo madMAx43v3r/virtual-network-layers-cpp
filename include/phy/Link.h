@@ -20,51 +20,16 @@ namespace vnl { namespace phy {
 
 class Link : public vnl::phy::Object, public vnl::Runnable {
 public:
-	Link(Engine* engine) : Object(engine), thread(0) {}
+	Link(Engine* engine) : Object(engine), thread(0), core_id(-1) {}
+	
+	virtual ~Link();
+	
+	void start(int core = -1);
+	void stop();
+	
+	void run() override;
 	
 	int debug = 0;
-	
-	virtual ~Link() {
-		delete engine;
-	}
-	
-	void start(int core = -1) {
-		dorun = true;
-		if(!thread) {
-			core_id = core;
-			thread = new std::thread(&Link::entry, this);
-		}
-	}
-	
-	void stop() {
-		dorun = false;
-		if(thread) {
-			Object::receive(new shutdown_t(0, true));
-			thread->join();
-			delete thread;
-			thread = 0;
-		}
-	}
-	
-	void run() override {
-		if(core_id >= 0) {
-			Util::stick_to_core(core_id);
-		}
-		if(!startup()) {
-			return;
-		}
-		while(dorun) {
-			Message* msg = poll();
-			if(msg) {
-				if(debug > 0) {
-					std::cout << std::dec << System::currentTimeMillis() << " Link@" << this << " "
-							<< (msg->isack ? "ACK" : "RCV") << " " << msg->toString() << std::endl;
-				}
-				receive(msg, this);
-			}
-		}
-		shutdown();
-	}
 	
 protected:
 	bool dorun = true;
@@ -86,46 +51,9 @@ protected:
 	virtual bool startup() { return true; }
 	virtual void shutdown() {}
 	
-	void receive(Message* msg, Object* src) override {
-		if(src == this) {
-			if(msg->isack) {
-				if(msg->src == this) {
-					Object::receive(msg, this);
-				} else {
-					msg->src->receive(msg, this);
-				}
-			} else {
-				if(msg->dst == this) {
-					Object::receive(msg, this);
-				} else {
-					msg->dst->receive(msg, this);
-				}
-			}
-		} else {
-			lock();
-				if(msg->isack) {
-					acks.push(msg);
-				} else {
-					queue.push(msg);
-				}
-			notify();
-			unlock();
-		}
-	}
+	void receive(Message* msg, Object* src) override;
 	
-	Message* poll() {
-		lock();
-		Message* msg = 0;
-		while(dorun) {
-			if(acks.pop(msg) || queue.pop(msg)) {
-				break;
-			} else {
-				wait(engine->timeout());
-			}
-		}
-		unlock();
-		return msg;
-	}
+	Message* poll();
 	
 private:
 	void entry() {
@@ -136,10 +64,11 @@ private:
 	vnl::util::simple_queue<Message*> queue;
 	vnl::util::simple_queue<Message*> acks;
 	
-	int core_id = -1;
 	std::thread* thread;
+	int core_id;
 	
 };
+
 
 }}
 

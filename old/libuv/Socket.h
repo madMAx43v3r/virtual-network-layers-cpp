@@ -15,6 +15,7 @@
 using namespace vnl::phy;
 using namespace std::placeholders;
 
+namespace old {
 namespace vnl { namespace io {
 
 class Socket : public vnl::phy::Object {
@@ -223,6 +224,6 @@ private:
 	
 };
 
-}}
+}}}
 
 #endif /* INCLUDE_IO_SOCKET_H_ */
