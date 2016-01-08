@@ -47,6 +47,7 @@ private:
 	vnl::util::simple_queue<Message*> queue;
 	
 	friend class Engine;
+	
 };
 
 
@@ -58,14 +59,13 @@ void Stream::send(T&& msg) {
 
 template<typename T>
 T Stream::read() {
-	Message* msg = poll();
-	if(msg->type == T::id) {
-		T res = *((T*)msg);
-		msg->ack();
-		return res;
-	} else {
-		msg->ack();
-		return T();
+	while(true) {
+		Message* msg = poll();
+		if(msg->type == T::id) {
+			T res = *((T*)msg);
+			msg->ack();
+			return res;
+		}
 	}
 }
 

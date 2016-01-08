@@ -32,13 +32,14 @@ public:
 	
 	void ack();
 	
-	uint32_t type = 0;
 	Object* src = 0;
 	Object* dst = 0;
 	uint64_t sid = 0;
+	uint32_t type = 0;
 	void* impl = 0;
 	bool isack = false;
 	bool async = false;
+	
 };
 
 template<typename T, uint32_t N>

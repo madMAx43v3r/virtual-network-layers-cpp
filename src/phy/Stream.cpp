@@ -41,7 +41,12 @@ void Stream::receive(Message* msg, Object* src) {
 }
 
 Message* Stream::poll() {
-	return poll(2147483647);
+	while(true) {
+		Message* msg = poll(2147483647);
+		if(msg) {
+			return msg;
+		}
+	}
 }
 
 Message* Stream::poll(int millis) {

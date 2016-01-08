@@ -18,6 +18,8 @@
 
 namespace vnl { namespace phy {
 
+class Link;
+
 template<typename M, int N>
 class SendBuffer;
 
@@ -48,14 +50,6 @@ public:
 	
 	uint64_t getMAC() {
 		return mac;
-	}
-	
-	virtual void receive(Message* msg, Object* src) {
-		if(src == link) {
-			engine->handle(msg);
-		} else {
-			link->receive(msg, src);
-		}
 	}
 	
 protected:
@@ -127,6 +121,14 @@ protected:
 	}
 	
 private:
+	virtual void receive(Message* msg, Object* src) {
+		if(src == link) {
+			engine->handle(msg);
+		} else {
+			link->receive(msg, src);
+		}
+	}
+	
 	Stream* get_stream(uint64_t sid) {
 		Stream** stream = streams.get(sid);
 		if(stream) {
@@ -149,6 +151,7 @@ private:
 	friend class Message;
 	friend class Stream;
 	friend class Engine;
+	friend class Link;
 	template<typename M, int N>
 	friend class SendBuffer;
 	
