@@ -31,23 +31,19 @@ public:
 	Address dst;
 	uint64_t sid;
 	
-	char* data;
+	const void* data;
 	int size;
 	
 	Frame() {
-		type = id;
+		mid = id;
 		flags = NONE;
 		sid = 0;
 		data = 0;
 		size = 0;
 	}
 	
-	~Frame() {
-		delete data;
-	}
-	
 	Frame(char flags, const Address& dst) {
-		type = id;
+		mid = id;
 		this->flags = flags;
 		this->dst = dst;
 		sid = 0;
@@ -55,11 +51,11 @@ public:
 		size = 0;
 	}
 	
-	Frame(char flags, const Address& dst, int size) {
-		type = id;
+	Frame(char flags, const Address& dst, const void* data, int size) {
+		mid = id;
 		this->flags = flags;
 		this->dst = dst;
-		this->data = new char[size];
+		this->data = data;
 		this->size = size;
 		sid = 0;
 	}

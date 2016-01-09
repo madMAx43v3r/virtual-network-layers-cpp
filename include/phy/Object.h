@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_OBJECT_H_
-#define INCLUDE_OBJECT_H_
+#ifndef INCLUDE_PHY_OBJECT_H_
+#define INCLUDE_PHY_OBJECT_H_
 
 #include "Message.h"
 #include "Stream.h"
@@ -25,11 +25,11 @@ class SendBuffer;
 
 class Object {
 public:
-	Object(Object* parent) : link(parent->link), engine(parent->engine) {
+	Object(Object* parent) : link(parent->link), engine(parent->engine), oid(0) {
 		mac = rand();
 	}
 	
-	Object(Engine* engine) : link(this), engine(engine) {
+	Object(Engine* engine) : link(this), engine(engine), oid(0) {
 		mac = rand();
 	}
 	
@@ -44,13 +44,8 @@ public:
 		link->receive(msg, 0);
 	}
 	
-	Object* getLink() {
-		return link;
-	}
-	
-	uint64_t getMAC() {
-		return mac;
-	}
+	uint64_t mac;
+	uint32_t oid;
 	
 protected:
 	uint64_t rand() {
@@ -142,7 +137,6 @@ protected:
 	
 private:
 	Object* link;
-	uint64_t mac;
 	int yield_counter = 0;
 	
 	vnl::util::simple_hashmap<uint64_t, Stream*> streams;
@@ -154,6 +148,31 @@ private:
 	friend class Link;
 	template<typename M, int N>
 	friend class SendBuffer;
+	
+};
+
+
+template<uint32_t OID>
+class TypedObject : public Object {
+public:
+	TypedObject(Object* parent) : Object(parent) {
+		Object::oid = OID;
+	}
+	
+	static const uint32_t oid = OID;
+	
+};
+
+
+class Port {
+public:
+	Port(Object* obj) : obj(obj) {}
+	
+	Object* obj;
+	
+	Object* operator->() const {
+		return obj;
+	}
 	
 };
 
@@ -186,4 +205,4 @@ private:
 
 }}
 
-#endif /* INCLUDE_LINK_H_ */
+#endif /* INCLUDE_PHY_OBJECT_H_ */

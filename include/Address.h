@@ -49,6 +49,7 @@ inline bool operator<(const Address& A, const Address& B) {
 	return (A.A xor A.B) < (B.A xor B.B);
 }
 
+
 }
 
 #endif /* INCLUDE_ADDRESS_H_ */

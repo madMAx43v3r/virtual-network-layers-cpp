@@ -11,6 +11,7 @@
 #include <random>
 #include <atomic>
 
+#include "Runnable.h"
 #include "Message.h"
 #include "Stream.h"
 

@@ -1,46 +1,26 @@
-/**
-   ByteBuffer
-   ByteBuffer.h
-   Copyright 2011 Ramsey Kant
+/*
+ * ByteBuffer.h
+ *
+ *  Created on: Jan 8, 2016
+ *      Author: mad
+ */
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-#ifndef _BYTEBUFFER_H
-#define _BYTEBUFFER_H
+#ifndef INCLUDE_BYTEBUFFER_H_
+#define INCLUDE_BYTEBUFFER_H_
 
 #include <cstdlib>
-#include <vector>
 #include <stdint.h>
 #include <string.h>
+#include "io/Stream.h"
+
+namespace vnl {
 
 class ByteBuffer {
 public:
-	ByteBuffer(int size = 4096);
+	ByteBuffer(vnl::io::Stream* stream);
 	
-	int remaining();
-	int position();
-	void clear();
-	void flip();
-	void compact();
-	void resize(int newSize);
-	
-	char* ptr();
-	void inc(int bytes);
-	
-	char peek();
 	char get();
-	void get(char* buf, int len);
+	void get(void* buf, int len);
 	int8_t getChar();
 	double getDouble();
 	float getFloat();
@@ -48,9 +28,8 @@ public:
 	int64_t getLong();
 	int16_t getShort();
 	
-	void put(ByteBuffer* src);
 	void put(char b);
-	void put(const char* b, int len);
+	void put(const void* buf, int len);
 	void putChar(int8_t value);
 	void putDouble(double value);
 	void putFloat(float value);
@@ -59,31 +38,89 @@ public:
 	void putShort(int16_t value);
 	
 private:
-	int pos, limit;
-	std::vector<char> buf;
+	vnl::io::Stream* stream;
 	
-	template <typename T> T read() {
-		T data = read<T>(pos);
-		pos += sizeof(T);
+	template<typename T>
+	T read() {
+		T data;
+		stream->read(&data, sizeof(T));
 		return data;
 	}
 	
-	template <typename T> T read(int32_t index) const {
-		if(index + sizeof(T) <= limit) {
-			return *((T*)&buf[index]);
-		}
-		return 0;
-	}
-	
-	template <typename T> void append(T data) {
-		int32_t s = sizeof(data);
-		if(buf.size() < (pos + s)) {
-			buf.resize(pos + s);
-		}
-		memcpy(&buf[pos], (char*)&data, s);
-		pos += s;
+	template<typename T>
+	void append(T data) {
+		stream->write(&data, sizeof(T));
 	}
 	
 };
+
+
+char ByteBuffer::get() {
+	return read<char>();
+}
+
+void ByteBuffer::get(void* buf, int len) {
+	stream->read(buf, len);
+}
+
+int8_t ByteBuffer::getChar() {
+	return read<int8_t>();
+}
+
+double ByteBuffer::getDouble() {
+	return vnl_ntohd(read<double>());
+}
+
+float ByteBuffer::getFloat() {
+	return vnl_ntohf(read<float>());
+}
+
+int32_t ByteBuffer::getInt() {
+	return vnl_ntohl(read<int32_t>());
+}
+
+int64_t ByteBuffer::getLong() {
+	return vnl_ntohll(read<int64_t>());
+}
+
+int16_t ByteBuffer::getShort() {
+	return vnl_ntohs(read<int16_t>());
+}
+
+
+void ByteBuffer::put(char b) {
+	append<char>(b);
+}
+
+void ByteBuffer::put(const void* buf, int len) {
+	stream->write(buf, len);
+}
+
+void ByteBuffer::putChar(int8_t value) {
+	append<int8_t>(value);
+}
+
+void ByteBuffer::putDouble(double value) {
+	append<double>(vnl_htond(value));
+}
+
+void ByteBuffer::putFloat(float value) {
+	append<float>(vnl_htonf(value));
+}
+
+void ByteBuffer::putInt(int32_t value) {
+	append<int32_t>(vnl_htonl(value));
+}
+
+void ByteBuffer::putLong(int64_t value) {
+	append<int64_t>(vnl_htonll(value));
+}
+
+void ByteBuffer::putShort(int16_t value) {
+	append<int16_t>(vnl_htons(value));
+}
+
+
+}
 
 #endif

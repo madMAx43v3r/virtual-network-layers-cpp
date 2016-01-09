@@ -61,7 +61,7 @@ template<typename T>
 T Stream::read() {
 	while(true) {
 		Message* msg = poll();
-		if(msg->type == T::id) {
+		if(msg->mid == T::id) {
 			T res = *((T*)msg);
 			msg->ack();
 			return res;

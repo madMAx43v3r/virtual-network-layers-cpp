@@ -12,6 +12,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "io/Stream.h"
+
 namespace vnl { namespace phy {
 
 class Object;
@@ -21,53 +23,70 @@ public:
 	Message() {}
 	virtual ~Message() {}
 	
-	Message(uint32_t type, bool async = false) : type(type), async(async) {}
-	Message(Object* dst, uint32_t type) : type(type), dst(dst) {}
-	Message(Object* dst, uint64_t sid, uint32_t type) : type(type), dst(dst), sid(sid) {}
+	Message(Object* dst, uint32_t mid, uint32_t oid = 0, uint64_t sid = 0, bool async = false)
+		:	dst(dst), mid(mid), oid(oid), sid(sid), async(async) {}
 	
 	virtual std::string toString();
 	
+	virtual bool serialize(vnl::io::Stream*) { return false; }
+	virtual bool deserialize(vnl::io::Stream*) { return false; }
+	
 	template<typename T>
 	T* cast();
+	
+	template<typename T>
+	bool is();
 	
 	void ack();
 	
 	Object* src = 0;
 	Object* dst = 0;
+	uint32_t mid = 0;
+	uint32_t oid = 0;
 	uint64_t sid = 0;
-	uint32_t type = 0;
 	void* impl = 0;
 	bool isack = false;
 	bool async = false;
 	
 };
 
-template<typename T, uint32_t N>
+template<uint32_t MID, uint32_t OID = 0>
+class Signal : public Message {
+public:
+	Signal() : Message() {}
+	Signal(Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, OID, sid, async) {}
+	
+	static const uint32_t mid = MID;
+	static const uint32_t oid = OID;
+	
+};
+
+template<typename T, uint32_t MID, uint32_t OID = 0>
 class Generic : public Message {
 public:
 	Generic() : Message() {}
-	Generic(const T& obj, bool async = false) : Message(N, async), data(obj) {}
-	Generic(Object* dst, const T& obj) : Message(dst, N), data(obj) {}
-	Generic(Object* dst, uint64_t sid, const T& obj) : Message(dst, sid, N), data(obj) {}
+	Generic(const T& data, Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, OID, sid, async), data(data) {}
 	
-	static const uint32_t id = N;
+	static const uint32_t mid = MID;
+	static const uint32_t oid = OID;
 	
 	T data;
 	
 };
 
-template<typename T, typename P, uint32_t N>
+template<typename T, typename P, uint32_t MID, uint32_t OID = 0>
 class Request : public Message {
 public:
-	Request(const P& args, bool async = false) : Message(N, async), args(args) {}
-	Request(Object* dst, const P& args) : Message(dst, N), args(args) {}
+	Request() : Message() {}
+	Request(const P& args, Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, OID, sid, async), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;
 		Message::ack();
 	}
 	
-	static const uint32_t id = N;
+	static const uint32_t mid = MID;
+	static const uint32_t oid = OID;
 	
 	typedef T res_t;
 	typedef P args_t;
@@ -80,11 +99,16 @@ public:
 
 template<typename T>
 T* Message::cast() {
-	if(type == T::id) {
+	if(mid == T::mid) {
 		return (T*)this;
 	} else {
 		return 0;
 	}
+}
+
+template<typename T>
+bool Message::is() {
+	return mid == T::mid;
 }
 
 void Message::ack() {
@@ -100,7 +124,7 @@ void Message::ack() {
 
 std::string Message::toString() {
 	std::ostringstream ss;
-	ss << "[" << Util::demangle(this) << "] type=0x" << std::hex << type << std::dec
+	ss << "[" << Util::demangle(this) << "] mid=0x" << std::hex << mid << " oid=0x" << oid << std::dec
 			<< " src=" << src << " dst=" << dst << " sid=" << sid << " isack=" << isack << " async=" << async;
 	return ss.str();
 }

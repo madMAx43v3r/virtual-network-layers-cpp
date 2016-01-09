@@ -8,19 +8,19 @@
 #ifndef INCLUDE_UPLINK_H_
 #define INCLUDE_UPLINK_H_
 
-#include "Downlink.h"
+#include "phy/Message.h"
+#include "phy/Object.h"
+#include "Frame.h"
 
 namespace vnl {
 
-class Uplink {
+class Uplink : public vnl::phy::Port {
 public:
+	Uplink(phy::Object* obj) : Port(obj) {}
 	
-	virtual ~Uplink() {}
-	
-	virtual void connect(Downlink* link, uint64_t srcmac) = 0;
-	virtual void disconnect(uint64_t srcmac) = 0;
-	
-	virtual void send(Frame frame, uint64_t srcmac) = 0;
+	typedef phy::Signal<0x85490083> connect_t;
+	typedef phy::Signal<0xa8b79ccd> disconnect_t;
+	typedef phy::Generic<Frame, 0xef34166d> send_t;
 	
 };
 

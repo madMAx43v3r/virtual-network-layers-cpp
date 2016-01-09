@@ -34,7 +34,7 @@ Server::~Server() {
 }
 
 void Server::handle(Message* msg) {
-	switch(msg->type) {
+	switch(msg->mid) {
 	case poll_t::id: {
 		poll_t* req = msg->cast<poll_t>();
 		req->res = update(req->args);
