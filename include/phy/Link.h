@@ -12,17 +12,18 @@
 #include <mutex>
 #include <iostream>
 
-#include "util/simple_queue.h"
 #include "Object.h"
 #include "System.h"
+#include "util/simple_queue.h"
 
 namespace vnl { namespace phy {
 
 class Link : public vnl::phy::Object, public vnl::Runnable {
 public:
-	Link(Engine* engine) : Object(engine), thread(0), core_id(-1) {}
+	Link(Engine* engine);
+	~Link();
 	
-	virtual ~Link();
+	static thread_local Link* local;
 	
 	void start(int core = -1);
 	void stop();
@@ -45,17 +46,17 @@ protected:
 		mutex.unlock();
 	}
 	
+	Message* poll();
+	
 	virtual void notify() = 0;
 	virtual void wait(int millis) = 0;
 	
 	virtual bool startup() { return true; }
 	virtual void shutdown() {}
 	
+private:
 	void receive(Message* msg, Object* src) override;
 	
-	Message* poll();
-	
-private:
 	void entry() {
 		run();
 	}

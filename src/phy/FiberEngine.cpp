@@ -110,7 +110,6 @@ public:
 		while(true) {
 			Message* msg;
 			while(!queue.pop(msg)) {
-				engine->enqueue(this);
 				idle = true;
 				yield();
 				idle = false;
@@ -173,7 +172,7 @@ FiberEngine::FiberEngine(int N) : N(N) {
 
 FiberEngine::~FiberEngine() {
 	for(auto task : tasks) {
-		delete task.val;
+		delete task.second;
 	}
 	for(auto task : finished) {
 		delete task;
@@ -206,19 +205,19 @@ void FiberEngine::handle(Message* msg) {
 		Stream* stream = get_stream(msg->dst, msg->sid);
 		if(stream) {
 			dispatch(msg, stream);
-			Fiber* fiber;
-			auto* queue = polling.get(msg->sid);
-			if(queue && queue->pop(fiber)) {
-				fiber->notify(true);
+			auto iter = polling.find(msg->sid);
+			if(iter != polling.end() && iter->second.size()) {
+				auto& queue = iter->second;
+				auto fiber = queue.begin();
+				(*fiber)->notify(true);
+				queue.erase(fiber);
 			}
 			return;
 		}
 	}
 	Worker* fiber;
-	if(!avail.empty()) {
-		fiber = avail.top(); avail.pop();
-	} else if(msg->src) {
-		fiber = workers[msg->src->getMAC() % N];
+	if(msg->src) {
+		fiber = workers[msg->src->mac % N];
 	} else {
 		fiber = workers[0];
 	}
@@ -226,7 +225,7 @@ void FiberEngine::handle(Message* msg) {
 }
 
 void FiberEngine::open(Stream* stream) {
-	polling.put(stream->sid);
+	polling[stream->sid];
 }
 
 void FiberEngine::close(Stream* stream) {
@@ -235,7 +234,7 @@ void FiberEngine::close(Stream* stream) {
 
 bool FiberEngine::poll(Stream* stream, int millis) {
 	if(current) {
-		polling.get(stream->sid)->push(current);
+		polling[stream->sid].push_back(current);
 		return current->poll(millis);
 	}
 	return false;
@@ -243,22 +242,25 @@ bool FiberEngine::poll(Stream* stream, int millis) {
 
 uint64_t FiberEngine::launch(Runnable* task) {
 	Task* fiber;
-	if(!finished.pop(fiber)) {
+	if(finished.empty()) {
 		fiber = new Task(this);
 		fiber->start();
+	} else {
+		fiber = finished.back();
+		finished.pop_back();
 	}
 	uint64_t tid = fiber->launch(task);
 	if(fiber->task) {
-		tasks.put(tid, fiber);
+		tasks[tid] = fiber;
 	}
 	return tid;
 }
 
 void FiberEngine::cancel(uint64_t tid) {
-	Task** fiber = tasks.get(tid);
-	if(fiber) {
-		delete *fiber;
-		tasks.erase(tid);
+	auto iter = tasks.find(tid);
+	if(iter != tasks.end()) {
+		delete iter->second;
+		tasks.erase(iter);
 	}
 }
 
@@ -268,7 +270,7 @@ int FiberEngine::timeout() {
 	int millis = 1000;
 	while(true) {
 		for(auto& stream : polling) {
-			auto& queue = stream.val;
+			auto& queue = stream.second;
 			for(auto iter = queue.begin(); iter != queue.end(); ++iter) {
 				Fiber* fiber = *iter;
 				int diff = fiber->timeout - now;
@@ -292,13 +294,9 @@ int FiberEngine::timeout() {
 	return millis;
 }
 
-void FiberEngine::enqueue(Worker* fiber) {
-	avail.push(fiber);
-}
-
 void FiberEngine::enqueue(Task* task) {
 	tasks.erase(task->tid);
-	finished.push(task);
+	finished.push_back(task);
 }
 
 

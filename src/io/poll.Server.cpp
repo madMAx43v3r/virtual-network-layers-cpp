@@ -35,20 +35,21 @@ Server::~Server() {
 
 void Server::handle(Message* msg) {
 	switch(msg->mid) {
-	case poll_t::id: {
-		poll_t* req = msg->cast<poll_t>();
+	case poll_t::mid: {
+		poll_t* req = ((poll_t*)msg);
 		req->res = update(req->args);
+		msg->ack();
 		break;
 	}
-	case signal_t::id: {
+	case signal_t::mid: {
 		char buf[1024];
 		while(read(pipefd[0], buf, sizeof(buf)) == sizeof(buf));
 		pipekey.events = POLLIN;
 		update(pipekey);
+		msg->ack();
 		break;
 	}
 	}
-	msg->ack();
 }
 
 void Server::notify() {

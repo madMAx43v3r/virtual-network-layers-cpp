@@ -19,6 +19,9 @@ Stream* Engine::get_stream(Object* obj, uint64_t sid) {
 
 void Engine::dispatch(Message* msg) {
 	msg->dst->handle(msg);
+	if(!msg->isack) {
+		msg->ack();
+	}
 }
 
 void Engine::dispatch(Message* msg, Stream* stream) {

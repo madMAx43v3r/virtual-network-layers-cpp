@@ -99,7 +99,6 @@ public:
 					engine->dispatch(msg);
 				}
 				while(!queue.pop(msg)) {
-					engine->enqueue(this);
 					wait();
 				}
 			}
@@ -196,28 +195,28 @@ void ThreadEngine::handle(Message* msg) {
 		Stream* stream = get_stream(msg->dst, msg->sid);
 		if(stream) {
 			dispatch(msg, stream);
-			Thread* fiber;
-			auto* queue = polling.get(msg->sid);
-			if(queue && queue->pop(fiber)) {
-				fiber->notify();
+			auto iter = polling.find(msg->sid);
+			if(iter != polling.end() && iter->second.size()) {
+				auto& queue = iter->second;
+				auto fiber = queue.begin();
+				(*fiber)->notify();
+				queue.erase(fiber);
 			}
 			return;
 		}
 	}
-	Worker* fiber;
-	if(!avail.empty()) {
-		fiber = avail.top(); avail.pop();
-	} else if(msg->src) {
-		fiber = workers[msg->src->getMAC() % N];
+	Worker* worker;
+	if(msg->src) {
+		worker = workers[msg->src->mac % N];
 	} else {
-		fiber = workers[0];
+		worker = workers[0];
 	}
-	fiber->push(msg);
+	worker->push(msg);
 }
 
 void ThreadEngine::open(Stream* stream) {
 	std::lock_guard<std::recursive_mutex> lock(mutex);
-	polling.put(stream->sid);
+	polling[stream->sid];
 }
 
 void ThreadEngine::close(Stream* stream) {
@@ -227,30 +226,33 @@ void ThreadEngine::close(Stream* stream) {
 
 bool ThreadEngine::poll(Stream* stream, int millis) {
 	if(current) {
-		polling.get(stream->sid)->push(current);
+		polling[stream->sid].push_back(current);
 		return current->poll(millis);
 	}
 	return false;
 }
 
-uint64_t ThreadEngine::launch(Runnable* task) {
+uint64_t ThreadEngine::launch(Runnable* task_) {
 	std::lock_guard<std::recursive_mutex> lock(mutex);
-	Task* fiber;
-	if(!finished.pop(fiber)) {
-		fiber = new Task(this);
-		fiber->start();
+	Task* task;
+	if(finished.empty()) {
+		task = new Task(this);
+		task->start();
+	} else {
+		task = finished.back();
+		finished.pop_back();
 	}
-	uint64_t tid = fiber->launch(task);
-	tasks.put(tid, fiber);
+	uint64_t tid = task->launch(task_);
+	tasks[tid] = task;
 	return tid;
 }
 
 void ThreadEngine::cancel(uint64_t tid) {
 	std::lock_guard<std::recursive_mutex> lock(mutex);
-	Task** fiber = tasks.get(tid);
-	if(fiber) {
-		delete *fiber;
-		tasks.erase(tid);
+	auto iter = tasks.find(tid);
+	if(iter != tasks.end()) {
+		delete iter->second;
+		tasks.erase(iter);
 	}
 }
 
@@ -258,13 +260,9 @@ int ThreadEngine::timeout() {
 	return 1000;
 }
 
-void ThreadEngine::enqueue(Worker* fiber) {
-	avail.push(fiber);
-}
-
 void ThreadEngine::enqueue(Task* task) {
 	tasks.erase(task->tid);
-	finished.push(task);
+	finished.push_back(task);
 }
 
 

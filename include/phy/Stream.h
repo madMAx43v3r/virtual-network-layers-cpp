@@ -13,6 +13,8 @@
 
 namespace vnl { namespace phy {
 
+class Engine;
+
 class Stream {
 public:
 	Stream(Object* object);
@@ -51,6 +53,46 @@ private:
 };
 
 
+class Condition : Stream {
+public:
+	Condition(Object* object) : Stream(object) {}
+	
+	typedef Signal<0x794f0932> signal_t;
+	
+	void wait() {
+		waiting = true;
+		read<signal_t>();
+		waiting = false;
+	}
+	
+	void notify() {
+		if(waiting) {
+			send(signal_t(obj));
+		}
+	}
+	
+	void set() {
+		value = true;
+		notify();
+	}
+	
+	void reset() {
+		value = false;
+	}
+	
+	void check() {
+		while(!value) {
+			wait();
+		}
+	}
+	
+private:
+	bool waiting = false;
+	bool value = false;
+	
+};
+
+
 template<typename T>
 void Stream::send(T&& msg) {
 	msg.sid = sid;
@@ -65,6 +107,8 @@ T Stream::read() {
 			T res = *((T*)msg);
 			msg->ack();
 			return res;
+		} else {
+			msg->ack();
 		}
 	}
 }

@@ -8,13 +8,14 @@
 #ifndef INCLUDE_PHY_OBJECT_H_
 #define INCLUDE_PHY_OBJECT_H_
 
+#include <unordered_map>
+#include <vector>
+
 #include "Message.h"
 #include "Stream.h"
 #include "Engine.h"
 #include "Runnable.h"
 #include "Util.h"
-#include "util/simple_queue.h"
-#include "util/simple_hashmap.h"
 
 namespace vnl { namespace phy {
 
@@ -25,19 +26,8 @@ class SendBuffer;
 
 class Object {
 public:
-	Object(Object* parent) : link(parent->link), engine(parent->engine), oid(0) {
-		mac = rand();
-	}
-	
-	Object(Engine* engine) : link(this), engine(engine), oid(0) {
-		mac = rand();
-	}
-	
-	virtual ~Object() {
-		for(uint64_t tid : tasks) {
-			engine->cancel(tid);
-		}
-	}
+	Object();
+	virtual ~Object() {}
 	
 	void receive(Message* msg) {
 		msg->dst = this;
@@ -45,7 +35,6 @@ public:
 	}
 	
 	uint64_t mac;
-	uint32_t oid;
 	
 protected:
 	uint64_t rand() {
@@ -70,7 +59,7 @@ protected:
 	}
 	
 	void open(Stream* stream) {
-		streams.put(stream->sid, stream);
+		streams[stream->sid] = stream;
 		engine->open(stream);
 	}
 	
@@ -97,9 +86,7 @@ protected:
 	}
 	
 	uint64_t launch(Runnable* task) {
-		uint64_t tid = engine->launch(task);
-		tasks.push(tid);
-		return tid;
+		return engine->launch(task);
 	}
 	
 	uint64_t launch(const std::function<void()>& func) {
@@ -108,14 +95,13 @@ protected:
 	
 	void cancel(uint64_t tid) {
 		engine->cancel(tid);
-		tasks.erase(tid);
 	}
 	
-	virtual void handle(Message* msg) {
-		msg->ack();
-	}
+	virtual void handle(Message* msg) {}
 	
 private:
+	Object(Engine* engine);
+	
 	virtual void receive(Message* msg, Object* src) {
 		if(src == link) {
 			engine->handle(msg);
@@ -124,10 +110,10 @@ private:
 		}
 	}
 	
-	Stream* get_stream(uint64_t sid) {
-		Stream** stream = streams.get(sid);
-		if(stream) {
-			return *stream;
+	Stream* get_stream(uint32_t sid) {
+		auto iter = streams.find(sid);
+		if(iter != streams.end()) {
+			return iter->second;
 		}
 		return 0;
 	}
@@ -137,10 +123,8 @@ protected:
 	
 private:
 	Object* link;
+	std::unordered_map<uint64_t, Stream*> streams;
 	int yield_counter = 0;
-	
-	vnl::util::simple_hashmap<uint64_t, Stream*> streams;
-	vnl::util::simple_queue<uint64_t> tasks;
 	
 	friend class Message;
 	friend class Stream;
@@ -148,31 +132,6 @@ private:
 	friend class Link;
 	template<typename M, int N>
 	friend class SendBuffer;
-	
-};
-
-
-template<uint32_t OID>
-class TypedObject : public Object {
-public:
-	TypedObject(Object* parent) : Object(parent) {
-		Object::oid = OID;
-	}
-	
-	static const uint32_t oid = OID;
-	
-};
-
-
-class Port {
-public:
-	Port(Object* obj) : obj(obj) {}
-	
-	Object* obj;
-	
-	Object* operator->() const {
-		return obj;
-	}
 	
 };
 
@@ -186,7 +145,11 @@ public:
 		obj->flush();
 	}
 	
-	T* get(T&& msg) {
+	T* get() {
+		return put(T());
+	}
+	
+	T* put(T&& msg) {
 		if(!left) {
 			obj->flush();
 			left = N;

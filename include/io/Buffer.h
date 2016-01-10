@@ -22,6 +22,9 @@ public:
 		delete [] buf;
 	}
 	
+	Buffer(const Buffer&) = delete;
+	Buffer& operator=(const Buffer&) = delete;
+	
 	void reset() {
 		pos = 0;
 		limit = 0;
@@ -54,8 +57,8 @@ public:
 	}
 	
 	bool write(const void* src, int len) override {
-		while(N-pos < len) {
-			expand();
+		if(N-pos < len) {
+			resize(pos+len);
 		}
 		memcpy(buf+pos, src, len);
 		pos += len;
@@ -63,12 +66,12 @@ public:
 	}
 	
 protected:
-	void expand() {
+	void resize(int n) {
 		char* old = buf;
-		N *= 2;
-		buf = new char[N];
-		memcpy(buf, old, N/2);
+		buf = new char[n];
+		memcpy(buf, old, N);
 		delete [] old;
+		N = n;
 	}
 	
 private:

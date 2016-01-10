@@ -14,8 +14,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "io/Socket.h"
+#include "io/socket/Server.h"
 
 using namespace vnl::phy;
 using namespace vnl::io::socket;
@@ -24,7 +26,8 @@ namespace vnl { namespace io {
 
 Server* Server::instance = 0;
 
-Socket::Socket(Object* parent) : Object(parent), server(Server::instance), in(this), out(this) {
+Socket::Socket() : server(Server::instance), in(this), out(this) {
+	assert(Server::instance != 0);
 	key.obj = this;
 	key.sin = in.sid;
 	key.sout = out.sid;
@@ -141,10 +144,10 @@ bool Socket::write(const void* buf, int len) {
 	}
 }
 
-bool Socket::poll(Stream& stream, int flag) {
+bool Socket::poll(phy::Stream& stream, int flag) {
 	key.events |= flag;
 	update();
-	int err = stream.read<signal_t>().data;
+	int err = stream.read<Server::signal_t>().data;
 	key.events &= ~flag;
 	return err == 0;
 }

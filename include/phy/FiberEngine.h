@@ -8,10 +8,10 @@
 #ifndef INCLUDE_PHY_FIBERENGINE_H_
 #define INCLUDE_PHY_FIBERENGINE_H_
 
+#include <vector>
+#include <unordered_map>
+
 #include "Engine.h"
-#include "util/simple_stack.h"
-#include "util/simple_queue.h"
-#include "util/simple_hashmap.h"
 
 namespace vnl { namespace phy {
 
@@ -35,17 +35,16 @@ protected:
 	class Worker;
 	class Task;
 	
-	void enqueue(Worker* fiber);
 	void enqueue(Task* task);
 	
 private:
 	int N;
 	Fiber* current = 0;
 	Worker** workers;
-	vnl::util::simple_stack<Worker*> avail;
-	vnl::util::simple_hashmap<uint64_t, vnl::util::simple_queue<Fiber*> > polling;
-	vnl::util::simple_hashmap<uint64_t, Task*> tasks;
-	vnl::util::simple_queue<Task*> finished;
+	std::vector<Worker*> avail;
+	std::vector<Task*> finished;
+	std::unordered_map<uint64_t, std::vector<Fiber*> > polling;
+	std::unordered_map<uint64_t, Task*> tasks;
 	
 };
 

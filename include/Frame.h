@@ -9,15 +9,13 @@
 #define INCLUDE_FRAME_H_
 
 #include "Address.h"
-#include "phy/Message.h"
+#include "Struct.h"
+#include "ByteBuffer.h"
 
 namespace vnl {
 
-class Frame : public vnl::phy::Message {
+class Frame {
 public:
-	
-	static const uint32_t id = 0xf6b245f5;
-	
 	static const char NONE = 0x00;
 	static const char UNICAST = 0x01;
 	static const char ANYCAST = 0x02;
@@ -29,46 +27,83 @@ public:
 	char flags;
 	Address src;
 	Address dst;
-	uint64_t sid;
-	
-	const void* data;
-	int size;
+	Struct* data;
 	
 	Frame() {
-		mid = id;
 		flags = NONE;
-		sid = 0;
 		data = 0;
-		size = 0;
 	}
 	
-	Frame(char flags, const Address& dst) {
-		mid = id;
-		this->flags = flags;
-		this->dst = dst;
-		sid = 0;
-		data = 0;
-		size = 0;
-	}
-	
-	Frame(char flags, const Address& dst, const void* data, int size) {
-		mid = id;
+	Frame(char flags, const Address& dst, Struct* data = 0) {
 		this->flags = flags;
 		this->dst = dst;
 		this->data = data;
-		this->size = size;
-		sid = 0;
-	}
-	
-	Message* base() {
-		return this;
 	}
 	
 	bool isNull() {
 		return flags == NONE;
 	}
 	
+	bool serialize(vnl::io::Stream* stream) {
+		ByteBuffer buf(stream);
+		buf.put(flags);
+		buf.putLong(src.A);
+		buf.putLong(src.B);
+		buf.putLong(dst.A);
+		buf.putLong(dst.B);
+		if(data) {
+			buf.putLong(data->vnl_id);
+			buf.error |= !data->serialize(stream);
+		} else {
+			buf.putLong(0);
+		}
+		return !buf.error;
+	}
+	
+	bool deserialize(vnl::io::Stream* stream) {
+		ByteBuffer buf(stream);
+		flags = buf.get();
+		src.A = buf.getLong();
+		src.B = buf.getLong();
+		dst.A = buf.getLong();
+		dst.B = buf.getLong();
+		uint64_t id = buf.getLong();
+		if(id) {
+			Struct::type_t type = Struct::resolve(id);
+			if(type.id == id) {
+				data = type.create();
+				if(data) {
+					data->deserialize(stream);
+				}
+			}
+		}
+		return !buf.error;
+	}
+	
 };
+
+
+template<uint32_t MID>
+class Packet : public vnl::phy::Message {
+public:
+	Packet() {}
+	
+	Packet(const Frame& frame, phy::Object* src, phy::Object* dst, uint64_t sid = 0, bool async = false)
+		:	Message(dst, mid, sid, async), frame(frame)
+	{
+		this->frame.src.B = src->mac;
+	}
+	
+	~Packet() {
+		delete frame.data;
+	}
+	
+	static const uint32_t mid = MID;
+	
+	Frame frame;
+	
+};
+
 
 }
 

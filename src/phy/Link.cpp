@@ -9,6 +9,10 @@
 
 namespace vnl { namespace phy {
 
+static thread_local Link* Link::local = 0;
+
+Link::Link(Engine* engine) : Object(engine), thread(0), core_id(-1) {}
+
 Link::~Link() {
 	delete engine;
 }
@@ -32,6 +36,7 @@ void Link::stop() {
 }
 
 void Link::run() {
+	local = this;
 	if(core_id >= 0) {
 		Util::stick_to_core(core_id);
 	}
@@ -53,18 +58,16 @@ void Link::run() {
 
 void Link::receive(Message* msg, Object* src) {
 	if(src == this) {
+		Object* dst;
 		if(msg->isack) {
-			if(msg->src == this) {
-				Object::receive(msg, this);
-			} else {
-				msg->src->receive(msg, this);
-			}
+			dst = msg->src;
 		} else {
-			if(msg->dst == this) {
-				Object::receive(msg, this);
-			} else {
-				msg->dst->receive(msg, this);
-			}
+			dst = msg->dst;
+		}
+		if(dst == this) {
+			Object::receive(msg, this);
+		} else {
+			dst->receive(msg, this);
 		}
 	} else {
 		lock();

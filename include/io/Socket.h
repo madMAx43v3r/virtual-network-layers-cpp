@@ -10,13 +10,12 @@
 
 #include "phy/Object.h"
 #include "io/Stream.h"
-#include "io/socket/Server.h"
 
 namespace vnl { namespace io {
 
 class Socket : public vnl::phy::Object, public vnl::io::Stream {
 public:
-	Socket(vnl::phy::Object* parent);
+	Socket();
 	
 	int create();
 	int close();
@@ -31,16 +30,14 @@ public:
 	bool write(const void* buf, int len) override;
 	
 protected:
-	typedef vnl::phy::Generic<int, 0x98a4ad8b> signal_t;
-	
-	bool poll(vnl::phy::Stream& stream, int flag);
+	bool poll(phy::Stream& stream, int flag);
 	void update();
 	
 private:
 	vnl::io::socket::Server* server;
 	vnl::io::socket::Server::key_t key;
-	vnl::phy::Stream in;
-	vnl::phy::Stream out;
+	phy::Stream in;
+	phy::Stream out;
 	
 };
 

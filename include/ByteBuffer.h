@@ -37,19 +37,21 @@ public:
 	void putLong(int64_t value);
 	void putShort(int16_t value);
 	
+	bool error = false;
+	
 private:
 	vnl::io::Stream* stream;
 	
 	template<typename T>
 	T read() {
 		T data;
-		stream->read(&data, sizeof(T));
+		error |= stream->read(&data, sizeof(T)) != sizeof(T);
 		return data;
 	}
 	
 	template<typename T>
 	void append(T data) {
-		stream->write(&data, sizeof(T));
+		error |= stream->write(&data, sizeof(T));
 	}
 	
 };

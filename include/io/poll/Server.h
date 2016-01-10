@@ -10,10 +10,9 @@
 
 #include <sys/poll.h>
 #include <vector>
+#include <stack>
 
 #include "io/socket/Server.h"
-#include "util/simple_stack.h"
-#include "util/simple_hashmap.h"
 
 namespace vnl { namespace io { namespace poll {
 
@@ -48,7 +47,7 @@ private:
 	key_t pipekey;
 	std::vector<pollfd_t> fds;
 	std::vector<key_t> keys;
-	vnl::util::simple_stack<int> empty;
+	std::stack<int, std::vector<int> > empty;
 	
 };
 
