@@ -14,7 +14,18 @@ using namespace vnl::phy;
 
 namespace vnl { namespace io { namespace poll {
 
-Server::Server(Engine* engine, const int N) : vnl::io::socket::Server(engine), N(N) {
+struct Server::init {
+	init() {
+		if(instance == 0 || instance->_prio < 10) {
+			instance = new vnl::io::poll::Server();
+		}
+	}
+};
+
+Server::init Server::initializer;
+
+Server::Server() : FiberEngine(1), N(4) {
+	_prio = 10;
 	fds.resize(N);
 	keys.resize(N);
 	for(int i = 0; i < N; ++i) {

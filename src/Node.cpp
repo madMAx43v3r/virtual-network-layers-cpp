@@ -20,9 +20,9 @@ Node::~Node() {
 	}
 }
 
-void Node::send(const Frame& frame) {
+void Node::send(const Frame& frame, uint64_t sid, bool async) {
 	if(uplink) {
-		phy::Object::send(Uplink::send_t(frame, this, uplink));
+		phy::Object::send(Uplink::send_t(frame, this, uplink, sid, async));
 	}
 }
 
@@ -41,17 +41,17 @@ void Uplink::handle(phy::Message* msg) {
 	if(!msg->src) {
 		return;
 	}
-	uint64_t srcmac = msg->src->mac;
 	switch(msg->mid) {
-	case Uplink::connect_t::mid:
-		nodes[srcmac] = msg->src;
+	case connect_t::mid:
+		nodes[msg->src->mac] = msg->src;
 		msg->ack();
 		break;
-	case Uplink::disconnect_t::mid:
-		nodes.erase(srcmac);
+	case disconnect_t::mid:
+		nodes.erase(msg->src->mac);
 		msg->ack();
 		break;
 	}
 }
+
 
 }

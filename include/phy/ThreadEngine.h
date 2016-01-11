@@ -21,15 +21,15 @@ public:
 	ThreadEngine(int N);
 	~ThreadEngine();
 	
-	void send(Message* msg) override;
-	void flush() override;
-	void handle(Message* msg) override;
-	void open(Stream* stream) override;
-	void close(Stream* stream) override;
-	bool poll(Stream* stream, int millis) override;
-	uint64_t launch(Runnable* task) override;
-	void cancel(uint64_t tid) override;
-	int timeout() override;
+	virtual void send(Message* msg) override;
+	virtual void flush() override;
+	virtual void handle(Message* msg, Stream* stream) override;
+	virtual void open(Stream* stream) override;
+	virtual void close(Stream* stream) override;
+	virtual bool poll(Stream* stream, int millis) override;
+	virtual uint64_t launch(Runnable* task) override;
+	virtual void cancel(uint64_t tid) override;
+	virtual int timeout() override;
 	
 protected:
 	class cancel_t {};

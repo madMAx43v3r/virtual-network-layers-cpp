@@ -6,22 +6,19 @@
  */
 
 #include "phy/Object.h"
-#include "phy/Link.h"
 #include <assert.h>
 
 namespace vnl { namespace phy {
 
-Object::Object() : link(Link::local), engine(0) {
-	if(link) {
-		engine = link->engine;
-	} else {
-		printf("ERROR: creating vnl::phy::Object without thread local link.\n");
-		assert(Link::local != 0);
+Object::Object() : engine(Engine::local) {
+	if(!engine) {
+		printf("ERROR: creating vnl::phy::Object without thread local engine.\n");
+		assert(Engine::local != 0);
 	}
 	mac = rand();
 }
 
-Object::Object(Engine* engine) : link(this), engine(engine) {
+Object::Object(Engine* engine) : engine(engine) {
 	mac = rand();
 }
 

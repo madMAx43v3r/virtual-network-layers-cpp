@@ -17,10 +17,11 @@ namespace vnl {
 
 class Router : public Uplink {
 public:
-	Router(Uplink* uplink = 0);
+	Router(Uplink* uplink = 0, int N = 1);
+	~Router();
 	
 protected:
-	void handle(phy::Message* msg) override;
+	virtual phy::Stream* route(phy::Message* msg) override;
 	
 	void route(Frame& frame, uint64_t srcmac);
 	void forward(Frame& frame, phy::Object* dst);
@@ -33,7 +34,11 @@ protected:
 	std::vector<phy::Object*>& get_entry(const Address& addr);
 	void clear_entry(const Address& addr);
 	
+	class Worker;
+	
 private:
+	int N;
+	std::vector<Worker*> workers;
 	std::unordered_map<uint64_t, std::vector<phy::Object*> > route64;
 	std::unordered_map<Address, std::vector<phy::Object*> > route128;
 	

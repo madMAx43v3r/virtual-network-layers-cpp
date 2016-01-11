@@ -197,31 +197,26 @@ void FiberEngine::flush() {
 	}
 }
 
-void FiberEngine::handle(Message* msg) {
+void FiberEngine::handle(Message* msg, Stream* stream) {
 	if(msg->isack) {
-		((Fiber*)msg->impl)->acked();
-		return;
-	} else if(msg->sid) {
-		Stream* stream = get_stream(msg->dst, msg->sid);
-		if(stream) {
-			dispatch(msg, stream);
-			auto iter = polling.find(msg->sid);
-			if(iter != polling.end() && iter->second.size()) {
-				auto& queue = iter->second;
-				auto fiber = queue.begin();
-				(*fiber)->notify(true);
-				queue.erase(fiber);
-			}
-			return;
+		Fiber* fiber = (Fiber*)msg->impl;
+		if(msg->callback) {
+			msg->callback(msg);
 		}
+		fiber->acked();
+		return;
+	} else if(stream) {
+		dispatch(msg, stream);
+		auto iter = polling.find(msg->sid);
+		if(iter != polling.end() && iter->second.size()) {
+			auto& queue = iter->second;
+			auto fiber = queue.begin();
+			(*fiber)->notify(true);
+			queue.erase(fiber);
+		}
+		return;
 	}
-	Worker* fiber;
-	if(msg->src) {
-		fiber = workers[msg->src->mac % N];
-	} else {
-		fiber = workers[0];
-	}
-	fiber->push(msg);
+	workers[msg->dst->mac % N]->push(msg);
 }
 
 void FiberEngine::open(Stream* stream) {

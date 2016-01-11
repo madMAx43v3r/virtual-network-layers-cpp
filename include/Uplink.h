@@ -17,13 +17,15 @@ class Uplink : public Node {
 public:
 	Uplink(Uplink* uplink = 0) : Node(uplink) {}
 	
-	typedef phy::Request<uint64_t, Node*, 0x85490083> connect_t;
+	typedef phy::Signal<0x85490083> connect_t;
+	typedef phy::Signal<0x85490083> disconnect_t;
 	typedef Packet<0xef34166d> send_t;
 	
 protected:
-	void handle(phy::Message* msg) override;
+	virtual void handle(phy::Message* msg) override;
 	
-	virtual uint64_t connect(Node* node) = 0;
+	virtual void onconnect(phy::Message* msg) {}
+	virtual void ondisconnect(phy::Message* msg) {}
 	
 	phy::Object* get_node(uint64_t mac) {
 		auto iter = nodes.find(mac);

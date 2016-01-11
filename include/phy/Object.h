@@ -19,8 +19,6 @@
 
 namespace vnl { namespace phy {
 
-class Link;
-
 template<typename M, int N>
 class SendBuffer;
 
@@ -31,7 +29,7 @@ public:
 	
 	void receive(Message* msg) {
 		msg->dst = this;
-		link->receive(msg, 0);
+		engine->receive(msg, 0);
 	}
 	
 	uint64_t mac;
@@ -54,6 +52,7 @@ protected:
 	
 	void send(Message* msg, bool async = false) {
 		msg->src = this;
+		msg->seq = seq_counter++;
 		msg->async = async;
 		engine->send(msg);
 	}
@@ -97,24 +96,27 @@ protected:
 		engine->cancel(tid);
 	}
 	
-	virtual void handle(Message* msg) {}
+	virtual void handle(Message* msg) = 0;
+	
+	virtual Stream* route(Message* msg) {
+		if(msg->sid) { return get_stream(msg->sid); }
+		return 0;
+	}
 	
 private:
 	Object(Engine* engine);
 	
 	virtual void receive(Message* msg, Object* src) {
-		if(src == link) {
-			engine->handle(msg);
+		if(src == engine) {
+			engine->handle(msg, msg->isack ? 0 : route(msg));
 		} else {
-			link->receive(msg, src);
+			engine->receive(msg, src);
 		}
 	}
 	
 	Stream* get_stream(uint32_t sid) {
 		auto iter = streams.find(sid);
-		if(iter != streams.end()) {
-			return iter->second;
-		}
+		if(iter != streams.end()) { return iter->second; }
 		return 0;
 	}
 	
@@ -122,14 +124,13 @@ protected:
 	Engine* engine;
 	
 private:
-	Object* link;
 	std::unordered_map<uint64_t, Stream*> streams;
+	int seq_counter = 0;
 	int yield_counter = 0;
 	
 	friend class Message;
 	friend class Stream;
 	friend class Engine;
-	friend class Link;
 	template<typename M, int N>
 	friend class SendBuffer;
 	

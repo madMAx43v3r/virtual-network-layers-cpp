@@ -6,60 +6,88 @@
  */
 
 #include "TcpUplink.h"
+
+#include "../include/io/StreamBuffer.h"
 #include "io/Buffer.h"
-#include "io/BufferedStream.h"
 
 namespace vnl {
 
 TcpUplink::TcpUplink(const std::string& endpoint, int port)
-	:	endpoint(endpoint), port(port), state(this)
+	:	endpoint(endpoint), port(port), state(this), stream(&sock)
 {
 	tid_reader = launch(std::bind(&TcpUplink::reader, this));
-	tid_writer = launch(std::bind(&TcpUplink::writer, this));
 }
 
 TcpUplink::~TcpUplink() {
 	cancel(tid_reader);
-	cancel(tid_writer);
-	for(auto msg : queue) {
-		msg->ack();
+	for(auto msg : sndbuf) {
+		delete msg;
 	}
 }
 
 void TcpUplink::handle(phy::Message* msg) {
 	Uplink::handle(msg);
-	if(msg->mid == Uplink::send_t::mid) {
-		queue.push((Uplink::send_t*)msg);
+	if(msg->mid == send_t::mid) {
+		send_t* packet = (send_t*)msg;
+		if(msg->src) {
+			pending[msg->src->mac | msg->seq] = packet;
+		}
+		write(packet);
 	}
 }
 
+void TcpUplink::write(send_t* msg) {
+	state.check();
+	ByteBuffer buf(&stream);
+	if(msg->src) {
+		buf.putLong(msg->src->mac);
+	} else {
+		buf.putLong(0);
+	}
+	msg->serialize(&stream);
+	stream.flush();
+}
+
 void TcpUplink::reader() {
+	auto release = [sndbuf](phy::Message* msg) {
+		sndbuf.push_back((receive_t*)msg);
+	};
 	while(true) {
 		sock.create();
 		sock.connect(endpoint, port);
+		stream.clear();
 		state.set();
-		io::BufferedStream stream(sock);
-		phy::SendBuffer<Node::receive_t, 100> buf;
+		for(auto it : pending) {
+			write(it.second);
+		}
+		ByteBuffer buf(&stream);
 		while(true) {
-			Node::receive_t* msg = buf.get();
-			if(!msg->deserialize(&stream)) {
+			uint64_t dstmac = buf.getLong();
+			receive_t* msg;
+			if(sndbuf.empty()) {
+				msg = new receive_t();
+			} else {
+				msg = sndbuf.back();
+				sndbuf.pop_back();
+			}
+			if(buf.error || !msg->deserialize(&stream)) {
 				printf("ERROR: TcpUplink::reader(): msg->deserialize() failed!\n");
+				release(msg);
 				break;
 			}
-			msg->dst = get_node(msg->frame.dst.B);
-			if(msg->dst) {
-				
+			phy::Object* dst = get_node(dstmac);
+			if(dst) {
+				msg->dst = dst;
+				msg->async = true;
+				msg->callback = release;
+				phy::Object::send(msg);
 			} else {
-				delete msg;
+				release(msg);
 			}
 		}
 		state.reset();
 		sock.close();
 	}
-}
-
-void TcpUplink::writer() {
-	
 }
 
 

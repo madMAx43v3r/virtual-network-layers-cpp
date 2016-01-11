@@ -7,7 +7,7 @@
 
 #include "CRC64.h"
 
-namespace vnl {
+namespace vnl { namespace util {
 
 struct CRC64::init {
 	init() {
@@ -31,4 +31,4 @@ uint64_t CRC64::crcTable[256];
 CRC64::init CRC64::initializer;
 
 
-}
+}}

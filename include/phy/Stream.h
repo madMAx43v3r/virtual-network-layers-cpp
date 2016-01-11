@@ -14,6 +14,7 @@
 namespace vnl { namespace phy {
 
 class Engine;
+class Object;
 
 class Stream {
 public:
@@ -48,6 +49,7 @@ private:
 	
 	vnl::util::simple_queue<Message*> queue;
 	
+	friend class Object;
 	friend class Engine;
 	
 };
@@ -97,20 +99,6 @@ template<typename T>
 void Stream::send(T&& msg) {
 	msg.sid = sid;
 	obj->send(msg);
-}
-
-template<typename T>
-T Stream::read() {
-	while(true) {
-		Message* msg = poll();
-		if(msg->mid == T::id) {
-			T res = *((T*)msg);
-			msg->ack();
-			return res;
-		} else {
-			msg->ack();
-		}
-	}
 }
 
 template<typename T, typename R>

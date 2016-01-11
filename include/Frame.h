@@ -98,6 +98,24 @@ public:
 		delete frame.data;
 	}
 	
+	bool serialize(vnl::io::Stream* stream) {
+		ByteBuffer out(stream);
+		out.putInt(mid);
+		out.putInt(seq);
+		out.putLong(sid);
+		out.error |= !frame.serialize(stream);
+		return !out.error;
+	}
+	
+	bool deserialize(vnl::io::Stream* stream) {
+		ByteBuffer in(stream);
+		Message::mid = in.getInt();
+		seq = in.getInt();
+		sid = in.getLong();
+		in.error |= !frame.deserialize(stream);
+		return !in.error;
+	}
+	
 	static const uint32_t mid = MID;
 	
 	Frame frame;

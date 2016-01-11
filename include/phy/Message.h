@@ -24,7 +24,7 @@ public:
 	virtual ~Message() {}
 	
 	Message(Object* dst, uint32_t mid, uint64_t sid = 0, bool async = false)
-		:	dst(dst), mid(mid), sid(sid), async(async) {}
+		:	dst(dst), mid(mid), seq(0), sid(sid), async(async) {}
 	
 	virtual std::string toString();
 	
@@ -33,10 +33,13 @@ public:
 	Object* src = 0;
 	Object* dst = 0;
 	uint32_t mid = 0;
+	uint32_t seq = 0;
 	uint64_t sid = 0;
 	void* impl = 0;
 	bool isack = false;
 	bool async = false;
+	
+	std::function<void(Message*)> callback;
 	
 };
 

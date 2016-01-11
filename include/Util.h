@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "CRC64.h"
+#include "util/CRC64.h"
 
 namespace vnl {
 
@@ -23,32 +23,32 @@ class Util {
 public:
 	
 	static uint64_t hash64(const std::string& str) {
-		CRC64 func;
+		util::CRC64 func;
 		func.update(str.c_str(), str.length());
 		return func.getValue();
 	}
 	
 	static uint64_t hash64(char* data, int size) {
-		CRC64 func;
+		util::CRC64 func;
 		func.update(data, size);
 		return func.getValue();
 	}
 	
 	static uint64_t hash64(uint64_t a) {
-		CRC64 func;
+		util::CRC64 func;
 		func.update(a);
 		return func.getValue();
 	}
 	
 	static uint64_t hash64(uint64_t a, uint64_t b) {
-		CRC64 func;
+		util::CRC64 func;
 		func.update(a*31);
 		func.update(b*37);
 		return func.getValue();
 	}
 	
 	static uint64_t hash64(uint64_t a, uint64_t b, uint64_t c) {
-		CRC64 func;
+		util::CRC64 func;
 		func.update(a*31);
 		func.update(b*37);
 		func.update(c*41);

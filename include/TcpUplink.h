@@ -9,6 +9,7 @@
 #define INCLUDE_TCP_TCPUPLINK_H_
 
 #include <vector>
+#include <unordered_map>
 
 #include "Uplink.h"
 #include "io/Socket.h"
@@ -23,19 +24,25 @@ public:
 	~TcpUplink();
 	
 protected:
-	void handle(phy::Message* msg) override;
+	virtual void handle(phy::Message* msg) override;
+	
+	void write(send_t* msg);
 	
 	void reader();
-	void writer();
 	
 private:
 	std::string endpoint;
 	int port;
+	
 	uint64_t tid_reader;
-	uint64_t tid_writer;
-	io::Socket sock;
 	phy::Condition state;
-	phy::Stream queue;
+	io::Socket sock;
+	io::StreamBuffer stream;
+	
+	std::unordered_map<uint64_t, send_t*> pending;
+	std::vector<receive_t*> sndbuf;
+	
+	static const uint32_t ackid = 0xf641c12f;
 	
 };
 

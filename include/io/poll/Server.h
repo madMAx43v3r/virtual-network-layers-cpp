@@ -13,12 +13,13 @@
 #include <stack>
 
 #include "io/socket/Server.h"
+#include "phy/FiberEngine.h"
 
 namespace vnl { namespace io { namespace poll {
 
-class Server : public vnl::io::socket::Server {
+class Server : public vnl::io::socket::Server, public vnl::phy::FiberEngine {
 public:
-	Server(vnl::phy::Engine* engine, const int N = 4);
+	Server();
 	~Server();
 	
 protected:
@@ -33,10 +34,10 @@ protected:
 		}
 	};
 	
-	void handle(vnl::phy::Message* msg) override;
+	virtual void handle(vnl::phy::Message* msg) override;
 	
-	void notify() override;
-	void wait(int millis) override;
+	virtual void notify() override;
+	virtual void wait(int millis) override;
 	
 	int update(key_t& key);
 	void expand();
@@ -49,7 +50,11 @@ private:
 	std::vector<key_t> keys;
 	std::stack<int, std::vector<int> > empty;
 	
+	struct init;
+	static init initializer;
+	
 };
+
 
 }}}
 

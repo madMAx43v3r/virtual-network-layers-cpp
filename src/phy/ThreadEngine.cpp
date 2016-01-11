@@ -186,32 +186,27 @@ void ThreadEngine::flush() {
 	}
 }
 
-void ThreadEngine::handle(Message* msg) {
+void ThreadEngine::handle(Message* msg, Stream* stream) {
 	std::lock_guard<std::recursive_mutex> lock(mutex);
 	if(msg->isack) {
-		((Thread*)msg->impl)->acked();
-		return;
-	} else if(msg->sid) {
-		Stream* stream = get_stream(msg->dst, msg->sid);
-		if(stream) {
-			dispatch(msg, stream);
-			auto iter = polling.find(msg->sid);
-			if(iter != polling.end() && iter->second.size()) {
-				auto& queue = iter->second;
-				auto fiber = queue.begin();
-				(*fiber)->notify();
-				queue.erase(fiber);
-			}
-			return;
+		Thread* thread = (Thread*)msg->impl;
+		if(msg->callback) {
+			msg->callback(msg);
 		}
+		thread->acked();
+		return;
+	} else if(stream) {
+		dispatch(msg, stream);
+		auto iter = polling.find(msg->sid);
+		if(iter != polling.end() && iter->second.size()) {
+			auto& queue = iter->second;
+			auto fiber = queue.begin();
+			(*fiber)->notify();
+			queue.erase(fiber);
+		}
+		return;
 	}
-	Worker* worker;
-	if(msg->src) {
-		worker = workers[msg->src->mac % N];
-	} else {
-		worker = workers[0];
-	}
-	worker->push(msg);
+	workers[msg->dst->mac % N]->push(msg);
 }
 
 void ThreadEngine::open(Stream* stream) {

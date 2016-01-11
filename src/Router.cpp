@@ -9,36 +9,69 @@
 
 namespace vnl {
 
-Router::Router(Uplink* uplink) : Uplink(uplink) {
+class Router::Worker : public Runnable {
+public:
+	Worker(Router* router) : router(router), queue(router), tid(0) {}
+	
+	void run() override {
+		while(true) {
+			phy::Message* msg = queue.poll();
+			if(msg->mid == Uplink::send_t::mid) {
+				Frame& frame = ((Uplink::send_t*)msg)->frame;
+				if(frame.src.A == 0) {
+					frame.src.A = mac;
+				}
+				if(frame.flags == Frame::REGISTER) {
+					router->configure(frame.dst, msg->src);
+				}
+				if(frame.flags == Frame::UNREGISTER) {
+					router->unregister(frame.dst, msg->src);
+				}
+				router->route(frame, msg->src ? msg->src->mac : 0);
+			} else if(msg->mid == Node::receive_t::mid) {
+				Frame& frame = ((Node::receive_t*)msg)->frame;
+				router->route(frame, 0);
+			}
+			msg->ack();
+		}
+	}
+	
+	Router* router;
+	phy::Stream queue;
+	uint64_t tid;
+	
+};
+
+Router::Router(Uplink* uplink, int N) : Uplink(uplink), N(N) {
 	Node::configure(Address(mac, 0));
+	workers.resize(N);
+	for(int i = 0; i < N; ++i) {
+		Worker* worker = new Worker(this);
+		worker->tid = launch(worker);
+		workers[i] = worker;
+	}
 }
 
-void Router::handle(phy::Message* msg) {
-	Uplink::handle(msg);
-	uint64_t srcmac = msg->src ? msg->src->mac : 0;
-	switch(msg->mid) {
-	case Uplink::send_t::mid: {
-		Frame& frame = ((Uplink::send_t*)msg)->frame;
-		if(frame.src.A == 0) {
-			frame.src.A = mac;
-		}
-		if(frame.flags == Frame::REGISTER) {
-			configure(frame.dst, msg->src);
-		}
-		if(frame.flags == Frame::UNREGISTER) {
-			unregister(frame.dst, msg->src);
-		}
-		route(frame, srcmac);
-		msg->ack();
-		break;
+Router::~Router() {
+	for(auto worker : workers) {
+		cancel(worker->tid);
+		delete worker;
 	}
-	case Node::receive_t::mid: {
-		Frame& frame = ((Node::receive_t*)msg)->frame;
-		route(frame, 0);
-		msg->ack();
-		break;
+}
+
+phy::Stream* Router::route(phy::Message* msg) {
+	if(Uplink::route(msg) == 0) {
+		uint64_t srcmac = 0;
+		if(msg->mid == Uplink::send_t::mid) {
+			srcmac = ((Uplink::send_t*)msg)->frame.src.B;
+		} else if(msg->mid == Node::receive_t::mid) {
+			srcmac = ((Node::receive_t*)msg)->frame.src.B;
+		}
+		if(srcmac) {
+			return &workers[srcmac % N]->queue;
+		}
 	}
-	}
+	return 0;
 }
 
 void Router::route(Frame& frame, uint64_t srcmac) {

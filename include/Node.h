@@ -23,7 +23,7 @@ public:
 	typedef Packet<0xb494e3b0> receive_t;
 	
 protected:
-	void send(const Frame& frame);
+	void send(const Frame& frame, uint64_t sid = 0, bool async = false);
 	
 	void configure(const Address& addr);
 	void unregister(const Address& addr);

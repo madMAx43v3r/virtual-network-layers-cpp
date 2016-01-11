@@ -49,14 +49,14 @@ public:
 		return b;
 	}
 	
-	int read(void* dst, int len) override {
+	virtual int read(void* dst, int len) override {
 		int n = std::min(limit-pos, len);
 		memcpy(dst, buf+pos, n);
 		pos += n;
 		return n;
 	}
 	
-	bool write(const void* src, int len) override {
+	virtual bool write(const void* src, int len) override {
 		if(N-pos < len) {
 			resize(pos+len);
 		}

@@ -11,23 +11,24 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "Link.h"
-
 namespace vnl { namespace phy {
 
-class Processor : public vnl::phy::Link {
+template<typename T>
+class Processor : public T {
 public:
-	Processor(Engine* engine) : Link(engine), ulock(mutex) {
+	Processor(int N) : T(N), ulock(mutex) {
 		ulock.unlock();
 	}
 	
+	virtual ~Processor() {}
+	
 protected:
 	
-	void notify() override {
+	virtual void notify() override {
 		cond.notify_all();
 	}
 	
-	void wait(int millis) override {
+	virtual void wait(int millis) override {
 		cond.wait_for(ulock, std::chrono::milliseconds(millis));
 	}
 	

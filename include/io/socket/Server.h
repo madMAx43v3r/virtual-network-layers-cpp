@@ -8,15 +8,11 @@
 #ifndef INCLUDE_IO_SOCKET_SERVER_H_
 #define INCLUDE_IO_SOCKET_SERVER_H_
 
-#include "phy/Link.h"
-
 namespace vnl { namespace io { namespace socket {
 
-class Server : public vnl::phy::Link {
+class Server {
 public:
 	static Server* instance;
-	
-	Server(vnl::phy::Engine* engine) : Link(engine) {}
 	
 	struct key_t {
 		key_t() : obj(0), sin(0), sout(0), fd(-1), events(0), index(-1) {}
@@ -31,6 +27,7 @@ public:
 	typedef vnl::phy::Request<int, key_t, 0xd25c0daf> poll_t;
 	typedef vnl::phy::Generic<int, 0x98a4ad8b> signal_t;
 	
+	int _prio = 0;
 	
 };
 

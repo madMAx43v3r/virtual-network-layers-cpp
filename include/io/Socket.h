@@ -24,12 +24,13 @@ public:
 	int listen(int backlog = 100);
 	Socket* accept();
 	
-	int read(void* buf, int len) override;
 	bool read_all(void* buf, int len);
-	
-	bool write(const void* buf, int len) override;
+	virtual int read(void* buf, int len) override;
+	virtual bool write(const void* buf, int len) override;
 	
 protected:
+	virtual void handle(phy::Message* msg) override {}
+	
 	bool poll(phy::Stream& stream, int flag);
 	void update();
 	

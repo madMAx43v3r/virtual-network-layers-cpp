@@ -5,22 +5,28 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_IO_BUFFEREDSTREAM_H_
-#define INCLUDE_IO_BUFFEREDSTREAM_H_
+#ifndef INCLUDE_IO_STREAMBUFFER_H_
+#define INCLUDE_IO_STREAMBUFFER_H_
 
 #include <string.h>
 #include "io/Stream.h"
 
 namespace vnl { namespace io {
 
-class BufferedStream : public vnl::io::Stream {
+class StreamBuffer : public vnl::io::Stream {
 public:
-	BufferedStream(Stream* stream, int N = 4096) : N(N), stream(stream), in(N), out(N) {
+	StreamBuffer(Stream* stream, int N = 4096) : N(N), stream(stream), in(N), out(N) {
+		clear();
+	}
+	
+	void clear() {
+		in.pos = 0;
 		in.left = 0;
+		out.pos = 0;
 		out.left = N;
 	}
 	
-	int read(void* dst, int len) {
+	virtual int read(void* dst, int len) override {
 		int rem = len;
 		while(rem > 0) {
 			if(in.left > 0) {
@@ -42,7 +48,7 @@ public:
 		return len;
 	}
 	
-	bool write(const void* src, int len) {
+	virtual bool write(const void* src, int len) override {
 		int rem = len;
 		while(rem > 0) {
 			if(out.left > 0) {
@@ -95,4 +101,4 @@ private:
 
 }}
 
-#endif /* INCLUDE_IO_BUFFEREDSTREAM_H_ */
+#endif /* INCLUDE_IO_STREAMBUFFER_H_ */
