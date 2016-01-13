@@ -1,31 +1,26 @@
 /*
- * TcpUplink.cpp
+ * TcpServer.cpp
  *
- *  Created on: Jan 10, 2016
- *      Author: mad
+ *  Created on: Jan 12, 2016
+ *      Author: MWITTAL
  */
-
-#include "TcpUplink.h"
-
-#include "../include/io/StreamBuffer.h"
-#include "io/Buffer.h"
 
 namespace vnl {
 
-TcpUplink::TcpUplink(const std::string& endpoint, int port)
-	:	endpoint(endpoint), port(port), state(this), stream(&sock)
+TcpServer::TcpServer(int port)
+	:	port(port), state(this), stream(&sock)
 {
 	tid_reader = launch(std::bind(&TcpUplink::reader, this));
 }
 
-TcpUplink::~TcpUplink() {
+TcpServer::~TcpServer() {
 	cancel(tid_reader);
 	for(auto msg : sndbuf) {
 		delete msg;
 	}
 }
 
-void TcpUplink::handle(phy::Message* msg) {
+void TcpServer::handle(phy::Message* msg) {
 	Uplink::handle(msg);
 	if(msg->mid == send_t::mid) {
 		send_t* packet = (send_t*)msg;
@@ -37,18 +32,16 @@ void TcpUplink::handle(phy::Message* msg) {
 		state.check();
 		ByteBuffer buf(&stream);
 		buf.putInt(ackid);
-		buf.putInt(ackbuf.size());
 		for(auto msg : ackbuf) {
 			buf.putLong(msg->dst->mac | msg->seq);
 			sndbuf.push_back(msg);
 		}
 		stream.flush();
-		ackbuf.clear();
 		msg->ack();
 	}
 }
 
-void TcpUplink::write(send_t* msg) {
+void TcpServer::write(receive_t* msg) {
 	state.check();
 	ByteBuffer buf(&stream);
 	buf.putInt(msg->mid);
@@ -61,7 +54,7 @@ void TcpUplink::write(send_t* msg) {
 	stream.flush();
 }
 
-void TcpUplink::reader() {
+void TcpServer::reader() {
 	auto callback = [ackbuf](phy::Message* msg) {
 		if(ackbuf.empty()) {
 			phy::Object::receive(new acksig_t(this, 0, true));
@@ -103,14 +96,11 @@ void TcpUplink::reader() {
 					sndbuf.push_back(msg);
 				}
 			} else if(mid == ackid) {
-				int32_t num = buf.getInt();
-				for(int i = 0; i < num; ++i) {
-					uint64_t hash = buf.getLong();
-					auto iter = pending.find(hash);
-					if(iter != pending.end()) {
-						iter->second->ack();
-						pending.erase(iter);
-					}
+				uint64_t hash = buf.getLong();
+				auto iter = pending.find(hash);
+				if(iter != pending.end()) {
+					iter->second->ack();
+					pending.erase(iter);
 				}
 			}
 		}

@@ -51,10 +51,15 @@ protected:
 	}
 	
 	void send(Message* msg, bool async = false) {
-		msg->src = this;
 		msg->seq = seq_counter++;
 		msg->async = async;
-		engine->send(msg);
+		if(msg->dst == this) {
+			msg->src = 0;
+			handle(msg);
+		} else {
+			msg->src = this;
+			engine->send(msg);
+		}
 	}
 	
 	void open(Stream* stream) {

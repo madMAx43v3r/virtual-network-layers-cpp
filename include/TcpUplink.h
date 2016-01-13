@@ -24,8 +24,9 @@ public:
 	~TcpUplink();
 	
 protected:
-	virtual void handle(phy::Message* msg) override;
+	typedef phy::Signal<0x1fa3586f> acksig_t;
 	
+	virtual void handle(phy::Message* msg) override;
 	void write(send_t* msg);
 	
 	void reader();
@@ -40,6 +41,7 @@ private:
 	io::StreamBuffer stream;
 	
 	std::unordered_map<uint64_t, send_t*> pending;
+	std::vector<receive_t*> ackbuf;
 	std::vector<receive_t*> sndbuf;
 	
 	static const uint32_t ackid = 0xf641c12f;
