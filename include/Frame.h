@@ -113,7 +113,7 @@ public:
 		seq = in.getInt();
 		sid = in.getLong();
 		in.error |= !frame.deserialize(stream);
-		return !in.error;
+		return !in.error && Message::mid == mid;
 	}
 	
 	static const uint32_t mid = MID;

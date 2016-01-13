@@ -27,13 +27,15 @@ void Node::send(const Frame& frame, uint64_t sid, bool async) {
 }
 
 void Node::configure(const Address& addr) {
-	send(Frame(Frame::REGISTER, addr));
-	logical.insert(addr);
+	if(logical.insert(addr).second) {
+		send(Frame(Frame::REGISTER, addr));
+	}
 }
 
 void Node::unregister(const Address& addr) {
-	send(Frame(Frame::UNREGISTER, addr));
-	logical.erase(addr);
+	if(logical.erase(addr)) {
+		send(Frame(Frame::UNREGISTER, addr));
+	}
 }
 
 
