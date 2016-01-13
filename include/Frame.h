@@ -100,7 +100,6 @@ public:
 	
 	bool serialize(vnl::io::Stream* stream) {
 		ByteBuffer out(stream);
-		out.putInt(mid);
 		out.putInt(seq);
 		out.putLong(sid);
 		out.error |= !frame.serialize(stream);
@@ -109,7 +108,6 @@ public:
 	
 	bool deserialize(vnl::io::Stream* stream) {
 		ByteBuffer in(stream);
-		Message::mid = in.getInt();
 		seq = in.getInt();
 		sid = in.getLong();
 		in.error |= !frame.deserialize(stream);
