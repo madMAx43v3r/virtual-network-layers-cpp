@@ -89,7 +89,7 @@ public:
 	Packet() {}
 	
 	Packet(const Frame& frame, phy::Object* src, phy::Object* dst, uint64_t sid = 0, bool async = false)
-		:	Message(dst, mid, sid, async), frame(frame)
+		:	Message(dst, id, sid, async), frame(frame)
 	{
 		this->frame.src.B = src->mac;
 	}
@@ -111,10 +111,10 @@ public:
 		seq = in.getInt();
 		sid = in.getLong();
 		in.error |= !frame.deserialize(stream);
-		return !in.error && Message::mid == mid;
+		return !in.error && Message::mid == id;
 	}
 	
-	static const uint32_t mid = MID;
+	static const uint32_t id = MID;
 	
 	Frame frame;
 	

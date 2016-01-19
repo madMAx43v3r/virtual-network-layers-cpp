@@ -15,7 +15,7 @@
 
 namespace vnl {
 
-class Router : public Uplink {
+class Router : public Switch {
 public:
 	Router(Uplink* uplink = 0, int N = 1);
 	~Router();
@@ -38,6 +38,7 @@ protected:
 	
 private:
 	int N;
+	Uplink* uplink;
 	std::vector<Worker*> workers;
 	std::unordered_map<uint64_t, std::vector<phy::Object*> > route64;
 	std::unordered_map<Address, std::vector<phy::Object*> > route128;

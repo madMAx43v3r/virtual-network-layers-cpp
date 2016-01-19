@@ -13,6 +13,8 @@
 
 #include "Node.h"
 #include "Uplink.h"
+#include "io/Socket.h"
+#include "io/StreamBuffer.h"
 
 namespace vnl {
 
@@ -26,6 +28,8 @@ protected:
 	
 	void reader();
 	
+	typedef phy::Signal<0x1fa3586f> acksig_t;
+	
 	class Proxy;
 	
 private:
@@ -35,12 +39,9 @@ private:
 	io::Socket sock;
 	io::StreamBuffer stream;
 	
-	std::unordered_map<uint64_t, Proxy*> route;
 	std::unordered_map<uint64_t, receive_t*> pending;
 	std::vector<Uplink::send_t*> ackbuf;
 	std::vector<Uplink::send_t*> sndbuf;
-	
-	static const uint32_t ackid = 0xf641c12f;
 	
 };
 

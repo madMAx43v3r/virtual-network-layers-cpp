@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "Node.h"
+#include "Uplink.h"
 
 namespace vnl {
 

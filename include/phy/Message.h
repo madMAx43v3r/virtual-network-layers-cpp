@@ -49,7 +49,7 @@ public:
 	Signal() : Message() {}
 	Signal(Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, sid, async) {}
 	
-	static const uint32_t mid = MID;
+	static const uint32_t id = MID;
 	
 };
 
@@ -59,7 +59,7 @@ public:
 	Generic() : Message() {}
 	Generic(const T& data, Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, sid, async), data(data) {}
 	
-	static const uint32_t mid = MID;
+	static const uint32_t id = MID;
 	
 	T data;
 	
@@ -76,7 +76,7 @@ public:
 		Message::ack();
 	}
 	
-	static const uint32_t mid = MID;
+	static const uint32_t id = MID;
 	
 	typedef T res_t;
 	typedef P args_t;

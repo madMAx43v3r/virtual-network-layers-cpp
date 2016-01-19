@@ -22,5 +22,10 @@ Object::Object(Engine* engine) : engine(engine) {
 	mac = rand();
 }
 
+Stream* Object::route(Message* msg) {
+	if(msg->sid) { return get_stream(msg->sid); }
+	return 0;
+}
+
 
 }}
