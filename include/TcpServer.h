@@ -21,6 +21,8 @@ public:
 	TcpServer(int port);
 	
 protected:
+	typedef phy::Signal<0x1fa3586f> acksig_t;
+	
 	virtual void handle(phy::Message* msg) override;
 	void write(receive_t* msg);
 	
