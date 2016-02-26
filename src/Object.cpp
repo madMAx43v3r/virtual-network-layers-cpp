@@ -10,14 +10,14 @@
 namespace vnl {
 
 Object::Object(Uplink* uplink) : Node(uplink) {
-	phy::Object::send(Uplink::connect_t(uplink));
+	phy::Object::send(Switch::connect_t(uplink));
 }
 
 Object::~Object() {
 	for(auto addr : logical) {
 		unregister(addr);
 	}
-	phy::Object::send(Uplink::disconnect_t(uplink));
+	phy::Object::send(Switch::disconnect_t(uplink));
 }
 
 void Object::handle(phy::Message* msg) {

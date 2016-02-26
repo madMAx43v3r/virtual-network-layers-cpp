@@ -13,7 +13,7 @@
 
 namespace vnl {
 
-class Uplink;
+class Switch;
 
 class Node : public vnl::phy::Object {
 public:
@@ -29,7 +29,7 @@ protected:
 	void unregister(const Address& addr);
 	
 protected:
-	phy::Object* uplink;
+	Uplink* uplink;
 	std::unordered_set<Address> logical;
 	
 };

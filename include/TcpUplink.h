@@ -11,10 +11,10 @@
 #include <vector>
 #include <unordered_map>
 
+#include "Node.h"
 #include "Uplink.h"
 #include "io/Socket.h"
-#include "io/Buffer.h"
-#include "util/simple_queue.h"
+#include "io/StreamBuffer.h"
 
 namespace vnl {
 
@@ -34,6 +34,7 @@ protected:
 private:
 	std::string endpoint;
 	int port;
+	phy::Object* node;
 	
 	uint64_t tid_reader;
 	phy::Condition state;
@@ -43,8 +44,6 @@ private:
 	std::unordered_map<uint64_t, send_t*> pending;
 	std::vector<receive_t*> ackbuf;
 	std::vector<receive_t*> sndbuf;
-	
-	static const uint32_t ackid = 0xf641c12f;
 	
 };
 

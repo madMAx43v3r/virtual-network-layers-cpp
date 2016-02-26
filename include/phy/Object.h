@@ -103,10 +103,7 @@ protected:
 	
 	virtual void handle(Message* msg) = 0;
 	
-	virtual Stream* route(Message* msg) {
-		if(msg->sid) { return get_stream(msg->sid); }
-		return 0;
-	}
+	virtual Stream* route(Message* msg);
 	
 private:
 	Object(Engine* engine);
