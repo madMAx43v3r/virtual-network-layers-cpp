@@ -14,6 +14,7 @@ namespace vnl {
 
 class Uplink : public Node {
 public:
+	Uplink() : Node(0) {}
 	Uplink(Uplink* uplink) : Node(uplink) {}
 	
 	typedef phy::Signal<0x85490083> connect_t;

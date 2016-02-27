@@ -13,17 +13,18 @@ namespace vnl {
 
 Node::Node(Uplink* uplink) : uplink(uplink)
 {
+	if(uplink) {
+		phy::Object::send(Uplink::connect_t(this));
+	}
 }
 
 Node::~Node() {
-	for(auto addr : logical) {
-		unregister(addr);
-	}
+	
 }
 
 void Node::send(const Frame& frame, uint64_t sid, bool async) {
 	if(uplink) {
-		phy::Object::send(Switch::send_t(frame, this, uplink, sid, async));
+		phy::Object::send(Uplink::send_t(frame, this, uplink, sid, async));
 	}
 }
 
@@ -39,19 +40,32 @@ void Node::unregister(const Address& addr) {
 	}
 }
 
-
-void Switch::handle(phy::Message* msg) {
-	if(!msg->src) { return; }
-	switch(msg->mid) {
-	case connect_t::mid:
-		nodes[msg->src->mac] = msg->src;
-		msg->ack();
-		break;
-	case disconnect_t::mid:
-		nodes.erase(msg->src->mac);
-		msg->ack();
-		break;
+void Node::exit() {
+	for(auto addr : logical) {
+		unregister(addr);
 	}
+	if(uplink) {
+		uplink->receive(new Uplink::disconnect_t(this, 0, true));
+	}
+}
+
+
+bool Switch::handle(phy::Message* msg) {
+	phy::Object* obj = msg->src;
+	if(!Uplink::handle(msg) && obj) {
+		switch(msg->mid) {
+		case connect_t::mid:
+			nodes[obj->mac] = obj;
+			msg->ack();
+			return true;
+		case disconnect_t::mid:
+			nodes.erase(obj->mac);
+			msg->ack();
+			delete obj;
+			return true;
+		}
+	}
+	return false;
 }
 
 

@@ -72,9 +72,7 @@ public:
 			Struct::type_t type = Struct::resolve(id);
 			if(type.id == id) {
 				data = type.create();
-				if(data) {
-					data->deserialize(stream);
-				}
+				data->deserialize(stream);
 			}
 		}
 		return !buf.error;

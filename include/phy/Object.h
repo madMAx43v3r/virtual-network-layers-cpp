@@ -34,6 +34,8 @@ public:
 	
 	uint64_t mac;
 	
+	static const int _TICK = 10;
+	
 protected:
 	uint64_t rand() {
 		return engine->rand();
@@ -76,11 +78,11 @@ protected:
 		engine->flush();
 	}
 	
-	void yield(int mod = 100) {
-		yield_counter++;
-		if(yield_counter >= mod) {
+	void yield() {
+		int now = System::currentTimeMillis();
+		if(now - last_yield >= _TICK) {
 			sleep(0);
-			yield_counter = 0;
+			last_yield = now;
 		}
 	}
 	
@@ -101,7 +103,9 @@ protected:
 		engine->cancel(tid);
 	}
 	
-	virtual void handle(Message* msg) = 0;
+	virtual bool handle(Message* msg) {
+		return false;
+	}
 	
 	virtual Stream* route(Message* msg);
 	
@@ -128,7 +132,7 @@ protected:
 private:
 	std::unordered_map<uint64_t, Stream*> streams;
 	int seq_counter = 0;
-	int yield_counter = 0;
+	int last_yield = 0;
 	
 	friend class Message;
 	friend class Stream;

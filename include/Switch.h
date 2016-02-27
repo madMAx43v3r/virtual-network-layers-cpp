@@ -19,7 +19,7 @@ public:
 	virtual ~Switch() {}
 	
 protected:
-	virtual void handle(phy::Message* msg) override;
+	virtual bool handle(phy::Message* msg) override;
 	
 	phy::Object* get_node(uint64_t mac) {
 		auto iter = nodes.find(mac);

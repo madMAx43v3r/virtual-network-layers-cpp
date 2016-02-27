@@ -7,13 +7,13 @@
 
 #include "TcpUplink.h"
 
-#include "../include/io/StreamBuffer.h"
+#include "io/StreamBuffer.h"
 #include "io/Buffer.h"
 
 namespace vnl {
 
 TcpUplink::TcpUplink(const std::string& endpoint, int port)
-	:	endpoint(endpoint), port(port), node(0), state(this), stream(&sock)
+	:	endpoint(endpoint), port(port), node(0), upstate(this), downstate(this), stream(&sock)
 {
 	tid_reader = launch(std::bind(&TcpUplink::reader, this));
 }
@@ -25,44 +25,48 @@ TcpUplink::~TcpUplink() {
 	}
 }
 
-void TcpUplink::handle(phy::Message* msg) {
-	Uplink::handle(msg);
-	switch(msg->mid) {
-	case connect_t::mid:
-		node = msg->src;
-		msg->ack();
-		break;
-	case disconnect_t::mid:
-		if(msg->src == node) {
-			node = 0;
+bool TcpUplink::handle(phy::Message* msg) {
+	if(!Uplink::handle(msg)) {
+		switch(msg->mid) {
+		case connect_t::mid:
+			node = msg->src;
+			downstate.set();
+			msg->ack();
+			return true;
+		case disconnect_t::mid:
+			if(msg->src == node) {
+				downstate.reset();
+				node = 0;
+			}
+			msg->ack();
+			return true;
+		case send_t::id:
+			send_t* packet = (send_t*)msg;
+			if(msg->src) {
+				pending[msg->src->mac | msg->seq] = packet;
+			}
+			write(packet);
+			return true;
+		case acksig_t::id:
+			upstate.check();
+			ByteBuffer buf(&stream);
+			buf.putInt(acksig_t::id);
+			buf.putInt(ackbuf.size());
+			for(auto msg : ackbuf) {
+				buf.putLong(msg->dst->mac | msg->seq);
+				sndbuf.push_back(msg);
+			}
+			stream.flush();
+			ackbuf.clear();
+			msg->ack();
+			return true;
 		}
-		msg->ack();
-		break;
-	case send_t::id:
-		send_t* packet = (send_t*)msg;
-		if(msg->src) {
-			pending[msg->src->mac | msg->seq] = packet;
-		}
-		write(packet);
-		break;
-	case acksig_t::id:
-		state.check();
-		ByteBuffer buf(&stream);
-		buf.putInt(acksig_t::id);
-		buf.putInt(ackbuf.size());
-		for(auto msg : ackbuf) {
-			buf.putLong(msg->dst->mac | msg->seq);
-			sndbuf.push_back(msg);
-		}
-		stream.flush();
-		ackbuf.clear();
-		msg->ack();
-		break;
 	}
+	return false;
 }
 
 void TcpUplink::write(send_t* msg) {
-	state.check();
+	upstate.check();
 	ByteBuffer buf(&stream);
 	buf.putInt(msg->mid);
 	msg->serialize(&stream);
@@ -83,11 +87,14 @@ void TcpUplink::reader() {
 		for(auto it : pending) {
 			write(it.second);
 		}
-		state.set();
+		upstate.set();
 		ByteBuffer buf(&stream);
 		while(true) {
+			downstate.check();
 			uint32_t mid = buf.getInt();
-			if(mid == receive_t::mid) {
+			if(buf.error) {
+				break;
+			} else if(mid == receive_t::mid) {
 				receive_t* msg;
 				if(sndbuf.empty()) {
 					msg = new receive_t();
@@ -95,18 +102,14 @@ void TcpUplink::reader() {
 					msg = sndbuf.back();
 					sndbuf.pop_back();
 				}
-				if(buf.error || !msg->deserialize(&stream)) {
-					printf("ERROR: TcpUplink::reader(): msg->deserialize() failed!\n");
-					sndbuf.push_back(msg);
-					break;
-				}
-				if(node) {
+				if(msg->deserialize(&stream)) {
 					msg->dst = node;
 					msg->async = true;
 					msg->callback = callback;
 					phy::Object::send(msg);
 				} else {
 					sndbuf.push_back(msg);
+					break;
 				}
 			} else if(mid == acksig_t::id) {
 				int32_t num = buf.getInt();
@@ -118,9 +121,11 @@ void TcpUplink::reader() {
 						pending.erase(iter);
 					}
 				}
+			} else {
+				break;
 			}
 		}
-		state.reset();
+		upstate.reset();
 		sock.close();
 	}
 }

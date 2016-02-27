@@ -28,6 +28,8 @@ protected:
 	void configure(const Address& addr);
 	void unregister(const Address& addr);
 	
+	void exit();
+	
 protected:
 	Uplink* uplink;
 	std::unordered_set<Address> logical;

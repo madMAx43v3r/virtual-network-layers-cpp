@@ -18,32 +18,22 @@
 
 namespace vnl {
 
-class TcpServer : public Node {
+class TcpServer : phy::Object {
 public:
-	TcpServer(int port);
+	TcpServer(Uplink* uplink, int port);
 	
 protected:
 	typedef phy::Signal<0x1fa3586f> acksig_t;
 	
-	virtual void handle(phy::Message* msg) override;
-	void write(receive_t* msg);
-	
-	void reader();
-	
-	typedef phy::Signal<0x1fa3586f> acksig_t;
+	void acceptor();
 	
 	class Proxy;
 	
 private:
 	int port;
-	uint64_t tid_reader;
-	phy::Condition state;
+	Uplink* uplink;
 	io::Socket sock;
-	io::StreamBuffer stream;
-	
-	std::unordered_map<uint64_t, receive_t*> pending;
-	std::vector<Uplink::send_t*> ackbuf;
-	std::vector<Uplink::send_t*> sndbuf;
+	uint64_t tid_acceptor;
 	
 };
 

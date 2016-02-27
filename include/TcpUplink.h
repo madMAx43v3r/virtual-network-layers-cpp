@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_TCP_TCPUPLINK_H_
-#define INCLUDE_TCP_TCPUPLINK_H_
+#ifndef INCLUDE_TCPUPLINK_H_
+#define INCLUDE_TCPUPLINK_H_
 
 #include <vector>
 #include <unordered_map>
@@ -26,7 +26,7 @@ public:
 protected:
 	typedef phy::Signal<0x1fa3586f> acksig_t;
 	
-	virtual void handle(phy::Message* msg) override;
+	virtual bool handle(phy::Message* msg) override;
 	void write(send_t* msg);
 	
 	void reader();
@@ -37,7 +37,8 @@ private:
 	phy::Object* node;
 	
 	uint64_t tid_reader;
-	phy::Condition state;
+	phy::Condition upstate;
+	phy::Condition downstate;
 	io::Socket sock;
 	io::StreamBuffer stream;
 	
@@ -50,4 +51,4 @@ private:
 
 }
 
-#endif /* INCLUDE_TCP_TCPUPLINK_H_ */
+#endif /* INCLUDE_TCPUPLINK_H_ */
