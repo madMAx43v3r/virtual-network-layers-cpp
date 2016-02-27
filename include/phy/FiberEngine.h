@@ -9,7 +9,7 @@
 #define INCLUDE_PHY_FIBERENGINE_H_
 
 #include <vector>
-#include <unordered_map>
+#include <list>
 
 #include "Engine.h"
 
@@ -17,34 +17,27 @@ namespace vnl { namespace phy {
 
 class FiberEngine : public Engine {
 public:
-	FiberEngine(int N);
+	FiberEngine();
 	~FiberEngine();
 	
 	virtual void send(Message* msg) override;
 	virtual void flush() override;
 	virtual void handle(Message* msg, Stream* stream) override;
-	virtual void open(Stream* stream) override;
-	virtual void close(Stream* stream) override;
+	virtual void ack(Message* msg) override;
 	virtual bool poll(Stream* stream, int millis) override;
-	virtual uint64_t launch(Runnable* task) override;
-	virtual void cancel(uint64_t tid) override;
+	virtual void* launch(Runnable* task) override;
+	virtual void cancel(void* task) override;
 	virtual int timeout() override;
 	
 protected:
 	class Fiber;
-	class Worker;
-	class Task;
 	
-	void enqueue(Task* task);
+	void enqueue(Fiber* fiber);
 	
 private:
-	int N;
 	Fiber* current = 0;
-	Worker** workers;
-	std::vector<Worker*> avail;
-	std::vector<Task*> finished;
-	std::unordered_map<uint64_t, std::vector<Fiber*> > polling;
-	std::unordered_map<uint64_t, Task*> tasks;
+	std::vector<Fiber*> avail;
+	std::list<Fiber*> polling;
 	
 };
 

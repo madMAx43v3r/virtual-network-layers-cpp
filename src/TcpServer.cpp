@@ -114,14 +114,15 @@ public:
 					sndbuf.pop_back();
 				}
 				if(msg->deserialize(&stream)) {
+					const Frame& frame = msg->frame;
 					msg->dst = uplink;
 					msg->async = true;
 					msg->callback = callback;
 					phy::Object::send(msg);
-					if(msg->frame.flags & Frame::REGISTER) {
-						logical.insert(msg->frame.dst);
-					} else if(msg->frame.flags & Frame::UNREGISTER) {
-						logical.erase(msg->frame.dst);
+					if(frame.flags & Frame::REGISTER) {
+						logical.insert(frame.dst);
+					} else if(frame.flags & Frame::UNREGISTER) {
+						logical.erase(frame.dst);
 					}
 				} else {
 					sndbuf.push_back(msg);

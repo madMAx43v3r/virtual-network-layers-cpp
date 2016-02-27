@@ -19,10 +19,7 @@
 
 namespace vnl { namespace phy {
 
-template<typename M, int N>
-class SendBuffer;
-
-class Object {
+class Object : Runnable {
 public:
 	Object();
 	virtual ~Object() {}
@@ -33,8 +30,6 @@ public:
 	}
 	
 	uint64_t mac;
-	
-	static const int _TICK = 10;
 	
 protected:
 	uint64_t rand() {
@@ -60,17 +55,16 @@ protected:
 			handle(msg);
 		} else {
 			msg->src = this;
+			msg->dst->receive(msg, this);
 			engine->send(msg);
 		}
 	}
 	
 	void open(Stream* stream) {
 		streams[stream->sid] = stream;
-		engine->open(stream);
 	}
 	
 	void close(Stream* stream) {
-		engine->close(stream);
 		streams.erase(stream->sid);
 	}
 	
@@ -80,56 +74,49 @@ protected:
 	
 	void yield() {
 		int now = System::currentTimeMillis();
-		if(now - last_yield >= _TICK) {
+		if(now - last_yield >= 10) {
 			sleep(0);
 			last_yield = now;
 		}
 	}
 	
 	void sleep(int millis) {
-		Stream s(this);
-		s.poll(millis);
+		Stream stream(this);
+		stream.poll(millis);
 	}
 	
-	uint64_t launch(Runnable* task) {
+	void* launch(Runnable* task) {
 		return engine->launch(task);
 	}
 	
-	uint64_t launch(const std::function<void()>& func) {
+	void* launch(const std::function<void()>& func) {
 		return launch(new Bind(func));
 	}
 	
-	void cancel(uint64_t tid) {
-		engine->cancel(tid);
+	void cancel(void* task) {
+		engine->cancel(task);
 	}
+	
+	virtual void run();
 	
 	virtual bool handle(Message* msg) {
 		return false;
 	}
 	
-	virtual Stream* route(Message* msg);
-	
 private:
 	Object(Engine* engine);
 	
-	virtual void receive(Message* msg, Object* src) {
-		if(src == engine) {
-			engine->handle(msg, msg->isack ? 0 : route(msg));
-		} else {
-			engine->receive(msg, src);
-		}
-	}
+	virtual void receive(Message* msg, Object* src);
 	
-	Stream* get_stream(uint32_t sid) {
-		auto iter = streams.find(sid);
-		if(iter != streams.end()) { return iter->second; }
-		return 0;
-	}
+	Stream* get_stream(uint64_t sid);
 	
 protected:
 	Engine* engine;
 	
 private:
+	Stream queue;
+	void* task;
+	
 	std::unordered_map<uint64_t, Stream*> streams;
 	int seq_counter = 0;
 	int last_yield = 0;
@@ -137,40 +124,10 @@ private:
 	friend class Message;
 	friend class Stream;
 	friend class Engine;
-	template<typename M, int N>
-	friend class SendBuffer;
 	
 };
 
 
-template<typename T, int N>
-class SendBuffer {
-public:
-	SendBuffer(Object* obj) : obj(obj), left(N) {}
-	
-	~SendBuffer() {
-		obj->flush();
-	}
-	
-	T* get() {
-		return put(T());
-	}
-	
-	T* put(T&& msg) {
-		if(!left) {
-			obj->flush();
-			left = N;
-		}
-		buf[N - left] = msg;
-		return &buf[N - left--];
-	}
-	
-private:
-	Object* obj;
-	int left;
-	T buf[N];
-	
-};
 
 
 }}

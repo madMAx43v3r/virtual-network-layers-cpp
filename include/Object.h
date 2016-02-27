@@ -8,21 +8,20 @@
 #ifndef INCLUDE_OBJECT_H_
 #define INCLUDE_OBJECT_H_
 
-#include <unordered_set>
-#include <unordered_map>
-
 #include "Node.h"
+#include "Struct.h"
 #include "Uplink.h"
 
 namespace vnl {
 
-class Object : public Node {
+class Object : public Node, Struct {
 public:
 	Object(Uplink* uplink);
 	~Object();
 	
 protected:
 	virtual void receive(const Frame& frame) = 0;
+	
 	virtual void registered(Address src, Address addr) {}
 	virtual void unregistered(Address src, Address addr) {}
 	

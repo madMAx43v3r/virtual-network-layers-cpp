@@ -9,7 +9,7 @@
 #define INCLUDE_NODE_H_
 
 #include "phy/Object.h"
-#include "Frame.h"
+#include "Packet.h"
 
 namespace vnl {
 
@@ -21,6 +21,7 @@ public:
 	~Node();
 	
 	typedef Packet<0xb494e3b0> receive_t;
+	typedef Packet<0xef34166d> send_t;
 	
 protected:
 	void send(const Frame& frame, uint64_t sid = 0, bool async = false);

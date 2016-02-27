@@ -26,6 +26,7 @@ public:
 	
 	virtual void run() {
 		func();
+		delete this;
 	}
 	
 private:

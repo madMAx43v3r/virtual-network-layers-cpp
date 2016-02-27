@@ -20,7 +20,7 @@ void Engine::start(int core) {
 	dorun = true;
 	if(!thread) {
 		core_id = core;
-		thread = new std::thread(&Engine::entry, this);
+		thread = new std::thread(&Engine::mainloop, this);
 	}
 }
 
@@ -34,7 +34,7 @@ void Engine::stop() {
 	}
 }
 
-void Engine::run() {
+void Engine::mainloop() {
 	local = this;
 	if(core_id >= 0) {
 		Util::stick_to_core(core_id);
@@ -92,18 +92,6 @@ Message* Engine::poll() {
 	}
 	unlock();
 	return msg;
-}
-
-void Engine::forward(Message* msg) {
-	msg->dst->receive(msg, msg->src);
-}
-
-void Engine::dispatch(Message* msg) {
-	msg->dst->handle(msg);
-}
-
-void Engine::dispatch(Message* msg, Stream* stream) {
-	stream->receive(msg, msg->dst);
 }
 
 

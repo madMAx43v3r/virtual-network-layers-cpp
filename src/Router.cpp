@@ -16,8 +16,8 @@ public:
 	void run() override {
 		while(true) {
 			phy::Message* msg = queue.poll();
-			if(msg->mid == Switch::send_t::mid) {
-				Frame& frame = ((Switch::send_t*)msg)->frame;
+			if(msg->mid == Node::send_t::mid) {
+				Frame& frame = ((Node::send_t*)msg)->frame;
 				if(frame.src.A == 0) {
 					frame.src.A = mac;
 				}
@@ -62,8 +62,8 @@ Router::~Router() {
 phy::Stream* Router::route(phy::Message* msg) {
 	if(Switch::route(msg) == 0) {
 		uint64_t srcmac = 0;
-		if(msg->mid == Switch::send_t::mid) {
-			srcmac = ((Switch::send_t*)msg)->frame.src.B;
+		if(msg->mid == Node::send_t::mid) {
+			srcmac = ((Node::send_t*)msg)->frame.src.B;
 		} else if(msg->mid == Node::receive_t::mid) {
 			srcmac = ((Node::receive_t*)msg)->frame.src.B;
 		}

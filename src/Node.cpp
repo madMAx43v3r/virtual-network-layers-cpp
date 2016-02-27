@@ -7,7 +7,6 @@
 
 #include "Node.h"
 #include "Uplink.h"
-#include "Switch.h"
 
 namespace vnl {
 
@@ -24,7 +23,7 @@ Node::~Node() {
 
 void Node::send(const Frame& frame, uint64_t sid, bool async) {
 	if(uplink) {
-		phy::Object::send(Uplink::send_t(frame, this, uplink, sid, async));
+		phy::Object::send(send_t(frame, this, uplink, sid, async));
 	}
 }
 
@@ -47,25 +46,6 @@ void Node::exit() {
 	if(uplink) {
 		uplink->receive(new Uplink::disconnect_t(this, 0, true));
 	}
-}
-
-
-bool Switch::handle(phy::Message* msg) {
-	phy::Object* obj = msg->src;
-	if(!Uplink::handle(msg) && obj) {
-		switch(msg->mid) {
-		case connect_t::mid:
-			nodes[obj->mac] = obj;
-			msg->ack();
-			return true;
-		case disconnect_t::mid:
-			nodes.erase(obj->mac);
-			msg->ack();
-			delete obj;
-			return true;
-		}
-	}
-	return false;
 }
 
 

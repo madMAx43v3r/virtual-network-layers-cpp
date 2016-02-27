@@ -8,6 +8,8 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
+#include <vector>
+
 #include "Message.h"
 #include "util/simple_queue.h"
 
@@ -43,6 +45,7 @@ public:
 	
 	Object* obj;
 	uint64_t sid;
+	std::vector<void*> impl;
 	
 private:
 	void receive(Message* msg, Object* src);

@@ -13,6 +13,7 @@
 #include <mutex>
 
 #include "io/Stream.h"
+#include "util/spinlock.h"
 
 namespace vnl {
 
@@ -31,21 +32,24 @@ public:
 	};
 	
 	static void define(uint64_t id, const type_t& type) {
-		std::unique_lock<std::mutex> lock(mutex);
+		mutex.lock();
 		registry[id] = type;
+		mutex.unlock();
 	}
 	
 	static type_t resolve(uint64_t id) {
-		std::unique_lock<std::mutex> lock(mutex);
+		type_t ret;
+		mutex.lock();
 		auto iter = registry.find(id);
 		if(iter != registry.end()) {
-			return iter->second;
+			ret = iter->second;
 		}
-		return 0;
+		mutex.unlock();
+		return ret;
 	}
 	
 private:
-	static std::mutex mutex;
+	static util::spinlock mutex;
 	static std::unordered_map<uint64_t, type_t> registry;
 	
 };

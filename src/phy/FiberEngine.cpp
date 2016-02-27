@@ -17,12 +17,26 @@ class FiberEngine::Fiber {
 public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
+	Runnable* task;
+	
 	Fiber(FiberEngine* engine)
-		: 	engine(engine), _call(boost::bind(&Fiber::entry, this, boost::arg<1>())) {}
+		: 	engine(engine), _call(boost::bind(&Fiber::entry, this, boost::arg<1>())), task(0) {}
 	
-	virtual ~Fiber() {}
+	void* launch(Runnable* task_) {
+		task = task_;
+		call();
+		if(task) { return this; }
+		return 0;
+	}
 	
-	virtual void run() = 0;
+	void run() {
+		while(true) {
+			yield();
+			task->run();
+			task = 0;
+			engine->enqueue(this);
+		}
+	}
 	
 	void start() {
 		call();
@@ -102,91 +116,19 @@ protected:
 	
 };
 
-class FiberEngine::Worker : public Fiber {
-public:
-	Worker(FiberEngine* engine) : Fiber(engine) {}
+FiberEngine::FiberEngine() {
 	
-	void run() override {
-		while(true) {
-			Message* msg;
-			while(!queue.pop(msg)) {
-				idle = true;
-				yield();
-				idle = false;
-			}
-			engine->dispatch(msg);
-		}
-	}
-	
-	void push(Message* msg) {
-		queue.push(msg);
-		if(idle) {
-			call();
-		}
-	}
-	
-protected:
-	vnl::util::simple_queue<Message*> queue;
-	bool idle = false;
-	
-};
-
-class FiberEngine::Task : public Fiber {
-public:
-	Task(FiberEngine* engine) : Fiber(engine), tid(0), task(0) {}
-	
-	~Task() {
-		delete task;
-	}
-	
-	void run() override {
-		while(true) {
-			yield();
-			task->run();
-			delete task;
-			task = 0;
-			engine->enqueue(this);
-		}
-	}
-	
-	uint64_t launch(Runnable* task_) {
-		tid = engine->rand();
-		task = task_;
-		call();
-		return tid;
-	}
-	
-	uint64_t tid;
-	Runnable* task;
-	
-};
-
-
-FiberEngine::FiberEngine(int N) : N(N) {
-	workers = new Worker*[N];
-	for(int i = 0; i < N; ++i) {
-		workers[i] = new Worker(this);
-		workers[i]->start();
-	}
 }
 
 FiberEngine::~FiberEngine() {
-	for(auto task : tasks) {
-		delete task.second;
+	for(auto it : avail) {
+		delete it;
 	}
-	for(auto task : finished) {
-		delete task;
-	}
-	for(int i = 0; i < N; ++i) {
-		delete workers[i];
-	}
-	delete [] workers;
 }
 
 void FiberEngine::send(Message* msg) {
 	if(current) {
 		msg->impl = current;
-		forward(msg);
 		current->sent(msg);
 	}
 }
@@ -198,65 +140,43 @@ void FiberEngine::flush() {
 }
 
 void FiberEngine::handle(Message* msg, Stream* stream) {
-	if(msg->isack) {
-		Fiber* fiber = (Fiber*)msg->impl;
-		if(msg->callback) {
-			msg->callback(msg);
-		}
-		fiber->acked();
-		return;
-	} else if(stream) {
-		dispatch(msg, stream);
-		auto iter = polling.find(msg->sid);
-		if(iter != polling.end() && iter->second.size()) {
-			auto& queue = iter->second;
-			auto fiber = queue.begin();
-			(*fiber)->notify(true);
-			queue.erase(fiber);
-		}
-		return;
+	auto& queue = stream->impl;
+	if(queue.size()) {
+		auto fiber = queue.begin();
+		((Fiber*)(*fiber))->notify(true);
+		queue.erase(fiber);
 	}
-	workers[msg->dst->mac % N]->push(msg);
 }
 
-void FiberEngine::open(Stream* stream) {
-	polling[stream->sid];
-}
-
-void FiberEngine::close(Stream* stream) {
-	polling.erase(stream->sid);
+void FiberEngine::ack(Message* msg) {
+	Fiber* fiber = (Fiber*)msg->impl;
+	fiber->acked();
 }
 
 bool FiberEngine::poll(Stream* stream, int millis) {
 	if(current) {
-		polling[stream->sid].push_back(current);
+		polling.push_back(current);
+		stream->impl.push_back(current);
 		return current->poll(millis);
 	}
 	return false;
 }
 
-uint64_t FiberEngine::launch(Runnable* task) {
-	Task* fiber;
-	if(finished.empty()) {
-		fiber = new Task(this);
+void* FiberEngine::launch(Runnable* task) {
+	Fiber* fiber;
+	if(avail.empty()) {
+		fiber = new Fiber(this);
 		fiber->start();
 	} else {
-		fiber = finished.back();
-		finished.pop_back();
+		fiber = avail.back();
+		avail.pop_back();
 	}
-	uint64_t tid = fiber->launch(task);
-	if(fiber->task) {
-		tasks[tid] = fiber;
-	}
-	return tid;
+	return fiber->launch(task);
 }
 
-void FiberEngine::cancel(uint64_t tid) {
-	auto iter = tasks.find(tid);
-	if(iter != tasks.end()) {
-		delete iter->second;
-		tasks.erase(iter);
-	}
+void FiberEngine::cancel(void* task) {
+	Fiber* fiber = (Fiber*)task;
+	delete fiber;
 }
 
 int FiberEngine::timeout() {
@@ -264,17 +184,14 @@ int FiberEngine::timeout() {
 	std::vector<Fiber*> list;
 	int millis = 1000;
 	while(true) {
-		for(auto& stream : polling) {
-			auto& queue = stream.second;
-			for(auto iter = queue.begin(); iter != queue.end(); ++iter) {
-				Fiber* fiber = *iter;
-				int diff = fiber->timeout - now;
-				if(diff <= 0) {
-					list.push_back(fiber);
-					queue.erase(iter);
-				} else if(diff < millis) {
-					millis = diff;
-				}
+		for(auto iter = polling.begin(); iter != polling.end(); ++iter) {
+			Fiber* fiber = *iter;
+			int diff = fiber->timeout - now;
+			if(diff <= 0) {
+				list.push_back(fiber);
+				polling.erase(iter);
+			} else if(diff < millis) {
+				millis = diff;
 			}
 		}
 		if(list.size()) {
@@ -289,10 +206,12 @@ int FiberEngine::timeout() {
 	return millis;
 }
 
-void FiberEngine::enqueue(Task* task) {
-	tasks.erase(task->tid);
-	finished.push_back(task);
+void FiberEngine::enqueue(Fiber* fiber) {
+	avail.push_back(fiber);
 }
+
+
+
 
 
 }}

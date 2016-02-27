@@ -22,7 +22,7 @@
 
 namespace vnl { namespace phy {
 
-class Engine : public vnl::phy::Object, public vnl::Runnable {
+class Engine : public Object {
 public:
 	Engine();
 	virtual ~Engine() {}
@@ -32,16 +32,13 @@ public:
 	void start(int core = -1);
 	void stop();
 	
-	virtual void run() override;
-	
 	virtual void send(Message* msg) = 0;
 	virtual void flush() = 0;
 	virtual void handle(Message* msg, Stream* stream) = 0;
-	virtual void open(Stream* stream) = 0;
-	virtual void close(Stream* stream) = 0;
+	virtual void ack(Message* msg) = 0;
 	virtual bool poll(Stream* stream, int millis) = 0;
-	virtual uint64_t launch(Runnable* task) = 0;
-	virtual void cancel(uint64_t tid) = 0;
+	virtual void* launch(Runnable* task) = 0;
+	virtual void cancel(void* task) = 0;
 	virtual int timeout() = 0;
 	
 	uint64_t rand();
@@ -70,16 +67,10 @@ protected:
 	virtual bool startup() { return true; }
 	virtual void shutdown() {}
 	
-	void forward(Message* msg);
-	void dispatch(Message* msg);
-	void dispatch(Message* msg, Stream* stream);
-	
 private:
-	virtual void receive(Message* msg, Object* src) override;
+	void mainloop();
 	
-	void entry() {
-		run();
-	}
+	virtual void receive(Message* msg, Object* src) override;
 	
 private:
 	std::default_random_engine generator;
