@@ -11,7 +11,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "Uplink.h"
+#include "Switch.h"
 
 namespace vnl {
 
@@ -21,8 +21,6 @@ public:
 	~Router();
 	
 protected:
-	virtual phy::Stream* route(phy::Message* msg) override;
-	
 	void route(Frame& frame, uint64_t srcmac);
 	void forward(Frame& frame, phy::Object* dst);
 	void fw_one(Frame& frame, std::vector<phy::Object*>& list, bool anycast);

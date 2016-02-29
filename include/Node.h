@@ -8,12 +8,14 @@
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
 
+#include <unordered_set>
+
 #include "phy/Object.h"
 #include "Packet.h"
 
 namespace vnl {
 
-class Switch;
+class Uplink;
 
 class Node : public vnl::phy::Object {
 public:

@@ -8,15 +8,14 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include <vector>
-
-#include "Message.h"
 #include "util/simple_queue.h"
+#include "phy/Message.h"
 
 namespace vnl { namespace phy {
 
 class Engine;
 class Object;
+class Fiber;
 
 class Stream {
 public:
@@ -28,10 +27,11 @@ public:
 	Stream& operator=(const Stream&) = delete;
 	
 	template<typename T>
-	void send(T&& msg);
+	void send(T&& msg, Object* dst);
 	
-	void send(Message* msg, bool async = false);
+	void send(Message* msg, Object* dst, bool async = false);
 	
+	// thread safe
 	void receive(Message* msg);
 	
 	Message* poll();
@@ -41,14 +41,16 @@ public:
 	T read();
 	
 	template<typename T, typename R>
-	T request(R&& req);
+	T request(R&& req, Object* dst);
 	
 	Object* obj;
 	uint64_t sid;
-	std::vector<void*> impl;
+	vnl::util::simple_queue<Fiber*> impl;
 	
 private:
-	void receive(Message* msg, Object* src);
+	void push(Message* msg) {
+		queue.push(msg);
+	}
 	
 	vnl::util::simple_queue<Message*> queue;
 	
@@ -72,7 +74,7 @@ public:
 	
 	void notify() {
 		if(waiting) {
-			send(signal_t(obj));
+			send(signal_t(), obj);
 		}
 	}
 	
@@ -98,15 +100,9 @@ private:
 };
 
 
-template<typename T>
-void Stream::send(T&& msg) {
-	msg.sid = sid;
-	obj->send(msg);
-}
-
 template<typename T, typename R>
-T Stream::request(R&& req) {
-	send(req);
+T Stream::request(R&& req, Object* dst) {
+	send(req, dst);
 	return req.res;
 }
 

@@ -8,6 +8,8 @@
 #ifndef INCLUDE_FRAME_H_
 #define INCLUDE_FRAME_H_
 
+#include <vector>
+
 #include "Address.h"
 #include "Struct.h"
 #include "ByteBuffer.h"
@@ -27,16 +29,26 @@ public:
 	char flags;
 	Address src;
 	Address dst;
-	Struct* data;
+	int32_t size;
+	char* data;
 	
 	Frame() {
 		flags = NONE;
 		data = 0;
+		size = 0;
 	}
 	
-	Frame(char flags, const Address& dst, Struct* data = 0) {
+	Frame(char flags, const Address& dst) {
 		this->flags = flags;
 		this->dst = dst;
+		this->size = 0;
+		this->data = 0;
+	}
+	
+	Frame(char flags, const Address& dst, char* data, int32_t size) {
+		this->flags = flags;
+		this->dst = dst;
+		this->size = size;
 		this->data = data;
 	}
 	
@@ -51,11 +63,9 @@ public:
 		buf.putLong(src.B);
 		buf.putLong(dst.A);
 		buf.putLong(dst.B);
+		buf.putInt(size);
 		if(data) {
-			buf.putLong(data->vnl_id);
-			buf.error |= !data->serialize(stream);
-		} else {
-			buf.putLong(0);
+			buf.put(data, size);
 		}
 		return !buf.error;
 	}
@@ -67,13 +77,10 @@ public:
 		src.B = buf.getLong();
 		dst.A = buf.getLong();
 		dst.B = buf.getLong();
-		uint64_t id = buf.getLong();
-		if(id) {
-			Struct::type_t type = Struct::resolve(id);
-			if(type.id) {
-				data = type.create();
-				data->deserialize(stream);
-			}
+		size = buf.getInt();
+		if(size) {
+			data = new char[size];
+			buf.get(data, size);
 		}
 		return !buf.error;
 	}

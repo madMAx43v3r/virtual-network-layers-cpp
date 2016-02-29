@@ -8,15 +8,18 @@
 #ifndef INCLUDE_IO_SOCKET_SERVER_H_
 #define INCLUDE_IO_SOCKET_SERVER_H_
 
+#include "phy/FiberEngine.h"
+#include "phy/Message.h"
+
 namespace vnl { namespace io { namespace socket {
 
-class Server {
+class Server : public vnl::phy::FiberEngine, public vnl::phy::Object {
 public:
 	static Server* instance;
 	
 	struct key_t {
 		key_t() : obj(0), sin(0), sout(0), fd(-1), events(0), index(-1) {}
-		Object* obj;
+		vnl::phy::Object* obj;
 		uint64_t sin;
 		uint64_t sout;
 		int fd;

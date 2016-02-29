@@ -5,39 +5,16 @@
  *      Author: MWITTAL
  */
 
+#include "TcpServer.h"
+
 namespace vnl {
-
-TcpServer::TcpServer(Uplink* uplink, int port)
-	:	uplink(uplink), port(port)
-{
-	tid_acceptor = launch(std::bind(&TcpServer::acceptor, this));
-}
-
-TcpServer::~TcpServer() {
-	cancel(tid_acceptor);
-}
-
-void TcpServer::acceptor() {
-	sock.create();
-	sock.bind(port);
-	sock.listen();
-	while(true) {
-		io::Socket* conn = sock.accept();
-		if(conn) {
-			new Proxy(uplink, conn);
-		} else {
-			break;
-		}
-	}
-	sock.close();
-}
 
 class TcpServer::Proxy : Node {
 public:
 	
 	io::Socket* sock;
 	io::StreamBuffer stream;
-	uint64_t tid_reader;
+	phy::taskid_t tid_reader;
 	
 	std::unordered_map<uint64_t, receive_t*> pending;
 	std::vector<Uplink::send_t*> ackbuf;
@@ -63,7 +40,7 @@ public:
 			if(msg->mid == receive_t::id) {
 				receive_t* packet = (receive_t*)msg;
 				if(msg->src) {
-					pending[msg->src->mac | msg->seq] = packet;
+					pending[msg->src->mac | packet->seq] = packet;
 				}
 				write(packet);
 				return true;
@@ -92,11 +69,11 @@ public:
 	}
 	
 	void reader() {
-		auto callback = [ackbuf](phy::Message* msg) {
-			if(ackbuf.empty()) {
-				phy::Object::receive(new acksig_t(this, 0, true));
+		auto callback = [this](phy::Message* msg) {
+			if(this->ackbuf.empty()) {
+				phy::Object::receive(new acksig_t(0, true));
 			}
-			ackbuf.push_back((Uplink::send_t*)msg);
+			this->ackbuf.push_back((Uplink::send_t*)msg);
 		};
 		stream.clear();
 		ByteBuffer buf(&stream);
@@ -104,7 +81,7 @@ public:
 			uint32_t mid = buf.getInt();
 			if(buf.error) {
 				break;
-			} else if(mid == Uplink::send_t::mid) {
+			} else if(mid == Uplink::send_t::id) {
 				uint64_t srcmac = buf.getLong();
 				Uplink::send_t* msg;
 				if(sndbuf.empty()) {
@@ -115,10 +92,8 @@ public:
 				}
 				if(msg->deserialize(&stream)) {
 					const Frame& frame = msg->frame;
-					msg->dst = uplink;
-					msg->async = true;
 					msg->callback = callback;
-					phy::Object::send(msg);
+					phy::Object::send(msg, uplink, true);
 					if(frame.flags & Frame::REGISTER) {
 						logical.insert(frame.dst);
 					} else if(frame.flags & Frame::UNREGISTER) {
@@ -146,6 +121,33 @@ public:
 	}
 	
 };
+
+
+TcpServer::TcpServer(Uplink* uplink, int port)
+	:	uplink(uplink), port(port)
+{
+	tid_acceptor = launch(std::bind(&TcpServer::acceptor, this));
+}
+
+TcpServer::~TcpServer() {
+	cancel(tid_acceptor);
+}
+
+void TcpServer::acceptor() {
+	sock.create();
+	sock.bind(port);
+	sock.listen();
+	while(true) {
+		io::Socket* conn = sock.accept();
+		if(conn) {
+			new Proxy(uplink, conn);
+		} else {
+			break;
+		}
+	}
+	sock.close();
+}
+
 
 
 

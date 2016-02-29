@@ -8,6 +8,7 @@
 #ifndef INCLUDE_UPLINK_H_
 #define INCLUDE_UPLINK_H_
 
+#include "Node.h"
 #include "Packet.h"
 
 namespace vnl {
@@ -18,7 +19,7 @@ public:
 	Uplink(Uplink* uplink) : Node(uplink) {}
 	
 	typedef phy::Signal<0x85490083> connect_t;
-	typedef phy::Signal<0x85490083> disconnect_t;
+	typedef phy::Signal<0x06824d17> disconnect_t;
 	
 };
 

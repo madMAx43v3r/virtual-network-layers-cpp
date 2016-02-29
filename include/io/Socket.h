@@ -10,6 +10,7 @@
 
 #include "phy/Object.h"
 #include "io/Stream.h"
+#include "io/socket/Server.h"
 
 namespace vnl { namespace io {
 
@@ -29,8 +30,6 @@ public:
 	virtual bool write(const void* buf, int len) override;
 	
 protected:
-	virtual void handle(phy::Message* msg) override {}
-	
 	bool poll(phy::Stream& stream, int flag);
 	void update();
 	

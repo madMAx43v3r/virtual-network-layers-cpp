@@ -36,7 +36,7 @@ private:
 	int port;
 	phy::Object* node;
 	
-	uint64_t tid_reader;
+	phy::taskid_t tid_reader;
 	phy::Condition upstate;
 	phy::Condition downstate;
 	io::Socket sock;

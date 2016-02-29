@@ -26,7 +26,7 @@ protected:
 	virtual void unregistered(Address src, Address addr) {}
 	
 private:
-	virtual void handle(phy::Message* msg) override;
+	virtual bool handle(phy::Message* msg) override;
 	
 private:
 	

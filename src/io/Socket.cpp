@@ -76,7 +76,7 @@ int Socket::bind(int port) {
 	return ::bind(key.fd, (sockaddr*)&addr, sizeof(addr));
 }
 
-int Socket::listen(int backlog = 100) {
+int Socket::listen(int backlog) {
 	return ::listen(key.fd, backlog);
 }
 
@@ -90,7 +90,7 @@ Socket* Socket::accept() {
 			}
 		} else {
 			fcntl(fd, F_SETFL, O_NONBLOCK);
-			Socket* sock = new Socket(this);
+			Socket* sock = new Socket();
 			sock->key.fd = fd;
 			return sock;
 		}
@@ -153,7 +153,7 @@ bool Socket::poll(phy::Stream& stream, int flag) {
 }
 
 void Socket::update() {
-	key.index = request<int>(Server::poll_t(server, key));
+	key.index = request<int>(Server::poll_t(key), server);
 }
 
 

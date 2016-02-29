@@ -20,20 +20,6 @@ public:
 	
 };
 
-class Bind : public Runnable {
-public:
-	Bind(const std::function<void()>& func) : func(func) {}
-	
-	virtual void run() {
-		func();
-		delete this;
-	}
-	
-private:
-	std::function<void()> func;
-	
-};
-
 }
 
 #endif /* INCLUDE_RUNNABLE_H_ */

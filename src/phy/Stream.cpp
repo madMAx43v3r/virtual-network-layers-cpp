@@ -6,12 +6,14 @@
  */
 
 #include "phy/Stream.h"
+#include "phy/Object.h"
+#include "phy/Engine.h"
 
 namespace vnl { namespace phy {
 
-Stream::Stream(Object* object) : Stream(object, object->rand()) {}
+Stream::Stream(Object* obj) : Stream(obj, obj->rand()) {}
 
-Stream::Stream(Object*object , uint64_t sid) : obj(object), sid(sid) {
+Stream::Stream(Object* obj , uint64_t sid) : obj(obj), sid(sid) {
 	obj->open(this);
 }
 
@@ -22,22 +24,14 @@ Stream::~Stream() {
 	}
 }
 
-void Stream::send(Message* msg, bool async) {
+void Stream::send(Message* msg, Object* dst, bool async) {
 	msg->sid = sid;
-	obj->send(msg, async);
+	obj->send(msg, dst, async);
 }
 
 void Stream::receive(Message* msg) {
 	msg->sid = sid;
 	obj->receive(msg);
-}
-
-void Stream::receive(Message* msg, Object* src) {
-	if(src == obj) {
-		queue.push(msg);
-	} else {
-		obj->receive(msg, src);
-	}
 }
 
 Message* Stream::poll() {

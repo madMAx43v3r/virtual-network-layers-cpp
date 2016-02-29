@@ -6,23 +6,81 @@
  */
 
 #include "phy/Object.h"
+#include "phy/Engine.h"
 #include <assert.h>
 
 namespace vnl { namespace phy {
 
-Object::Object() : engine(Engine::local), queue(this, 0), task(0) {
+Object::Object() : engine(Engine::local), queue(this, 0), running(0) {
 	if(!engine) {
 		printf("ERROR: creating vnl::phy::Object without thread local engine.\n");
 		assert(Engine::local != 0);
 	}
 	mac = rand();
+	main = std::bind(&Object::mainloop, this);
 }
 
-Object::Object(Engine* engine) : engine(engine) {
-	mac = rand();
+void Object::receive(Message* msg) {
+	msg->dst = this;
+	engine->receive(msg);
 }
 
-void Object::run() {
+uint64_t Object::rand() {
+	return engine->rand();
+}
+
+void Object::send(Message* msg, Object* dst, bool async) {
+	msg->src = this;
+	msg->dst = dst;
+	msg->async = async;
+	if(dst == this) {
+		msg->src = 0;
+		handle(msg);
+	} else {
+		msg->dst->receive(msg);
+		engine->sent(msg);
+	}
+}
+
+void Object::open(Stream* stream) {
+	streams[stream->sid] = stream;
+}
+
+void Object::close(Stream* stream) {
+	streams.erase(stream->sid);
+}
+
+void Object::flush() {
+	engine->flush();
+}
+
+void Object::yield() {
+	int64_t now = System::currentTimeMillis();
+	if(now - last_yield >= 10) {
+		sleep(0);
+		last_yield = now;
+	}
+}
+
+void Object::sleep(int millis) {
+	Stream stream(this);
+	stream.poll(millis);
+}
+
+taskid_t Object::launch(Runnable* task) {
+	return engine->launch(std::bind(&Runnable::run, task));
+}
+
+taskid_t Object::launch(const std::function<void()>& func) {
+	return engine->launch(func);
+}
+
+void Object::cancel(taskid_t task) {
+	engine->cancel(task);
+}
+
+void Object::mainloop() {
+	running = true;
 	while(true) {
 		Message* msg = queue.poll(10);
 		if(!msg) {
@@ -32,35 +90,7 @@ void Object::run() {
 			msg->ack();
 		}
 	}
-	task = 0;
-}
-
-void Object::receive(Message* msg, Object* src) {
-	if(src == engine) {
-		if(msg->isack) {
-			if(msg->callback) {
-				msg->callback(msg);
-			}
-			engine->ack(msg);
-		} else {
-			Stream* stream = get_stream(msg->sid);
-			if(stream) {
-				stream->receive(msg, this);
-				engine->handle(msg, stream);
-				if(msg->sid == 0 && !task) {
-					task = launch(this);
-				}
-			}
-		}
-	} else {
-		engine->receive(msg, src);
-	}
-}
-
-Stream* Object::get_stream(uint64_t sid) {
-	auto iter = streams.find(sid);
-	if(iter != streams.end()) { return iter->second; }
-	return 0;
+	running = false;
 }
 
 

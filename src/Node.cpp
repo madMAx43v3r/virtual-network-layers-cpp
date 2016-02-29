@@ -13,7 +13,7 @@ namespace vnl {
 Node::Node(Uplink* uplink) : uplink(uplink)
 {
 	if(uplink) {
-		phy::Object::send(Uplink::connect_t(this));
+		phy::Object::send(Uplink::connect_t(), uplink);
 	}
 }
 
@@ -23,7 +23,7 @@ Node::~Node() {
 
 void Node::send(const Frame& frame, uint64_t sid, bool async) {
 	if(uplink) {
-		phy::Object::send(send_t(frame, this, uplink, sid, async));
+		phy::Object::send(send_t(frame, sid, async), uplink);
 	}
 }
 
@@ -44,7 +44,7 @@ void Node::exit() {
 		unregister(addr);
 	}
 	if(uplink) {
-		uplink->receive(new Uplink::disconnect_t(this, 0, true));
+		uplink->receive(new Uplink::disconnect_t(0, true));
 	}
 }
 

@@ -17,25 +17,26 @@ Object::~Object() {
 	
 }
 
-void Object::handle(phy::Message* msg) {
-	if(!Node::handle(msg) && msg->mid == receive_t::mid) {
+bool Object::handle(phy::Message* msg) {
+	if(!Node::handle(msg) && msg->mid == receive_t::id) {
 		const Frame& frame = ((receive_t*)msg)->frame;
 		if(frame.flags & 0xF0 == 0) {
 			receive(frame);
+			return true;
 		} else {
 			switch(frame.flags) {
 			case Frame::REGISTER:
 				registered(frame.src, frame.dst);
 				msg->ack();
-				break;
+				return true;
 			case Frame::UNREGISTER:
 				unregistered(frame.src, frame.dst);
 				msg->ack();
-				break;
+				return true;
 			}
 		}
 	}
-	
+	return false;
 }
 
 

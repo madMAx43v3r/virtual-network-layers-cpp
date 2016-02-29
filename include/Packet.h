@@ -8,6 +8,8 @@
 #ifndef INCLUDE_PACKET_H_
 #define INCLUDE_PACKET_H_
 
+#include "phy/Message.h"
+#include "phy/Object.h"
 #include "Frame.h"
 
 namespace vnl {
@@ -17,14 +19,9 @@ class Packet : public vnl::phy::Message {
 public:
 	Packet() {}
 	
-	Packet(const Frame& frame, phy::Object* src, phy::Object* dst, uint64_t sid = 0, bool async = false)
-		:	Message(dst, id, sid, async), frame(frame)
+	Packet(const Frame& frame, uint64_t sid = 0, bool async = false)
+		:	Message(id, sid, async), frame(frame)
 	{
-		this->frame.src.B = src->mac;
-	}
-	
-	~Packet() {
-		delete frame.data;
 	}
 	
 	bool serialize(vnl::io::Stream* stream) {
@@ -44,6 +41,9 @@ public:
 	}
 	
 	static const uint32_t id = MID;
+	
+	// TODO
+	int32_t seq = 0;
 	
 	Frame frame;
 	

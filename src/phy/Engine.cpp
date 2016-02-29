@@ -9,90 +9,141 @@
 
 namespace vnl { namespace phy {
 
-static thread_local Engine* Engine::local = 0;
+thread_local Engine* Engine::local = 0;
 
-Engine::Engine() : Object(this), thread(0), core_id(-1) {
+Engine::Engine() : ulock(mutex), thread(0), core_id(-1) {
 	static std::atomic<int> counter;
 	generator.seed(Util::hash64(counter++, System::nanoTime()));
+	ulock.unlock();
 }
 
-void Engine::start(int core) {
-	dorun = true;
+Engine::~Engine() {
+	for(Fiber* fiber : fibers) {
+		delete fiber;
+	}
+}
+
+void Engine::start(vnl::Runnable* init, int core) {
 	if(!thread) {
 		core_id = core;
-		thread = new std::thread(&Engine::mainloop, this);
+		lock();
+		thread = new std::thread(&Engine::mainloop, this, init);
+		while(!dorun) {
+			wait();
+		}
+		unlock();
 	}
 }
 
 void Engine::stop() {
 	dorun = false;
 	if(thread) {
-		Object::receive(new shutdown_t(0, true));
+		lock();
+		notify();
+		unlock();
 		thread->join();
 		delete thread;
 		thread = 0;
 	}
 }
 
-void Engine::mainloop() {
+void Engine::mainloop(vnl::Runnable* init) {
 	local = this;
 	if(core_id >= 0) {
 		Util::stick_to_core(core_id);
 	}
-	if(!startup()) {
-		return;
-	}
+	init->run();
+	dorun = true;
+	notify();
+	std::vector<Stream*> pending;
+	std::vector<Message*> inbox;
 	while(dorun) {
-		Message* msg = poll();
-		if(msg) {
-			if(debug > 0) {
-				std::cout << std::dec << System::currentTimeMillis() << " Engine@" << this << " "
-						<< (msg->isack ? "ACK" : "RCV") << " " << msg->toString() << std::endl;
-			}
-			receive(msg, this);
-		}
-	}
-	shutdown();
-}
-
-void Engine::receive(Message* msg, Object* src) {
-	if(src == this) {
-		Object* dst;
-		if(msg->isack) {
-			dst = msg->src;
-		} else {
-			dst = msg->dst;
-		}
-		if(dst == this) {
-			Object::receive(msg, this);
-		} else {
-			dst->receive(msg, this);
-		}
-	} else {
-		lock();
-			if(msg->isack) {
-				acks.push(msg);
+		inbox.clear();
+		while(dorun) {
+			int to = timeout();
+			lock();
+			if(acks.empty() && queue.empty()) {
+				wait(to);
 			} else {
-				queue.push(msg);
+				Message* msg;
+				while(acks.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				while(queue.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				unlock();
+				break;
 			}
-		notify();
-		unlock();
+			unlock();
+		}
+		pending.clear();
+		for(Message* msg : inbox) {
+			if(debug > 0) {
+				std::cout << std::dec << System::currentTimeMillis() << " Engine@" << this << " " << (msg->isack ? "ACK" : "RCV") << " " << msg->toString() << std::endl;
+			}
+			if(msg->isack) {
+				if(msg->callback) {
+					msg->callback(msg);
+				}
+				msg->impl->acked();
+			} else {
+				Object* obj = msg->dst;
+				Stream* stream = obj->get_stream(msg->sid);
+				if(stream) {
+					stream->push(msg);
+					pending.push_back(stream);
+					if(stream->sid == 0) {
+						obj->process();
+					}
+				}
+			}
+		}
+		for(Stream* stream : pending) {
+			if(stream->queue.size()) {
+				Fiber* fiber;
+				if(stream->impl.pop(fiber)) {
+					fiber->notify(true);
+				}
+			}
+		}
 	}
 }
 
-Message* Engine::poll() {
-	lock();
-	Message* msg = 0;
-	while(dorun) {
-		if(acks.pop(msg) || queue.pop(msg)) {
-			break;
-		} else {
-			wait(engine->timeout());
+taskid_t Engine::launch(const std::function<void()>& func) {
+	Fiber* fiber;
+	if(avail.empty()) {
+		fiber = create();
+		fiber->start();
+		fibers.insert(fiber);
+	} else {
+		fiber = avail.back();
+		avail.pop_back();
+	}
+	taskid_t task;
+	task.id = nextid++;
+	task.impl = fiber;
+	fiber->launch(func, task.id);
+	return task;
+}
+
+void Engine::cancel(taskid_t task) {
+	if(task.impl) {
+		Fiber* fiber = task.impl;
+		if(fiber->tid == task.id) {
+			fiber->stop();
+			fibers.erase(fiber);
+			delete fiber;
 		}
 	}
-	unlock();
-	return msg;
 }
+
+void Fiber::finished() {
+	engine->finished(this);
+}
+
+
+
 
 
 }}

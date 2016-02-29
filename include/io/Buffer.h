@@ -49,6 +49,15 @@ public:
 		return b;
 	}
 	
+	void* write(int len) {
+		if(N-pos < len) {
+			resize(pos+len);
+		}
+		void* addr = buf+pos;
+		pos += len;
+		return addr;
+	}
+	
 	virtual int read(void* dst, int len) override {
 		int n = std::min(limit-pos, len);
 		memcpy(dst, buf+pos, n);
@@ -57,11 +66,7 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) override {
-		if(N-pos < len) {
-			resize(pos+len);
-		}
-		memcpy(buf+pos, src, len);
-		pos += len;
+		memcpy(write(len), src, len);
 		return true;
 	}
 	

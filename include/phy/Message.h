@@ -11,20 +11,22 @@
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
+#include <functional>
 
 #include "io/Stream.h"
 
 namespace vnl { namespace phy {
 
 class Object;
+class Fiber;
 
 class Message {
 public:
 	Message() {}
 	virtual ~Message() {}
 	
-	Message(Object* dst, uint32_t mid, uint64_t sid = 0, bool async = false)
-		:	dst(dst), mid(mid), seq(0), sid(sid), async(async) {}
+	Message(uint32_t mid, uint64_t sid = 0, bool async = false)
+		:	mid(mid), sid(sid), async(async) {}
 	
 	virtual std::string toString();
 	
@@ -33,9 +35,8 @@ public:
 	Object* src = 0;
 	Object* dst = 0;
 	uint32_t mid = 0;
-	uint32_t seq = 0;
 	uint64_t sid = 0;
-	void* impl = 0;
+	Fiber* impl = 0;
 	bool isack = false;
 	bool async = false;
 	
@@ -47,9 +48,13 @@ template<uint32_t MID>
 class Signal : public Message {
 public:
 	Signal() : Message() {}
-	Signal(Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, sid, async) {}
+	Signal(uint64_t sid, bool async = false) : Message(MID, sid, async) {}
 	
 	static const uint32_t id = MID;
+	
+private:
+	template<typename X>
+	Signal(Object* dst, X sid);
 	
 };
 
@@ -57,11 +62,15 @@ template<typename T, uint32_t MID>
 class Generic : public Message {
 public:
 	Generic() : Message() {}
-	Generic(const T& data, Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, sid, async), data(data) {}
+	Generic(const T& data, uint64_t sid = 0, bool async = false) : Message(MID, sid, async), data(data) {}
 	
 	static const uint32_t id = MID;
 	
 	T data;
+	
+private:
+	template<typename X>
+	Generic(const T& data, Object* dst, X sid);
 	
 };
 
@@ -69,7 +78,7 @@ template<typename T, typename P, uint32_t MID>
 class Request : public Message {
 public:
 	Request() : Message() {}
-	Request(const P& args, Object* dst, uint64_t sid = 0, bool async = false) : Message(dst, MID, sid, async), args(args) {}
+	Request(const P& args, uint64_t sid = 0, bool async = false) : Message(MID, sid, async), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;
@@ -84,26 +93,12 @@ public:
 	T res;
 	P args;
 	
+private:
+	template<typename X>
+	Request(const P& args, Object* dst, X sid);
+	
 };
 
-
-void Message::ack() {
-	if(!isack) {
-		isack = true;
-		if(src) {
-			src->receive(this, dst);
-		} else if(async) {
-			delete this;
-		}
-	}
-}
-
-std::string Message::toString() {
-	std::ostringstream ss;
-	ss << "[" << Util::demangle(this) << "] mid=0x" << std::hex << mid << std::dec
-			<< " src=" << src << " dst=" << dst << " sid=" << sid << " isack=" << isack << " async=" << async;
-	return ss.str();
-}
 
 
 }}

@@ -13,11 +13,11 @@ bool Switch::handle(phy::Message* msg) {
 	phy::Object* obj = msg->src;
 	if(!Uplink::handle(msg) && obj) {
 		switch(msg->mid) {
-		case connect_t::mid:
+		case connect_t::id:
 			nodes[obj->mac] = obj;
 			msg->ack();
 			return true;
-		case disconnect_t::mid:
+		case disconnect_t::id:
 			nodes.erase(obj->mac);
 			msg->ack();
 			delete obj;

@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <stdint.h>
 #include <string.h>
+#include "util/types.h"
 #include "io/Stream.h"
 
 namespace vnl {

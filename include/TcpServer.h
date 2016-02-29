@@ -21,6 +21,7 @@ namespace vnl {
 class TcpServer : phy::Object {
 public:
 	TcpServer(Uplink* uplink, int port);
+	~TcpServer();
 	
 protected:
 	typedef phy::Signal<0x1fa3586f> acksig_t;
@@ -33,7 +34,7 @@ private:
 	int port;
 	Uplink* uplink;
 	io::Socket sock;
-	uint64_t tid_acceptor;
+	phy::taskid_t tid_acceptor;
 	
 };
 

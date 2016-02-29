@@ -17,10 +17,12 @@
 
 namespace vnl { namespace io { namespace poll {
 
-class Server : public vnl::io::socket::Server, public vnl::phy::FiberEngine {
+class Server : public vnl::io::socket::Server {
 public:
 	Server();
 	~Server();
+	
+	virtual void run() override {}
 	
 protected:
 	struct pollfd_t : pollfd {
@@ -34,7 +36,7 @@ protected:
 		}
 	};
 	
-	virtual void handle(vnl::phy::Message* msg) override;
+	virtual bool handle(vnl::phy::Message* msg) override;
 	
 	virtual void notify() override;
 	virtual void wait(int millis) override;

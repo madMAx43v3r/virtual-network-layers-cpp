@@ -1,17 +1,18 @@
 
-CFLAGS = -std=c++11 -g -O2 -I../include
-LDFLAGS = -lboost_coroutine -lboost_context -lboost_system -lpthread
+ROOT := ..
+LDFLAGS := -lboost_coroutine -lboost_context -lboost_system -lpthread
 
-all: vnl clean test_stuff
+all: vnl test_phy
+
+include $(ROOT)/Makefile.rules
 
 vnl:
 	make -C ..
 
-test_stuff: bin/test_stuff.o
+test_phy: bin/test_phy.o $(ROOT)/lib/*.a
 	$(CXX) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 clean:
 	$(RM) bin/*
+	$(RM) test_phy
 
-bin/%.o: %.cpp
-	$(CXX) -c -o $@ $< $(CFLAGS)

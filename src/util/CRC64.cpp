@@ -5,7 +5,7 @@
  *      Author: mad
  */
 
-#include "CRC64.h"
+#include "util/CRC64.h"
 
 namespace vnl { namespace util {
 

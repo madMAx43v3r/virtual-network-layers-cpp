@@ -11,115 +11,93 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Message.h"
-#include "Stream.h"
-#include "Engine.h"
+#include "phy/Message.h"
+#include "phy/Stream.h"
 #include "Runnable.h"
+#include "System.h"
 #include "Util.h"
 
 namespace vnl { namespace phy {
 
-class Object : Runnable {
+class Engine;
+class Fiber;
+
+struct taskid_t {
+	uint32_t id;
+	Fiber* impl;
+	taskid_t() : id(0), impl(0) {}
+};
+
+class Object {
 public:
 	Object();
 	virtual ~Object() {}
 	
-	void receive(Message* msg) {
-		msg->dst = this;
-		engine->receive(msg, 0);
-	}
+	// thread safe
+	void receive(Message* msg);
 	
 	uint64_t mac;
 	
 protected:
-	uint64_t rand() {
-		return engine->rand();
-	}
+	uint64_t rand();
 	
 	template<typename T, typename R>
-	T request(R&& req) {
-		send(req);
+	T request(R&& req, Object* dst) {
+		send(req, dst);
 		return req.res;
 	}
 	
 	template<typename T>
-	void send(T&& msg) {
-		send(&msg, false);
+	void send(T&& msg, Object* dst) {
+		send(&msg, dst, false);
 	}
 	
-	void send(Message* msg, bool async = false) {
-		msg->seq = seq_counter++;
-		msg->async = async;
-		if(msg->dst == this) {
-			msg->src = 0;
-			handle(msg);
-		} else {
-			msg->src = this;
-			msg->dst->receive(msg, this);
-			engine->send(msg);
-		}
-	}
+	void send(Message* msg, Object* dst, bool async);
 	
-	void open(Stream* stream) {
-		streams[stream->sid] = stream;
-	}
+	void flush();
 	
-	void close(Stream* stream) {
-		streams.erase(stream->sid);
-	}
+	void open(Stream* stream);
+	void close(Stream* stream);
 	
-	void flush() {
-		engine->flush();
-	}
+	void yield();
+	void sleep(int millis);
 	
-	void yield() {
-		int now = System::currentTimeMillis();
-		if(now - last_yield >= 10) {
-			sleep(0);
-			last_yield = now;
-		}
-	}
+	taskid_t launch(Runnable* task);
+	taskid_t launch(const std::function<void()>& func);
 	
-	void sleep(int millis) {
-		Stream stream(this);
-		stream.poll(millis);
-	}
-	
-	void* launch(Runnable* task) {
-		return engine->launch(task);
-	}
-	
-	void* launch(const std::function<void()>& func) {
-		return launch(new Bind(func));
-	}
-	
-	void cancel(void* task) {
-		engine->cancel(task);
-	}
-	
-	virtual void run();
+	void cancel(taskid_t task);
 	
 	virtual bool handle(Message* msg) {
 		return false;
 	}
 	
 private:
-	Object(Engine* engine);
+	void mainloop();
 	
-	virtual void receive(Message* msg, Object* src);
+	void process() {
+		if(!running) {
+			launch(main);
+		}
+	}
 	
-	Stream* get_stream(uint64_t sid);
-	
-protected:
-	Engine* engine;
+	Stream* get_stream(uint64_t sid) {
+		auto iter = streams.find(sid);
+		if(iter != streams.end()) {
+			return iter->second;
+		}
+		return &queue;
+	}
 	
 private:
-	Stream queue;
-	void* task;
+	Engine* engine;
 	
 	std::unordered_map<uint64_t, Stream*> streams;
-	int seq_counter = 0;
-	int last_yield = 0;
+	Stream queue;
+	
+	std::function<void()> main;
+	bool running;
+	
+	int64_t last_yield = 0;
 	
 	friend class Message;
 	friend class Stream;
@@ -127,6 +105,12 @@ private:
 	
 };
 
+
+template<typename T>
+void Stream::send(T&& msg, Object* dst) {
+	msg.sid = sid;
+	obj->send(msg, dst);
+}
 
 
 

@@ -28,25 +28,26 @@ TcpUplink::~TcpUplink() {
 bool TcpUplink::handle(phy::Message* msg) {
 	if(!Uplink::handle(msg)) {
 		switch(msg->mid) {
-		case connect_t::mid:
+		case connect_t::id:
 			node = msg->src;
 			downstate.set();
 			msg->ack();
 			return true;
-		case disconnect_t::mid:
+		case disconnect_t::id:
 			if(msg->src == node) {
 				downstate.reset();
 				node = 0;
 			}
 			msg->ack();
 			return true;
-		case send_t::id:
+		case send_t::id: {
 			send_t* packet = (send_t*)msg;
 			if(msg->src) {
-				pending[msg->src->mac | msg->seq] = packet;
+				pending[msg->src->mac | packet->seq] = packet;
 			}
 			write(packet);
 			return true;
+		}
 		case acksig_t::id:
 			upstate.check();
 			ByteBuffer buf(&stream);
@@ -74,11 +75,11 @@ void TcpUplink::write(send_t* msg) {
 }
 
 void TcpUplink::reader() {
-	auto callback = [ackbuf](phy::Message* msg) {
-		if(ackbuf.empty()) {
-			phy::Object::receive(new acksig_t(this, 0, true));
+	auto callback = [this](phy::Message* msg) {
+		if(this->ackbuf.empty()) {
+			phy::Object::receive(new acksig_t(0, true));
 		}
-		ackbuf.push_back((receive_t*)msg);
+		this->ackbuf.push_back((receive_t*)msg);
 	};
 	while(true) {
 		sock.create();
@@ -94,7 +95,7 @@ void TcpUplink::reader() {
 			uint32_t mid = buf.getInt();
 			if(buf.error) {
 				break;
-			} else if(mid == receive_t::mid) {
+			} else if(mid == receive_t::id) {
 				receive_t* msg;
 				if(sndbuf.empty()) {
 					msg = new receive_t();
@@ -103,10 +104,8 @@ void TcpUplink::reader() {
 					sndbuf.pop_back();
 				}
 				if(msg->deserialize(&stream)) {
-					msg->dst = node;
-					msg->async = true;
 					msg->callback = callback;
-					phy::Object::send(msg);
+					phy::Object::send(msg, node, true);
 				} else {
 					sndbuf.push_back(msg);
 					break;

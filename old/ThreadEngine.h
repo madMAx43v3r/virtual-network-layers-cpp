@@ -21,9 +21,9 @@ public:
 	ThreadEngine(int N);
 	~ThreadEngine();
 	
-	virtual void send(Message* msg) override;
+	virtual void sent(Message* msg) override;
 	virtual void flush() override;
-	virtual void handle(Message* msg, Stream* stream) override;
+	virtual void process(Message* msg, Stream* stream) override;
 	virtual void open(Stream* stream) override;
 	virtual void close(Stream* stream) override;
 	virtual bool poll(Stream* stream, int millis) override;

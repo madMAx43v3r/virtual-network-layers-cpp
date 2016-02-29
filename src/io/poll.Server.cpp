@@ -24,7 +24,7 @@ struct Server::init {
 
 Server::init Server::initializer;
 
-Server::Server() : FiberEngine(1), N(4) {
+Server::Server() : N(4) {
 	_prio = 10;
 	fds.resize(N);
 	keys.resize(N);
@@ -44,23 +44,24 @@ Server::~Server() {
 	::close(pipefd[1]);
 }
 
-void Server::handle(Message* msg) {
+bool Server::handle(Message* msg) {
 	switch(msg->mid) {
-	case poll_t::mid: {
+	case poll_t::id: {
 		poll_t* req = ((poll_t*)msg);
 		req->res = update(req->args);
 		msg->ack();
-		break;
+		return true;
 	}
-	case signal_t::mid: {
+	case signal_t::id: {
 		char buf[1024];
 		while(read(pipefd[0], buf, sizeof(buf)) == sizeof(buf));
 		pipekey.events = POLLIN;
 		update(pipekey);
 		msg->ack();
-		break;
+		return true;
 	}
 	}
+	return false;
 }
 
 void Server::notify() {
@@ -78,13 +79,11 @@ void Server::wait(int millis) {
 			if(key.obj) {
 				int err = pfd.err();
 				if(pfd.revents & POLLIN) {
-					signal_t* msg = new signal_t(err, true);
-					msg->sid = key.sin;
+					signal_t* msg = new signal_t(err, key.sin, true);
 					key.obj->receive(msg);
 				}
 				if(pfd.revents & POLLOUT) {
-					signal_t* msg = new signal_t(err, true);
-					msg->sid = key.sout;
+					signal_t* msg = new signal_t(err, key.sout, true);
 					key.obj->receive(msg);
 				}
 			}

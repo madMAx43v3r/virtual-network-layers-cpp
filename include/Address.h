@@ -49,7 +49,20 @@ inline bool operator<(const Address& A, const Address& B) {
 	return (A.A xor A.B) < (B.A xor B.B);
 }
 
+inline bool operator==(const Address& A, const Address& B) {
+	return A.A == B.A && A.B == B.B;
+}
 
+
+}
+
+namespace std {
+	template<>
+	struct hash<vnl::Address> {
+		size_t operator()(const vnl::Address& x) const {
+			return vnl::Util::hash64(x.A, x.B);
+		}
+	};
 }
 
 #endif /* INCLUDE_ADDRESS_H_ */

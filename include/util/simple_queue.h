@@ -185,6 +185,10 @@ public:
 		return avail;
 	}
 	
+	bool empty() {
+		return avail == 0;
+	}
+	
 protected:
 	void push_node(node_t* node) {
 		node->next = write->next;
