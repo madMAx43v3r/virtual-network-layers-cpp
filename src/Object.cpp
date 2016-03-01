@@ -18,7 +18,10 @@ Object::~Object() {
 }
 
 bool Object::handle(phy::Message* msg) {
-	if(!Node::handle(msg) && msg->mid == receive_t::id) {
+	if(Node::handle(msg)) {
+		return true;
+	}
+	if(msg->mid == receive_t::id) {
 		const Frame& frame = ((receive_t*)msg)->frame;
 		if(frame.flags & 0xF0 == 0) {
 			receive(frame);

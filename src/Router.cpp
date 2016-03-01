@@ -1,80 +1,70 @@
 /*
  * Router.cpp
  *
- *  Created on: Jan 10, 2016
- *      Author: mad
+ *  Created on: Feb 29, 2016
+ *      Author: MWITTAL
  */
 
 #include "Router.h"
 
 namespace vnl {
 
-class Router::Worker : public Runnable {
-public:
-	Worker(Router* router) : router(router), queue(router), tid(0) {}
-	
-	void run() override {
-		while(true) {
-			phy::Message* msg = queue.poll();
-			if(msg->mid == Node::send_t::mid) {
-				Frame& frame = ((Node::send_t*)msg)->frame;
-				if(frame.src.A == 0) {
-					frame.src.A = mac;
-				}
-				if(frame.flags == Frame::REGISTER) {
-					router->configure(frame.dst, msg->src);
-				}
-				if(frame.flags == Frame::UNREGISTER) {
-					router->unregister(frame.dst, msg->src);
-				}
-				router->route(frame, msg->src ? msg->src->mac : 0);
-			} else if(msg->mid == Node::receive_t::mid) {
-				Frame& frame = ((Node::receive_t*)msg)->frame;
-				router->route(frame, 0);
-			}
-			msg->ack();
-		}
-	}
-	
-	Router* router;
-	phy::Stream queue;
-	uint64_t tid;
-	
-};
-
-Router::Router(Uplink* uplink, int N) : N(N), uplink(uplink) {
+Router::Router(Uplink* uplink) : uplink(uplink) {
 	Node::configure(Address(mac, 0));
-	workers.resize(N);
-	for(int i = 0; i < N; ++i) {
-		Worker* worker = new Worker(this);
-		worker->tid = launch(worker);
-		workers[i] = worker;
-	}
 }
 
 Router::~Router() {
-	for(auto worker : workers) {
-		cancel(worker->tid);
-		delete worker;
-	}
+	
 }
 
-phy::Stream* Router::route(phy::Message* msg) {
-	if(Switch::route(msg) == 0) {
-		uint64_t srcmac = 0;
-		if(msg->mid == Node::send_t::mid) {
-			srcmac = ((Node::send_t*)msg)->frame.src.B;
-		} else if(msg->mid == Node::receive_t::mid) {
-			srcmac = ((Node::receive_t*)msg)->frame.src.B;
-		}
-		if(srcmac) {
-			return &workers[srcmac % N]->queue;
-		}
+bool Router::handle(phy::Message* msg) {
+	if(Uplink::handle(msg)) {
+		return true;
 	}
-	return 0;
+	Node* node = (Node*)msg->src;
+	uint64_t srcmac = node ? node->mac : 0;
+	switch(msg->mid) {
+	case connect_t::id:
+		if(node) {
+			nodes[srcmac] = node;
+		}
+		msg->ack();
+		return true;
+	case disconnect_t::id:
+		if(node) {
+			nodes.erase(srcmac);
+		}
+		msg->ack();
+		return true;
+	case send_t::id: {
+		Packet* packet = (Packet*)msg;
+		Frame& frame = packet->frame;
+		if(frame.src.A == 0) {
+			frame.src.A = mac;
+		}
+		if(frame.src.B == 0) {
+			frame.src.B = srcmac;
+		}
+		if(frame.flags == Frame::REGISTER) {
+			configure(frame.dst, node);
+		}
+		if(frame.flags == Frame::UNREGISTER) {
+			unregister(frame.dst, node);
+		}
+		route(packet, srcmac);
+		return true;
+	}
+	case receive_t::id: {
+		Packet* packet = (Packet*)msg;
+		route(packet, 0);
+		return true;
+	}
+	}
+	return false;
 }
 
-void Router::route(Frame& frame, uint64_t srcmac) {
+void Router::route(Packet* msg, uint64_t srcmac) {
+	Frame& frame = msg->frame;
 	bool unicast = frame.flags & Frame::UNICAST;
 	bool anycast = frame.flags & Frame::ANYCAST;
 	bool multicast = frame.flags & Frame::MULTICAST;
@@ -82,11 +72,11 @@ void Router::route(Frame& frame, uint64_t srcmac) {
 		if(unicast) {
 			auto iter = nodes.find(frame.dst.B);
 			if(iter != nodes.end()) {
-				forward(frame, iter->second);
+				forward(msg, iter->second);
 			}
 		} else if(multicast && frame.dst.B == -1) {
 			for(auto iter : nodes) {
-				forward(frame, iter.second);
+				forward(msg, iter.second);
 			}
 		}
 		return;
@@ -95,9 +85,9 @@ void Router::route(Frame& frame, uint64_t srcmac) {
 		auto iter = route128.find(frame.dst);
 		if(iter != route128.end()) {
 			if(multicast) {
-				fw_many(frame, iter->second, srcmac);
+				fw_many(msg, iter->second, srcmac);
 			} else {
-				fw_one(frame, iter->second, anycast);
+				fw_one(msg, iter->second, anycast);
 				return;
 			}
 		}
@@ -106,9 +96,9 @@ void Router::route(Frame& frame, uint64_t srcmac) {
 		auto iter = route64.find(frame.dst.A);
 		if(iter != route64.end()) {
 			if(multicast) {
-				fw_many(frame, iter->second, srcmac);
+				fw_many(msg, iter->second, srcmac);
 			} else {
-				fw_one(frame, iter->second, anycast);
+				fw_one(msg, iter->second, anycast);
 				return;
 			}
 		}
@@ -116,45 +106,48 @@ void Router::route(Frame& frame, uint64_t srcmac) {
 	if(srcmac != 0) {
 		send(frame);
 	}
+	// Check if frame dropped
+	if() {
+		
+	}
 }
 
-void Router::forward(Frame& frame, phy::Object* dst) {
-	phy::Object::send(Node::receive_t(frame, this, dst));
+void Router::forward(Packet* msg, Node* dst) {
+	phy::Object::send(Node::receive_t(msg->frame), dst);
 }
 
-void Router::fw_one(Frame& frame, std::vector<phy::Object*>& list, bool anycast) {
+void Router::fw_one(Packet* msg, std::vector<Node*>& list, bool anycast) {
 	int N = list.size();
-	phy::Object* obj = 0;
+	Node* dst = 0;
 	if(anycast) {
 		while(true) {
-			obj = list[std::rand() % N];
-			if(obj) { break; }
+			dst = list[std::rand() % N];
+			if(dst) { break; }
 		}
 	} else {
 		for(int i = 0; i < N; ++i) {
-			obj = list[i];
-			if(obj) { break; }
+			dst = list[i];
+			if(dst) { break; }
 		}
 	}
-	if(obj) {
-		forward(frame, obj);
+	if(dst) {
+		forward(msg, dst);
 	}
 }
 
-void Router::fw_many(Frame& frame, std::vector<phy::Object*>& list, uint64_t srcmac) {
+void Router::fw_many(Packet* msg, std::vector<Node*>& list, uint64_t srcmac) {
 	int N = list.size();
-	phy::SendBuffer<Node::receive_t, 10> buf;
 	for(int i = 0; i < N; ++i) {
-		phy::Object* dst = list[i];
+		Node* dst = list[i];
 		if(dst && dst->mac != srcmac) {
-			phy::Object::send(buf.put(Node::receive_t(frame, this, dst, 0, true)));
+			forward(msg, dst);
 		}
 	}
 }
 
-void Router::configure(Address addr, phy::Object* src) {
+void Router::configure(Address addr, Node* src) {
 	auto& list = get_entry(addr);
-	phy::Object** slot = 0;
+	Node** slot = 0;
 	for(auto& obj : list) {
 		if(obj == src) { return; }
 		if(obj == 0) { slot = &obj; }
@@ -166,7 +159,7 @@ void Router::configure(Address addr, phy::Object* src) {
 	}
 }
 
-void Router::unregister(Address addr, phy::Object* src) {
+void Router::unregister(Address addr, Node* src) {
 	auto& list = get_entry(addr);
 	int count = 0;
 	for(auto& obj : list) {
@@ -178,7 +171,7 @@ void Router::unregister(Address addr, phy::Object* src) {
 	}
 }
 
-std::vector<phy::Object*>& Router::get_entry(const Address& addr) {
+std::vector<Node*>& Router::get_entry(const Address& addr) {
 	if(addr.B == 0) {
 		return route64[addr.A];
 	} else {
@@ -192,6 +185,14 @@ void Router::clear_entry(const Address& addr) {
 	} else {
 		route128.erase(addr);
 	}
+}
+
+Node* Router::get_node(uint64_t mac) {
+	auto iter = nodes.find(mac);
+	if(iter != nodes.end()) {
+		return iter->second;
+	}
+	return 0;
 }
 
 

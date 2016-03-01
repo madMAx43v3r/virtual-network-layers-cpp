@@ -11,15 +11,6 @@ namespace vnl {
 
 class TcpServer::Proxy : Node {
 public:
-	
-	io::Socket* sock;
-	io::StreamBuffer stream;
-	phy::taskid_t tid_reader;
-	
-	std::unordered_map<uint64_t, receive_t*> pending;
-	std::vector<Uplink::send_t*> ackbuf;
-	std::vector<Uplink::send_t*> sndbuf;
-	
 	Proxy(Uplink* uplink, io::Socket* sock)
 		:	Node::Node(uplink),
 			sock(sock), stream(sock)
@@ -36,27 +27,29 @@ public:
 	}
 	
 	virtual bool handle(phy::Message* msg) override {
-		if(!Node::handle(msg)) {
-			if(msg->mid == receive_t::id) {
-				receive_t* packet = (receive_t*)msg;
-				if(msg->src) {
-					pending[msg->src->mac | packet->seq] = packet;
-				}
-				write(packet);
-				return true;
-			} else if(msg->mid == acksig_t::id) {
-				ByteBuffer buf(&stream);
-				buf.putInt(acksig_t::id);
-				buf.putInt(ackbuf.size());
-				for(auto msg : ackbuf) {
-					buf.putLong(msg->dst->mac | msg->seq);
-					sndbuf.push_back(msg);
-				}
-				stream.flush();
-				ackbuf.clear();
-				msg->ack();
-				return true;
+		if(Node::handle(msg)) {
+			return true;
+		}
+		if(msg->mid == receive_t::id) {
+			receive_t* packet = (receive_t*)msg;
+			packet->seq = nextseq++;
+			if(msg->src) {
+				pending[msg->src->mac | packet->seq] = packet;
 			}
+			write(packet);
+			return true;
+		} else if(msg->mid == acksig_t::id) {
+			ByteBuffer buf(&stream);
+			buf.putInt(acksig_t::id);
+			buf.putInt(ackbuf.size());
+			for(auto msg : ackbuf) {
+				buf.putLong(msg->dst->mac | msg->seq);
+				sndbuf.push_back(msg);
+			}
+			stream.flush();
+			ackbuf.clear();
+			msg->ack();
+			return true;
 		}
 		return false;
 	}
@@ -119,6 +112,17 @@ public:
 		}
 		exit();
 	}
+	
+protected:
+	io::Socket* sock;
+	io::StreamBuffer stream;
+	phy::taskid_t tid_reader;
+	
+	std::unordered_map<uint64_t, receive_t*> pending;
+	std::vector<Uplink::send_t*> ackbuf;
+	std::vector<Uplink::send_t*> sndbuf;
+	
+	int32_t nextseq = 1;
 	
 };
 

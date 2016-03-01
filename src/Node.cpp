@@ -44,8 +44,10 @@ void Node::exit() {
 		unregister(addr);
 	}
 	if(uplink) {
-		uplink->receive(new Uplink::disconnect_t(0, true));
+		phy::Object::send(Uplink::disconnect_t(), uplink);
+		uplink = 0;
 	}
+	delete this;
 }
 
 

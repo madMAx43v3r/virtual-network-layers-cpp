@@ -10,8 +10,11 @@
 namespace vnl {
 
 bool Switch::handle(phy::Message* msg) {
+	if(Uplink::handle(msg)) {
+		return msg;
+	}
 	phy::Object* obj = msg->src;
-	if(!Uplink::handle(msg) && obj) {
+	if(obj) {
 		switch(msg->mid) {
 		case connect_t::id:
 			nodes[obj->mac] = obj;
@@ -20,7 +23,6 @@ bool Switch::handle(phy::Message* msg) {
 		case disconnect_t::id:
 			nodes.erase(obj->mac);
 			msg->ack();
-			delete obj;
 			return true;
 		}
 	}

@@ -14,12 +14,23 @@
 
 namespace vnl {
 
-template<uint32_t MID>
 class Packet : public vnl::phy::Message {
 public:
-	Packet() {}
+	Packet* parent = 0;
+	int32_t count = 0;
+	int32_t acks = 0;
+	int32_t seq = 0;
 	
-	Packet(const Frame& frame, uint64_t sid = 0, bool async = false)
+	Frame frame;
+	
+};
+
+template<uint32_t MID>
+class PacketTmpl : public Packet {
+public:
+	PacketTmpl() {}
+	
+	PacketTmpl(const Frame& frame, uint64_t sid = 0, bool async = false)
 		:	Message(id, sid, async), frame(frame)
 	{
 	}
@@ -42,10 +53,6 @@ public:
 	
 	static const uint32_t id = MID;
 	
-	// TODO
-	int32_t seq = 0;
-	
-	Frame frame;
 	
 };
 
