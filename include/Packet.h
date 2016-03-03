@@ -19,8 +19,8 @@ public:
 	Packet* parent = 0;
 	int32_t count = 0;
 	int32_t acks = 0;
-	int32_t seq = 0;
 	
+	int32_t seq = 0;
 	Frame frame;
 	
 };
@@ -30,9 +30,11 @@ class PacketTmpl : public Packet {
 public:
 	PacketTmpl() {}
 	
-	PacketTmpl(const Frame& frame, uint64_t sid = 0, bool async = false)
-		:	Message(id, sid, async), frame(frame)
-	{
+	PacketTmpl(const Frame& frame_, uint64_t sid_ = 0, bool async_ = false) {
+		mid = id;
+		sid = sid_;
+		async = async_;
+		frame = frame_;
 	}
 	
 	bool serialize(vnl::io::Stream* stream) {

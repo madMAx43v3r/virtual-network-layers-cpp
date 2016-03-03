@@ -20,9 +20,6 @@ TcpUplink::TcpUplink(const std::string& endpoint, int port)
 
 TcpUplink::~TcpUplink() {
 	cancel(tid_reader);
-	for(auto msg : sndbuf) {
-		delete msg;
-	}
 }
 
 bool TcpUplink::handle(phy::Message* msg) {
@@ -59,7 +56,7 @@ bool TcpUplink::handle(phy::Message* msg) {
 		buf.putInt(ackbuf.size());
 		for(auto msg : ackbuf) {
 			buf.putLong(msg->dst->mac | msg->seq);
-			sndbuf.push_back(msg);
+			sndbuf.free(msg);
 		}
 		stream.flush();
 		ackbuf.clear();
@@ -78,18 +75,18 @@ void TcpUplink::write(send_t* msg) {
 
 void TcpUplink::reader() {
 	auto callback = [this](phy::Message* msg) {
-		if(this->ackbuf.empty()) {
+		if(ackbuf.empty()) {
 			phy::Object::receive(new acksig_t(0, true));
 		}
-		this->ackbuf.push_back((receive_t*)msg);
+		ackbuf.push_back((receive_t*)msg);
 	};
 	while(true) {
 		sock.create();
 		sock.connect(endpoint, port);
 		stream.clear();
 		downstate.check();
-		for(Address& addr : node->logical) {
-			
+		for(const Address& addr : node->logical) {
+			// TODO
 		}
 		for(auto it : pending) {
 			write(it.second);
@@ -101,20 +98,14 @@ void TcpUplink::reader() {
 			if(buf.error) {
 				break;
 			} else if(mid == receive_t::id) {
-				receive_t* msg;
-				if(sndbuf.empty()) {
-					msg = new receive_t();
-				} else {
-					msg = sndbuf.back();
-					sndbuf.pop_back();
-				}
+				receive_t* msg = sndbuf.alloc();
 				if(msg->deserialize(&stream)) {
 					msg->callback = callback;
 					if(node) {
 						phy::Object::send(msg, node, true);
 					}
 				} else {
-					sndbuf.push_back(msg);
+					sndbuf.free(msg);
 					break;
 				}
 			} else if(mid == acksig_t::id) {

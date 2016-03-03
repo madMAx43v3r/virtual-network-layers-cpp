@@ -71,6 +71,10 @@ protected:
 		return false;
 	}
 	
+	void exit() {
+		delete this;
+	}
+	
 private:
 	void mainloop();
 	

@@ -1,7 +1,4 @@
 
 /callgrind.out.*
-/test_link
-/test_local
-/test_stuff
-/test_tcp
+/test_phy
 

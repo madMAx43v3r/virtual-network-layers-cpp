@@ -10,8 +10,10 @@
 
 #include <vector>
 #include <unordered_map>
+#include <functional>
 
-#include "Switch.h"
+#include "Uplink.h"
+#include "phy/Pool.h"
 
 namespace vnl {
 
@@ -28,6 +30,10 @@ protected:
 	void fw_one(Packet* msg, std::vector<Node*>& list, bool anycast);
 	void fw_many(Packet* msg, std::vector<Node*>& list, uint64_t srcmac);
 	
+	void callback(Packet* msg);
+	void callback_rcv(phy::Message* msg);
+	void callback_snd(phy::Message* msg);
+	
 	void configure(Address addr, Node* src);
 	void unregister(Address addr, Node* src);
 	
@@ -40,7 +46,10 @@ private:
 	std::unordered_map<uint64_t, std::vector<Node*> > route64;
 	std::unordered_map<Address, std::vector<Node*> > route128;
 	
-	
+	std::function<void(phy::Message*)> cb_rcv;
+	std::function<void(phy::Message*)> cb_snd;
+	phy::Pool<receive_t> rcvbuf;
+	phy::Pool<send_t> sndbuf;
 	
 };
 

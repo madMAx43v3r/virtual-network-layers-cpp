@@ -21,9 +21,9 @@ Node::~Node() {
 	
 }
 
-void Node::send(const Frame& frame, uint64_t sid, bool async) {
+void Node::send(const Frame& frame, uint64_t sid) {
 	if(uplink) {
-		phy::Object::send(send_t(frame, sid, async), uplink);
+		phy::Object::send(send_t(frame, sid), uplink);
 	}
 }
 
@@ -47,7 +47,7 @@ void Node::exit() {
 		phy::Object::send(Uplink::disconnect_t(), uplink);
 		uplink = 0;
 	}
-	delete this;
+	phy::Object::exit();
 }
 
 

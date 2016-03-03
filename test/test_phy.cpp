@@ -13,7 +13,7 @@
 #include "phy/Object.h"
 using namespace vnl::phy;
 
-const bool verify = true;
+const bool verify = false;
 const bool usestreams = false;
 
 class Consumer : public vnl::phy::Object {
@@ -87,7 +87,7 @@ protected:
 class ProcessorA : public FiberEngine {
 public:
 	ProcessorA() : consumer(0) {
-		start(this, 0);
+		start(0);
 	}
 	~ProcessorA() {
 		delete consumer;
@@ -101,7 +101,7 @@ public:
 class ProcessorB : public FiberEngine {
 public:
 	ProcessorB(Consumer* dst) : dst(dst), producer(0) {
-		start(this, 0);
+		start(0);
 	}
 	~ProcessorB() {
 		delete producer;

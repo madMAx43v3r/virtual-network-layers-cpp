@@ -32,7 +32,7 @@ public:
 	
 	static thread_local Engine* local;
 	
-	void start(vnl::Runnable* init, int core = -1);
+	void start(int core = -1);
 	void stop();
 	
 	void sent(Message* msg) {
@@ -87,7 +87,7 @@ protected:
 	virtual Fiber* create() = 0;
 	
 private:
-	void mainloop(vnl::Runnable* init);
+	void mainloop();
 	
 	void wait() {
 		cond.wait(ulock);

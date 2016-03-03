@@ -9,7 +9,11 @@
 
 namespace vnl {
 
-Router::Router(Uplink* uplink) : uplink(uplink) {
+Router::Router(Uplink* uplink)
+	:	Uplink::Uplink(uplink),
+		cb_rcv(std::bind(&Router::callback_rcv, this, std::placeholders::_1)),
+		cb_snd(std::bind(&Router::callback_snd, this, std::placeholders::_1))
+{
 	Node::configure(Address(mac, 0));
 }
 
@@ -18,9 +22,6 @@ Router::~Router() {
 }
 
 bool Router::handle(phy::Message* msg) {
-	if(Uplink::handle(msg)) {
-		return true;
-	}
 	Node* node = (Node*)msg->src;
 	uint64_t srcmac = node ? node->mac : 0;
 	switch(msg->mid) {
@@ -39,12 +40,8 @@ bool Router::handle(phy::Message* msg) {
 	case send_t::id: {
 		Packet* packet = (Packet*)msg;
 		Frame& frame = packet->frame;
-		if(frame.src.A == 0) {
-			frame.src.A = mac;
-		}
-		if(frame.src.B == 0) {
-			frame.src.B = srcmac;
-		}
+		if(frame.src.A == 0) { frame.src.A = mac; }
+		if(frame.src.B == 0) { frame.src.B = srcmac; }
 		if(frame.flags == Frame::REGISTER) {
 			configure(frame.dst, node);
 		}
@@ -79,41 +76,70 @@ void Router::route(Packet* msg, uint64_t srcmac) {
 				forward(msg, iter.second);
 			}
 		}
-		return;
-	}
-	{
-		auto iter = route128.find(frame.dst);
-		if(iter != route128.end()) {
-			if(multicast) {
-				fw_many(msg, iter->second, srcmac);
-			} else {
-				fw_one(msg, iter->second, anycast);
-				return;
+	} else {
+		{
+			auto iter = route128.find(frame.dst);
+			if(iter != route128.end()) {
+				if(multicast) {
+					fw_many(msg, iter->second, srcmac);
+				} else {
+					fw_one(msg, iter->second, anycast);
+					return;
+				}
 			}
 		}
-	}
-	{
-		auto iter = route64.find(frame.dst.A);
-		if(iter != route64.end()) {
-			if(multicast) {
-				fw_many(msg, iter->second, srcmac);
-			} else {
-				fw_one(msg, iter->second, anycast);
-				return;
+		{
+			auto iter = route64.find(frame.dst.A);
+			if(iter != route64.end()) {
+				if(multicast) {
+					fw_many(msg, iter->second, srcmac);
+				} else {
+					fw_one(msg, iter->second, anycast);
+					return;
+				}
 			}
 		}
+		if(srcmac != 0) {
+			msg->count++;
+			send_t* snd = sndbuf.alloc();
+			snd->parent = msg;
+			snd->sid = msg->sid;
+			snd->frame = msg->frame;
+			snd->callback = cb_snd;
+			phy::Object::send(snd, uplink, true);
+		}
 	}
-	if(srcmac != 0) {
-		send(frame);
-	}
-	// Check if frame dropped
-	if() {
-		
+	if(!msg->count) {
+		msg->ack();
 	}
 }
 
 void Router::forward(Packet* msg, Node* dst) {
-	phy::Object::send(Node::receive_t(msg->frame), dst);
+	msg->count++;
+	receive_t* rcv = rcvbuf.alloc();
+	rcv->parent = msg;
+	rcv->sid = msg->sid;
+	rcv->frame = msg->frame;
+	rcv->callback = cb_rcv;
+	phy::Object::send(rcv, dst, true);
+}
+
+void Router::callback(Packet* msg) {
+	if(++(msg->parent->acks) == msg->parent->count) {
+		msg->parent->ack();
+	}
+}
+
+void Router::callback_rcv(phy::Message* msg_) {
+	Packet* msg = (Packet*)msg_;
+	callback(msg);
+	rcvbuf.free((receive_t*)msg);
+}
+
+void Router::callback_snd(phy::Message* msg_) {
+	Packet* msg = (Packet*)msg_;
+	callback(msg);
+	sndbuf.free((send_t*)msg);
 }
 
 void Router::fw_one(Packet* msg, std::vector<Node*>& list, bool anycast) {
@@ -148,9 +174,9 @@ void Router::fw_many(Packet* msg, std::vector<Node*>& list, uint64_t srcmac) {
 void Router::configure(Address addr, Node* src) {
 	auto& list = get_entry(addr);
 	Node** slot = 0;
-	for(auto& obj : list) {
-		if(obj == src) { return; }
-		if(obj == 0) { slot = &obj; }
+	for(auto& node : list) {
+		if(node == src) { return; }
+		if(node == 0) { slot = &node; }
 	}
 	if(slot) {
 		*slot = src;
@@ -162,9 +188,9 @@ void Router::configure(Address addr, Node* src) {
 void Router::unregister(Address addr, Node* src) {
 	auto& list = get_entry(addr);
 	int count = 0;
-	for(auto& obj : list) {
-		if(obj == src) { obj = 0; }
-		if(obj == 0) { count++; }
+	for(auto& node : list) {
+		if(node == src) { node = 0; }
+		if(node == 0) { count++; }
 	}
 	if(count == list.size()) {
 		clear_entry(addr);

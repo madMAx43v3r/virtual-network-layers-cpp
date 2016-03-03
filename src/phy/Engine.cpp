@@ -23,11 +23,11 @@ Engine::~Engine() {
 	}
 }
 
-void Engine::start(vnl::Runnable* init, int core) {
+void Engine::start(int core) {
 	if(!thread) {
 		core_id = core;
 		lock();
-		thread = new std::thread(&Engine::mainloop, this, init);
+		thread = new std::thread(&Engine::mainloop, this);
 		while(!dorun) {
 			wait();
 		}
@@ -47,12 +47,12 @@ void Engine::stop() {
 	}
 }
 
-void Engine::mainloop(vnl::Runnable* init) {
+void Engine::mainloop() {
 	local = this;
 	if(core_id >= 0) {
 		Util::stick_to_core(core_id);
 	}
-	init->run();
+	run();
 	dorun = true;
 	notify();
 	std::vector<Stream*> pending;

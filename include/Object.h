@@ -17,13 +17,10 @@ namespace vnl {
 class Object : public Node, Struct {
 public:
 	Object(Uplink* uplink);
-	~Object();
 	
 protected:
-	virtual void receive(const Frame& frame) = 0;
-	
-	virtual void registered(Address src, Address addr) {}
-	virtual void unregistered(Address src, Address addr) {}
+	virtual void registered(const Address& src, const Address& addr) {}
+	virtual void unregistered(const Address& src, const Address& addr) {}
 	
 private:
 	virtual bool handle(phy::Message* msg) override;

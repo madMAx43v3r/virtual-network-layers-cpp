@@ -13,30 +13,18 @@ Object::Object(Uplink* uplink) : Node::Node(uplink) {
 	
 }
 
-Object::~Object() {
-	
-}
-
 bool Object::handle(phy::Message* msg) {
-	if(Node::handle(msg)) {
-		return true;
-	}
 	if(msg->mid == receive_t::id) {
 		const Frame& frame = ((receive_t*)msg)->frame;
-		if(frame.flags & 0xF0 == 0) {
-			receive(frame);
+		switch(frame.flags) {
+		case Frame::REGISTER:
+			registered(frame.src, frame.dst);
+			msg->ack();
 			return true;
-		} else {
-			switch(frame.flags) {
-			case Frame::REGISTER:
-				registered(frame.src, frame.dst);
-				msg->ack();
-				return true;
-			case Frame::UNREGISTER:
-				unregistered(frame.src, frame.dst);
-				msg->ack();
-				return true;
-			}
+		case Frame::UNREGISTER:
+			unregistered(frame.src, frame.dst);
+			msg->ack();
+			return true;
 		}
 	}
 	return false;

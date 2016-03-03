@@ -6,6 +6,7 @@
  */
 
 #include "TcpServer.h"
+#include "phy/Pool.h"
 
 namespace vnl {
 
@@ -21,9 +22,6 @@ public:
 	~Proxy() {
 		sock->close();
 		cancel(tid_reader);
-		for(auto msg : sndbuf) {
-			delete msg;
-		}
 	}
 	
 	virtual bool handle(phy::Message* msg) override {
@@ -44,7 +42,7 @@ public:
 			buf.putInt(ackbuf.size());
 			for(auto msg : ackbuf) {
 				buf.putLong(msg->dst->mac | msg->seq);
-				sndbuf.push_back(msg);
+				sndbuf.free(msg);
 			}
 			stream.flush();
 			ackbuf.clear();
@@ -63,10 +61,10 @@ public:
 	
 	void reader() {
 		auto callback = [this](phy::Message* msg) {
-			if(this->ackbuf.empty()) {
+			if(ackbuf.empty()) {
 				phy::Object::receive(new acksig_t(0, true));
 			}
-			this->ackbuf.push_back((Uplink::send_t*)msg);
+			ackbuf.push_back((send_t*)msg);
 		};
 		stream.clear();
 		ByteBuffer buf(&stream);
@@ -74,15 +72,9 @@ public:
 			uint32_t mid = buf.getInt();
 			if(buf.error) {
 				break;
-			} else if(mid == Uplink::send_t::id) {
+			} else if(mid == send_t::id) {
 				uint64_t srcmac = buf.getLong();
-				Uplink::send_t* msg;
-				if(sndbuf.empty()) {
-					msg = new Uplink::send_t();
-				} else {
-					msg = sndbuf.back();
-					sndbuf.pop_back();
-				}
+				send_t* msg = sndbuf.alloc();
 				if(msg->deserialize(&stream)) {
 					const Frame& frame = msg->frame;
 					msg->callback = callback;
@@ -93,7 +85,7 @@ public:
 						logical.erase(frame.dst);
 					}
 				} else {
-					sndbuf.push_back(msg);
+					sndbuf.free(msg);
 					break;
 				}
 			} else if(mid == acksig_t::id) {
@@ -119,8 +111,8 @@ protected:
 	phy::taskid_t tid_reader;
 	
 	std::unordered_map<uint64_t, receive_t*> pending;
-	std::vector<Uplink::send_t*> ackbuf;
-	std::vector<Uplink::send_t*> sndbuf;
+	std::vector<send_t*> ackbuf;
+	phy::Pool<send_t> sndbuf;
 	
 	int32_t nextseq = 1;
 	
