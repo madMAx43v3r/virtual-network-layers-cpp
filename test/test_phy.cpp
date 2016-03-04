@@ -79,7 +79,7 @@ protected:
 };
 
 
-class ProcessorA : public ThreadEngine {
+class ProcessorA : public FiberEngine {
 public:
 	ProcessorA() : consumer(0) {
 		start(0);
@@ -93,7 +93,7 @@ public:
 	Consumer* consumer;
 };
 
-class ProcessorB : public ThreadEngine {
+class ProcessorB : public FiberEngine {
 public:
 	ProcessorB(Consumer* dst) : dst(dst), producer(0) {
 		start(0);

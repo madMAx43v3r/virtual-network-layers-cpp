@@ -58,15 +58,19 @@ public:
 		return addr;
 	}
 	
-	virtual int read(void* dst, int len) override {
+	virtual bool read(void* dst, int len) override {
 		int n = std::min(limit-pos, len);
 		memcpy(dst, buf+pos, n);
 		pos += n;
-		return n;
+		return n == len;
 	}
 	
 	virtual bool write(const void* src, int len) override {
 		memcpy(write(len), src, len);
+		return true;
+	}
+	
+	virtual bool flush() override {
 		return true;
 	}
 	

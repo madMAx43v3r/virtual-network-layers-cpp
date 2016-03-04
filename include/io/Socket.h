@@ -14,7 +14,7 @@
 
 namespace vnl { namespace io {
 
-class Socket : public vnl::phy::Object, public vnl::io::Stream {
+class Socket : public vnl::phy::Object {
 public:
 	Socket();
 	
@@ -25,9 +25,8 @@ public:
 	int listen(int backlog = 100);
 	Socket* accept();
 	
-	bool read_all(void* buf, int len);
-	virtual int read(void* buf, int len) override;
-	virtual bool write(const void* buf, int len) override;
+	int read(void* buf, int len);
+	bool write(const void* buf, int len);
 	
 protected:
 	bool poll(phy::Stream& stream, int flag);
@@ -36,6 +35,7 @@ protected:
 private:
 	vnl::io::socket::Server* server;
 	vnl::io::socket::Server::key_t key;
+	
 	phy::Stream in;
 	phy::Stream out;
 	

@@ -60,7 +60,8 @@ namespace std {
 	template<>
 	struct hash<vnl::Address> {
 		size_t operator()(const vnl::Address& x) const {
-			return vnl::Util::hash64(x.A, x.B);
+			//return vnl::Util::hash64(x.A, x.B);
+			return x.A ^ x.B;
 		}
 	};
 }

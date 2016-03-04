@@ -97,24 +97,6 @@ Socket* Socket::accept() {
 	}
 }
 
-bool Socket::read_all(void* buf, int len) {
-	int left = len;
-	while(true) {
-		int res = ::read(key.fd, buf, left);
-		if(res > 0) {
-			left -= res;
-			buf = ((char*)buf) + res;
-		}
-		if(left > 0) {
-			if(!poll(in, POLLIN)) {
-				return false;
-			}
-		} else {
-			return true;
-		}
-	}
-}
-
 int Socket::read(void* buf, int len) {
 	while(true) {
 		int res = ::read(key.fd, buf, len);

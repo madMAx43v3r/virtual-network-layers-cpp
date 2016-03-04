@@ -8,13 +8,13 @@
 #ifndef INCLUDE_TCPUPLINK_H_
 #define INCLUDE_TCPUPLINK_H_
 
+#include <io/SocketBuffer.h>
 #include <vector>
 #include <unordered_map>
 
 #include "Node.h"
 #include "Uplink.h"
 #include "io/Socket.h"
-#include "io/StreamBuffer.h"
 #include "phy/Pool.h"
 
 namespace vnl {
@@ -38,14 +38,13 @@ private:
 	int port;
 	Node* node;
 	
-	phy::taskid_t tid_reader;
 	phy::Condition upstate;
 	phy::Condition downstate;
 	
 	io::Socket sock;
 	io::StreamBuffer stream;
 	
-	std::unordered_map<uint64_t, send_t*> pending;
+	std::unordered_map<uint32_t, send_t*> pending;
 	std::vector<receive_t*> ackbuf;
 	phy::Pool<receive_t> sndbuf;
 	

@@ -88,12 +88,8 @@ void Engine::mainloop() {
 			if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
-				Object* obj = msg->dst;
-				Stream* stream = obj->get_stream(msg->sid);
+				Stream* stream = msg->dst->get_stream(msg->sid);
 				if(stream) {
-					if(stream->sid == 0) {
-						obj->process();
-					}
 					stream->push(msg);
 					pending.push_back(stream);
 				}
@@ -101,6 +97,9 @@ void Engine::mainloop() {
 		}
 		for(Stream* stream : pending) {
 			if(stream->queue.size()) {
+				if(stream->sid == 0) {
+					stream->obj->process();
+				}
 				Fiber* fiber;
 				if(stream->impl.pop(fiber)) {
 					fiber->notify(true);

@@ -16,23 +16,19 @@ public:
 		:	Node::Node(uplink),
 			sock(sock), stream(sock)
 	{
-		tid_reader = launch(std::bind(&Proxy::reader, this));
+		launch(std::bind(&Proxy::reader, this));
 	}
 	
 	~Proxy() {
-		sock->close();
-		cancel(tid_reader);
+		delete sock;
 	}
 	
 	virtual bool handle(phy::Message* msg) override {
-		if(Node::handle(msg)) {
-			return true;
-		}
 		if(msg->mid == receive_t::id) {
 			receive_t* packet = (receive_t*)msg;
 			packet->seq = nextseq++;
 			if(msg->src) {
-				pending[msg->src->mac | packet->seq] = packet;
+				pending[packet->seq] = packet;
 			}
 			write(packet);
 			return true;
@@ -41,7 +37,7 @@ public:
 			buf.putInt(acksig_t::id);
 			buf.putInt(ackbuf.size());
 			for(auto msg : ackbuf) {
-				buf.putLong(msg->dst->mac | msg->seq);
+				buf.putLong(msg->seq);
 				sndbuf.free(msg);
 			}
 			stream.flush();
@@ -89,10 +85,10 @@ public:
 					break;
 				}
 			} else if(mid == acksig_t::id) {
-				int32_t num = buf.getInt();
+				int num = buf.getInt();
 				for(int i = 0; i < num; ++i) {
-					uint64_t hash = buf.getLong();
-					auto iter = pending.find(hash);
+					uint32_t seq = buf.getInt();
+					auto iter = pending.find(seq);
 					if(iter != pending.end()) {
 						iter->second->ack();
 						pending.erase(iter);
@@ -102,15 +98,15 @@ public:
 				break;
 			}
 		}
+		sock->close();
 		exit();
 	}
 	
 protected:
 	io::Socket* sock;
 	io::StreamBuffer stream;
-	phy::taskid_t tid_reader;
 	
-	std::unordered_map<uint64_t, receive_t*> pending;
+	std::unordered_map<uint32_t, receive_t*> pending;
 	std::vector<send_t*> ackbuf;
 	phy::Pool<send_t> sndbuf;
 	
@@ -122,11 +118,7 @@ protected:
 TcpServer::TcpServer(Uplink* uplink, int port)
 	:	uplink(uplink), port(port)
 {
-	tid_acceptor = launch(std::bind(&TcpServer::acceptor, this));
-}
-
-TcpServer::~TcpServer() {
-	cancel(tid_acceptor);
+	launch(std::bind(&TcpServer::acceptor, this));
 }
 
 void TcpServer::acceptor() {

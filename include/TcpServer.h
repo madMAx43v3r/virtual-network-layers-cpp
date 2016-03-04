@@ -8,20 +8,19 @@
 #ifndef INCLUDE_TCPSERVER_H_
 #define INCLUDE_TCPSERVER_H_
 
+#include <io/SocketBuffer.h>
 #include <unordered_map>
 #include <vector>
 
 #include "Node.h"
 #include "Uplink.h"
 #include "io/Socket.h"
-#include "io/StreamBuffer.h"
 
 namespace vnl {
 
 class TcpServer : phy::Object {
 public:
 	TcpServer(Uplink* uplink, int port);
-	~TcpServer();
 	
 protected:
 	typedef phy::Signal<0x1fa3586f> acksig_t;
@@ -34,7 +33,6 @@ private:
 	int port;
 	Uplink* uplink;
 	io::Socket sock;
-	phy::taskid_t tid_acceptor;
 	
 };
 

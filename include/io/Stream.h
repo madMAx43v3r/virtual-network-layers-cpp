@@ -14,8 +14,10 @@ class Stream {
 public:
 	virtual ~Stream() {}
 	
-	virtual int read(void* dst, int len) = 0;
+	virtual bool read(void* dst, int len) = 0;
 	virtual bool write(const void* src, int len) = 0;
+	
+	virtual bool flush() = 0;
 	
 };
 

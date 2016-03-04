@@ -5,47 +5,43 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_IO_STREAMBUFFER_H_
-#define INCLUDE_IO_STREAMBUFFER_H_
+#ifndef INCLUDE_IO_SOCKETBUFFER_H_
+#define INCLUDE_IO_SOCKETBUFFER_H_
 
 #include <string.h>
 #include "io/Stream.h"
+#include "io/Socket.h"
 
 namespace vnl { namespace io {
 
-class StreamBuffer : public vnl::io::Stream {
+class SocketBuffer : public vnl::io::Stream {
 public:
-	StreamBuffer(Stream* stream, int N = 4096) : N(N), stream(stream), in(N), out(N) {
-		clear();
-	}
-	
-	void clear() {
+	SocketBuffer(Socket* sock, int size = 4096) : N(size), sock(sock), in(N), out(N) {
 		in.pos = 0;
 		in.left = 0;
 		out.pos = 0;
 		out.left = N;
 	}
 	
-	virtual int read(void* dst, int len) override {
-		int rem = len;
-		while(rem > 0) {
+	virtual bool read(void* dst, int len) override {
+		while(len > 0) {
 			if(in.left > 0) {
-				int n = std::min(in.left, rem);
+				int n = std::min(in.left, len);
 				memcpy(dst, in.buf+in.pos, n);
 				in.pos += n;
 				in.left -= n;
-				rem -= n;
+				len -= n;
 				dst = ((char*)dst) + n;
 			} else {
-				int res = stream->read(in.buf, N);
+				int res = sock->read(in.buf, N);
 				if(res <= 0) {
-					return res;
+					return false;
 				}
 				in.left = res;
 				in.pos = 0;
 			}
 		}
-		return len;
+		return true;
 	}
 	
 	virtual bool write(const void* src, int len) override {
@@ -65,9 +61,9 @@ public:
 		return true;
 	}
 	
-	bool flush() {
+	virtual bool flush() override {
 		if(out.left > 0) {
-			int res = stream->write(out.buf, out.left);
+			int res = sock->write(out.buf, out.left);
 			out.pos = 0;
 			out.left = N;
 			if(res <= 0) {
@@ -78,7 +74,7 @@ public:
 	}
 	
 protected:
-	Stream* stream;
+	Socket* sock;
 	
 	struct buf_t {
 		buf_t(int N) : pos(0), left(0) {
@@ -101,4 +97,4 @@ private:
 
 }}
 
-#endif /* INCLUDE_IO_STREAMBUFFER_H_ */
+#endif /* INCLUDE_IO_SOCKETBUFFER_H_ */

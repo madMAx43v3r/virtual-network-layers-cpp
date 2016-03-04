@@ -5,27 +5,25 @@
  *      Author: mad
  */
 
+#include <io/SocketBuffer.h>
 #include "TcpUplink.h"
 
-#include "io/StreamBuffer.h"
 #include "io/Buffer.h"
 
 namespace vnl {
 
 TcpUplink::TcpUplink(const std::string& endpoint, int port)
-	:	endpoint(endpoint), port(port), node(0), upstate(this), downstate(this), stream(&sock)
+	:	Uplink::Uplink(this),
+		endpoint(endpoint), port(port), node(0), upstate(this), downstate(this), stream(&sock)
 {
-	tid_reader = launch(std::bind(&TcpUplink::reader, this));
+	launch(std::bind(&TcpUplink::reader, this));
 }
 
 TcpUplink::~TcpUplink() {
-	cancel(tid_reader);
+	
 }
 
 bool TcpUplink::handle(phy::Message* msg) {
-	if(Uplink::handle(msg)) {
-		return true;
-	}
 	switch(msg->mid) {
 	case connect_t::id:
 		node = (Node*)msg->src;
@@ -43,7 +41,7 @@ bool TcpUplink::handle(phy::Message* msg) {
 		send_t* packet = (send_t*)msg;
 		packet->seq = nextseq++;
 		if(msg->src) {
-			pending[msg->src->mac | packet->seq] = packet;
+			pending[packet->seq] = packet;
 		}
 		upstate.check();
 		write(packet);
@@ -55,7 +53,7 @@ bool TcpUplink::handle(phy::Message* msg) {
 		buf.putInt(acksig_t::id);
 		buf.putInt(ackbuf.size());
 		for(auto msg : ackbuf) {
-			buf.putLong(msg->dst->mac | msg->seq);
+			buf.putLong(msg->seq);
 			sndbuf.free(msg);
 		}
 		stream.flush();
@@ -109,10 +107,10 @@ void TcpUplink::reader() {
 					break;
 				}
 			} else if(mid == acksig_t::id) {
-				int32_t num = buf.getInt();
+				int num = buf.getInt();
 				for(int i = 0; i < num; ++i) {
-					uint64_t hash = buf.getLong();
-					auto iter = pending.find(hash);
+					uint32_t seq = buf.getInt();
+					auto iter = pending.find(seq);
 					if(iter != pending.end()) {
 						iter->second->ack();
 						pending.erase(iter);
