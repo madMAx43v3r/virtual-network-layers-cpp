@@ -80,7 +80,6 @@ void Object::cancel(taskid_t task) {
 }
 
 void Object::mainloop() {
-	running = true;
 	while(true) {
 		Message* msg = queue.poll(10);
 		if(!msg) {

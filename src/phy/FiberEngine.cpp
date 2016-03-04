@@ -17,8 +17,8 @@ class BoostFiber : public Fiber {
 public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
-	BoostFiber(Engine* engine)
-		: 	Fiber::Fiber(engine), _call(boost::bind(&BoostFiber::entry, this, boost::arg<1>())) {}
+	BoostFiber(FiberEngine* engine)
+		: 	engine(engine), _call(boost::bind(&BoostFiber::entry, this, boost::arg<1>())) {}
 	
 	virtual void launch(const std::function<void()>& task_, uint32_t tid_) override {
 		task = task_;
@@ -41,7 +41,10 @@ public:
 		}
 	}
 	
-	virtual void acked() override {
+	virtual void acked(Message* msg) override {
+		if(msg->callback) {
+			cbs.push_back(msg);
+		}
 		pending--;
 		if(pending == 0 && waiting) {
 			call();
@@ -78,7 +81,7 @@ protected:
 			tid = 0;
 			yield();
 			task();
-			finished();
+			engine->finished(this);
 		}
 	}
 	
@@ -97,6 +100,12 @@ protected:
 	
 	void yield() {
 		(*_yield)();
+		if(cbs.size()) {
+			for(Message* msg : cbs) {
+				msg->callback(msg);
+			}
+			cbs.clear();
+		}
 	}
 	
 	void entry(fiber::yield_type& yield_) {
@@ -104,7 +113,9 @@ protected:
 		run();
 	}
 	
+	FiberEngine* engine;
 	std::function<void()> task;
+	std::vector<Message*> cbs;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
 	int pending = 0;
