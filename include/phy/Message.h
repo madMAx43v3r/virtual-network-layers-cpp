@@ -52,10 +52,6 @@ public:
 	
 	static const uint32_t id = MID;
 	
-private:
-	template<typename X>
-	Signal(Object* dst, X sid);
-	
 };
 
 template<typename T, uint32_t MID>
@@ -67,10 +63,6 @@ public:
 	static const uint32_t id = MID;
 	
 	T data;
-	
-private:
-	template<typename X>
-	Generic(const T& data, Object* dst, X sid);
 	
 };
 
@@ -92,10 +84,6 @@ public:
 	
 	T res;
 	P args;
-	
-private:
-	template<typename X>
-	Request(const P& args, Object* dst, X sid);
 	
 };
 

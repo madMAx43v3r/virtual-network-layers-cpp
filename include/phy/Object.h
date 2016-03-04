@@ -43,7 +43,7 @@ protected:
 	
 	template<typename T, typename R>
 	T request(R&& req, Object* dst) {
-		send(req, dst);
+		send(req, dst, false);
 		return req.res;
 	}
 	
