@@ -57,13 +57,16 @@ public:
 		return Util::hash64(generator());
 	}
 	
+	void finished(Fiber* fiber) {
+		avail.push_back(fiber);
+	}
+	
 	Fiber* current = 0;
 	
 	int debug = 0;
 	
 protected:
 	bool dorun = false;
-	std::mutex sync_mutex;
 	std::unordered_set<Fiber*> fibers;
 	std::vector<Fiber*> avail;
 	
@@ -82,6 +85,9 @@ protected:
 	virtual void wait(int millis) {
 		cond.wait_for(ulock, std::chrono::milliseconds(millis));
 	}
+	
+	virtual void impl_lock() {}
+	virtual void impl_unlock() {}
 	
 	virtual int timeout() = 0;
 	virtual Fiber* create() = 0;
@@ -102,10 +108,6 @@ private:
 		}
 		notify();
 		unlock();
-	}
-	
-	void finished(Fiber* fiber) {
-		avail.push_back(fiber);
 	}
 	
 private:

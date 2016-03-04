@@ -10,6 +10,7 @@
 #include <map>
 
 #include "phy/FiberEngine.h"
+#include "phy/ThreadEngine.h"
 #include "phy/Object.h"
 using namespace vnl::phy;
 
@@ -57,17 +58,11 @@ class Producer : public vnl::phy::Object {
 public:
 	Producer(Consumer* dst, int M) : dst(dst) {
 		for(int i = 0; i < M; ++i) {
-			tasks.push_back(launch(std::bind(&Producer::produce, this)));
-		}
-	}
-	~Producer() {
-		for(auto task : tasks) {
-			cancel(task);
+			launch(std::bind(&Producer::produce, this));
 		}
 	}
 protected:
 	Consumer* dst;
-	std::vector<taskid_t> tasks;
 	void produce() {
 		std::cout << vnl::System::currentTimeMillis() << " Started Producer " << mac << std::endl;
 		uint64_t pid = rand();
@@ -84,7 +79,7 @@ protected:
 };
 
 
-class ProcessorA : public FiberEngine {
+class ProcessorA : public ThreadEngine {
 public:
 	ProcessorA() : consumer(0) {
 		start(0);
@@ -98,7 +93,7 @@ public:
 	Consumer* consumer;
 };
 
-class ProcessorB : public FiberEngine {
+class ProcessorB : public ThreadEngine {
 public:
 	ProcessorB(Consumer* dst) : dst(dst), producer(0) {
 		start(0);

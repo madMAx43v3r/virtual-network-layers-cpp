@@ -52,7 +52,9 @@ void Engine::mainloop() {
 	if(core_id >= 0) {
 		Util::stick_to_core(core_id);
 	}
+	impl_lock();
 	run();
+	impl_unlock();
 	dorun = true;
 	notify();
 	std::vector<Stream*> pending;
@@ -78,24 +80,22 @@ void Engine::mainloop() {
 			unlock();
 		}
 		pending.clear();
+		impl_lock();
 		for(Message* msg : inbox) {
 			if(debug > 0) {
 				std::cout << std::dec << System::currentTimeMillis() << " Engine@" << this << " " << (msg->isack ? "ACK" : "RCV") << " " << msg->toString() << std::endl;
 			}
 			if(msg->isack) {
-				if(msg->callback) {
-					msg->callback(msg);
-				}
-				msg->impl->acked();
+				msg->impl->acked(msg);
 			} else {
 				Object* obj = msg->dst;
 				Stream* stream = obj->get_stream(msg->sid);
 				if(stream) {
-					stream->push(msg);
-					pending.push_back(stream);
 					if(stream->sid == 0) {
 						obj->process();
 					}
+					stream->push(msg);
+					pending.push_back(stream);
 				}
 			}
 		}
@@ -107,7 +107,13 @@ void Engine::mainloop() {
 				}
 			}
 		}
+		impl_unlock();
 	}
+	impl_lock();
+	for(Fiber* fiber : fibers) {
+		fiber->stop();
+	}
+	impl_unlock();
 }
 
 taskid_t Engine::launch(const std::function<void()>& func) {
@@ -136,10 +142,6 @@ void Engine::cancel(taskid_t task) {
 			delete fiber;
 		}
 	}
-}
-
-void Fiber::finished() {
-	engine->finished(this);
 }
 
 

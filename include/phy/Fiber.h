@@ -18,8 +18,6 @@ class Engine;
 
 class Fiber {
 public:
-	Fiber(Engine* engine) : engine(engine) {}
-	
 	virtual ~Fiber() {};
 	
 	virtual void start() = 0;
@@ -30,7 +28,7 @@ public:
 	
 	virtual void sent(Message* msg) = 0;
 	
-	virtual void acked() = 0;
+	virtual void acked(Message* msg) = 0;
 	
 	virtual bool poll(int millis) = 0;
 	
@@ -38,9 +36,6 @@ public:
 	
 	virtual void flush() = 0;
 	
-	void finished();
-	
-	Engine* engine;
 	uint32_t tid = 0;
 	
 };
