@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_IO_POLL_SERVER_H_
-#define INCLUDE_IO_POLL_SERVER_H_
+#ifndef INCLUDE_IO_SOCKET_POLLSERVER_H_
+#define INCLUDE_IO_SOCKET_POLLSERVER_H_
 
 #include <sys/poll.h>
 #include <vector>
@@ -17,10 +17,10 @@
 
 namespace vnl { namespace io { namespace poll {
 
-class Server : public vnl::io::socket::Server {
+class PollServer : public vnl::io::socket::Server {
 public:
-	Server();
-	~Server();
+	PollServer();
+	~PollServer();
 	
 	virtual void run() override {}
 	
@@ -41,6 +41,7 @@ protected:
 	virtual void notify() override;
 	virtual void wait(int millis) override;
 	
+private:
 	int update(key_t& key);
 	void expand();
 	
@@ -52,12 +53,9 @@ private:
 	std::vector<key_t> keys;
 	std::stack<int, std::vector<int> > empty;
 	
-	struct init;
-	static init initializer;
-	
 };
 
 
 }}}
 
-#endif /* INCLUDE_IO_POLL_SERVER_H_ */
+#endif /* INCLUDE_IO_SOCKET_POLLSERVER_H_ */

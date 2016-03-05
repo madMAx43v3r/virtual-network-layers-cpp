@@ -8,24 +8,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "io/poll/Server.h"
+#include "io/socket/PollServer.h"
 
 using namespace vnl::phy;
 
 namespace vnl { namespace io { namespace poll {
 
-struct Server::init {
-	init() {
-		if(instance == 0 || instance->_prio < 10) {
-			instance = new vnl::io::poll::Server();
-		}
-	}
-};
-
-Server::init Server::initializer;
-
-Server::Server() : N(4) {
-	_prio = 10;
+PollServer::PollServer() : N(4) {
 	fds.resize(N);
 	keys.resize(N);
 	for(int i = 0; i < N; ++i) {
@@ -39,12 +28,12 @@ Server::Server() : N(4) {
 	}
 }
 
-Server::~Server() {
+PollServer::~PollServer() {
 	::close(pipefd[0]);
 	::close(pipefd[1]);
 }
 
-bool Server::handle(Message* msg) {
+bool PollServer::handle(Message* msg) {
 	switch(msg->mid) {
 	case poll_t::id: {
 		poll_t* req = ((poll_t*)msg);
@@ -64,12 +53,12 @@ bool Server::handle(Message* msg) {
 	return false;
 }
 
-void Server::notify() {
+void PollServer::notify() {
 	char sig = 1;
 	::write(pipefd[1], &sig, 1) == 1;
 }
 
-void Server::wait(int millis) {
+void PollServer::wait(int millis) {
 	unlock();
 	int count = ::poll(&fds[0], N, millis);
 	for(int i = 0; i < N && count > 0; ++i) {
@@ -94,7 +83,7 @@ void Server::wait(int millis) {
 	lock();
 }
 
-int Server::update(key_t& key) {
+int PollServer::update(key_t& key) {
 	int& i = key.index;
 	if(i < 0) {
 		if(empty.empty()) {
@@ -115,7 +104,7 @@ int Server::update(key_t& key) {
 	return i;
 }
 
-void Server::expand() {
+void PollServer::expand() {
 	N *= 2;
 	fds.resize(N);
 	keys.resize(N);

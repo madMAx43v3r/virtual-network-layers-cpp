@@ -45,15 +45,14 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) override {
-		int rem = len;
-		while(rem > 0) {
+		while(len > 0) {
 			if(out.left > 0) {
-				int n = std::min(out.left, rem);
+				int n = std::min(out.left, len);
 				memcpy(out.buf+out.pos, src, n);
 				out.pos += n;
 				out.left -= n;
-				rem -= n;
-				src = ((char*)src) + n;
+				len -= n;
+				src = ((const char*)src) + n;
 			} else if(!flush()) {
 				return false;
 			}
@@ -62,8 +61,8 @@ public:
 	}
 	
 	virtual bool flush() override {
-		if(out.left > 0) {
-			int res = sock->write(out.buf, out.left);
+		if(out.pos > 0) {
+			int res = sock->write(out.buf, out.pos);
 			out.pos = 0;
 			out.left = N;
 			if(res <= 0) {

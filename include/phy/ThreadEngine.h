@@ -21,19 +21,12 @@ class ThreadFiber;
 class ThreadEngine : public Engine {
 protected:
 	
+	virtual void mainloop() override;
+	
 	virtual Fiber* create() override;
-	virtual int timeout() override;
-	
-	virtual void impl_lock() override {
-		mutex.lock();
-	}
-	
-	virtual void impl_unlock() override {
-		mutex.unlock();
-	}
 	
 private:
-	std::mutex mutex;
+	std::mutex sync;
 	
 	friend class ThreadFiber;
 	

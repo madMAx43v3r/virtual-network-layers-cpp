@@ -16,7 +16,7 @@ public:
 	class cancel_t {};
 	
 	ThreadFiber(ThreadEngine* engine)
-		: 	engine(engine), ulock(engine->mutex, std::defer_lock), thread(0)
+		: 	engine(engine), ulock(engine->sync, std::defer_lock), thread(0)
 	{
 	}
 	
@@ -32,7 +32,7 @@ public:
 	}
 	
 	virtual void start() override {
-		std::unique_lock<std::mutex> lock(engine->mutex, std::adopt_lock);
+		std::unique_lock<std::mutex> lock(engine->sync, std::adopt_lock);
 		thread = new std::thread(&ThreadFiber::run, this);
 		cond.wait(lock);
 	}
@@ -138,12 +138,65 @@ protected:
 };
 
 
-Fiber* ThreadEngine::create() {
-	return new ThreadFiber(this);
+void ThreadEngine::mainloop() {
+	local = this;
+	if(core_id >= 0) {
+		Util::stick_to_core(core_id);
+	}
+	sync.lock();
+	run();
+	sync.unlock();
+	dorun = true;
+	notify();
+	std::vector<Message*> inbox;
+	while(dorun) {
+		inbox.clear();
+		while(dorun) {
+			lock();
+			if(acks.empty() && queue.empty()) {
+				wait(1000);
+			} else {
+				Message* msg;
+				while(acks.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				while(queue.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				unlock();
+				break;
+			}
+			unlock();
+		}
+		sync.lock();
+		for(Message* msg : inbox) {
+			if(msg->isack) {
+				msg->impl->acked(msg);
+			} else {
+				Stream* stream = msg->dst->get_stream(msg->sid);
+				if(stream) {
+					stream->push(msg);
+					if(stream->sid == 0) {
+						stream->obj->process();
+					}
+					Fiber* fiber;
+					if(stream->impl.pop(fiber)) {
+						fiber->notify(true);
+					}
+				}
+			}
+		}
+		sync.unlock();
+	}
+	sync.lock();
+	for(Fiber* fiber : fibers) {
+		fiber->stop();
+	}
+	sync.unlock();
 }
 
-int ThreadEngine::timeout() {
-	return 1000;
+Fiber* ThreadEngine::create() {
+	return new ThreadFiber(this);
 }
 
 

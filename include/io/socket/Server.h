@@ -30,8 +30,6 @@ public:
 	typedef vnl::phy::Request<int, key_t, 0xd25c0daf> poll_t;
 	typedef vnl::phy::Generic<int, 0x98a4ad8b> signal_t;
 	
-	int _prio = 0;
-	
 };
 
 }}}

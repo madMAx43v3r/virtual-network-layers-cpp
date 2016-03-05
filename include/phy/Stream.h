@@ -26,13 +26,13 @@ public:
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
+	// thread safe
+	void receive(Message* msg);
+	
 	template<typename T>
 	void send(T&& msg, Object* dst);
 	
 	void send(Message* msg, Object* dst, bool async = false);
-	
-	// thread safe
-	void receive(Message* msg);
 	
 	Message* poll();
 	Message* poll(int millis);

@@ -6,9 +6,9 @@
  */
 
 #include <assert.h>
+#include <io/poll/PollServer.h>
 
 #include "io/Socket.h"
-#include "io/poll/Server.h"
 #include "phy/FiberEngine.h"
 #include "phy/ThreadEngine.h"
 #include "phy/Processor.h"

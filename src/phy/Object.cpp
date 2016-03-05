@@ -12,12 +12,9 @@
 namespace vnl { namespace phy {
 
 Object::Object() : engine(Engine::local), queue(this, 0), running(0) {
-	if(!engine) {
-		printf("ERROR: creating vnl::phy::Object without thread local engine.\n");
-		assert(Engine::local != 0);
-	}
+	assert(Engine::local);
 	mac = rand();
-	main = std::bind(&Object::mainloop, this);
+	launch(std::bind(&Object::mainloop, this));
 }
 
 void Object::receive(Message* msg) {
@@ -81,15 +78,13 @@ void Object::cancel(taskid_t task) {
 
 void Object::mainloop() {
 	while(true) {
-		Message* msg = queue.poll(10);
-		if(!msg) {
-			break;
-		}
-		if(!handle(msg)) {
-			msg->ack();
+		Message* msg = queue.poll();
+		if(msg) {
+			if(!handle(msg)) {
+				msg->ack();
+			}
 		}
 	}
-	running = false;
 }
 
 

@@ -20,6 +20,8 @@
 namespace vnl { namespace phy {
 
 class Engine;
+class FiberEngine;
+class ThreadEngine;
 class Fiber;
 
 struct taskid_t {
@@ -52,12 +54,10 @@ protected:
 		send(&msg, dst, false);
 	}
 	
+	// TODO: This should be in Engine.h
 	void send(Message* msg, Object* dst, bool async);
 	
 	void flush();
-	
-	void open(Stream* stream);
-	void close(Stream* stream);
 	
 	void yield();
 	void sleep(int millis);
@@ -76,19 +76,17 @@ protected:
 	}
 	
 private:
+	void open(Stream* stream);
+	void close(Stream* stream);
+	
 	void mainloop();
 	
-	void process() {
-		if(!running) {
-			running = true;
-			launch(main);
-		}
-	}
-	
 	Stream* get_stream(uint64_t sid) {
-		auto iter = streams.find(sid);
-		if(iter != streams.end()) {
-			return iter->second;
+		if(sid) {
+			auto iter = streams.find(sid);
+			if(iter != streams.end()) {
+				return iter->second;
+			}
 		}
 		return &queue;
 	}
@@ -99,14 +97,13 @@ private:
 	std::unordered_map<uint64_t, Stream*> streams;
 	Stream queue;
 	
-	std::function<void()> main;
-	bool running;
-	
 	int64_t last_yield = 0;
 	
 	friend class Message;
 	friend class Stream;
 	friend class Engine;
+	friend class FiberEngine;
+	friend class ThreadEngine;
 	
 };
 

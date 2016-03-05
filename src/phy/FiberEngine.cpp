@@ -126,6 +126,65 @@ protected:
 };
 
 
+void FiberEngine::mainloop() {
+	local = this;
+	if(core_id >= 0) {
+		Util::stick_to_core(core_id);
+	}
+	run();
+	dorun = true;
+	notify();
+	std::vector<Stream*> pending;
+	std::vector<Message*> inbox;
+	while(dorun) {
+		inbox.clear();
+		while(dorun) {
+			int to = timeout();
+			lock();
+			if(acks.empty() && queue.empty()) {
+				wait(to);
+			} else {
+				Message* msg;
+				while(acks.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				while(queue.pop(msg)) {
+					inbox.push_back(msg);
+				}
+				unlock();
+				break;
+			}
+			unlock();
+		}
+		pending.clear();
+		for(Message* msg : inbox) {
+			if(msg->isack) {
+				msg->impl->acked(msg);
+			} else {
+				Stream* stream = msg->dst->get_stream(msg->sid);
+				if(stream) {
+					stream->push(msg);
+					pending.push_back(stream);
+				}
+			}
+		}
+		for(Stream* stream : pending) {
+			if(stream->queue.size()) {
+				if(stream->sid == 0) {
+					stream->obj->process();
+				}
+				Fiber* fiber;
+				if(stream->impl.pop(fiber)) {
+					fiber->notify(true);
+				}
+			}
+		}
+	}
+	for(Fiber* fiber : fibers) {
+		fiber->stop();
+	}
+}
+
 Fiber* FiberEngine::create() {
 	return new BoostFiber(this);
 }

@@ -35,9 +35,29 @@ public:
 	void start(int core = -1);
 	void stop();
 	
+	void finished(Fiber* fiber) {
+		avail.push_back(fiber);
+	}
+	
+	Fiber* current = 0;
+	
+protected:
+	bool dorun = false;
+	vnl::util::simple_queue<Message*> queue;
+	vnl::util::simple_queue<Message*> acks;
+	std::unordered_set<Fiber*> fibers;
+	std::vector<Fiber*> avail;
+	int core_id;
+	
+	uint64_t rand() {
+		return Util::hash64(generator());
+	}
+	
 	void sent(Message* msg) {
-		msg->impl = current;
-		current->sent(msg);
+		if(msg->impl == 0) {
+			msg->impl = current;
+			current->sent(msg);
+		}
 	}
 	
 	bool poll(Stream* stream, int millis) {
@@ -51,24 +71,8 @@ public:
 	}
 	
 	taskid_t launch(const std::function<void()>& func);
+	
 	void cancel(taskid_t task);
-	
-	uint64_t rand() {
-		return Util::hash64(generator());
-	}
-	
-	void finished(Fiber* fiber) {
-		avail.push_back(fiber);
-	}
-	
-	Fiber* current = 0;
-	
-	int debug = 0;
-	
-protected:
-	bool dorun = false;
-	std::unordered_set<Fiber*> fibers;
-	std::vector<Fiber*> avail;
 	
 	void lock() {
 		mutex.lock();
@@ -86,14 +90,16 @@ protected:
 		cond.wait_for(ulock, std::chrono::milliseconds(millis));
 	}
 	
-	virtual void impl_lock() {}
-	virtual void impl_unlock() {}
+	virtual void mainloop() = 0;
 	
-	virtual int timeout() = 0;
 	virtual Fiber* create() = 0;
 	
+	friend class vnl::phy::Stream;
+	
 private:
-	void mainloop();
+	void entry() {
+		mainloop();
+	}
 	
 	void wait() {
 		cond.wait(ulock);
@@ -114,18 +120,12 @@ private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	std::unique_lock<std::mutex> ulock;
-	
 	std::default_random_engine generator;
-	vnl::util::simple_queue<Message*> queue;
-	vnl::util::simple_queue<Message*> acks;
 	
 	std::thread* thread;
-	int core_id;
-	
 	uint32_t nextid = 1;
 	
 	friend class vnl::phy::Object;
-	friend class vnl::phy::Fiber;
 	
 };
 

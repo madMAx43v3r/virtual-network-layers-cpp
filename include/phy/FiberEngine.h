@@ -16,8 +16,12 @@ namespace vnl { namespace phy {
 class FiberEngine : public Engine {
 protected:
 	
+	virtual void mainloop() override;
+	
 	virtual Fiber* create() override;
-	virtual int timeout() override;
+	
+private:
+	int timeout();
 	
 };
 
