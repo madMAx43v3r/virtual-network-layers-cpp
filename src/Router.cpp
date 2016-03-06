@@ -23,7 +23,7 @@ Router::~Router() {
 
 bool Router::handle(phy::Message* msg) {
 	Node* node = (Node*)msg->src;
-	uint64_t srcmac = node ? node->mac : 0;
+	uint64_t srcmac = node ? node->getMAC() : 0;
 	switch(msg->mid) {
 	case connect_t::id:
 		if(node) {
@@ -103,7 +103,6 @@ void Router::route(Packet* msg, uint64_t srcmac) {
 			msg->count++;
 			send_t* snd = sndbuf.alloc();
 			snd->parent = msg;
-			snd->sid = msg->sid;
 			snd->frame = msg->frame;
 			snd->callback = cb_snd;
 			phy::Object::send(snd, uplink, true);
@@ -118,7 +117,6 @@ void Router::forward(Packet* msg, Node* dst) {
 	msg->count++;
 	receive_t* rcv = rcvbuf.alloc();
 	rcv->parent = msg;
-	rcv->sid = msg->sid;
 	rcv->frame = msg->frame;
 	rcv->callback = cb_rcv;
 	phy::Object::send(rcv, dst, true);
@@ -131,15 +129,15 @@ void Router::callback(Packet* msg) {
 }
 
 void Router::callback_rcv(phy::Message* msg_) {
-	Packet* msg = (Packet*)msg_;
+	receive_t* msg = (receive_t*)msg_;
 	callback(msg);
-	rcvbuf.free((receive_t*)msg);
+	rcvbuf.free(msg);
 }
 
 void Router::callback_snd(phy::Message* msg_) {
-	Packet* msg = (Packet*)msg_;
+	send_t* msg = (send_t*)msg_;
 	callback(msg);
-	sndbuf.free((send_t*)msg);
+	sndbuf.free(msg);
 }
 
 void Router::fw_one(Packet* msg, std::vector<Node*>& list, bool anycast) {
@@ -165,7 +163,7 @@ void Router::fw_many(Packet* msg, std::vector<Node*>& list, uint64_t srcmac) {
 	int N = list.size();
 	for(int i = 0; i < N; ++i) {
 		Node* dst = list[i];
-		if(dst && dst->mac != srcmac) {
+		if(dst && dst->getMAC() != srcmac) {
 			forward(msg, dst);
 		}
 	}

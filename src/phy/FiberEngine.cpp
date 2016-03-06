@@ -5,11 +5,14 @@
  *      Author: mad
  */
 
+#include <string.h>
+
 #include <chrono>
 #include <boost/bind.hpp>
 #include <boost/coroutine/symmetric_coroutine.hpp>
 
 #include "phy/FiberEngine.h"
+#include "phy/Stream.h"
 
 namespace vnl { namespace phy {
 
@@ -81,7 +84,7 @@ protected:
 			tid = 0;
 			yield();
 			task();
-			engine->finished(this);
+			finished(engine, this);
 		}
 	}
 	
@@ -92,10 +95,10 @@ protected:
 	}
 	
 	void call() {
-		Fiber* tmp = engine->current;
-		engine->current = this;
+		Fiber* tmp = get_current(engine);
+		set_current(engine, this);
 		_call();
-		engine->current = tmp;
+		set_current(engine, tmp);
 	}
 	
 	void yield() {
@@ -128,51 +131,45 @@ protected:
 
 void FiberEngine::mainloop() {
 	local = this;
-	if(core_id >= 0) {
-		Util::stick_to_core(core_id);
-	}
 	run();
+	lock();
 	dorun = true;
 	notify();
-	std::vector<Stream*> pending;
+	unlock();
+	std::vector<Stream*> list;
 	std::vector<Message*> inbox;
 	while(dorun) {
 		inbox.clear();
 		while(dorun) {
 			int to = timeout();
 			lock();
-			if(acks.empty() && queue.empty()) {
-				wait(to);
-			} else {
-				Message* msg;
-				while(acks.pop(msg)) {
-					inbox.push_back(msg);
-				}
-				while(queue.pop(msg)) {
-					inbox.push_back(msg);
-				}
+			int nack = acks.size();
+			int nmsg = queue.size();
+			int total = nack + nmsg;
+			if(total) {
+				inbox.resize(total);
+				if(nack) { memcpy(&inbox[0], 	&acks[0], 	nack * sizeof(void*)); acks.clear(); }
+				if(nmsg) { memcpy(&inbox[nack], &queue[0], 	nmsg * sizeof(void*)); queue.clear(); }
 				unlock();
 				break;
+			} else {
+				wait(to);
 			}
 			unlock();
 		}
-		pending.clear();
+		list.clear();
 		for(Message* msg : inbox) {
 			if(msg->isack) {
+				assert(msg->impl);
 				msg->impl->acked(msg);
 			} else {
-				Stream* stream = msg->dst->get_stream(msg->sid);
-				if(stream) {
-					stream->push(msg);
-					pending.push_back(stream);
-				}
+				Stream* stream = msg->dst;
+				stream->push(msg);
+				list.push_back(stream);
 			}
 		}
-		for(Stream* stream : pending) {
-			if(stream->queue.size()) {
-				if(stream->sid == 0) {
-					stream->obj->process();
-				}
+		for(Stream* stream : list) {
+			if(!stream->queue.empty()) {
 				Fiber* fiber;
 				if(stream->impl.pop(fiber)) {
 					fiber->notify(true);

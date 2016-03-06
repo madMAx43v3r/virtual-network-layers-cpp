@@ -8,13 +8,11 @@
 #include <io/SocketBuffer.h>
 #include "TcpUplink.h"
 
-#include "io/Buffer.h"
-
 namespace vnl {
 
 TcpUplink::TcpUplink(const std::string& endpoint, int port)
 	:	Uplink::Uplink(this),
-		endpoint(endpoint), port(port), node(0), upstate(this), downstate(this), stream(&sock)
+		endpoint(endpoint), port(port), node(0), stream(&sock)
 {
 	launch(std::bind(&TcpUplink::reader, this));
 }
@@ -74,7 +72,7 @@ void TcpUplink::write(send_t* msg) {
 void TcpUplink::reader() {
 	auto callback = [this](phy::Message* msg) {
 		if(ackbuf.empty()) {
-			phy::Object::receive(new acksig_t(0, true));
+			receive(new acksig_t(true));
 		}
 		ackbuf.push_back((receive_t*)msg);
 	};
@@ -82,13 +80,7 @@ void TcpUplink::reader() {
 		sock.create();
 		sock.connect(endpoint, port);
 		stream.clear();
-		downstate.check();
-		for(const Address& addr : node->logical) {
-			// TODO
-		}
-		for(auto it : pending) {
-			write(it.second);
-		}
+		pending.clear();
 		upstate.set();
 		ByteBuffer buf(&stream);
 		while(true) {
@@ -98,10 +90,9 @@ void TcpUplink::reader() {
 			} else if(mid == receive_t::id) {
 				receive_t* msg = sndbuf.alloc();
 				if(msg->deserialize(&stream)) {
+					downstate.check();
 					msg->callback = callback;
-					if(node) {
-						phy::Object::send(msg, node, true);
-					}
+					phy::Object::send(msg, node, true);
 				} else {
 					sndbuf.free(msg);
 					break;

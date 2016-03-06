@@ -11,8 +11,10 @@
 #include <cstdlib>
 #include <stdint.h>
 #include <string.h>
+
 #include "util/types.h"
 #include "io/Stream.h"
+#include "phy/Memory.h"
 
 namespace vnl {
 
@@ -22,6 +24,7 @@ public:
 	
 	char get();
 	void get(void* buf, int len);
+	void get(phy::Page* buf, int len);
 	int8_t getChar();
 	double getDouble();
 	float getFloat();
@@ -31,6 +34,7 @@ public:
 	
 	void put(char b);
 	void put(const void* buf, int len);
+	void put(phy::Page* buf, int len);
 	void putChar(int8_t value);
 	void putDouble(double value);
 	void putFloat(float value);
@@ -66,6 +70,20 @@ void ByteBuffer::get(void* buf, int len) {
 	stream->read(buf, len);
 }
 
+void ByteBuffer::get(phy::Page* buf, int len) {
+	while(len) {
+		int n = std::min(len, phy::Page::size);
+		get(buf->mem, n);
+		len -= n;
+		if(len) {
+			if(!buf->next) {
+				buf->next = phy::Page::alloc();
+			}
+			buf = buf->next;
+		}
+	}
+}
+
 int8_t ByteBuffer::getChar() {
 	return read<int8_t>();
 }
@@ -97,6 +115,15 @@ void ByteBuffer::put(char b) {
 
 void ByteBuffer::put(const void* buf, int len) {
 	stream->write(buf, len);
+}
+
+void ByteBuffer::put(phy::Page* buf, int len) {
+	while(len) {
+		int n = std::min(len, phy::Page::size);
+		put(buf->mem, n);
+		len -= n;
+		buf = buf->next;
+	}
 }
 
 void ByteBuffer::putChar(int8_t value) {

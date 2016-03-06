@@ -28,7 +28,7 @@ public:
 	std::unordered_set<Address> logical;
 	
 protected:
-	void send(const Frame& frame, uint64_t sid = 0);
+	void send(const Frame& frame);
 	
 	void configure(const Address& addr);
 	void unregister(const Address& addr);

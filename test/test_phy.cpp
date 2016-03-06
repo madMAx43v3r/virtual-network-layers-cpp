@@ -26,7 +26,15 @@ public:
 		last = vnl::System::currentTimeMillis();
 	}
 	
-	typedef Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> count_seq_t;
+	class count_seq_t : public Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> {
+	public:
+		count_seq_t(const std::pair<uint64_t, uint64_t>& data, bool async = false) : Generic(data, async) {}
+		virtual std::string toString() override {
+			std::ostringstream ss;
+			ss << Message::toString() << " pid=" << data.first << " seq=" << data.second;
+			return ss.str();
+		}
+	};
 	
 protected:
 	void count_seq(Message* msg, std::pair<uint64_t, uint64_t> data) {
@@ -67,7 +75,7 @@ protected:
 		std::cout << vnl::System::currentTimeMillis() << " Started Producer " << mac << std::endl;
 		uint64_t pid = rand();
 		uint64_t seq = 0;
-		Stream stream(this);
+		Stream stream;
 		while(true) {
 			if(usestreams) {
 				stream.send(Consumer::count_seq_t(std::make_pair(pid, ++seq)), dst);
@@ -82,12 +90,13 @@ protected:
 class ProcessorA : public FiberEngine {
 public:
 	ProcessorA() : consumer(0) {
-		start(0);
+		start();
 	}
 	~ProcessorA() {
 		delete consumer;
 	}
 	virtual void run() override {
+		vnl::Util::stick_to_core(0);
 		consumer = new Consumer();
 	}
 	Consumer* consumer;
@@ -96,12 +105,13 @@ public:
 class ProcessorB : public FiberEngine {
 public:
 	ProcessorB(Consumer* dst) : dst(dst), producer(0) {
-		start(0);
+		start();
 	}
 	~ProcessorB() {
 		delete producer;
 	}
 	virtual void run() override {
+		vnl::Util::stick_to_core(1);
 		producer = new Producer(dst, 10);
 	}
 	Producer* producer;
@@ -115,6 +125,7 @@ int main() {
 	ProcessorB* procB = new ProcessorB(procA->consumer);
 	
 	std::this_thread::sleep_for(std::chrono::seconds(1*60));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	
 	procA->stop();
 	procB->stop();

@@ -16,7 +16,7 @@ Object::Object(Uplink* uplink) : Node::Node(uplink) {
 bool Object::handle(phy::Message* msg) {
 	if(msg->mid == receive_t::id) {
 		const Frame& frame = ((receive_t*)msg)->frame;
-		switch(frame.flags) {
+		switch(frame.flags & 0xF0) {
 		case Frame::REGISTER:
 			registered(frame.src, frame.dst);
 			msg->ack();

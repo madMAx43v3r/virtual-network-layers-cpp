@@ -5,27 +5,38 @@
  *      Author: mad
  */
 
+#include <assert.h>
+
 #include "phy/Engine.h"
+#include "phy/Stream.h"
+#include "phy/Fiber.h"
 
 namespace vnl { namespace phy {
 
 thread_local Engine* Engine::local = 0;
 
-Engine::Engine() : ulock(mutex), thread(0), core_id(-1) {
+Engine::Engine() : ulock(mutex), thread(0) {
+	ulock.unlock();
 	static std::atomic<int> counter;
 	generator.seed(Util::hash64(counter++, System::nanoTime()));
-	ulock.unlock();
+	acks.reserve(1024);
+	queue.reserve(1024);
+	fibers.reserve(1024);
+	avail.reserve(1024);
+	pages.reserve(1024);
 }
 
 Engine::~Engine() {
 	for(Fiber* fiber : fibers) {
 		delete fiber;
 	}
+	for(Page* page : pages) {
+		delete page;
+	}
 }
 
-void Engine::start(int core) {
+void Engine::start() {
 	if(!thread) {
-		core_id = core;
 		lock();
 		thread = new std::thread(&Engine::entry, this);
 		while(!dorun) {
@@ -45,6 +56,27 @@ void Engine::stop() {
 		delete thread;
 		thread = 0;
 	}
+}
+
+void Engine::send(Message* msg, Stream* dst, bool async) {
+	assert(msg->impl == 0);
+	assert(msg->isack == false);
+	assert(current);
+	msg->dst = dst;
+	msg->async = async;
+	msg->impl = current;
+	dst->engine->receive(msg);
+	current->sent(msg);
+}
+
+bool Engine::poll(Stream* stream, int millis) {
+	stream->impl.push(current);
+	bool res = current->poll(millis);
+	return res;
+}
+
+void Engine::flush() {
+	current->flush();
 }
 
 taskid_t Engine::launch(const std::function<void()>& func) {
@@ -75,7 +107,24 @@ void Engine::cancel(taskid_t task) {
 	}
 }
 
+Page* Engine::get_page() {
+	Page* page;
+	if(pages.size()) {
+		page = pages.back();
+		pages.pop_back();
+	} else {
+		page = new Page(this);
+	}
+	return page;
+}
 
+void Engine::free_page(Page* page) {
+	if(pages.size() < 1024) {
+		pages.push_back(page);
+	} else {
+		delete page;
+	}
+}
 
 
 

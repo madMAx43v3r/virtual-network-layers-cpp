@@ -9,7 +9,7 @@
 #define INCLUDE_IO_SOCKET_SERVER_H_
 
 #include "phy/FiberEngine.h"
-#include "phy/Message.h"
+#include "phy/Object.h"
 
 namespace vnl { namespace io { namespace socket {
 
@@ -18,10 +18,9 @@ public:
 	static Server* instance;
 	
 	struct key_t {
-		key_t() : obj(0), sin(0), sout(0), fd(-1), events(0), index(-1) {}
-		vnl::phy::Object* obj;
-		uint64_t sin;
-		uint64_t sout;
+		key_t() : sin(0), sout(0), fd(-1), events(0), index(-1) {}
+		vnl::phy::Stream* sin;
+		vnl::phy::Stream* sout;
 		int fd;
 		int events;
 		int index;

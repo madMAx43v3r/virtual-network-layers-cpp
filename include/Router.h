@@ -13,7 +13,7 @@
 #include <functional>
 
 #include "Uplink.h"
-#include "phy/Pool.h"
+#include "phy/Memory.h"
 
 namespace vnl {
 

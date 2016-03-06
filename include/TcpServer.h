@@ -15,6 +15,7 @@
 #include "Node.h"
 #include "Uplink.h"
 #include "io/Socket.h"
+#include "io/SocketBuffer.h"
 
 namespace vnl {
 

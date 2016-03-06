@@ -14,9 +14,9 @@
 
 namespace vnl { namespace io {
 
-class Socket {
+class Socket : phy::Stream {
 public:
-	Socket(vnl::phy::Object* obj);
+	Socket();
 	
 	int create();
 	int close();
@@ -30,13 +30,11 @@ public:
 	
 protected:
 	bool poll(phy::Stream& stream, int flag);
-	void update(phy::Stream& stream);
+	void update();
 	
 private:
 	vnl::io::socket::Server* server;
 	vnl::io::socket::Server::key_t key;
-	
-	vnl::phy::Object* object;
 	
 	phy::Stream in;
 	phy::Stream out;

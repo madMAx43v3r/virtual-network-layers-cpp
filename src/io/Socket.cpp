@@ -26,11 +26,10 @@ namespace vnl { namespace io {
 
 Server* Server::instance = 0;
 
-Socket::Socket(vnl::phy::Object* obj) : server(Server::instance), object(obj), in(obj), out(obj) {
+Socket::Socket() : server(Server::instance) {
 	assert(Server::instance != 0);
-	key.obj = obj;
-	key.sin = in.sid;
-	key.sout = out.sid;
+	key.sin = &in;
+	key.sout = &out;
 }
 
 int Socket::create() {
@@ -39,9 +38,10 @@ int Socket::create() {
 }
 
 int Socket::close() {
-	key.obj = 0;
-	update(in);
-	return ::close(key.fd);
+	int fd = key.fd;
+	key.fd = -1;
+	update();
+	return ::close(fd);
 }
 
 int Socket::connect(const std::string& endpoint, int port) {
@@ -90,7 +90,7 @@ Socket* Socket::accept() {
 			}
 		} else {
 			fcntl(fd, F_SETFL, O_NONBLOCK);
-			Socket* sock = new Socket(object);
+			Socket* sock = new Socket();
 			sock->key.fd = fd;
 			return sock;
 		}
@@ -127,14 +127,14 @@ bool Socket::write(const void* buf, int len) {
 
 bool Socket::poll(phy::Stream& stream, int flag) {
 	key.events |= flag;
-	update(stream);
-	int err = stream.read<Server::signal_t>().data;
+	update();
+	int err = ((Server::signal_t*)stream.poll())->data;
 	key.events &= ~flag;
 	return err == 0;
 }
 
-void Socket::update(phy::Stream& stream) {
-	key.index = stream.request<int>(Server::poll_t(key), server);
+void Socket::update() {
+	key.index = request<int>(Server::poll_t(key), server);
 }
 
 

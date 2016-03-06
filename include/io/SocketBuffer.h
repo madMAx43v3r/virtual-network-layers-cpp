@@ -17,6 +17,10 @@ namespace vnl { namespace io {
 class SocketBuffer : public vnl::io::Stream {
 public:
 	SocketBuffer(Socket* sock, int size = 4096) : N(size), sock(sock), in(N), out(N) {
+		clear();
+	}
+	
+	void clear() {
 		in.pos = 0;
 		in.left = 0;
 		out.pos = 0;
@@ -32,6 +36,13 @@ public:
 				in.left -= n;
 				len -= n;
 				dst = ((char*)dst) + n;
+			} else if(len >= N) {
+				int res = sock->read(dst, len);
+				if(res <= 0) {
+					return false;
+				}
+				len -= res;
+				dst = ((char*)dst) + res;
 			} else {
 				int res = sock->read(in.buf, N);
 				if(res <= 0) {
@@ -45,6 +56,17 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) override {
+		if(len >= N) {
+			if(out.pos && !flush()) {
+				return false;
+			}
+			int res = sock->write(src, len);
+			if(res <= 0) {
+				return false;
+			} else {
+				return true;
+			}
+		}
 		while(len > 0) {
 			if(out.left > 0) {
 				int n = std::min(out.left, len);

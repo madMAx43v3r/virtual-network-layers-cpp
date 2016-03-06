@@ -30,9 +30,8 @@ class PacketTmpl : public Packet {
 public:
 	PacketTmpl() {}
 	
-	PacketTmpl(const Frame& frame_, uint64_t sid_ = 0, bool async_ = false) {
+	PacketTmpl(const Frame& frame_, bool async_ = false) {
 		mid = id;
-		sid = sid_;
 		async = async_;
 		frame = frame_;
 	}
@@ -40,7 +39,6 @@ public:
 	bool serialize(vnl::io::Stream* stream) {
 		ByteBuffer out(stream);
 		out.putInt(seq);
-		out.putLong(sid);
 		out.error |= !frame.serialize(stream);
 		return !out.error;
 	}
@@ -48,7 +46,6 @@ public:
 	bool deserialize(vnl::io::Stream* stream) {
 		ByteBuffer in(stream);
 		seq = in.getInt();
-		sid = in.getLong();
 		in.error |= !frame.deserialize(stream);
 		return !in.error && Message::mid == id;
 	}

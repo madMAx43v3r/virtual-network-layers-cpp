@@ -6,7 +6,7 @@
  */
 
 #include "TcpServer.h"
-#include "phy/Pool.h"
+#include "phy/Memory.h"
 
 namespace vnl {
 
@@ -58,11 +58,10 @@ public:
 	void reader() {
 		auto callback = [this](phy::Message* msg) {
 			if(ackbuf.empty()) {
-				phy::Object::receive(new acksig_t(0, true));
+				receive(new acksig_t(true));
 			}
 			ackbuf.push_back((send_t*)msg);
 		};
-		stream.clear();
 		ByteBuffer buf(&stream);
 		while(true) {
 			uint32_t mid = buf.getInt();
@@ -72,14 +71,16 @@ public:
 				uint64_t srcmac = buf.getLong();
 				send_t* msg = sndbuf.alloc();
 				if(msg->deserialize(&stream)) {
-					const Frame& frame = msg->frame;
+					switch(msg->frame.flags & 0xF0) {
+					case Frame::REGISTER:
+						logical.insert(msg->frame.dst);
+						break;
+					case Frame::UNREGISTER:
+						logical.erase(msg->frame.dst);
+						break;
+					}
 					msg->callback = callback;
 					phy::Object::send(msg, uplink, true);
-					if(frame.flags & Frame::REGISTER) {
-						logical.insert(frame.dst);
-					} else if(frame.flags & Frame::UNREGISTER) {
-						logical.erase(frame.dst);
-					}
 				} else {
 					sndbuf.free(msg);
 					break;
@@ -104,7 +105,7 @@ public:
 	
 protected:
 	io::Socket* sock;
-	io::StreamBuffer stream;
+	io::SocketBuffer stream;
 	
 	std::unordered_map<uint32_t, receive_t*> pending;
 	std::vector<send_t*> ackbuf;

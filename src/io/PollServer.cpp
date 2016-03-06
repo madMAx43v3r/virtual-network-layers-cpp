@@ -21,7 +21,6 @@ PollServer::PollServer() : N(4) {
 		empty.push(i);
 	}
 	if(::pipe2(pipefd, O_NONBLOCK) == 0) {
-		pipekey.obj = this;
 		pipekey.fd = pipefd[0];
 		pipekey.events = POLLIN;
 		update(pipekey);
@@ -65,15 +64,13 @@ void PollServer::wait(int millis) {
 		pollfd_t& pfd = fds[i];
 		if(pfd.revents) {
 			const key_t& key = keys[i];
-			if(key.obj) {
+			if(key.fd >= 0) {
 				int err = pfd.err();
 				if(pfd.revents & POLLIN) {
-					signal_t* msg = new signal_t(err, key.sin, true);
-					key.obj->receive(msg);
+					key.sin->receive(new signal_t(err, true));
 				}
 				if(pfd.revents & POLLOUT) {
-					signal_t* msg = new signal_t(err, key.sout, true);
-					key.obj->receive(msg);
+					key.sout->receive(new signal_t(err, true));
 				}
 			}
 			pfd.events = 0;
@@ -91,7 +88,7 @@ int PollServer::update(key_t& key) {
 		}
 		i = empty.top(); empty.pop();
 	}
-	if(key.obj) {
+	if(key.fd >= 0) {
 		fds[i].fd = key.fd;
 		fds[i].events = key.events;
 		keys[i] = key;

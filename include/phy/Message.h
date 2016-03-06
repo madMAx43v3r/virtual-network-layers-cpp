@@ -13,11 +13,9 @@
 #include <sstream>
 #include <functional>
 
-#include "io/Stream.h"
-
 namespace vnl { namespace phy {
 
-class Object;
+class Stream;
 class Fiber;
 
 class Message {
@@ -25,17 +23,16 @@ public:
 	Message() {}
 	virtual ~Message() {}
 	
-	Message(uint32_t mid, uint64_t sid = 0, bool async = false)
-		:	mid(mid), sid(sid), async(async) {}
+	Message(uint32_t mid, bool async = false)
+		:	mid(mid), async(async) {}
 	
 	virtual std::string toString();
 	
 	void ack();
 	
-	Object* src = 0;
-	Object* dst = 0;
 	uint32_t mid = 0;
-	uint64_t sid = 0;
+	Stream* src = 0;
+	Stream* dst = 0;
 	Fiber* impl = 0;
 	bool isack = false;
 	bool async = false;
@@ -48,7 +45,7 @@ template<uint32_t MID>
 class Signal : public Message {
 public:
 	Signal() : Message() {}
-	Signal(uint64_t sid, bool async = false) : Message(MID, sid, async) {}
+	Signal(bool async) : Message(MID, async) {}
 	
 	static const uint32_t id = MID;
 	
@@ -58,7 +55,7 @@ template<typename T, uint32_t MID>
 class Generic : public Message {
 public:
 	Generic() : Message() {}
-	Generic(const T& data, uint64_t sid = 0, bool async = false) : Message(MID, sid, async), data(data) {}
+	Generic(const T& data, bool async = false) : Message(MID, async), data(data) {}
 	
 	static const uint32_t id = MID;
 	
@@ -70,7 +67,7 @@ template<typename T, typename P, uint32_t MID>
 class Request : public Message {
 public:
 	Request() : Message() {}
-	Request(const P& args, uint64_t sid = 0, bool async = false) : Message(MID, sid, async), args(args) {}
+	Request(const P& args, bool async = false) : Message(MID, async), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;

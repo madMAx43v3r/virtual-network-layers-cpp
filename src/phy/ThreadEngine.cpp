@@ -6,8 +6,10 @@
  */
 
 #include <thread>
+#include <string.h>
 
 #include "phy/ThreadEngine.h"
+#include "phy/Stream.h"
 
 namespace vnl { namespace phy {
 
@@ -32,9 +34,7 @@ public:
 	}
 	
 	virtual void start() override {
-		std::unique_lock<std::mutex> lock(engine->sync, std::adopt_lock);
 		thread = new std::thread(&ThreadFiber::run, this);
-		cond.wait(lock);
 	}
 	
 	virtual void stop() override {
@@ -64,7 +64,7 @@ public:
 		if(docancel) {
 			throw cancel_t();
 		}
-		engine->current = this;
+		set_current(engine, this);
 		check_cbs();
 		return res;
 	}
@@ -84,30 +84,30 @@ public:
 	
 protected:
 	void run() {
+		Engine::local = engine;
 		ulock.lock();
-		engine->current = this;
-		notify();
+		set_current(engine, this);
 		try {
 			while(true) {
-				tid = 0;
-				wait();
 				task();
-				engine->finished(this);
+				tid = 0;
+				finished(engine, this);
+				wait();
 			}
 		} catch(cancel_t&) {}
-		engine->current = 0;
+		set_current(engine, 0);
 		ulock.unlock();
 	}
 	
 	void wait() {
-		engine->current = 0;
+		set_current(engine, 0);
 		waiting = true;
 		cond.wait(ulock);
 		waiting = false;
 		if(docancel) {
 			throw cancel_t();
 		}
-		engine->current = this;
+		set_current(engine, this);
 		check_cbs();
 	}
 	
@@ -140,31 +140,29 @@ protected:
 
 void ThreadEngine::mainloop() {
 	local = this;
-	if(core_id >= 0) {
-		Util::stick_to_core(core_id);
-	}
 	sync.lock();
 	run();
-	sync.unlock();
+	lock();
 	dorun = true;
 	notify();
+	unlock();
 	std::vector<Message*> inbox;
 	while(dorun) {
+		sync.unlock();
 		inbox.clear();
 		while(dorun) {
 			lock();
-			if(acks.empty() && queue.empty()) {
-				wait(1000);
-			} else {
-				Message* msg;
-				while(acks.pop(msg)) {
-					inbox.push_back(msg);
-				}
-				while(queue.pop(msg)) {
-					inbox.push_back(msg);
-				}
+			int nack = acks.size();
+			int nmsg = queue.size();
+			int total = nack + nmsg;
+			if(total) {
+				inbox.resize(total);
+				if(nack) { memcpy(&inbox[0], 	&acks[0], 	nack * sizeof(void*)); acks.clear(); }
+				if(nmsg) { memcpy(&inbox[nack], &queue[0], 	nmsg * sizeof(void*)); queue.clear(); }
 				unlock();
 				break;
+			} else {
+				wait(1000);
 			}
 			unlock();
 		}
@@ -173,22 +171,15 @@ void ThreadEngine::mainloop() {
 			if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
-				Stream* stream = msg->dst->get_stream(msg->sid);
-				if(stream) {
-					stream->push(msg);
-					if(stream->sid == 0) {
-						stream->obj->process();
-					}
-					Fiber* fiber;
-					if(stream->impl.pop(fiber)) {
-						fiber->notify(true);
-					}
+				Stream* stream = msg->dst;
+				stream->push(msg);
+				Fiber* fiber;
+				if(stream->impl.pop(fiber)) {
+					fiber->notify(true);
 				}
 			}
 		}
-		sync.unlock();
 	}
-	sync.lock();
 	for(Fiber* fiber : fibers) {
 		fiber->stop();
 	}

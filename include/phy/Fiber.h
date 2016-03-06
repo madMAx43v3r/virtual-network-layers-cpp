@@ -10,11 +10,9 @@
 
 #include <functional>
 
-#include "phy/Message.h"
+#include "phy/Engine.h"
 
 namespace vnl { namespace phy {
-
-class Engine;
 
 class Fiber {
 public:
@@ -37,6 +35,19 @@ public:
 	virtual void flush() = 0;
 	
 	uint32_t tid = 0;
+	
+protected:
+	Fiber* get_current(Engine* engine) {
+		return engine->current;
+	}
+	
+	void set_current(Engine* engine, Fiber* fiber) {
+		engine->current = fiber;
+	}
+	
+	void finished(Engine* engine, Fiber* fiber) {
+		engine->finished(fiber);
+	}
 	
 };
 

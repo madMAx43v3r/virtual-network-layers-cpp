@@ -15,15 +15,24 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "util/simple_queue.h"
 #include "phy/Message.h"
-#include "phy/Stream.h"
-#include "phy/Object.h"
-#include "phy/Fiber.h"
 #include "Runnable.h"
 #include "System.h"
+#include "Util.h"
 
 namespace vnl { namespace phy {
+
+class Page;
+class Fiber;
+class Stream;
+class Object;
+
+struct taskid_t {
+	uint64_t id;
+	Fiber* impl;
+	taskid_t() : id(0), impl(0) {}
+};
+
 
 class Engine : public vnl::Runnable {
 public:
@@ -32,43 +41,27 @@ public:
 	
 	static thread_local Engine* local;
 	
-	void start(int core = -1);
+	void start();
 	void stop();
-	
-	void finished(Fiber* fiber) {
-		avail.push_back(fiber);
-	}
-	
-	Fiber* current = 0;
 	
 protected:
 	bool dorun = false;
-	vnl::util::simple_queue<Message*> queue;
-	vnl::util::simple_queue<Message*> acks;
+	
+	std::vector<Message*> queue;
+	std::vector<Message*> acks;
+	
 	std::unordered_set<Fiber*> fibers;
 	std::vector<Fiber*> avail;
-	int core_id;
 	
 	uint64_t rand() {
 		return Util::hash64(generator());
 	}
 	
-	void sent(Message* msg) {
-		if(msg->impl == 0) {
-			msg->impl = current;
-			current->sent(msg);
-		}
-	}
+	void send(Message* msg, Stream* dst, bool async);
 	
-	bool poll(Stream* stream, int millis) {
-		stream->impl.push(current);
-		bool res = current->poll(millis);
-		return res;
-	}
+	bool poll(Stream* stream, int millis);
 	
-	void flush() {
-		current->flush();
-	}
+	void flush();
 	
 	taskid_t launch(const std::function<void()>& func);
 	
@@ -94,8 +87,6 @@ protected:
 	
 	virtual Fiber* create() = 0;
 	
-	friend class vnl::phy::Stream;
-	
 private:
 	void entry() {
 		mainloop();
@@ -108,13 +99,21 @@ private:
 	void receive(Message* msg) {
 		lock();
 		if(msg->isack) {
-			acks.push(msg);
+			acks.push_back(msg);
 		} else {
-			queue.push(msg);
+			queue.push_back(msg);
 		}
 		notify();
 		unlock();
 	}
+	
+	void finished(Fiber* fiber) {
+		avail.push_back(fiber);
+	}
+	
+	Page* get_page();
+	
+	void free_page(Page* page);
 	
 private:
 	std::mutex mutex;
@@ -123,11 +122,20 @@ private:
 	std::default_random_engine generator;
 	
 	std::thread* thread;
-	uint32_t nextid = 1;
+	uint64_t nextid = 1;
 	
-	friend class vnl::phy::Object;
+	Fiber* current = 0;
+	
+	std::vector<Page*> pages;
+	
+	friend class Message;
+	friend class Stream;
+	friend class Object;
+	friend class Fiber;
+	friend class Page;
 	
 };
+
 
 
 }}

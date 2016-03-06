@@ -8,6 +8,7 @@
 #ifndef INCLUDE_FRAME_H_
 #define INCLUDE_FRAME_H_
 
+#include <phy/Memory.h>
 #include <vector>
 
 #include "Address.h"
@@ -26,11 +27,12 @@ public:
 	static const char REGISTER = 0x10 | MULTICAST;
 	static const char UNREGISTER = 0x20 | MULTICAST;
 	
-	char flags;
 	Address src;
 	Address dst;
+	phy::Page* data;
 	int32_t size;
-	char* data;
+	
+	char flags;
 	
 	Frame() {
 		flags = NONE;
@@ -45,7 +47,7 @@ public:
 		this->data = 0;
 	}
 	
-	Frame(char flags, const Address& dst, char* data, int32_t size) {
+	Frame(char flags, const Address& dst, phy::Page* data, int32_t size) {
 		this->flags = flags;
 		this->dst = dst;
 		this->size = size;
@@ -79,7 +81,7 @@ public:
 		dst.B = buf.getLong();
 		size = buf.getInt();
 		if(size) {
-			data = new char[size];
+			data = phy::Page::alloc();
 			buf.get(data, size);
 		}
 		return !buf.error;

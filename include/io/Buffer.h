@@ -9,64 +9,63 @@
 #define INCLUDE_IO_BUFFER_H_
 
 #include "io/Stream.h"
+#include "phy/Memory.h"
 
 namespace vnl { namespace io {
 
 class Buffer : public vnl::io::Stream {
 public:
-	Buffer(int N = 1024) : N(N), pos(0), limit(0) {
-		buf = new char[N];
-	}
+	Buffer() : Buffer(phy::Page::alloc()) {}
 	
-	~Buffer() {
-		delete [] buf;
+	Buffer(phy::Page* data) : first(data), pos(0) {
+		buf = first;
 	}
-	
-	Buffer(const Buffer&) = delete;
-	Buffer& operator=(const Buffer&) = delete;
 	
 	void reset() {
+		buf = first;
 		pos = 0;
-		limit = 0;
 	}
 	
 	void flip() {
-		limit = pos;
+		buf = first;
 		pos = 0;
 	}
 	
-	int size() {
-		return limit;
-	}
-	
-	void* ptr() {
-		return buf;
-	}
-	
-	void* copy() {
-		void* b = new char[limit];
-		memcpy(b, buf, limit);
-		return b;
-	}
-	
-	void* write(int len) {
-		if(N-pos < len) {
-			resize(pos+len);
-		}
-		void* addr = buf+pos;
-		pos += len;
-		return addr;
-	}
-	
 	virtual bool read(void* dst, int len) override {
-		int n = std::min(limit-pos, len);
-		memcpy(dst, buf+pos, n);
-		pos += n;
-		return n == len;
+		while(len) {
+			int left = phy::Page::size - pos;
+			if(!left) {
+				if(!buf->next) {
+					return false;
+				}
+				buf = buf->next;
+				left = phy::Page::size;
+			}
+			int n = std::min(len, left);
+			memcpy(dst, buf->mem + pos, n);
+			pos += n;
+			len -= n;
+			dst = (char*)dst + n;
+		}
+		return true;
 	}
 	
 	virtual bool write(const void* src, int len) override {
-		memcpy(write(len), src, len);
+		while(len) {
+			int left = phy::Page::size - pos;
+			if(!left) {
+				if(!buf->next) {
+					buf->next = phy::Page::alloc();
+				}
+				buf = buf->next;
+				left = phy::Page::size;
+			}
+			int n = std::min(len, left);
+			memcpy(buf->mem + pos, src, n);
+			pos += n;
+			len -= n;
+			src = (const char*)src + n;
+		}
 		return true;
 	}
 	
@@ -74,20 +73,10 @@ public:
 		return true;
 	}
 	
-protected:
-	void resize(int n) {
-		char* old = buf;
-		buf = new char[n];
-		memcpy(buf, old, N);
-		delete [] old;
-		N = n;
-	}
-	
 private:
-	int N;
-	char* buf;
+	phy::Page* buf;
+	phy::Page* first;
 	int pos;
-	int limit;
 	
 };
 

@@ -21,9 +21,9 @@ Node::~Node() {
 	
 }
 
-void Node::send(const Frame& frame, uint64_t sid) {
+void Node::send(const Frame& frame) {
 	if(uplink) {
-		phy::Object::send(send_t(frame, sid), uplink);
+		phy::Object::send(send_t(frame, mac), uplink);
 	}
 }
 

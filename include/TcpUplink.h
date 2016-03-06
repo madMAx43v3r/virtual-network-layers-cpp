@@ -15,7 +15,8 @@
 #include "Node.h"
 #include "Uplink.h"
 #include "io/Socket.h"
-#include "phy/Pool.h"
+#include "io/SocketBuffer.h"
+#include "phy/Memory.h"
 
 namespace vnl {
 
@@ -42,7 +43,7 @@ private:
 	phy::Condition downstate;
 	
 	io::Socket sock;
-	io::StreamBuffer stream;
+	io::SocketBuffer stream;
 	
 	std::unordered_map<uint32_t, send_t*> pending;
 	std::vector<receive_t*> ackbuf;

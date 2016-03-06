@@ -14,7 +14,7 @@ void Message::ack() {
 	if(!isack) {
 		isack = true;
 		if(src) {
-			src->receive(this);
+			src->engine->receive(this);
 		} else if(async) {
 			delete this;
 		}
@@ -24,7 +24,7 @@ void Message::ack() {
 std::string Message::toString() {
 	std::ostringstream ss;
 	ss << "[" << Util::demangle(this) << "] mid=0x" << std::hex << mid << std::dec
-			<< " src=" << src << " dst=" << dst << " sid=" << sid << " isack=" << isack << " async=" << async;
+			<< " src=" << src << " dst=" << dst << " isack=" << isack << " async=" << async;
 	return ss.str();
 }
 
