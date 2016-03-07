@@ -18,26 +18,19 @@
 
 namespace vnl { namespace phy {
 
-class Object : protected Stream {
+class Object : public Stream {
 public:
 	Object() {
-		launch(std::bind(&Object::mainloop, this));
+		engine->launch(std::bind(&Object::mainloop, this), 0);
 	}
 	
 	virtual ~Object() {}
-	
-	// thread safe
-	void receive(Message* msg) {
-		Stream::receive(msg);
-	}
 	
 	uint64_t getMAC() {
 		return mac;
 	}
 	
-	void close() {
-		receive(new Stream::close_t(true));
-	}
+	typedef Signal<0xfe6ccd6f> close_t;
 	
 protected:
 	uint64_t rand() {
@@ -61,12 +54,14 @@ protected:
 		stream.poll(millis);
 	}
 	
-	taskid_t launch(Runnable* task) {
-		return engine->launch(std::bind(&Runnable::run, task));
+	taskid_t launch(const std::function<void()>& func) {
+		taskid_t task = engine->launch(func, this);
+		tasks[task.id] = task;
+		return task;
 	}
 	
-	taskid_t launch(const std::function<void()>& func) {
-		return engine->launch(func);
+	void wait_on(const taskid_t& task, Stream* stream) {
+		engine->wait_on(task, stream);
 	}
 	
 	virtual bool handle(Message* msg) {
@@ -74,20 +69,10 @@ protected:
 	}
 	
 private:
-	void mainloop() {
-		while(true) {
-			Message* msg = poll();
-			if(!msg) {
-				break;
-			}
-			assert(msg->isack == false);
-			if(!handle(msg)) {
-				msg->ack();
-			}
-		}
-	}
+	void mainloop();
 	
 private:
+	std::unordered_map<uint64_t, taskid_t> tasks;
 	int64_t last_yield = 0;
 	
 	friend class Message;
@@ -95,7 +80,6 @@ private:
 	friend class Engine;
 	
 };
-
 
 
 

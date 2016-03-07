@@ -16,6 +16,7 @@
 
 namespace vnl { namespace phy {
 
+class Object;
 class FiberEngine;
 class ThreadEngine;
 
@@ -33,8 +34,6 @@ public:
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
-	
-	typedef Signal<0xfe6ccd6f> close_t;
 	
 	// thread safe
 	void receive(Message* msg) {
@@ -74,21 +73,12 @@ public:
 	
 protected:
 	uint64_t mac;
-	bool open = true;
 	
 private:
 	Engine* engine;
 	
 	void push(Message* msg) {
-		if(open) {
-			queue.push(msg);
-		} else {
-			msg->ack();
-		}
-		if(msg->mid == close_t::id) {
-			open = false;
-			queue.push(0);
-		}
+		queue.push(msg);
 	}
 	
 private:

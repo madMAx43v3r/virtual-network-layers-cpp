@@ -50,6 +50,7 @@ void Engine::stop() {
 }
 
 void Engine::send(Message* msg, Stream* dst, bool async) {
+	assert(Engine::local == this);
 	assert(msg->impl == 0);
 	assert(msg->isack == false);
 	assert(current);
@@ -61,15 +62,18 @@ void Engine::send(Message* msg, Stream* dst, bool async) {
 }
 
 bool Engine::poll(Stream* stream, int millis) {
+	assert(Engine::local == this);
 	stream->impl.push(current);
 	return current->poll(millis);
 }
 
 void Engine::flush() {
+	assert(Engine::local == this);
 	current->flush();
 }
 
-taskid_t Engine::launch(const std::function<void()>& func) {
+taskid_t Engine::launch(const std::function<void()>& func, Stream* stream) {
+	assert(Engine::local == this);
 	Fiber* fiber;
 	if(avail.empty()) {
 		fiber = create();
@@ -83,8 +87,20 @@ taskid_t Engine::launch(const std::function<void()>& func) {
 	task.id = nextid++;
 	task.impl = fiber;
 	task.func = func;
+	if(stream) {
+		fiber->waitlist.push_back(stream);
+	}
 	fiber->launch(task);
 	return task;
+}
+
+void Engine::wait_on(const taskid_t& task, Stream* stream) {
+	assert(Engine::local == this);
+	Fiber* fiber = task.impl;
+	if(fiber->task.id == task.id) {
+		fiber->waitlist.push_back(stream);
+		stream->poll()->ack();
+	}
 }
 
 int Engine::collect(std::vector<Message*>& inbox, int timeout) {
@@ -129,6 +145,16 @@ void Engine::free_page(Page* page) {
 	} else {
 		delete page;
 	}
+}
+
+
+void Fiber::finished(Engine* engine, Fiber* fiber) {
+	for(Stream* stream : waitlist) {
+		stream->receive(new Engine::finished_t(task.id, true));
+	}
+	task.id = 0;
+	waitlist.clear();
+	engine->finished(fiber);
 }
 
 

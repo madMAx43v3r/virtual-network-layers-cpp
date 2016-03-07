@@ -71,14 +71,12 @@ class Producer : public vnl::phy::Object {
 public:
 	Producer(Consumer* dst, int M) : dst(dst) {
 		for(int i = 0; i < M; ++i) {
-			launch(std::bind(&Producer::produce, this));
+			workers.push_back(launch(std::bind(&Producer::produce, this)));
 		}
-	}
-	void stop() {
-		dst = 0;
 	}
 protected:
 	Consumer* dst;
+	std::vector<taskid_t> workers;
 	void produce() {
 		const int N = 103;
 		uint64_t pid = rand();
@@ -104,7 +102,9 @@ protected:
 		std::cout << "Producer task exit " << pid << std::endl;
 	}
 	virtual bool handle(Message* msg) {
-		dst = 0;
+		if(msg->mid == close_t::id) {
+			dst = 0;
+		}
 		return false;
 	}
 	
@@ -135,16 +135,19 @@ int main() {
 	//std::this_thread::sleep_for(std::chrono::seconds(1*60));
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	
-	consumer->close();
-	producer->close();
+	engineA->exec([consumer, producer]() {
+		std::cout << "stopping..." << std::endl;
+		Stream s;
+		s.send(Object::close_t(), producer);
+		s.send(Object::close_t(), consumer);
+		delete consumer;
+		delete producer;
+	});
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	
 	engineA->stop();
 	engineB->stop();
-	
-	delete consumer;
-	delete producer;
 	
 	delete engineA;
 	delete engineB;

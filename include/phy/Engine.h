@@ -18,7 +18,6 @@
 
 #include "util/mpsc_queue.h"
 #include "phy/Message.h"
-#include "Runnable.h"
 #include "System.h"
 #include "Util.h"
 
@@ -73,9 +72,9 @@ protected:
 	
 	void flush();
 	
-	taskid_t launch(const std::function<void()>& func);
+	taskid_t launch(const std::function<void()>& func, Stream* stream);
 	
-	// TODO: wait_for(taskid_t task);
+	void wait_on(const taskid_t& task, Stream* stream);
 	
 	void lock() {
 		mutex.lock();
@@ -100,6 +99,7 @@ protected:
 	int collect(std::vector<Message*>& inbox, int timeout);
 	
 	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
+	typedef Generic<uint64_t, 0x5a8a106d> finished_t;
 	
 private:
 	struct exec_info_t {

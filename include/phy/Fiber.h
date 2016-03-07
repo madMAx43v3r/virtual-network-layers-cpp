@@ -34,9 +34,9 @@ public:
 	
 	virtual void flush() = 0;
 	
+protected:
 	taskid_t task;
 	
-protected:
 	Fiber* get_current(Engine* engine) {
 		return engine->current;
 	}
@@ -45,10 +45,12 @@ protected:
 		engine->current = fiber;
 	}
 	
-	void finished(Engine* engine, Fiber* fiber) {
-		task.id = 0;
-		engine->finished(fiber);
-	}
+	void finished(Engine* engine, Fiber* fiber);
+	
+private:
+	std::vector<Stream*> waitlist;
+	
+	friend class Engine;
 	
 };
 
