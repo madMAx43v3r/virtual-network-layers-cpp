@@ -16,7 +16,7 @@
 #include "Uplink.h"
 #include "io/Socket.h"
 #include "io/SocketBuffer.h"
-#include "phy/Memory.h"
+#include "util/pool.h"
 
 namespace vnl {
 
@@ -47,7 +47,7 @@ private:
 	
 	std::unordered_map<uint32_t, send_t*> pending;
 	std::vector<receive_t*> ackbuf;
-	phy::Pool<receive_t> sndbuf;
+	vnl::util::pool<receive_t> sndbuf;
 	
 	int32_t nextseq = 1;
 	

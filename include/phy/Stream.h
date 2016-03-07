@@ -8,9 +8,11 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
+#include <assert.h>
+
 #include "phy/Engine.h"
 #include "phy/Memory.h"
-#include "phy/Queue.h"
+#include "util/queue.h"
 
 namespace vnl { namespace phy {
 
@@ -21,13 +23,18 @@ class ThreadEngine;
 class Stream {
 public:
 	Stream() : engine(Engine::local) {
+		assert(engine);
 		mac = engine->rand();
 	}
 	
-	Stream(uint64_t sid) : engine(Engine::local), mac(sid) {}
+	Stream(uint64_t mac) : engine(Engine::local), mac(mac) {
+		assert(engine);
+	}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
+	
+	typedef Signal<0xfe6ccd6f> close_t;
 	
 	// thread safe
 	void receive(Message* msg) {
@@ -65,26 +72,31 @@ public:
 		return msg;
 	}
 	
-	void close() {
-		Message* msg;
-		while(queue.pop(msg)) {
-			msg->ack();
-		}
-	}
-	
+protected:
 	uint64_t mac;
+	bool open = true;
 	
 private:
 	Engine* engine;
 	
 	void push(Message* msg) {
-		queue.push(msg);
+		if(open) {
+			queue.push(msg);
+		} else {
+			msg->ack();
+		}
+		if(msg->mid == close_t::id) {
+			open = false;
+			queue.push(0);
+		}
 	}
 	
-	Queue<Message*> queue;
-	Queue<Fiber*> impl;
+private:
+	vnl::util::queue<Message*> queue;
+	vnl::util::queue<Fiber*> impl;
 	
 	friend class Message;
+	friend class Object;
 	friend class Engine;
 	friend class FiberEngine;
 	friend class ThreadEngine;

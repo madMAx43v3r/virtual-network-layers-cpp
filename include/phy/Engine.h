@@ -14,7 +14,9 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
+#include "util/mpsc_queue.h"
 #include "phy/Message.h"
 #include "Runnable.h"
 #include "System.h"
@@ -30,11 +32,12 @@ class Object;
 struct taskid_t {
 	uint64_t id;
 	Fiber* impl;
+	std::function<void()> func;
 	taskid_t() : id(0), impl(0) {}
 };
 
 
-class Engine : public vnl::Runnable {
+class Engine {
 public:
 	Engine();
 	virtual ~Engine();
@@ -44,13 +47,20 @@ public:
 	void start();
 	void stop();
 	
+	void exec(const std::function<void()>& func) {
+		exec_info_t info;
+		info.func = func;
+		exec_t msg;
+		msg.data = std::bind(&Engine::do_exec, this, &info);
+		receive(&msg);
+		std::unique_lock<std::mutex> ulock(mutex);
+		info.cond.wait(ulock);
+	}
+	
 protected:
-	bool dorun = false;
+	bool dorun = true;
 	
-	std::vector<Message*> queue;
-	std::vector<Message*> acks;
-	
-	std::unordered_set<Fiber*> fibers;
+	std::vector<Fiber*> fibers;
 	std::vector<Fiber*> avail;
 	
 	uint64_t rand() {
@@ -65,7 +75,7 @@ protected:
 	
 	taskid_t launch(const std::function<void()>& func);
 	
-	void cancel(taskid_t task);
+	// TODO: wait_for(taskid_t task);
 	
 	void lock() {
 		mutex.lock();
@@ -87,9 +97,24 @@ protected:
 	
 	virtual Fiber* create() = 0;
 	
+	int collect(std::vector<Message*>& inbox, int timeout);
+	
+	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
+	
 private:
+	struct exec_info_t {
+		std::function<void()> func;
+		std::condition_variable cond;
+	};
+	
 	void entry() {
 		mainloop();
+	}
+	
+	void do_exec(exec_info_t* info) {
+		info->func();
+		std::unique_lock<std::mutex> ulock(mutex);
+		info->cond.notify_all();
 	}
 	
 	void wait() {
@@ -97,14 +122,12 @@ private:
 	}
 	
 	void receive(Message* msg) {
-		lock();
-		if(msg->isack) {
-			acks.push_back(msg);
-		} else {
-			queue.push_back(msg);
+		queue.push(msg);
+		if(waiting-- == 1) {
+			lock();
+			notify();
+			unlock();
 		}
-		notify();
-		unlock();
 	}
 	
 	void finished(Fiber* fiber) {
@@ -121,10 +144,12 @@ private:
 	std::unique_lock<std::mutex> ulock;
 	std::default_random_engine generator;
 	
+	Fiber* current = 0;
+	std::atomic<int> waiting;
+	vnl::util::mpsc_queue<Message*> queue;
+	
 	std::thread* thread;
 	uint64_t nextid = 1;
-	
-	Fiber* current = 0;
 	
 	std::vector<Page*> pages;
 	

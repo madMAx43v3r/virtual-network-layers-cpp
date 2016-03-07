@@ -27,9 +27,8 @@ public:
 		delete thread;
 	}
 	
-	virtual void launch(const std::function<void()>& task_, uint32_t tid_) override {
+	virtual void launch(taskid_t task_) override {
 		task = task_;
-		tid = tid_;
 		notify();
 	}
 	
@@ -61,10 +60,8 @@ public:
 	
 	virtual bool poll(int millis) override {
 		bool res = cond.wait_for(ulock, std::chrono::milliseconds(millis)) == std::cv_status::no_timeout;
-		if(docancel) {
-			throw cancel_t();
-		}
 		set_current(engine, this);
+		if(docancel) { cancel(); }
 		check_cbs();
 		return res;
 	}
@@ -89,8 +86,7 @@ protected:
 		set_current(engine, this);
 		try {
 			while(true) {
-				task();
-				tid = 0;
+				task.func();
 				finished(engine, this);
 				wait();
 			}
@@ -104,15 +100,17 @@ protected:
 		waiting = true;
 		cond.wait(ulock);
 		waiting = false;
-		if(docancel) {
-			throw cancel_t();
-		}
 		set_current(engine, this);
+		if(docancel) { cancel(); }
 		check_cbs();
 	}
 	
 	void notify() {
 		cond.notify_all();
+	}
+	
+	void cancel() {
+		throw cancel_t();
 	}
 	
 	void check_cbs() {
@@ -125,7 +123,6 @@ protected:
 	}
 	
 	ThreadEngine* engine;
-	std::function<void()> task;
 	std::vector<Message*> cbs;
 	std::unique_lock<std::mutex> ulock;
 	std::condition_variable cond;
@@ -141,34 +138,20 @@ protected:
 void ThreadEngine::mainloop() {
 	local = this;
 	sync.lock();
-	run();
-	lock();
-	dorun = true;
-	notify();
-	unlock();
 	std::vector<Message*> inbox;
 	while(dorun) {
 		sync.unlock();
 		inbox.clear();
 		while(dorun) {
-			lock();
-			int nack = acks.size();
-			int nmsg = queue.size();
-			int total = nack + nmsg;
-			if(total) {
-				inbox.resize(total);
-				if(nack) { memcpy(&inbox[0], 	&acks[0], 	nack * sizeof(void*)); acks.clear(); }
-				if(nmsg) { memcpy(&inbox[nack], &queue[0], 	nmsg * sizeof(void*)); queue.clear(); }
-				unlock();
+			if(collect(inbox, 1000)) {
 				break;
-			} else {
-				wait(1000);
 			}
-			unlock();
 		}
 		sync.lock();
 		for(Message* msg : inbox) {
-			if(msg->isack) {
+			if(msg->mid == Engine::exec_t::id) {
+				launch(((Engine::exec_t*)msg)->data);
+			} else if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
 				Stream* stream = msg->dst;

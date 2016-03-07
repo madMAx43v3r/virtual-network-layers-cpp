@@ -6,7 +6,7 @@
  */
 
 #include "TcpServer.h"
-#include "phy/Memory.h"
+#include "util/pool.h"
 
 namespace vnl {
 
@@ -109,7 +109,7 @@ protected:
 	
 	std::unordered_map<uint32_t, receive_t*> pending;
 	std::vector<send_t*> ackbuf;
-	phy::Pool<send_t> sndbuf;
+	vnl::util::pool<send_t> sndbuf;
 	
 	int32_t nextseq = 1;
 	

@@ -20,8 +20,7 @@ namespace vnl { namespace phy {
 
 class Object : protected Stream {
 public:
-	Object() : engine(Engine::local) {
-		assert(Engine::local);
+	Object() {
 		launch(std::bind(&Object::mainloop, this));
 	}
 	
@@ -34,6 +33,10 @@ public:
 	
 	uint64_t getMAC() {
 		return mac;
+	}
+	
+	void close() {
+		receive(new Stream::close_t(true));
 	}
 	
 protected:
@@ -66,15 +69,6 @@ protected:
 		return engine->launch(func);
 	}
 	
-	void cancel(taskid_t task) {
-		engine->cancel(task);
-	}
-	
-	void exit() {
-		Stream::close();
-		delete this;
-	}
-	
 	virtual bool handle(Message* msg) {
 		return false;
 	}
@@ -83,6 +77,9 @@ private:
 	void mainloop() {
 		while(true) {
 			Message* msg = poll();
+			if(!msg) {
+				break;
+			}
 			assert(msg->isack == false);
 			if(!handle(msg)) {
 				msg->ack();
@@ -91,8 +88,6 @@ private:
 	}
 	
 private:
-	Engine* engine;
-	
 	int64_t last_yield = 0;
 	
 	friend class Message;

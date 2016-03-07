@@ -5,8 +5,6 @@
  *      Author: mad
  */
 
-#include <string.h>
-
 #include <chrono>
 #include <boost/bind.hpp>
 #include <boost/coroutine/symmetric_coroutine.hpp>
@@ -23,9 +21,8 @@ public:
 	BoostFiber(FiberEngine* engine)
 		: 	engine(engine), _call(boost::bind(&BoostFiber::entry, this, boost::arg<1>())) {}
 	
-	virtual void launch(const std::function<void()>& task_, uint32_t tid_) override {
+	virtual void launch(taskid_t task_) override {
 		task = task_;
-		tid = tid_;
 		call();
 	}
 	
@@ -34,7 +31,7 @@ public:
 	}
 	
 	virtual void stop() override {
-		// nothing to do
+		
 	}
 	
 	virtual void sent(Message* msg) override {
@@ -81,9 +78,8 @@ public:
 protected:
 	void run() {
 		while(true) {
-			tid = 0;
 			yield();
-			task();
+			task.func();
 			finished(engine, this);
 		}
 	}
@@ -117,7 +113,6 @@ protected:
 	}
 	
 	FiberEngine* engine;
-	std::function<void()> task;
 	std::vector<Message*> cbs;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
@@ -125,47 +120,30 @@ protected:
 	bool result = false;
 	bool waiting = false;
 	
-	
 };
 
 
 void FiberEngine::mainloop() {
 	local = this;
-	run();
-	lock();
-	dorun = true;
-	notify();
-	unlock();
 	std::vector<Stream*> list;
 	std::vector<Message*> inbox;
 	while(dorun) {
 		inbox.clear();
 		while(dorun) {
 			int to = timeout();
-			lock();
-			int nack = acks.size();
-			int nmsg = queue.size();
-			int total = nack + nmsg;
-			if(total) {
-				inbox.resize(total);
-				if(nack) { memcpy(&inbox[0], 	&acks[0], 	nack * sizeof(void*)); acks.clear(); }
-				if(nmsg) { memcpy(&inbox[nack], &queue[0], 	nmsg * sizeof(void*)); queue.clear(); }
-				unlock();
+			if(collect(inbox, to)) {
 				break;
-			} else {
-				wait(to);
 			}
-			unlock();
 		}
 		list.clear();
 		for(Message* msg : inbox) {
-			if(msg->isack) {
-				assert(msg->impl);
+			if(msg->mid == Engine::exec_t::id) {
+				launch(((Engine::exec_t*)msg)->data);
+			} else if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
-				Stream* stream = msg->dst;
-				stream->push(msg);
-				list.push_back(stream);
+				msg->dst->push(msg);
+				list.push_back(msg->dst);
 			}
 		}
 		for(Stream* stream : list) {

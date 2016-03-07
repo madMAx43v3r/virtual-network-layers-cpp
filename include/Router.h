@@ -13,7 +13,7 @@
 #include <functional>
 
 #include "Uplink.h"
-#include "phy/Memory.h"
+#include "util/pool.h"
 
 namespace vnl {
 
@@ -48,8 +48,8 @@ private:
 	
 	std::function<void(phy::Message*)> cb_rcv;
 	std::function<void(phy::Message*)> cb_snd;
-	phy::Pool<receive_t> rcvbuf;
-	phy::Pool<send_t> sndbuf;
+	vnl::util::pool<receive_t> rcvbuf;
+	vnl::util::pool<send_t> sndbuf;
 	
 };
 

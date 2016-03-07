@@ -22,6 +22,9 @@ public:
 		return page;
 	}
 	
+	Page(const Page&) = delete;
+	Page& operator=(const Page&) = delete;
+	
 	void free() {
 		engine->free_page(this);
 	}
@@ -47,37 +50,6 @@ private:
 	friend class Engine;
 	
 };
-
-
-template<typename T>
-class Pool {
-public:
-	~Pool() {
-		for(T* obj : list) {
-			delete obj;
-		}
-	}
-	
-	T* alloc() {
-		if(list.size()) {
-			T* obj = list.back();
-			list.pop_back();
-			obj->~T();
-			return new(obj) T();
-		} else {
-			return new T();
-		}
-	}
-	
-	void free(T* obj) {
-		list.push_back(obj);
-	}
-	
-protected:
-	std::vector<T*> list;
-	
-};
-
 
 
 }}

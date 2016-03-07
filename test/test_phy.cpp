@@ -12,10 +12,12 @@
 #include "phy/FiberEngine.h"
 #include "phy/ThreadEngine.h"
 #include "phy/Object.h"
+#include "util/pool.h"
 using namespace vnl::phy;
 
 const bool verify = false;
-const bool usestreams = false;
+const bool async = true;
+
 
 class Consumer : public vnl::phy::Object {
 public:
@@ -28,6 +30,7 @@ public:
 	
 	class count_seq_t : public Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> {
 	public:
+		count_seq_t() : Generic() {}
 		count_seq_t(const std::pair<uint64_t, uint64_t>& data, bool async = false) : Generic(data, async) {}
 		virtual std::string toString() override {
 			std::ostringstream ss;
@@ -60,7 +63,9 @@ protected:
 		}
 		return false;
 	}
+	
 };
+
 
 class Producer : public vnl::phy::Object {
 public:
@@ -69,69 +74,80 @@ public:
 			launch(std::bind(&Producer::produce, this));
 		}
 	}
+	void stop() {
+		dst = 0;
+	}
 protected:
 	Consumer* dst;
 	void produce() {
-		std::cout << vnl::System::currentTimeMillis() << " Started Producer " << mac << std::endl;
+		const int N = 103;
 		uint64_t pid = rand();
 		uint64_t seq = 0;
-		Stream stream;
-		while(true) {
-			if(usestreams) {
-				stream.send(Consumer::count_seq_t(std::make_pair(pid, ++seq)), dst);
+		std::cout << vnl::System::currentTimeMillis() << " Started Producer " << pid << std::endl;
+		vnl::util::pool<Consumer::count_seq_t> msgs;
+		auto callback = [&msgs](Message* msg) {
+			msgs.free((Consumer::count_seq_t*)msg);
+		};
+		while(dst) {
+			if(async) {
+				for(int i = 0; i < N; ++i) {
+					Consumer::count_seq_t* msg = msgs.alloc();
+					msg->data = std::make_pair(pid, ++seq);
+					msg->callback = callback;
+					send(msg, dst, true);
+				}
+				flush();
 			} else {
 				send(Consumer::count_seq_t(std::make_pair(pid, ++seq)), dst);
 			}
 		}
+		std::cout << "Producer task exit " << pid << std::endl;
 	}
-};
-
-
-class ProcessorA : public FiberEngine {
-public:
-	ProcessorA() : consumer(0) {
-		start();
+	virtual bool handle(Message* msg) {
+		dst = 0;
+		return false;
 	}
-	~ProcessorA() {
-		delete consumer;
-	}
-	virtual void run() override {
-		vnl::Util::stick_to_core(0);
-		consumer = new Consumer();
-	}
-	Consumer* consumer;
-};
-
-class ProcessorB : public FiberEngine {
-public:
-	ProcessorB(Consumer* dst) : dst(dst), producer(0) {
-		start();
-	}
-	~ProcessorB() {
-		delete producer;
-	}
-	virtual void run() override {
-		vnl::Util::stick_to_core(1);
-		producer = new Producer(dst, 10);
-	}
-	Producer* producer;
-	Consumer* dst;
+	
 };
 
 
 int main() {
 	
-	ProcessorA* procA = new ProcessorA();
-	ProcessorB* procB = new ProcessorB(procA->consumer);
+	Consumer* consumer = 0;
+	Producer* producer = 0;
 	
-	std::this_thread::sleep_for(std::chrono::seconds(1*60));
-	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	Engine* engineA = new FiberEngine();
+	engineA->start();
+	engineA->exec([&consumer]() {
+		std::cout << "engineA starting..." << std::endl;
+		vnl::Util::stick_to_core(0);
+		consumer = new Consumer();
+	});
 	
-	procA->stop();
-	procB->stop();
+	Engine* engineB = new FiberEngine();
+	engineB->start();
+	engineB->exec([&producer, consumer]() {
+		std::cout << "engineB starting..." << std::endl;
+		vnl::Util::stick_to_core(1);
+		producer = new Producer(consumer, 1);
+	});
 	
-	delete procB;
-	delete procA;
+	//std::this_thread::sleep_for(std::chrono::seconds(1*60));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	
+	consumer->close();
+	producer->close();
+	
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	
+	engineA->stop();
+	engineB->stop();
+	
+	delete consumer;
+	delete producer;
+	
+	delete engineA;
+	delete engineB;
 	
 }
 

@@ -26,6 +26,9 @@ public:
 	Message(uint32_t mid, bool async = false)
 		:	mid(mid), async(async) {}
 	
+	Message(const Message&) = delete;
+	Message& operator=(const Message&) = delete;
+	
 	virtual std::string toString();
 	
 	void ack();
@@ -44,7 +47,7 @@ public:
 template<uint32_t MID>
 class Signal : public Message {
 public:
-	Signal() : Message() {}
+	Signal() : Message(MID) {}
 	Signal(bool async) : Message(MID, async) {}
 	
 	static const uint32_t id = MID;
@@ -54,7 +57,7 @@ public:
 template<typename T, uint32_t MID>
 class Generic : public Message {
 public:
-	Generic() : Message() {}
+	Generic() : Message(MID) {}
 	Generic(const T& data, bool async = false) : Message(MID, async), data(data) {}
 	
 	static const uint32_t id = MID;
@@ -66,7 +69,7 @@ public:
 template<typename T, typename P, uint32_t MID>
 class Request : public Message {
 public:
-	Request() : Message() {}
+	Request() : Message(MID) {}
 	Request(const P& args, bool async = false) : Message(MID, async), args(args) {}
 	
 	void ack(const T& result) {

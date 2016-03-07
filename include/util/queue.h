@@ -10,17 +10,17 @@
 
 #include "phy/Memory.h"
 
-namespace vnl { namespace phy {
+namespace vnl { namespace util {
 
-template<typename T>
-class Queue {
+template<typename T, int N = 20>
+class queue {
 public:
-	Queue() {
+	queue() {
 		front = new block_t();
 		back = front;
 	}
 	
-	~Queue() {
+	~queue() {
 		block_t* block = front;
 		while(block) {
 			block_t* tmp = block->next;
@@ -31,8 +31,7 @@ public:
 	
 protected:
 	struct block_t {
-		static const int size = 30;
-		T elem[size];
+		T elem[N];
 		int read = 0;
 		int write = 0;
 		block_t* next = 0;
@@ -40,7 +39,7 @@ protected:
 	
 public:
 	void push(T obj) {
-		if(back->write >= block_t::size) {
+		if(back->write >= N) {
 			if(!back->next) {
 				back->next = new block_t();
 			}
@@ -50,7 +49,7 @@ public:
 	}
 	
 	T pop() {
-		if(front->read >= block_t::size) {
+		if(front->read >= N) {
 			block_t* tmp = front;
 			tmp->read = 0;
 			tmp->write = 0;
@@ -70,7 +69,7 @@ public:
 	}
 	
 	bool empty() {
-		return front->read == back->write && front == back;
+		return front->read == front->write && front == back;
 	}
 	
 private:

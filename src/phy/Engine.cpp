@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
@@ -19,11 +20,6 @@ Engine::Engine() : ulock(mutex), thread(0) {
 	ulock.unlock();
 	static std::atomic<int> counter;
 	generator.seed(Util::hash64(counter++, System::nanoTime()));
-	acks.reserve(1024);
-	queue.reserve(1024);
-	fibers.reserve(1024);
-	avail.reserve(1024);
-	pages.reserve(1024);
 }
 
 Engine::~Engine() {
@@ -37,19 +33,14 @@ Engine::~Engine() {
 
 void Engine::start() {
 	if(!thread) {
-		lock();
 		thread = new std::thread(&Engine::entry, this);
-		while(!dorun) {
-			wait();
-		}
-		unlock();
 	}
 }
 
 void Engine::stop() {
-	dorun = false;
 	if(thread) {
 		lock();
+		dorun = false;
 		notify();
 		unlock();
 		thread->join();
@@ -71,8 +62,7 @@ void Engine::send(Message* msg, Stream* dst, bool async) {
 
 bool Engine::poll(Stream* stream, int millis) {
 	stream->impl.push(current);
-	bool res = current->poll(millis);
-	return res;
+	return current->poll(millis);
 }
 
 void Engine::flush() {
@@ -84,7 +74,7 @@ taskid_t Engine::launch(const std::function<void()>& func) {
 	if(avail.empty()) {
 		fiber = create();
 		fiber->start();
-		fibers.insert(fiber);
+		fibers.push_back(fiber);
 	} else {
 		fiber = avail.back();
 		avail.pop_back();
@@ -92,19 +82,34 @@ taskid_t Engine::launch(const std::function<void()>& func) {
 	taskid_t task;
 	task.id = nextid++;
 	task.impl = fiber;
-	fiber->launch(func, task.id);
+	task.func = func;
+	fiber->launch(task);
 	return task;
 }
 
-void Engine::cancel(taskid_t task) {
-	if(task.impl) {
-		Fiber* fiber = task.impl;
-		if(fiber->tid == task.id) {
-			fiber->stop();
-			fibers.erase(fiber);
-			delete fiber;
-		}
+int Engine::collect(std::vector<Message*>& inbox, int timeout) {
+	inbox.clear();
+	Message* msg = 0;
+	while(queue.pop(msg)) {
+		inbox.push_back(msg);
 	}
+	int res = inbox.size();
+	if(!res) {
+		lock();
+		waiting.store(1, std::memory_order_release);
+		if(queue.pop(msg)) {
+			inbox.push_back(msg);
+		} else {
+			wait(timeout);
+		}
+		waiting.store(0, std::memory_order_release);
+		unlock();
+		while(queue.pop(msg)) {
+			inbox.push_back(msg);
+		}
+		res = inbox.size();
+	}
+	return res;
 }
 
 Page* Engine::get_page() {

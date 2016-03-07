@@ -22,8 +22,6 @@ public:
 	PollServer();
 	~PollServer();
 	
-	virtual void run() override {}
-	
 protected:
 	struct pollfd_t : pollfd {
 		pollfd_t() {

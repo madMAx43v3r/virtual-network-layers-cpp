@@ -47,7 +47,6 @@ void Node::exit() {
 		phy::Object::send(Uplink::disconnect_t(), uplink);
 		uplink = 0;
 	}
-	phy::Object::exit();
 }
 
 

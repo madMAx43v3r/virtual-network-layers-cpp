@@ -22,7 +22,7 @@ public:
 	
 	virtual void stop() = 0;
 	
-	virtual void launch(const std::function<void()>& task, uint32_t tid) = 0;
+	virtual void launch(taskid_t task) = 0;
 	
 	virtual void sent(Message* msg) = 0;
 	
@@ -34,7 +34,7 @@ public:
 	
 	virtual void flush() = 0;
 	
-	uint32_t tid = 0;
+	taskid_t task;
 	
 protected:
 	Fiber* get_current(Engine* engine) {
@@ -46,6 +46,7 @@ protected:
 	}
 	
 	void finished(Engine* engine, Fiber* fiber) {
+		task.id = 0;
 		engine->finished(fiber);
 	}
 	
