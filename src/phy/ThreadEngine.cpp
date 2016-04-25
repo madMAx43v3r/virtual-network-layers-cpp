@@ -41,9 +41,9 @@ public:
 		notify();
 	}
 	
-	virtual void sent(Message* msg) override {
+	virtual void sent(Message* msg, bool async) override {
 		pending++;
-		if(!msg->async && pending > 0) {
+		if(!async && pending > 0) {
 			wait();
 		}
 	}
@@ -58,7 +58,7 @@ public:
 		}
 	}
 	
-	virtual bool poll(int millis) override {
+	virtual bool poll(int64_t millis) override {
 		bool res = cond.wait_for(ulock, std::chrono::milliseconds(millis)) == std::cv_status::no_timeout;
 		set_current(engine, this);
 		if(docancel) { cancel(); }
@@ -150,11 +150,11 @@ void ThreadEngine::mainloop() {
 		sync.lock();
 		for(Message* msg : inbox) {
 			if(msg->mid == Engine::exec_t::id) {
-				launch(((Engine::exec_t*)msg)->data, 0);
+				launch(((Engine::exec_t*)msg)->data);
 			} else if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
-				Stream* stream = msg->dst;
+				Stream* stream = (Stream*)msg->dst;
 				stream->push(msg);
 				Fiber* fiber;
 				if(stream->impl.pop(fiber)) {

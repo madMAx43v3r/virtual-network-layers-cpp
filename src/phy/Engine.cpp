@@ -10,6 +10,7 @@
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
+#include "phy/Object.h"
 #include "phy/Fiber.h"
 
 namespace vnl { namespace phy {
@@ -19,7 +20,7 @@ thread_local Engine* Engine::local = 0;
 Engine::Engine() : ulock(mutex), thread(0) {
 	ulock.unlock();
 	static std::atomic<int> counter;
-	generator.seed(Util::hash64(counter++, System::nanoTime()));
+	generator.seed(Util::hash64(counter++, (uint64_t)std::hash(std::this_thread::get_id()), System::nanoTime()));
 }
 
 Engine::~Engine() {
@@ -45,23 +46,22 @@ void Engine::stop() {
 		unlock();
 		thread->join();
 		delete thread;
-		thread = 0;
 	}
 }
 
-void Engine::send(Message* msg, Stream* dst, bool async) {
+void Engine::send(Message* msg, Node* dst, bool async) {
 	assert(Engine::local == this);
 	assert(msg->impl == 0);
 	assert(msg->isack == false);
+	assert(dst);
 	assert(current);
-	msg->dst = dst;
-	msg->async = async;
+	msg->src = this;
 	msg->impl = current;
-	dst->engine->receive(msg);
-	current->sent(msg);
+	dst->receive(msg);
+	current->sent(msg, async);
 }
 
-bool Engine::poll(Stream* stream, int millis) {
+bool Engine::poll(Stream* stream, int64_t millis) {
 	assert(Engine::local == this);
 	stream->impl.push(current);
 	return current->poll(millis);
@@ -72,7 +72,7 @@ void Engine::flush() {
 	current->flush();
 }
 
-taskid_t Engine::launch(const std::function<void()>& func, Stream* stream) {
+taskid_t Engine::launch(const std::function<void()>& func) {
 	assert(Engine::local == this);
 	Fiber* fiber;
 	if(avail.empty()) {
@@ -87,20 +87,18 @@ taskid_t Engine::launch(const std::function<void()>& func, Stream* stream) {
 	task.id = nextid++;
 	task.impl = fiber;
 	task.func = func;
-	if(stream) {
-		fiber->waitlist.push_back(stream);
-	}
 	fiber->launch(task);
 	return task;
 }
 
-void Engine::wait_on(const taskid_t& task, Stream* stream) {
+bool Engine::listen_on(const taskid_t& task, Stream* dst) {
 	assert(Engine::local == this);
 	Fiber* fiber = task.impl;
 	if(fiber->task.id == task.id) {
-		fiber->waitlist.push_back(stream);
-		stream->poll()->ack();
+		fiber->waitlist.push_back(dst);
+		return true;
 	}
+	return false;
 }
 
 int Engine::collect(std::vector<Message*>& inbox, int timeout) {
@@ -132,6 +130,7 @@ Page* Engine::get_page() {
 	Page* page;
 	if(pages.size()) {
 		page = pages.back();
+		page->next = 0;
 		pages.pop_back();
 	} else {
 		page = new Page(this);

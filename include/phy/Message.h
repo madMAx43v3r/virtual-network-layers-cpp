@@ -15,7 +15,7 @@
 
 namespace vnl { namespace phy {
 
-class Stream;
+class Node;
 class Fiber;
 
 class Message {
@@ -23,8 +23,8 @@ public:
 	Message() {}
 	virtual ~Message() {}
 	
-	Message(uint32_t mid, bool async = false)
-		:	mid(mid), async(async) {}
+	Message(uint32_t mid)
+		:	mid(mid) {}
 	
 	Message(const Message&) = delete;
 	Message& operator=(const Message&) = delete;
@@ -34,11 +34,10 @@ public:
 	void ack();
 	
 	uint32_t mid = 0;
-	Stream* src = 0;
-	Stream* dst = 0;
+	Node* src = 0;
+	Node* dst = 0;
 	Fiber* impl = 0;
 	bool isack = false;
-	bool async = false;
 	
 	std::function<void(Message*)> callback;
 	
@@ -48,7 +47,6 @@ template<uint32_t MID>
 class Signal : public Message {
 public:
 	Signal() : Message(MID) {}
-	Signal(bool async) : Message(MID, async) {}
 	
 	static const uint32_t id = MID;
 	
@@ -58,7 +56,7 @@ template<typename T, uint32_t MID>
 class Generic : public Message {
 public:
 	Generic() : Message(MID) {}
-	Generic(const T& data, bool async = false) : Message(MID, async), data(data) {}
+	Generic(const T& data) : Message(MID), data(data) {}
 	
 	static const uint32_t id = MID;
 	
@@ -70,7 +68,7 @@ template<typename T, typename P, uint32_t MID>
 class Request : public Message {
 public:
 	Request() : Message(MID) {}
-	Request(const P& args, bool async = false) : Message(MID, async), args(args) {}
+	Request(const P& args) : Message(MID), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;

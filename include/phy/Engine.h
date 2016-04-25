@@ -18,8 +18,10 @@
 
 #include "util/mpsc_queue.h"
 #include "phy/Message.h"
+#include "phy/Node.h"
 #include "System.h"
 #include "Util.h"
+
 
 namespace vnl { namespace phy {
 
@@ -29,14 +31,13 @@ class Stream;
 class Object;
 
 struct taskid_t {
-	uint64_t id;
-	Fiber* impl;
+	uint64_t id = 0;
+	Fiber* impl = 0;
 	std::function<void()> func;
-	taskid_t() : id(0), impl(0) {}
 };
 
 
-class Engine {
+class Engine : public vnl::phy::Node {
 public:
 	Engine();
 	virtual ~Engine();
@@ -47,14 +48,25 @@ public:
 	void stop();
 	
 	void exec(const std::function<void()>& func) {
-		exec_info_t info;
-		info.func = func;
+		SyncNode node;
 		exec_t msg;
-		msg.data = std::bind(&Engine::do_exec, this, &info);
+		msg.src = node;
+		msg.data = func;
 		receive(&msg);
-		std::unique_lock<std::mutex> ulock(mutex);
-		info.cond.wait(ulock);
+		node.wait();
 	}
+	
+	virtual void receive(Message* msg) override {
+		queue.push(msg);
+		if(waiting-- == 1) {
+			lock();
+			notify();
+			unlock();
+		}
+	}
+	
+	typedef Generic<uint64_t, 0x5a8a106d> finished_t;
+	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
 	
 protected:
 	bool dorun = true;
@@ -63,18 +75,29 @@ protected:
 	std::vector<Fiber*> avail;
 	
 	uint64_t rand() {
-		return Util::hash64(generator());
+		return generator();
 	}
 	
-	void send(Message* msg, Stream* dst, bool async);
+	template<typename T>
+	void send(T&& msg, Node* dst) {
+		send(&msg, dst, false);
+	}
 	
-	bool poll(Stream* stream, int millis);
+	template<typename T, typename R>
+	T request(R&& req, Node* dst) {
+		send(&req, dst, false);
+		return req.res;
+	}
+	
+	void send(Message* msg, Node* dst, bool async);
+	
+	bool poll(Stream* stream, int64_t millis);
 	
 	void flush();
 	
-	taskid_t launch(const std::function<void()>& func, Stream* stream);
+	taskid_t launch(const std::function<void()>& func);
 	
-	void wait_on(const taskid_t& task, Stream* stream);
+	bool listen_on(const taskid_t& task, Stream* dst);
 	
 	void lock() {
 		mutex.lock();
@@ -98,36 +121,13 @@ protected:
 	
 	int collect(std::vector<Message*>& inbox, int timeout);
 	
-	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
-	typedef Generic<uint64_t, 0x5a8a106d> finished_t;
-	
 private:
 	struct exec_info_t {
 		std::function<void()> func;
-		std::condition_variable cond;
 	};
 	
 	void entry() {
 		mainloop();
-	}
-	
-	void do_exec(exec_info_t* info) {
-		info->func();
-		std::unique_lock<std::mutex> ulock(mutex);
-		info->cond.notify_all();
-	}
-	
-	void wait() {
-		cond.wait(ulock);
-	}
-	
-	void receive(Message* msg) {
-		queue.push(msg);
-		if(waiting-- == 1) {
-			lock();
-			notify();
-			unlock();
-		}
 	}
 	
 	void finished(Fiber* fiber) {
@@ -135,14 +135,13 @@ private:
 	}
 	
 	Page* get_page();
-	
 	void free_page(Page* page);
 	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	std::unique_lock<std::mutex> ulock;
-	std::default_random_engine generator;
+	std::mt19937_64 generator;
 	
 	Fiber* current = 0;
 	std::atomic<int> waiting;
@@ -158,6 +157,7 @@ private:
 	friend class Object;
 	friend class Fiber;
 	friend class Page;
+	friend class Layer;
 	
 };
 

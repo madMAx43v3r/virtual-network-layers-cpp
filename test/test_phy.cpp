@@ -49,7 +49,7 @@ protected:
 		counter++;
 		if(counter % (1000*1000) == 0) {
 			uint64_t now = vnl::System::currentTimeMillis();
-			std::cout << (now-last) << " Consumer " << mac << std::endl;
+			std::cout << (now-last) << " Consumer " << this_mac << std::endl;
 			last = now;
 		}
 	}
@@ -102,7 +102,7 @@ protected:
 		std::cout << "Producer task exit " << pid << std::endl;
 	}
 	virtual bool handle(Message* msg) {
-		if(msg->mid == close_t::id) {
+		if(msg->mid == delete_t::id) {
 			dst = 0;
 		}
 		return false;
@@ -138,8 +138,8 @@ int main() {
 	engineA->exec([consumer, producer]() {
 		std::cout << "stopping..." << std::endl;
 		Stream s;
-		s.send(Object::close_t(), producer);
-		s.send(Object::close_t(), consumer);
+		s.send(Object::delete_t(), producer);
+		s.send(Object::delete_t(), consumer);
 		delete consumer;
 		delete producer;
 	});

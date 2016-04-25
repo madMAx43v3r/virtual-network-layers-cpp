@@ -15,6 +15,7 @@ namespace vnl { namespace phy {
 
 class FiberEngine : public Engine {
 protected:
+	FiberEngine(int stack_size = 64*1024);
 	
 	virtual void mainloop() override;
 	
@@ -22,6 +23,9 @@ protected:
 	
 private:
 	int timeout();
+	
+private:
+	int stack_size;
 	
 };
 

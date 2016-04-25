@@ -13,7 +13,7 @@
 
 namespace vnl { namespace io { namespace socket {
 
-class Server : public vnl::phy::FiberEngine, public vnl::phy::Object {
+class Server : private vnl::phy::FiberEngine, public vnl::phy::Object {
 public:
 	static Server* instance;
 	

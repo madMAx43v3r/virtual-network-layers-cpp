@@ -23,7 +23,7 @@ Node::~Node() {
 
 void Node::send(const Frame& frame) {
 	if(uplink) {
-		phy::Object::send(send_t(frame, mac), uplink);
+		phy::Object::send(send_t(frame, this_mac), uplink);
 	}
 }
 

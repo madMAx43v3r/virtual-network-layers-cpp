@@ -17,9 +17,7 @@ public:
 	static const int size = 4096;
 	
 	static Page* alloc() {
-		Page* page = Engine::local->get_page();
-		page->next = 0;
-		return page;
+		return Engine::local->get_page();
 	}
 	
 	Page(const Page&) = delete;
@@ -48,6 +46,52 @@ private:
 	}
 	
 	friend class Engine;
+	
+};
+
+
+class Region {
+public:
+	Region(Engine* engine) : engine(engine) {
+		assert(engine);
+		begin = engine->get_page();
+		page = begin;
+		left = Page::size;
+	}
+	
+	Region() : Region(Engine::local) {}
+	
+	~Region() {
+		begin->free_all();
+	}
+	
+	void* alloc(int size) {
+		assert(size <= 1024);
+		if(left < size) {
+			page->next = engine->get_page();
+			page = page->next;
+			left = Page::size;
+		}
+		void* ptr = page->mem + (Page::size - left);
+		left -= size;
+		return ptr;
+	}
+	
+	template<typename T>
+	void* alloc() {
+		return alloc(sizeof(T));
+	}
+	
+	template<typename T>
+	T* create() {
+		return new(alloc<T>()) T();
+	}
+	
+private:
+	Engine* engine;
+	Page* begin;
+	Page* page;
+	int left;
 	
 };
 

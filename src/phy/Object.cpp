@@ -6,37 +6,63 @@
  */
 
 #include "phy/Object.h"
+#include "phy/Registry.h"
+#include "Util.h"
+
 
 namespace vnl { namespace phy {
 
+Object::Object()
+	:	mac(engine->rand())
+{
+	bind();
+}
+
+Object::Object(uint64_t mac)
+	:	mac(mac)
+{
+	bind();
+}
+
+Object::Object(const std::string& name)
+	:	Object::Object(Util::hash64(name)), name(name)
+{
+}
+
+Object::Object(Object* parent, const std::string& name)
+	:	Object::Object(parent->name + name)
+{
+}
+
+void Object::bind() {
+	assert(Registry::instance);
+	assert(Stream::request<bool>(Registry::bind_t(this), Registry::instance));
+	task = engine->launch(std::bind(&Object::mainloop, this));
+}
+
+void Object::die() {
+	Stream::send(Registry::kill_t(this), Registry::instance);
+}
+
 void Object::mainloop() {
-	Message* shutdown = 0;
 	while(true) {
 		Message* msg = poll();
 		if(!msg) {
 			break;
 		}
-		switch(msg->mid) {
-		case Engine::finished_t::id:
-			tasks.erase(((Engine::finished_t*)msg)->data);
+		if(msg->mid == delete_t::id) {
+			engine->listen_on(task, Registry::instance);
+			die();
+		} else if(msg->mid == exit_t::id) {
+			shutdown();
 			msg->ack();
 			break;
-		case close_t::id:
-			shutdown = msg;
-			if(handle(msg)) {
-				return;
-			}
-			break;
-		default:
-			if(!handle(msg)) {
-				msg->ack();
-			}
 		}
-		if(shutdown && tasks.size() == 0) {
-			shutdown->ack();
-			return;
+		if(!handle(msg)) {
+			msg->ack();
 		}
 	}
 }
+
 
 }}

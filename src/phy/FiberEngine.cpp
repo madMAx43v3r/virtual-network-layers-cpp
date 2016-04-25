@@ -8,6 +8,7 @@
 #include <chrono>
 #include <boost/bind.hpp>
 #include <boost/coroutine/symmetric_coroutine.hpp>
+#include <boost/coroutine/protected_stack_allocator.hpp>
 
 #include "phy/FiberEngine.h"
 #include "phy/Stream.h"
@@ -18,8 +19,12 @@ class BoostFiber : public Fiber {
 public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
-	BoostFiber(FiberEngine* engine)
-		: 	engine(engine), _call(boost::bind(&BoostFiber::entry, this, boost::arg<1>())) {}
+	BoostFiber(FiberEngine* engine, int stack_size)
+		: 	engine(engine),
+			_call(	boost::bind(&BoostFiber::entry, this, boost::arg<1>()),
+					boost::coroutines::attributes(stack_size),
+					boost::coroutines::protected_stack_allocator()	)
+	{}
 	
 	virtual void launch(taskid_t task_) override {
 		task = task_;
@@ -34,9 +39,9 @@ public:
 		
 	}
 	
-	virtual void sent(Message* msg) override {
+	virtual void sent(Message* msg, bool async) override {
 		pending++;
-		if(!msg->async && pending > 0) {
+		if(!async && pending > 0) {
 			wait();
 		}
 	}
@@ -51,7 +56,7 @@ public:
 		}
 	}
 	
-	virtual bool poll(int millis) override {
+	virtual bool poll(int64_t millis) override {
 		timeout = System::currentTimeMillis() + millis;
 		polling = true;
 		yield();
@@ -123,6 +128,10 @@ protected:
 };
 
 
+FiberEngine::FiberEngine(int stack_size) : stack_size(stack_size) {
+	
+}
+
 void FiberEngine::mainloop() {
 	local = this;
 	std::vector<Stream*> list;
@@ -138,12 +147,13 @@ void FiberEngine::mainloop() {
 		list.clear();
 		for(Message* msg : inbox) {
 			if(msg->mid == Engine::exec_t::id) {
-				launch(((Engine::exec_t*)msg)->data, 0);
+				launch(((Engine::exec_t*)msg)->data);
 			} else if(msg->isack) {
 				msg->impl->acked(msg);
 			} else {
-				msg->dst->push(msg);
-				list.push_back(msg->dst);
+				Stream* stream = (Stream*)msg->dst;
+				stream->push(msg);
+				list.push_back(stream);
 			}
 		}
 		for(Stream* stream : list) {

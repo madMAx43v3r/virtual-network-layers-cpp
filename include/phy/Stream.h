@@ -8,60 +8,47 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include <assert.h>
-
+#include "phy/Node.h"
 #include "phy/Engine.h"
 #include "phy/Memory.h"
-#include "util/queue.h"
+#include "phy/Queue.h"
+
 
 namespace vnl { namespace phy {
 
-class Object;
-class FiberEngine;
-class ThreadEngine;
-
-
-class Stream {
+class Stream : public vnl::phy::Node {
 public:
-	Stream() : engine(Engine::local) {
-		assert(engine);
-		mac = engine->rand();
-	}
-	
-	Stream(uint64_t mac) : engine(Engine::local), mac(mac) {
-		assert(engine);
-	}
+	Stream() : Stream(Engine::local) {}
+	Stream(Engine* engine) : engine(engine), mem(engine), queue(mem), impl(mem) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
 	// thread safe
-	void receive(Message* msg) {
+	virtual void receive(Message* msg) override {
 		msg->dst = this;
 		engine->receive(msg);
 	}
 	
 	template<typename T>
-	void send(T&& msg, Stream* dst) {
-		send(&msg, dst, false);
+	void send(T&& msg, Node* dst) {
+		engine->send(msg, dst);
 	}
 	
 	template<typename T, typename R>
-	T request(R&& req, Stream* dst) {
-		send(&req, dst, false);
-		return req.res;
+	T request(R&& req, Node* dst) {
+		return engine->request<T>(req, dst);
 	}
 	
-	void send(Message* msg, Stream* dst, bool async) {
-		msg->src = this;
+	void send(Message* msg, Node* dst, bool async) {
 		engine->send(msg, dst, async);
 	}
 	
 	Message* poll() {
-		return poll(2147483647);
+		return poll(9223372036854775808LL);
 	}
 	
-	Message* poll(int millis) {
+	Message* poll(int64_t millis) {
 		Message* msg = 0;
 		if(!queue.pop(msg) && millis >= 0) {
 			if(engine->poll(this, millis)) {
@@ -71,67 +58,20 @@ public:
 		return msg;
 	}
 	
-protected:
-	uint64_t mac;
-	
-private:
-	Engine* engine;
-	
 	void push(Message* msg) {
 		queue.push(msg);
 	}
 	
-private:
-	vnl::util::queue<Message*> queue;
-	vnl::util::queue<Fiber*> impl;
+protected:
+	Engine* engine;
+	Region mem;
 	
-	friend class Message;
-	friend class Object;
-	friend class Engine;
-	friend class FiberEngine;
-	friend class ThreadEngine;
+private:
+	Queue<Message*> queue;
+	Queue<Fiber*> impl;
 	
 };
 
-
-class Condition : Stream {
-public:
-	Condition() {}
-	
-	typedef Signal<0x794f0932> signal_t;
-	
-	void wait() {
-		waiting = true;
-		poll()->ack();
-		waiting = false;
-	}
-	
-	void notify() {
-		if(waiting) {
-			send(signal_t(), this);
-		}
-	}
-	
-	void set() {
-		value = true;
-		notify();
-	}
-	
-	void reset() {
-		value = false;
-	}
-	
-	void check() {
-		while(!value) {
-			wait();
-		}
-	}
-	
-private:
-	bool waiting = false;
-	bool value = false;
-	
-};
 
 
 }}

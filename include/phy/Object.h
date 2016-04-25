@@ -14,70 +14,74 @@
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
+#include "phy/Reference.h"
 #include "System.h"
 
 namespace vnl { namespace phy {
 
 class Object : public Stream {
 public:
-	Object() {
-		engine->launch(std::bind(&Object::mainloop, this), 0);
-	}
-	
-	virtual ~Object() {}
+	Object();
+	Object(const std::string& name);
+	Object(Object* parent, const std::string& name);
 	
 	uint64_t getMAC() {
 		return mac;
 	}
 	
-	typedef Signal<0xfe6ccd6f> close_t;
+	typedef Signal<0xfe6ccd6f> delete_t;
 	
 protected:
 	uint64_t rand() {
 		return engine->rand();
 	}
 	
+	template<typename T>
+	void send(T&& msg, Reference& dst) {
+		Stream::send(msg, dst.get());
+	}
+	
+	template<typename T, typename R>
+	T request(R&& req, Reference& dst) {
+		return Stream::request<T>(req, dst.get());
+	}
+	
+	void send(Message* msg, Reference& dst, bool async) {
+		Stream::send(msg, dst.get(), async);
+	}
+	
 	void flush() {
 		engine->flush();
 	}
 	
-	void yield() {
-		int64_t now = System::currentTimeMillis();
-		if(now - last_yield >= 10) {
-			sleep(0);
-			last_yield = now;
-		}
-	}
-	
-	void sleep(int millis) {
-		Stream stream;
-		stream.poll(millis);
-	}
-	
-	taskid_t launch(const std::function<void()>& func) {
-		taskid_t task = engine->launch(func, this);
-		tasks[task.id] = task;
-		return task;
-	}
-	
-	void wait_on(const taskid_t& task, Stream* stream) {
-		engine->wait_on(task, stream);
-	}
+	void die();
 	
 	virtual bool handle(Message* msg) {
 		return false;
 	}
 	
+	virtual void shutdown() {}
+	
 private:
+	typedef Signal<0x9a4ac2ca> exit_t;
+	
+	Object(uint64_t mac);
+	
+	virtual ~Object() {}
+	
+	void bind();
+	
 	void mainloop();
 	
 private:
-	std::unordered_map<uint64_t, taskid_t> tasks;
-	int64_t last_yield = 0;
+	std::string name;
+	uint64_t mac;
+	taskid_t task;
 	
 	friend class Message;
 	friend class Stream;
 	friend class Engine;
+	friend class Registry;
 	
 };
 

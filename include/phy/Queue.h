@@ -1,32 +1,23 @@
 /*
- * queue.h
+ * Queue.h
  *
  *  Created on: Mar 5, 2016
  *      Author: mad
  */
 
-#ifndef INCLUDE_UTIL_QUEUE_H_
-#define INCLUDE_UTIL_QUEUE_H_
+#ifndef INCLUDE_PHY_QUEUE_H_
+#define INCLUDE_PHY_QUEUE_H_
 
 #include "phy/Memory.h"
 
-namespace vnl { namespace util {
+namespace vnl { namespace phy {
 
 template<typename T, int N = 20>
-class queue {
+class Queue {
 public:
-	queue() {
-		front = new block_t();
+	Queue(Region* mem) : mem(mem) {
+		front = mem->create<block_t>();
 		back = front;
-	}
-	
-	~queue() {
-		block_t* block = front;
-		while(block) {
-			block_t* tmp = block->next;
-			delete block;
-			block = tmp;
-		}
 	}
 	
 protected:
@@ -41,7 +32,7 @@ public:
 	void push(T obj) {
 		if(back->write >= N) {
 			if(!back->next) {
-				back->next = new block_t();
+				back->next = mem->create<block_t>();
 			}
 			back = back->next;
 		}
@@ -73,6 +64,7 @@ public:
 	}
 	
 private:
+	Region* mem;
 	block_t* front;
 	block_t* back;
 	
@@ -81,4 +73,4 @@ private:
 
 }}
 
-#endif /* INCLUDE_UTIL_QUEUE_H_ */
+#endif /* INCLUDE_PHY_QUEUE_H_ */

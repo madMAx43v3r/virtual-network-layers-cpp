@@ -27,7 +27,7 @@ namespace vnl { namespace io {
 Server* Server::instance = 0;
 
 Socket::Socket() : server(Server::instance) {
-	assert(Server::instance != 0);
+	assert(server);
 	key.sin = &in;
 	key.sout = &out;
 }

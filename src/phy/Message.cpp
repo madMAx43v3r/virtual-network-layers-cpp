@@ -14,8 +14,8 @@ void Message::ack() {
 	if(!isack) {
 		isack = true;
 		if(src) {
-			src->engine->receive(this);
-		} else if(async) {
+			src->receive(this);
+		} else {
 			delete this;
 		}
 	}
