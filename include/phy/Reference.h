@@ -19,7 +19,7 @@ class Object;
 class Reference {
 public:
 	Reference(Object* obj)
-		:	mac(0), obj(obj)
+		:	mac(obj->MAC()), obj(obj)
 	{
 	}
 	
@@ -51,7 +51,7 @@ public:
 	
 	~Reference() {
 		if(obj) {
-			Engine::local->send(Registry::close_t(obj), Registry::instance);
+			Engine::local->send_async(Registry::close_t(obj), Registry::instance);
 		}
 	}
 	

@@ -17,10 +17,11 @@ namespace vnl { namespace phy {
 
 thread_local Engine* Engine::local = 0;
 
-Engine::Engine() : ulock(mutex), thread(0) {
+Engine::Engine() : ulock(mutex), thread(0), mem(this), buffer(mem) {
 	ulock.unlock();
 	static std::atomic<int> counter;
 	generator.seed(Util::hash64(counter++, (uint64_t)std::hash(std::this_thread::get_id()), System::nanoTime()));
+	async_cb = std::bind(&Engine::async_ack, this, std::placeholders::_1);
 }
 
 Engine::~Engine() {
@@ -49,7 +50,7 @@ void Engine::stop() {
 	}
 }
 
-void Engine::send(Message* msg, Node* dst, bool async) {
+void Engine::send_impl(Message* msg, Node* dst, bool async) {
 	assert(Engine::local == this);
 	assert(msg->impl == 0);
 	assert(msg->isack == false);
@@ -91,7 +92,7 @@ taskid_t Engine::launch(const std::function<void()>& func) {
 	return task;
 }
 
-bool Engine::listen_on(const taskid_t& task, Stream* dst) {
+bool Engine::listen_on(const taskid_t& task, Node* dst) {
 	assert(Engine::local == this);
 	Fiber* fiber = task.impl;
 	if(fiber->task.id == task.id) {
@@ -127,6 +128,7 @@ int Engine::collect(std::vector<Message*>& inbox, int timeout) {
 }
 
 Page* Engine::get_page() {
+	assert(Engine::local == this);
 	Page* page;
 	if(pages.size()) {
 		page = pages.back();
@@ -139,6 +141,7 @@ Page* Engine::get_page() {
 }
 
 void Engine::free_page(Page* page) {
+	assert(Engine::local == this);
 	if(pages.size() < 1024) {
 		pages.push_back(page);
 	} else {
@@ -148,7 +151,7 @@ void Engine::free_page(Page* page) {
 
 
 void Fiber::finished(Engine* engine, Fiber* fiber) {
-	for(Stream* stream : waitlist) {
+	for(Node* stream : waitlist) {
 		stream->receive(new Engine::finished_t(task.id, true));
 	}
 	task.id = 0;

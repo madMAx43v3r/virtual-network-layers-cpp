@@ -25,9 +25,7 @@ public:
 	Object(const std::string& name);
 	Object(Object* parent, const std::string& name);
 	
-	uint64_t getMAC() {
-		return mac;
-	}
+	const std::string& getName() const { return name; }
 	
 	typedef Signal<0xfe6ccd6f> delete_t;
 	
@@ -41,13 +39,22 @@ protected:
 		Stream::send(msg, dst.get());
 	}
 	
+	template<typename T>
+	void send_async(T&& msg, Reference& dst) {
+		Stream::send_async(msg, dst.get());
+	}
+	
 	template<typename T, typename R>
 	T request(R&& req, Reference& dst) {
 		return Stream::request<T>(req, dst.get());
 	}
 	
-	void send(Message* msg, Reference& dst, bool async) {
-		Stream::send(msg, dst.get(), async);
+	void send(Message* msg, Reference& dst) {
+		Stream::send(msg, dst.get());
+	}
+	
+	void send_async(Message* msg, Reference& dst) {
+		Stream::send_async(msg, dst.get());
 	}
 	
 	void flush() {
@@ -75,7 +82,6 @@ private:
 	
 private:
 	std::string name;
-	uint64_t mac;
 	taskid_t task;
 	
 	friend class Message;

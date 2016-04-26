@@ -9,15 +9,13 @@
 #define INCLUDE_PHY_REGISTRY_H_
 
 #include <unordered_map>
-#include <tuple>
 
 #include "phy/Node.h"
-#include "util/spinlock.h"
 
 
 namespace vnl { namespace phy {
 
-class Registry : public vnl::phy::Node {
+class Registry : public vnl::phy::FloatingNode {
 public:
 	static Registry* instance;
 	
@@ -27,25 +25,14 @@ public:
 	typedef vnl::phy::Generic<Object*, 0x4177d786> kill_t;
 	typedef vnl::phy::Signal<0x2aa87626> shutdown_t;
 	
-	virtual void receive(Message* msg) override {
-		sync.lock();
-		if(!handle(msg)) {
-			msg->ack();
-		}
-		if(exit_msg && map.empty()) {
-			exit_msg->ack();
-		}
-		sync.unlock();
-	}
-	
-private:
+protected:
 	struct entry_t {
 		Object* obj = 0;
 		int64_t ref = 0;
 		bool dying = false;
 	};
 	
-	bool handle(Message* msg) {
+	bool handle(Message* msg) override {
 		switch(msg->mid) {
 		case bind_t::id: {
 			bind_t* req = (bind_t*)msg;
@@ -85,11 +72,15 @@ private:
 			}
 			return true;
 		}
+		if(exit_msg && map.empty()) {
+			exit_msg->ack();
+		}
 		return false;
 	}
 	
+private:
 	bool bind(Object* obj) {
-		uint64_t mac = obj->getMAC();
+		uint64_t mac = obj->MAC();
 		entry_t& entry = map[mac];
 		if(entry.obj == 0) {
 			entry.obj = obj;
@@ -133,7 +124,7 @@ private:
 	}
 	
 	void kill(Object* obj) {
-		uint64_t mac = obj->getMAC();
+		uint64_t mac = obj->MAC();
 		auto iter = map.find(mac);
 		if(iter != map.end()) {
 			entry_t& entry = iter->second;

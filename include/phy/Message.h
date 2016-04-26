@@ -39,6 +39,7 @@ public:
 	Fiber* impl = 0;
 	bool isack = false;
 	
+	void* user = 0;
 	std::function<void(Message*)> callback;
 	
 };

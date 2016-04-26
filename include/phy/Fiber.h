@@ -8,8 +8,6 @@
 #ifndef INCLUDE_PHY_FIBER_H_
 #define INCLUDE_PHY_FIBER_H_
 
-#include <functional>
-
 #include "phy/Engine.h"
 
 namespace vnl { namespace phy {
@@ -48,7 +46,7 @@ protected:
 	void finished(Engine* engine, Fiber* fiber);
 	
 private:
-	std::vector<Stream*> waitlist;
+	std::vector<Node*> waitlist;
 	
 	friend class Engine;
 	

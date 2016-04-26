@@ -28,8 +28,7 @@ public:
 		{
 			Registry::shutdown_t msg;
 			msg.src = &node;
-			Registry::instance->receive(&msg);
-			node.wait();
+			node.send(&msg, Registry::instance);
 		}
 	}
 	

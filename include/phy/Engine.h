@@ -19,6 +19,7 @@
 #include "util/mpsc_queue.h"
 #include "phy/Message.h"
 #include "phy/Node.h"
+#include "phy/RingBuffer.h"
 #include "System.h"
 #include "Util.h"
 
@@ -50,10 +51,9 @@ public:
 	void exec(const std::function<void()>& func) {
 		SyncNode node;
 		exec_t msg;
-		msg.src = node;
+		msg.src = &node;
 		msg.data = func;
-		receive(&msg);
-		node.wait();
+		node.send(&msg, this);
 	}
 	
 	virtual void receive(Message* msg) override {
@@ -64,6 +64,9 @@ public:
 			unlock();
 		}
 	}
+	
+	Page* get_page();
+	void free_page(Page* page);
 	
 	typedef Generic<uint64_t, 0x5a8a106d> finished_t;
 	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
@@ -80,16 +83,32 @@ protected:
 	
 	template<typename T>
 	void send(T&& msg, Node* dst) {
-		send(&msg, dst, false);
+		send(&msg, dst);
+	}
+	
+	template<typename T>
+	void send_async(T&& msg, Node* dst) {
+		RingBuffer::entry_t* entry;
+		T* cpy = buffer.create<T>(entry);
+		*cpy = msg;
+		cpy->user = entry;
+		cpy->callback = async_cb;
+		send(cpy, dst);
 	}
 	
 	template<typename T, typename R>
 	T request(R&& req, Node* dst) {
-		send(&req, dst, false);
+		send(&req, dst);
 		return req.res;
 	}
 	
-	void send(Message* msg, Node* dst, bool async);
+	void send(Message* msg, Node* dst) {
+		send_impl(msg, dst, false);
+	}
+	
+	void send_async(Message* msg, Node* dst) {
+		send_impl(msg, dst, true);
+	}
 	
 	bool poll(Stream* stream, int64_t millis);
 	
@@ -97,7 +116,7 @@ protected:
 	
 	taskid_t launch(const std::function<void()>& func);
 	
-	bool listen_on(const taskid_t& task, Stream* dst);
+	bool listen_on(const taskid_t& task, Node* dst);
 	
 	void lock() {
 		mutex.lock();
@@ -122,9 +141,7 @@ protected:
 	int collect(std::vector<Message*>& inbox, int timeout);
 	
 private:
-	struct exec_info_t {
-		std::function<void()> func;
-	};
+	void send_impl(Message* msg, Node* dst, bool async);
 	
 	void entry() {
 		mainloop();
@@ -134,8 +151,9 @@ private:
 		avail.push_back(fiber);
 	}
 	
-	Page* get_page();
-	void free_page(Page* page);
+	void async_ack(Message* msg) {
+		buffer.free((RingBuffer::entry_t*)msg->user);
+	}
 	
 private:
 	std::mutex mutex;
@@ -151,6 +169,10 @@ private:
 	uint64_t nextid = 1;
 	
 	std::vector<Page*> pages;
+	
+	Region mem;
+	RingBuffer buffer;
+	std::function<void(Message*)> async_cb;
 	
 	friend class Message;
 	friend class Stream;

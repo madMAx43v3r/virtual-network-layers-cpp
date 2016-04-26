@@ -11,6 +11,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "util/spinlock.h"
+
 
 namespace vnl { namespace phy {
 
@@ -20,7 +22,28 @@ class Node {
 public:
 	virtual ~Node() {}
 	
+	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
+	
+};
+
+
+class FloatingNode : public Node {
+public:
+	
+	virtual void receive(Message* msg) override {
+		sync.lock();
+		if(!handle(msg)) {
+			msg->ack();
+		}
+		sync.unlock();
+	}
+	
+protected:
+	virtual bool handle(Message* msg) = 0;
+	
+private:
+	vnl::util::spinlock sync;
 	
 };
 
@@ -34,7 +57,8 @@ public:
 		cond.notify_all();
 	}
 	
-	void wait() {
+	void send(Message* msg, Node* dst) {
+		dst->receive(msg);
 		cond.wait(ulock);
 	}
 	

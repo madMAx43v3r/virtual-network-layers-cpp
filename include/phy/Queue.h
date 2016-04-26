@@ -16,8 +16,8 @@ template<typename T, int N = 20>
 class Queue {
 public:
 	Queue(Region* mem) : mem(mem) {
-		front = mem->create<block_t>();
-		back = front;
+		p_front = mem->create<block_t>();
+		p_back = p_front;
 	}
 	
 protected:
@@ -29,26 +29,28 @@ protected:
 	};
 	
 public:
-	void push(T obj) {
-		if(back->write >= N) {
-			if(!back->next) {
-				back->next = mem->create<block_t>();
+	T* push(T obj) {
+		if(p_back->write >= N) {
+			if(!p_back->next) {
+				p_back->next = mem->create<block_t>();
 			}
-			back = back->next;
+			p_back = p_back->next;
 		}
-		back->elem[back->write++] = obj;
+		T* ptr = &p_back->elem[p_back->write++];
+		*ptr = obj;
+		return ptr;
 	}
 	
 	T pop() {
-		if(front->read >= N) {
-			block_t* tmp = front;
+		if(p_front->read >= N) {
+			block_t* tmp = p_front;
 			tmp->read = 0;
 			tmp->write = 0;
-			front = front->next;
-			tmp->next = back->next;
-			back->next = tmp;
+			p_front = p_front->next;
+			tmp->next = p_back->next;
+			p_back->next = tmp;
 		}
-		return front->elem[front->read++];
+		return p_front->elem[p_front->read++];
 	}
 	
 	bool pop(T& ref) {
@@ -59,14 +61,22 @@ public:
 		return false;
 	}
 	
+	T& front() {
+		return p_front->elem[p_front->read];
+	}
+	
+	T& back() {
+		return p_back->elem[p_back->write - 1];
+	}
+	
 	bool empty() {
-		return front->read == front->write && front == back;
+		return p_front->read == p_front->write && p_front == p_back;
 	}
 	
 private:
 	Region* mem;
-	block_t* front;
-	block_t* back;
+	block_t* p_front;
+	block_t* p_back;
 	
 };
 

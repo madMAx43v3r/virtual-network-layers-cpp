@@ -14,7 +14,7 @@ Router::Router(Uplink* uplink)
 		cb_rcv(std::bind(&Router::callback_rcv, this, std::placeholders::_1)),
 		cb_snd(std::bind(&Router::callback_snd, this, std::placeholders::_1))
 {
-	Node::configure(Address(this_mac, 0));
+	Node::configure(Address(MAC(), 0));
 }
 
 Router::~Router() {
@@ -23,7 +23,7 @@ Router::~Router() {
 
 bool Router::handle(phy::Message* msg) {
 	Node* node = (Node*)msg->src;
-	uint64_t srcmac = node ? node->getMAC() : 0;
+	uint64_t srcmac = node ? node->MAC() : 0;
 	switch(msg->mid) {
 	case connect_t::id:
 		if(node) {
@@ -40,7 +40,7 @@ bool Router::handle(phy::Message* msg) {
 	case send_t::id: {
 		Packet* packet = (Packet*)msg;
 		Frame& frame = packet->frame;
-		if(frame.src.A == 0) { frame.src.A = this_mac; }
+		if(frame.src.A == 0) { frame.src.A = MAC(); }
 		if(frame.src.B == 0) { frame.src.B = srcmac; }
 		if(frame.flags == Frame::REGISTER) {
 			configure(frame.dst, node);
@@ -65,7 +65,7 @@ void Router::route(Packet* msg, uint64_t srcmac) {
 	bool unicast = frame.flags & Frame::UNICAST;
 	bool anycast = frame.flags & Frame::ANYCAST;
 	bool multicast = frame.flags & Frame::MULTICAST;
-	if(frame.dst.A == this_mac) {
+	if(frame.dst.A == MAC()) {
 		if(unicast) {
 			auto iter = nodes.find(frame.dst.B);
 			if(iter != nodes.end()) {
@@ -163,7 +163,7 @@ void Router::fw_many(Packet* msg, std::vector<Node*>& list, uint64_t srcmac) {
 	int N = list.size();
 	for(int i = 0; i < N; ++i) {
 		Node* dst = list[i];
-		if(dst && dst->getMAC() != srcmac) {
+		if(dst && dst->MAC() != srcmac) {
 			forward(msg, dst);
 		}
 	}

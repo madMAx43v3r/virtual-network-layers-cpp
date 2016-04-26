@@ -13,13 +13,13 @@
 namespace vnl { namespace phy {
 
 Object::Object()
-	:	mac(engine->rand())
+	:	Stream::Stream(engine->rand())
 {
 	bind();
 }
 
 Object::Object(uint64_t mac)
-	:	mac(mac)
+	:	Stream::Stream(mac)
 {
 	bind();
 }

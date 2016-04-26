@@ -54,25 +54,36 @@ class Region {
 public:
 	Region(Engine* engine) : engine(engine) {
 		assert(engine);
-		begin = engine->get_page();
-		page = begin;
+		p_front = engine->get_page();
+		p_back = p_front;
 		left = Page::size;
 	}
 	
 	Region() : Region(Engine::local) {}
 	
+	Region(const Region&) = delete;
+	Region& operator=(const Region&) = delete;
+	
 	~Region() {
-		begin->free_all();
+		p_front->free_all();
+	}
+	
+	Page* get_page() {
+		return engine->get_page();
+	}
+	
+	void free_page(Page* page) {
+		engine->free_page(page);
 	}
 	
 	void* alloc(int size) {
 		assert(size <= 1024);
 		if(left < size) {
-			page->next = engine->get_page();
-			page = page->next;
+			p_back->next = engine->get_page();
+			p_back = p_back->next;
 			left = Page::size;
 		}
-		void* ptr = page->mem + (Page::size - left);
+		void* ptr = p_back->mem + (Page::size - left);
 		left -= size;
 		return ptr;
 	}
@@ -89,11 +100,12 @@ public:
 	
 private:
 	Engine* engine;
-	Page* begin;
-	Page* page;
+	Page* p_front;
+	Page* p_back;
 	int left;
 	
 };
+
 
 
 }}
