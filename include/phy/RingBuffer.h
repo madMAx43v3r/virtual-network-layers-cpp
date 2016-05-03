@@ -48,13 +48,13 @@ public:
 	}
 	
 	template<typename T>
-	void free(entry_t* entry) {
+	void destroy(entry_t* entry) {
 		((T*)entry->ptr)->~T();
 		free(entry);
 	}
 	
 	entry_t* alloc(int size) {
-		assert(size <= 1024);
+		assert(size <= Page::size);
 		if(left < size) {
 			p_back->next = mem->get_page();
 			p_back = p_back->next;

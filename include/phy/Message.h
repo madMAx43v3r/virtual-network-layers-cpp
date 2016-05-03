@@ -38,6 +38,7 @@ public:
 	Node* dst = 0;
 	Fiber* impl = 0;
 	bool isack = false;
+	bool safe = false;
 	
 	void* user = 0;
 	std::function<void(Message*)> callback;

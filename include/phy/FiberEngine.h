@@ -14,18 +14,27 @@
 namespace vnl { namespace phy {
 
 class FiberEngine : public Engine {
-protected:
+public:
 	FiberEngine(int stack_size = 64*1024);
 	
-	virtual void mainloop() override;
+	~FiberEngine() {
+		for(Fiber* fiber : fibers) {
+			delete fiber;
+		}
+	}
 	
-	virtual Fiber* create() override;
+	virtual void run(Object* object) override;
 	
 private:
+	virtual void FiberEngine::fork(Object* object) override;
+	
 	int timeout();
 	
 private:
 	int stack_size;
+	
+	List<Fiber*> fibers;
+	Queue<Fiber*> avail;
 	
 };
 

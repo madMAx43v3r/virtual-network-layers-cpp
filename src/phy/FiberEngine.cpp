@@ -24,25 +24,21 @@ public:
 			_call(	boost::bind(&BoostFiber::entry, this, boost::arg<1>()),
 					boost::coroutines::attributes(stack_size),
 					boost::coroutines::protected_stack_allocator()	)
-	{}
-	
-	virtual void launch(taskid_t task_) override {
-		task = task_;
+	{
 		call();
 	}
 	
-	virtual void start() override {
+	virtual void exec(Object* obj_) override {
+		obj = obj_;
 		call();
-	}
-	
-	virtual void stop() override {
-		
 	}
 	
 	virtual void sent(Message* msg, bool async) override {
 		pending++;
 		if(!async && pending > 0) {
+			wait_msg = msg;
 			wait();
+			wait_msg = 0;
 		}
 	}
 	
@@ -51,7 +47,7 @@ public:
 			cbs.push_back(msg);
 		}
 		pending--;
-		if(pending == 0 && waiting) {
+		if(waiting && (wait_msg == msg || pending == 0)) {
 			call();
 		}
 	}
@@ -84,8 +80,8 @@ protected:
 	void run() {
 		while(true) {
 			yield();
-			task.func();
-			finished(engine, this);
+			do_exec(engine, obj);
+			engine->avail.push(this);
 		}
 	}
 	
@@ -121,69 +117,68 @@ protected:
 	std::vector<Message*> cbs;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
+	Object* obj;
 	int pending = 0;
 	bool result = false;
 	bool waiting = false;
+	Message* wait_msg = 0;
 	
 };
 
 
-FiberEngine::FiberEngine(int stack_size) : stack_size(stack_size) {
-	
+FiberEngine::FiberEngine(int stack_size)
+	:	stack_size(stack_size), fibers(mem), avail(mem)
+{
 }
 
-void FiberEngine::mainloop() {
-	local = this;
-	std::vector<Stream*> list;
-	std::vector<Message*> inbox;
+void FiberEngine::run(Object* object) {
+	fork(object);
+	Queue<Node*> list(mem);
 	while(dorun) {
-		inbox.clear();
-		while(dorun) {
-			int to = timeout();
-			if(collect(inbox, to)) {
+		int to = timeout();
+		while(true) {
+			Message* msg = collect(to);
+			if(msg) {
+				if(msg->isack) {
+					msg->impl->acked(msg);
+				} else {
+					Node* node = msg->dst;
+					node->receive(msg);
+					list.push(node);
+				}
+			} else {
 				break;
 			}
 		}
-		list.clear();
-		for(Message* msg : inbox) {
-			if(msg->mid == Engine::exec_t::id) {
-				launch(((Engine::exec_t*)msg)->data);
-			} else if(msg->isack) {
-				msg->impl->acked(msg);
-			} else {
-				Stream* stream = (Stream*)msg->dst;
-				stream->push(msg);
-				list.push_back(stream);
+		Node* node;
+		while(list.pop(node)) {
+			if(node->impl) {
+				node->impl->notify(true);
 			}
 		}
-		for(Stream* stream : list) {
-			if(!stream->queue.empty()) {
-				Fiber* fiber;
-				if(stream->impl.pop(fiber)) {
-					fiber->notify(true);
-				}
-			}
-		}
-	}
-	for(Fiber* fiber : fibers) {
-		fiber->stop();
 	}
 }
 
-Fiber* FiberEngine::create() {
-	return new BoostFiber(this);
+void FiberEngine::fork(Object* object) {
+	assert(Engine::local == this);
+	Fiber* fiber;
+	if(!avail.pop(fiber)) {
+		fiber = new BoostFiber(this);
+		fibers.push(fiber);
+	}
+	fiber->exec(object);
 }
 
 int FiberEngine::timeout() {
 	int64_t now = System::currentTimeMillis();
+	int64_t millis = 9223372036854775808LL;
 	std::vector<BoostFiber*> list;
-	int millis = 1000;
 	while(true) {
 		list.clear();
 		for(Fiber* ptr : fibers) {
 			BoostFiber* fiber = (BoostFiber*)ptr;
 			if(fiber->polling) {
-				int diff = fiber->timeout - now;
+				int64_t diff = fiber->timeout - now;
 				if(diff <= 0) {
 					list.push_back(fiber);
 				} else if(diff < millis) {

@@ -17,6 +17,7 @@ public:
 	static const int size = 4096;
 	
 	static Page* alloc() {
+		assert(Engine::local);
 		return Engine::local->get_page();
 	}
 	
@@ -45,6 +46,10 @@ private:
 		mem = (char*)malloc(size);
 	}
 	
+	~Page() {
+		::free(mem);
+	}
+	
 	friend class Engine;
 	
 };
@@ -69,17 +74,22 @@ public:
 	}
 	
 	template<typename T>
-	void* alloc() {
-		return alloc(sizeof(T));
-	}
-	
-	template<typename T>
 	T* create() {
 		return new(alloc<T>()) T();
 	}
 	
+	template<typename T>
+	void destroy(T* obj) {
+		obj->~T();
+	}
+	
+	template<typename T>
+	void* alloc() {
+		return alloc(sizeof(T));
+	}
+	
 	void* alloc(int size) {
-		assert(size <= 1024);
+		assert(size <= Page::size);
 		if(left < size) {
 			p_back->next = engine->get_page();
 			p_back = p_back->next;

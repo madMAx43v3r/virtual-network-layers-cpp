@@ -19,14 +19,15 @@ class Object;
 class Reference {
 public:
 	Reference(Object* obj)
-		:	mac(obj->MAC()), obj(obj)
+		:	mac(obj->getMAC()), obj(obj)
 	{
+		assert(Engine::local);
+		Engine::local->send_async(Registry::open_t(obj), Registry::instance);
 	}
 	
 	Reference(uint64_t mac)
 		:	mac(mac)
 	{
-		assert(Engine::local);
 	}
 	
 	Reference(const std::string& name) 

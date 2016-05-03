@@ -16,22 +16,28 @@
 
 namespace vnl { namespace phy {
 
-class Stream : public vnl::phy::Node {
+class Engine;
+
+class Stream : public Node {
 public:
-	Stream(uint64_t mac) : Stream(Engine::local, mac) {}
-	
-	Stream(Engine* engine, uint64_t mac)
-		:	engine(engine), mem(engine), mac(mac), queue(mem), impl(mem) {}
+	Stream(Engine* engine)
+		:	engine(engine), mem(engine), queue(mem) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
-	uint64_t MAC() const { return mac; }
-	
 	// thread safe
 	virtual void receive(Message* msg) override {
-		msg->dst = this;
-		engine->receive(msg);
+		if(msg->safe) {
+			push(msg);
+		} else {
+			msg->dst = this;
+			engine->receive(msg);
+		}
+	}
+	
+	uint64_t rand() {
+		return engine->rand();
 	}
 	
 	template<typename T>
@@ -57,6 +63,10 @@ public:
 		engine->send_async(msg, dst);
 	}
 	
+	void flush() {
+		engine->flush();
+	}
+	
 	Message* poll() {
 		return poll(9223372036854775808LL);
 	}
@@ -80,9 +90,9 @@ protected:
 	Region mem;
 	
 private:
-	uint64_t mac;
 	Queue<Message*> queue;
-	Queue<Fiber*> impl;
+	
+	friend class Engine;
 	
 };
 
