@@ -68,12 +68,14 @@ public:
 		p_front->free_all();
 	}
 	
-	Page* get_page() {
-		return engine->get_page();
+	template<typename T>
+	void* alloc() {
+		return alloc(sizeof(T));
 	}
 	
-	void free_page(Page* page) {
-		engine->free_page(page);
+	template<typename T>
+	T* create() {
+		return new(alloc<T>()) T();
 	}
 	
 	void* alloc(int size) {
@@ -88,14 +90,12 @@ public:
 		return ptr;
 	}
 	
-	template<typename T>
-	void* alloc() {
-		return alloc(sizeof(T));
+	Page* get_page() {
+		return engine->get_page();
 	}
 	
-	template<typename T>
-	T* create() {
-		return new(alloc<T>()) T();
+	void free_page(Page* page) {
+		engine->free_page(page);
 	}
 	
 private:

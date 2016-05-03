@@ -152,7 +152,7 @@ private:
 	}
 	
 	void async_ack(Message* msg) {
-		buffer.free((RingBuffer::entry_t*)msg->user);
+		buffer.free<Message>((RingBuffer::entry_t*)msg->user);
 	}
 	
 private:

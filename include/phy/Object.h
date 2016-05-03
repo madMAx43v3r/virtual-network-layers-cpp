@@ -8,9 +8,8 @@
 #ifndef INCLUDE_PHY_OBJECT_H_
 #define INCLUDE_PHY_OBJECT_H_
 
+#include <functional>
 #include <unordered_map>
-#include <vector>
-#include <assert.h>
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
@@ -27,6 +26,7 @@ public:
 	
 	const std::string& getName() const { return name; }
 	
+	typedef Generic<uint32_t, 0x33145536> timeout_t;
 	typedef Signal<0xfe6ccd6f> delete_t;
 	
 protected:
@@ -59,6 +59,10 @@ protected:
 	
 	void flush() {
 		engine->flush();
+	}
+	
+	void timeout(int64_t micro, const std::function<void()>& func, bool repeat = false) {
+		// TODO
 	}
 	
 	void die();

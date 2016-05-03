@@ -12,7 +12,7 @@
 #include "phy/FiberEngine.h"
 #include "phy/ThreadEngine.h"
 #include "phy/Object.h"
-#include "util/pool.h"
+#include "phy/Pool.h"
 using namespace vnl::phy;
 
 const bool verify = false;
@@ -24,14 +24,14 @@ public:
 	uint64_t last = 0;
 	uint64_t counter = 0;
 	std::map<uint64_t, uint64_t> map;
-	Consumer() {
+	Consumer(std::string name) : Object::Object(name) {
 		last = vnl::System::currentTimeMillis();
 	}
 	
 	class count_seq_t : public Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> {
 	public:
 		count_seq_t() : Generic() {}
-		count_seq_t(const std::pair<uint64_t, uint64_t>& data, bool async = false) : Generic(data, async) {}
+		count_seq_t(const std::pair<uint64_t, uint64_t>& data) : Generic(data) {}
 		virtual std::string toString() override {
 			std::ostringstream ss;
 			ss << Message::toString() << " pid=" << data.first << " seq=" << data.second;
@@ -49,7 +49,7 @@ protected:
 		counter++;
 		if(counter % (1000*1000) == 0) {
 			uint64_t now = vnl::System::currentTimeMillis();
-			std::cout << (now-last) << " Consumer " << this_mac << std::endl;
+			std::cout << (now-last) << " Consumer " << MAC() << std::endl;
 			last = now;
 		}
 	}
@@ -69,23 +69,17 @@ protected:
 
 class Producer : public vnl::phy::Object {
 public:
-	Producer(Consumer* dst, int M) : dst(dst) {
-		for(int i = 0; i < M; ++i) {
-			workers.push_back(launch(std::bind(&Producer::produce, this)));
-		}
+	Producer(std::string name, std::string dst_) : Object::Object(name), dst(dst_) {
+		
 	}
 protected:
-	Consumer* dst;
+	Reference dst;
 	std::vector<taskid_t> workers;
 	void produce() {
 		const int N = 103;
 		uint64_t pid = rand();
 		uint64_t seq = 0;
 		std::cout << vnl::System::currentTimeMillis() << " Started Producer " << pid << std::endl;
-		vnl::util::pool<Consumer::count_seq_t> msgs;
-		auto callback = [&msgs](Message* msg) {
-			msgs.free((Consumer::count_seq_t*)msg);
-		};
 		while(dst) {
 			if(async) {
 				for(int i = 0; i < N; ++i) {
