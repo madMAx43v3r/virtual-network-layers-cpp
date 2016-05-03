@@ -19,15 +19,9 @@ namespace vnl { namespace phy {
 template<typename T>
 class List {
 public:
-	List() {
+	List(Region* mem) : mem(mem) {
 		p_front = 0;
 		p_back = 0;
-	}
-	
-	~List() {
-		for(auto iter = begin(); iter != end(); ++iter) {
-			iter->~T();
-		}
 	}
 	
 protected:
@@ -39,11 +33,11 @@ protected:
 public:
 	T& push(T obj) {
 		if(!p_front) {
-			p_front = mem.create<entry_t>();
+			p_front = mem->create<entry_t>();
 			p_back = p_front;
 		} else {
 			if(!p_back->next) {
-				p_back->next = mem.create<entry_t>();
+				p_back->next = mem->create<entry_t>();
 			}
 			p_back = p_back->next;
 		}
@@ -141,7 +135,7 @@ public:
 	const_iterator cend() const { return const_iterator(p_back->next); }
 	
 protected:
-	Region mem;
+	Region* mem;
 	entry_t* p_front;
 	entry_t* p_back;
 	

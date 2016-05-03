@@ -20,8 +20,10 @@ class Engine;
 
 class Stream : public Node {
 public:
+	Stream() : Stream(Engine::local) {}
+	
 	Stream(Engine* engine)
-		:	engine(engine), mem(engine), queue(mem) {}
+		:	engine(engine), queue(&mem) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -38,6 +40,10 @@ public:
 	
 	uint64_t rand() {
 		return engine->rand();
+	}
+	
+	void fork(Object* object) {
+		engine->fork(object);
 	}
 	
 	template<typename T>
@@ -87,9 +93,9 @@ public:
 	
 protected:
 	Engine* engine;
-	Region mem;
 	
 private:
+	Region mem;
 	Queue<Message*> queue;
 	
 	friend class Engine;

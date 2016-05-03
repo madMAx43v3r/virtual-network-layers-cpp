@@ -8,31 +8,46 @@
 #ifndef INCLUDE_PHY_MEMORY_H_
 #define INCLUDE_PHY_MEMORY_H_
 
-#include "phy/Engine.h"
+#include "util/spinlock.h"
+
+#ifndef VNL_PHY_PAGESIZE
+#define VNL_PHY_PAGESIZE 4096
+#endif
+
 
 namespace vnl { namespace phy {
 
 class Page {
 public:
-	static const int size = 4096;
+	static const int size = VNL_PHY_PAGESIZE;
 	
 	static Page* alloc() {
-		assert(Engine::local);
-		return Engine::local->get_page();
+		sync.lock();
+		if(begin) {
+			Page* page = begin;
+			begin = begin->next;
+			sync.unlock();
+			page->next = 0;
+			return page;
+		} else {
+			sync.unlock();
+			return new Page(this);
+		}
 	}
 	
 	Page(const Page&) = delete;
 	Page& operator=(const Page&) = delete;
 	
 	void free() {
-		engine->free_page(this);
+		sync.lock();
+		_free();
+		sync.unlock();
 	}
 	
 	void free_all() {
-		if(next) {
-			next->free();
-		}
-		free();
+		sync.lock();
+		_free_all();
+		sync.unlock();
 	}
 	
 	char* mem;
@@ -40,9 +55,7 @@ public:
 	Page* next;
 	
 private:
-	Engine* engine;
-	
-	Page(Engine* engine) : next(0), engine(engine) {
+	Page() : next(0) {
 		mem = (char*)malloc(size);
 	}
 	
@@ -50,37 +63,54 @@ private:
 		::free(mem);
 	}
 	
-	friend class Engine;
+	void _free() {
+		next = begin;
+		begin = this;
+	}
+	
+	void _free_all() {
+		Page* page = this;
+		while(page) {
+			Page* tmp = page;
+			page = page->next;
+			tmp->_free();
+		}
+	}
+	
+private:
+	static vnl::util::spinlock sync;
+	static Page* begin;
 	
 };
 
 
 class Region {
 public:
-	Region(Engine* engine) : engine(engine) {
-		assert(engine);
-		p_front = engine->get_page();
+	Region() {
+		p_front = Page::alloc();
 		p_back = p_front;
 		left = Page::size;
 	}
 	
-	Region() : Region(Engine::local) {}
-	
-	Region(const Region&) = delete;
-	Region& operator=(const Region&) = delete;
+	Region(size_t bytes) : Region() {
+		size_t n = bytes/Page::size;
+		Page* page = p_back;
+		for(size_t i = 0; i < n; ++i) {
+			page->next = Page::alloc();
+			page = page->next;
+		}
+	}
 	
 	~Region() {
 		p_front->free_all();
 	}
 	
+	Region(const Region&) = delete;
+	Region& operator=(const Region&) = delete;
+	
 	template<typename T>
 	T* create() {
 		return new(alloc<T>()) T();
-	}
-	
-	template<typename T>
-	void destroy(T* obj) {
-		obj->~T();
 	}
 	
 	template<typename T>
@@ -91,7 +121,9 @@ public:
 	void* alloc(int size) {
 		assert(size <= Page::size);
 		if(left < size) {
-			p_back->next = engine->get_page();
+			if(!p_back->next) {
+				p_back->next = Page::alloc();
+			}
 			p_back = p_back->next;
 			left = Page::size;
 		}
@@ -100,16 +132,7 @@ public:
 		return ptr;
 	}
 	
-	Page* get_page() {
-		return engine->get_page();
-	}
-	
-	void free_page(Page* page) {
-		engine->free_page(page);
-	}
-	
 private:
-	Engine* engine;
 	Page* p_front;
 	Page* p_back;
 	int left;

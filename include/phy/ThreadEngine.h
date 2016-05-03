@@ -19,6 +19,7 @@ public:
 	ThreadEngine() : fiber(this) {}
 	
 	virtual void run(Object* object) override {
+		assert(Engine::local == this);
 		fiber.exec(object);
 	}
 	
@@ -28,7 +29,7 @@ protected:
 	public:
 		ThreadFiber(ThreadEngine* engine) : engine(engine) {}
 		
-		virtual void exec(Object* object) override {
+		void exec(Object* object) {
 			do_exec(engine, object);
 		}
 		
@@ -42,7 +43,7 @@ protected:
 			}
 		}
 		
-		virtual void acked(Message* msg) override {
+		void acked(Message* msg) {
 			if(msg->callback) {
 				msg->callback(msg);
 			}
@@ -56,17 +57,14 @@ protected:
 			Message* msg = engine->collect(millis);
 			if(msg) {
 				if(msg->isack) {
-					msg->impl->acked(msg);
+					acked(msg);
 				} else {
-					msg->dst->receive(msg);
+					Node* node = msg->dst;
+					node->receive(msg);
 				}
 				return true;
 			}
 			return false;
-		}
-		
-		virtual void notify(bool res) override {
-			// nothing to do
 		}
 		
 		virtual void flush() override {

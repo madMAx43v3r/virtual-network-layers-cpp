@@ -130,6 +130,7 @@ private:
 			if(obj->ref == 1) {
 				obj->receive(new Object::exit_t());
 			}
+			obj->ref--;
 		}
 	}
 	

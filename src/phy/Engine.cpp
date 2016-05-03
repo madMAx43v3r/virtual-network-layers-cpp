@@ -21,7 +21,7 @@ thread_local Engine* Engine::local = 0;
 
 Engine::Engine(uint64_t mac)
 	:	Object(mac),
-	 	ulock(mutex), mem(this), buffer(mem)
+	 	ulock(mutex), buffer(memory)
 {
 	assert(Engine::local == 0);
 	Engine::local = this;
@@ -32,14 +32,11 @@ Engine::Engine(uint64_t mac)
 }
 
 Engine::~Engine() {
-	for(Page* page : pages) {
-		delete page;
-	}
 	Engine::local = 0;
 }
 
 void Engine::exec(Object* object) {
-	object->mainloop(this);
+	object->run(this);
 	send_async(Registry::finished_t(object), Registry::instance);
 }
 
@@ -88,27 +85,6 @@ Message* Engine::collect(int64_t timeout) {
 	return msg;
 }
 
-Page* Engine::get_page() {
-	assert(Engine::local == this);
-	Page* page;
-	if(pages.size()) {
-		page = pages.back();
-		page->next = 0;
-		pages.pop_back();
-	} else {
-		page = new Page(this);
-	}
-	return page;
-}
-
-void Engine::free_page(Page* page) {
-	assert(Engine::local == this);
-	if(pages.size() < 1024) {
-		pages.push_back(page);
-	} else {
-		delete page;
-	}
-}
 
 
 

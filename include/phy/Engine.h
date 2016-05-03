@@ -55,10 +55,6 @@ public:
 	
 	virtual void run(Object* object) = 0;
 	
-	Page* get_page();
-	
-	void free_page(Page* page);
-	
 protected:
 	bool dorun = true;
 	
@@ -95,7 +91,7 @@ protected:
 		send_impl(msg, dst, true);
 	}
 	
-	bool poll(Stream* stream, int64_t millis);
+	bool poll(Stream* stream, int64_t micro);
 	
 	void flush();
 	
@@ -111,11 +107,11 @@ protected:
 		cond.notify_all();
 	}
 	
-	virtual void wait(int64_t millis) {
-		cond.wait_for(ulock, std::chrono::milliseconds(millis));
+	virtual void wait(int64_t micro) {
+		cond.wait_for(ulock, std::chrono::microseconds(micro));
 	}
 	
-	Message* collect(int64_t timeout);
+	Message* collect(int64_t micro);
 	
 	virtual void fork(Object* object) = 0;
 	
@@ -129,7 +125,7 @@ private:
 	}
 	
 protected:
-	Region mem;
+	Region memory;
 	
 private:
 	std::mutex mutex;
@@ -140,8 +136,6 @@ private:
 	Fiber* current = 0;
 	std::atomic<int> waiting;
 	vnl::util::mpsc_queue<Message*> queue;
-	
-	std::vector<Page*> pages;
 	
 	RingBuffer buffer;
 	std::function<void(Message*)> async_cb;

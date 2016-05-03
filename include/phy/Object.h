@@ -28,7 +28,6 @@ public:
 	uint64_t getMAC() const { return mac; }
 	const std::string& getName() const { return name; }
 	
-	typedef Generic<uint32_t, 0x33145536> timeout_t;
 	typedef Signal<0xfe6ccd6f> delete_t;
 	
 	// thread safe
@@ -39,6 +38,10 @@ public:
 protected:
 	uint64_t rand() {
 		return stream->rand();
+	}
+	
+	void fork(Object* object) {
+		stream->fork(object);
 	}
 	
 	template<typename T>
@@ -77,11 +80,12 @@ protected:
 	virtual void shutdown() {}
 	
 private:
+	typedef Generic<uint32_t, 0x33145536> timeout_t;
 	typedef Signal<0x9a4ac2ca> exit_t;
 	
 	virtual ~Object() {}
 	
-	void mainloop(Engine* engine);
+	void run(Engine* engine);
 	
 private:
 	uint64_t mac;

@@ -28,16 +28,18 @@ Object::Object(Object* parent, const std::string& name)
 }
 
 void Object::die() {
-	send(Registry::delete_t(this), Registry::instance);
+	stream->send(Registry::delete_t(this), Registry::instance);
 }
 
-void Object::mainloop(Engine* engine) {
-	Stream s(engine);
-	stream = &s;
+void Object::run(Engine* engine) {
+	Stream tmp(engine);
+	stream = &tmp;
 	if(mac == 0) {
 		mac = stream->rand();
 	}
-	assert(request<bool>(Registry::bind_t(this), Registry::instance));
+	if(!stream->request<bool>(Registry::bind_t(this), Registry::instance)) {
+		return;
+	}
 	while(true) {
 		Message* msg = stream->poll();
 		if(!msg) {

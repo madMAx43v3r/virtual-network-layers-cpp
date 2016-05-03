@@ -18,15 +18,9 @@ class Fiber {
 public:
 	virtual ~Fiber() {};
 	
-	virtual void exec(Object* object) = 0;
-	
 	virtual void sent(Message* msg, bool async) = 0;
 	
-	virtual void acked(Message* msg) = 0;
-	
-	virtual bool poll(int64_t millis) = 0;
-	
-	virtual void notify(bool res) = 0;
+	virtual bool poll(int64_t micro) = 0;
 	
 	virtual void flush() = 0;
 	

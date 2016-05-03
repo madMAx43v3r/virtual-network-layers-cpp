@@ -28,7 +28,7 @@ public:
 		call();
 	}
 	
-	virtual void exec(Object* obj_) override {
+	void exec(Object* obj_) {
 		obj = obj_;
 		call();
 	}
@@ -42,7 +42,7 @@ public:
 		}
 	}
 	
-	virtual void acked(Message* msg) override {
+	void acked(Message* msg) {
 		if(msg->callback) {
 			cbs.push_back(msg);
 		}
@@ -52,15 +52,15 @@ public:
 		}
 	}
 	
-	virtual bool poll(int64_t millis) override {
-		timeout = System::currentTimeMillis() + millis;
+	virtual bool poll(int64_t micro) override {
+		timeout = System::currentTimeMicros() + micro;
 		polling = true;
 		yield();
 		polling = false;
 		return result;
 	}
 	
-	virtual void notify(bool res) override {
+	void notify(bool res) {
 		if(polling) {
 			result = res;
 			call();
@@ -127,20 +127,22 @@ protected:
 
 
 FiberEngine::FiberEngine(int stack_size)
-	:	stack_size(stack_size), fibers(mem), avail(mem)
+	:	stack_size(stack_size), fibers(memory), avail(memory)
 {
 }
 
 void FiberEngine::run(Object* object) {
+	assert(Engine::local == this);
+	Region mem;
 	fork(object);
-	Queue<Node*> list(mem);
+	Queue<Node*> list(&mem);
 	while(dorun) {
-		int to = timeout();
+		int64_t micros = timeout();
 		while(true) {
-			Message* msg = collect(to);
+			Message* msg = collect(micros);
 			if(msg) {
 				if(msg->isack) {
-					msg->impl->acked(msg);
+					((BoostFiber*)msg->impl)->acked(msg);
 				} else {
 					Node* node = msg->dst;
 					node->receive(msg);
@@ -153,7 +155,7 @@ void FiberEngine::run(Object* object) {
 		Node* node;
 		while(list.pop(node)) {
 			if(node->impl) {
-				node->impl->notify(true);
+				((BoostFiber*)node->impl)->notify(true);
 			}
 		}
 	}
@@ -161,7 +163,7 @@ void FiberEngine::run(Object* object) {
 
 void FiberEngine::fork(Object* object) {
 	assert(Engine::local == this);
-	Fiber* fiber;
+	BoostFiber* fiber;
 	if(!avail.pop(fiber)) {
 		fiber = new BoostFiber(this);
 		fibers.push(fiber);
@@ -170,31 +172,31 @@ void FiberEngine::fork(Object* object) {
 }
 
 int FiberEngine::timeout() {
-	int64_t now = System::currentTimeMillis();
-	int64_t millis = 9223372036854775808LL;
-	std::vector<BoostFiber*> list;
+	Region mem;
+	int64_t now = System::currentTimeMicros();
+	int64_t micros = 9223372036854775808LL;
+	Queue<BoostFiber*> list(&mem);
 	while(true) {
-		list.clear();
-		for(Fiber* ptr : fibers) {
-			BoostFiber* fiber = (BoostFiber*)ptr;
+		for(BoostFiber* fiber : fibers) {
 			if(fiber->polling) {
 				int64_t diff = fiber->timeout - now;
 				if(diff <= 0) {
-					list.push_back(fiber);
-				} else if(diff < millis) {
-					millis = diff;
+					list.push(fiber);
+				} else if(diff < micros) {
+					micros = diff;
 				}
 			}
 		}
-		if(list.size()) {
-			for(BoostFiber* fiber : list) {
+		if(!list.empty()) {
+			BoostFiber* fiber;
+			while(list.pop(fiber)) {
 				fiber->notify(false);
 			}
 		} else {
 			break;
 		}
 	}
-	return millis;
+	return micros;
 }
 
 

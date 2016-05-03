@@ -13,6 +13,8 @@
 
 namespace vnl { namespace phy {
 
+class BoostFiber;
+
 class FiberEngine : public Engine {
 public:
 	FiberEngine(int stack_size = 64*1024);
@@ -33,8 +35,8 @@ private:
 private:
 	int stack_size;
 	
-	List<Fiber*> fibers;
-	Queue<Fiber*> avail;
+	List<BoostFiber*> fibers;
+	Queue<BoostFiber*> avail;
 	
 };
 
