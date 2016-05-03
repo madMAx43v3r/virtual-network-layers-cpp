@@ -39,7 +39,7 @@ public:
 	};
 	
 	entry_t* alloc(int size) {
-		assert(size <= 1024);
+		assert(size <= Page::size);
 		if(left < size) {
 			p_back->next = mem->get_page();
 			p_back = p_back->next;

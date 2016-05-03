@@ -12,15 +12,13 @@
 
 namespace vnl { namespace phy {
 
+class Object;
+
 class Fiber {
 public:
 	virtual ~Fiber() {};
 	
-	virtual void start() = 0;
-	
-	virtual void stop() = 0;
-	
-	virtual void launch(taskid_t task) = 0;
+	virtual void exec(Object* object) = 0;
 	
 	virtual void sent(Message* msg, bool async) = 0;
 	
@@ -33,8 +31,6 @@ public:
 	virtual void flush() = 0;
 	
 protected:
-	taskid_t task;
-	
 	Fiber* get_current(Engine* engine) {
 		return engine->current;
 	}
@@ -43,12 +39,9 @@ protected:
 		engine->current = fiber;
 	}
 	
-	void finished(Engine* engine, Fiber* fiber);
-	
-private:
-	std::vector<Node*> waitlist;
-	
-	friend class Engine;
+	void do_exec(Engine* engine, Object* object) {
+		engine->exec(object);
+	}
 	
 };
 

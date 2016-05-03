@@ -19,46 +19,47 @@
 
 namespace vnl { namespace phy {
 
-class Object : public Stream {
+class Object : Node {
 public:
 	Object();
+	Object(uint64_t mac);
 	Object(const std::string& name);
 	Object(Object* parent, const std::string& name);
 	
+	uint64_t getMAC() const { return mac; }
 	const std::string& getName() const { return name; }
 	
-	typedef Signal<0xfe6ccd6f> delete_t;
+	// thread safe
+	virtual void receive(Message* msg) override {
+		stream->receive(msg);
+	}
 	
 protected:
 	uint64_t rand() {
-		return engine->rand();
+		return stream->rand();
 	}
 	
 	template<typename T>
 	void send(T&& msg, Reference& dst) {
-		Stream::send(msg, dst.get());
+		stream->send(msg, dst.get());
 	}
 	
 	template<typename T>
 	void send_async(T&& msg, Reference& dst) {
-		Stream::send_async(msg, dst.get());
+		stream->send_async(msg, dst.get());
 	}
 	
 	template<typename T, typename R>
 	T request(R&& req, Reference& dst) {
-		return Stream::request<T>(req, dst.get());
+		return stream->request<T>(req, dst.get());
 	}
 	
 	void send(Message* msg, Reference& dst) {
-		Stream::send(msg, dst.get());
+		stream->send(msg, dst.get());
 	}
 	
 	void send_async(Message* msg, Reference& dst) {
-		Stream::send_async(msg, dst.get());
-	}
-	
-	void flush() {
-		engine->flush();
+		stream->send_async(msg, dst.get());
 	}
 	
 	void die();
@@ -72,22 +73,20 @@ protected:
 private:
 	typedef Signal<0x9a4ac2ca> exit_t;
 	
-	Object(uint64_t mac);
-	
 	virtual ~Object() {}
 	
-	void bind();
-	
-	void mainloop();
+	void mainloop(Engine* engine);
 	
 private:
+	uint64_t mac;
 	std::string name;
-	taskid_t task;
+	Stream* stream = 0;
 	
-	friend class Message;
-	friend class Stream;
-	friend class Engine;
+	int64_t ref = 0;
+	bool dying = false;
+	
 	friend class Registry;
+	friend class Engine;
 	
 };
 

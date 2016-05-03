@@ -12,7 +12,11 @@
 
 namespace vnl { namespace phy {
 
-template<typename T, int N = 20>
+/*
+ * This is a queue.
+ * Maximum element size at default is 400 bytes.
+ */
+template<typename T, int N = 10>
 class Queue {
 public:
 	Queue(Region* mem) : mem(mem) {
@@ -29,16 +33,16 @@ protected:
 	};
 	
 public:
-	T* push(T obj) {
+	T& push(T obj) {
 		if(p_back->write >= N) {
 			if(!p_back->next) {
 				p_back->next = mem->create<block_t>();
 			}
 			p_back = p_back->next;
 		}
-		T* ptr = &p_back->elem[p_back->write++];
-		*ptr = obj;
-		return ptr;
+		T& ref = &p_back->elem[p_back->write++];
+		ref = obj;
+		return ref;
 	}
 	
 	T pop() {
@@ -69,14 +73,15 @@ public:
 		return p_back->elem[p_back->write - 1];
 	}
 	
-	bool empty() {
+	bool empty() const {
 		return p_front->read == p_front->write && p_front == p_back;
 	}
 	
-private:
+protected:
 	Region* mem;
 	block_t* p_front;
 	block_t* p_back;
+	
 	
 };
 

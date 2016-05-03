@@ -17,6 +17,7 @@
 namespace vnl { namespace phy {
 
 class Message;
+class Engine;
 
 class Node {
 public:
@@ -25,10 +26,15 @@ public:
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
 	
+private:
+	Fiber* impl = 0;
+	
+	friend class Engine;
+	
 };
 
 
-class FloatingNode : public Node {
+class Reactor : public Node {
 public:
 	
 	virtual void receive(Message* msg) override {

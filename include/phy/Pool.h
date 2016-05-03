@@ -21,16 +21,16 @@ public:
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 	
-	T* alloc() {
-		if(!list.empty()) {
-			T* obj = list.pop();
+	T* create() {
+		T* obj;
+		if(list.pop(obj)) {
 			return new(obj) T();
 		} else {
 			return mem->create<T>();
 		}
 	}
 	
-	void free(T* obj) {
+	void destroy(T* obj) {
 		obj->~T();
 		list.push(obj);
 	}

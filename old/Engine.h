@@ -19,7 +19,6 @@
 #include "util/mpsc_queue.h"
 #include "phy/Message.h"
 #include "phy/Node.h"
-#include "phy/Queue.h"
 #include "phy/RingBuffer.h"
 #include "System.h"
 #include "Util.h"
@@ -32,18 +31,32 @@ class Fiber;
 class Stream;
 class Object;
 
-class Engine : public Node {
+struct taskid_t {
+	uint64_t id = 0;
+	Fiber* impl = 0;
+	std::function<void()> func;
+};
+
+
+class Engine : public vnl::phy::Node {
 public:
 	Engine();
-	Engine(uint64_t mac);
-	Engine(const std::string& name);
 	virtual ~Engine();
 	
 	static thread_local Engine* local;
 	
-	// thread safe
+	void start();
+	void stop();
+	
+	void exec(const std::function<void()>& func) {
+		SyncNode node;
+		exec_t msg;
+		msg.src = &node;
+		msg.data = func;
+		node.send(&msg, this);
+	}
+	
 	virtual void receive(Message* msg) override {
-		msg->safe = true;
 		queue.push(msg);
 		if(waiting-- == 1) {
 			lock();
@@ -52,14 +65,17 @@ public:
 		}
 	}
 	
-	virtual void run(Object* object) = 0;
-	
 	Page* get_page();
-	
 	void free_page(Page* page);
+	
+	typedef Generic<uint64_t, 0x5a8a106d> finished_t;
+	typedef Generic<std::function<void()>, 0xde2a20fe> exec_t;
 	
 protected:
 	bool dorun = true;
+	
+	std::vector<Fiber*> fibers;
+	std::vector<Fiber*> avail;
 	
 	uint64_t rand() {
 		return generator();
@@ -98,6 +114,10 @@ protected:
 	
 	void flush();
 	
+	taskid_t launch(const std::function<void()>& func);
+	
+	bool listen_on(const taskid_t& task, Node* dst);
+	
 	void lock() {
 		mutex.lock();
 	}
@@ -110,26 +130,30 @@ protected:
 		cond.notify_all();
 	}
 	
-	virtual void wait(int64_t millis) {
+	virtual void wait(int millis) {
 		cond.wait_for(ulock, std::chrono::milliseconds(millis));
 	}
 	
-	Message* collect(int64_t timeout);
+	virtual void mainloop() = 0;
 	
-	virtual void fork(Object* object) = 0;
+	virtual Fiber* create() = 0;
+	
+	int collect(std::vector<Message*>& inbox, int timeout);
 	
 private:
-	void exec(Object* object);
-	
 	void send_impl(Message* msg, Node* dst, bool async);
 	
-	void async_ack(Message* msg) {
-		msg->~Message();
-		buffer.free((RingBuffer::entry_t*)msg->user);
+	void entry() {
+		mainloop();
 	}
 	
-protected:
-	Region mem;
+	void finished(Fiber* fiber) {
+		avail.push_back(fiber);
+	}
+	
+	void async_ack(Message* msg) {
+		buffer.free((RingBuffer::entry_t*)msg->user);
+	}
 	
 private:
 	std::mutex mutex;
@@ -141,15 +165,21 @@ private:
 	std::atomic<int> waiting;
 	vnl::util::mpsc_queue<Message*> queue;
 	
+	std::thread* thread;
+	uint64_t nextid = 1;
+	
 	std::vector<Page*> pages;
 	
+	Region mem;
 	RingBuffer buffer;
 	std::function<void(Message*)> async_cb;
 	
+	friend class Message;
 	friend class Stream;
 	friend class Object;
 	friend class Fiber;
 	friend class Page;
+	friend class Layer;
 	
 };
 

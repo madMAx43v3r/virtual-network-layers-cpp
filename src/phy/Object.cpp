@@ -12,17 +12,10 @@
 
 namespace vnl { namespace phy {
 
-Object::Object()
-	:	Stream::Stream(engine->rand())
-{
-	bind();
-}
 
-Object::Object(uint64_t mac)
-	:	Stream::Stream(mac)
-{
-	bind();
-}
+Object::Object() : mac(0) {}
+
+Object::Object(uint64_t mac) : mac(mac) {}
 
 Object::Object(const std::string& name)
 	:	Object::Object(Util::hash64(name)), name(name)
@@ -34,26 +27,23 @@ Object::Object(Object* parent, const std::string& name)
 {
 }
 
-void Object::bind() {
-	assert(Registry::instance);
-	assert(Stream::request<bool>(Registry::bind_t(this), Registry::instance));
-	task = engine->launch(std::bind(&Object::mainloop, this));
-}
-
 void Object::die() {
-	Stream::send(Registry::kill_t(this), Registry::instance);
+	send(Registry::delete_t(this), Registry::instance);
 }
 
-void Object::mainloop() {
+void Object::mainloop(Engine* engine) {
+	Stream s(engine);
+	stream = &s;
+	if(mac == 0) {
+		mac = stream->rand();
+	}
+	assert(request<bool>(Registry::bind_t(this), Registry::instance));
 	while(true) {
-		Message* msg = poll();
+		Message* msg = stream->poll();
 		if(!msg) {
 			break;
 		}
-		if(msg->mid == delete_t::id) {
-			engine->listen_on(task, Registry::instance);
-			die();
-		} else if(msg->mid == exit_t::id) {
+		if(msg->mid == exit_t::id) {
 			shutdown();
 			msg->ack();
 			break;

@@ -1,36 +1,111 @@
 /*
  * ThreadEngine.h
  *
- *  Created on: Mar 3, 2016
- *      Author: mwittal
+ *  Created on: May 2, 2016
+ *      Author: mad
  */
 
 #ifndef INCLUDE_PHY_THREADENGINE_H_
 #define INCLUDE_PHY_THREADENGINE_H_
 
-#include <mutex>
-#include <condition_variable>
+#include "Engine.h"
+#include "Fiber.h"
 
-#include "phy/Fiber.h"
-#include "phy/Engine.h"
 
 namespace vnl { namespace phy {
 
-class ThreadFiber;
-
 class ThreadEngine : public Engine {
+public:
+	ThreadEngine() : fiber(this) {}
+	
+	virtual void run(Object* object) override {
+		fiber.exec(object);
+	}
+	
 protected:
 	
-	virtual void mainloop() override;
+	class ThreadFiber : public Fiber {
+	public:
+		ThreadFiber(ThreadEngine* engine) : engine(engine) {}
+		
+		virtual void exec(Object* object) override {
+			do_exec(engine, object);
+		}
+		
+		virtual void sent(Message* msg, bool async) override {
+			pending++;
+			if(!async && pending > 0) {
+				wait_msg = msg;
+				while(wait_msg) {
+					wait();
+				}
+			}
+		}
+		
+		virtual void acked(Message* msg) override {
+			if(msg->callback) {
+				msg->callback(msg);
+			}
+			pending--;
+			if(msg == wait_msg) {
+				wait_msg = 0;
+			}
+		}
+		
+		virtual bool poll(int64_t millis) override {
+			Message* msg = engine->collect(millis);
+			if(msg) {
+				if(msg->isack) {
+					msg->impl->acked(msg);
+				} else {
+					msg->dst->receive(msg);
+				}
+				return true;
+			}
+			return false;
+		}
+		
+		virtual void notify(bool res) override {
+			// nothing to do
+		}
+		
+		virtual void flush() override {
+			while(pending) {
+				wait();
+			}
+		}
+		
+	private:
+		void wait() {
+			poll(9223372036854775808LL);
+		}
+		
+	private:
+		ThreadEngine* engine;
+		int pending = 0;
+		bool result = false;
+		bool waiting = false;
+		Message* wait_msg = 0;
+		
+	};
 	
-	virtual Fiber* create() override;
+	virtual void fork(Object* object) override {
+		std::thread thread(std::bind(&ThreadEngine::entry, object));
+		thread.detach();
+	}
 	
 private:
-	std::mutex sync;
 	
-	friend class ThreadFiber;
+	static void entry(Object* object) {
+		ThreadEngine engine;
+		engine.run(object);
+	}
+	
+private:
+	ThreadFiber fiber;
 	
 };
+
 
 
 }}
