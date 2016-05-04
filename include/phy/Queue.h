@@ -14,7 +14,7 @@ namespace vnl { namespace phy {
 
 /*
  * This is a queue.
- * Maximum element size at default is 496 bytes.
+ * Maximum element size at default is 500 bytes.
  */
 template<typename T, int N = 8>
 class Queue {
@@ -25,17 +25,19 @@ public:
 	}
 	
 	Queue(const Queue&) = delete;
-	Queue& operator=(const Queue&) = delete;
 	
-protected:
-	struct block_t {
-		T elem[N];
-		int read = 0;
-		int write = 0;
-		block_t* next = 0;
-	};
+	Queue& operator=(const Queue& other) {
+		clear();
+		append(other);
+		return *this;
+	}
 	
-public:
+	void append(const Queue& other) {
+		for(const T& obj : other) {
+			push(obj);
+		}
+	}
+	
 	T& push(const T& obj) {
 		if(p_back->write >= N) {
 			if(!p_back->next) {
@@ -48,24 +50,35 @@ public:
 		return ref;
 	}
 	
-	T pop() {
-		if(p_front->read >= N) {
-			block_t* tmp = p_front;
-			tmp->read = 0;
-			tmp->write = 0;
-			p_front = p_front->next;
-			tmp->next = p_back->next;
-			p_back->next = tmp;
-		}
-		return p_front->elem[p_front->read++];
-	}
-	
-	bool pop(T& ref) {
+	bool pop(T& obj) {
 		if(!empty()) {
-			ref = pop();
+			if(p_front->read >= N) {
+				block_t* tmp = p_front;
+				tmp->read = 0;
+				tmp->write = 0;
+				p_front = p_front->next;
+				tmp->next = p_back->next;
+				p_back->next = tmp;
+			}
+			T& tmp = p_front->elem[p_front->read++];
+			obj = tmp;
+			tmp.~T();
 			return true;
 		}
 		return false;
+	}
+	
+	bool pop() {
+		T obj;
+		return pop(obj);
+	}
+	
+	T& operator[](size_t index) {
+		auto iter = begin();
+		for(size_t i = 0; i < index; ++i) {
+			++iter;
+		}
+		return *iter;
 	}
 	
 	T& front() {
@@ -74,6 +87,25 @@ public:
 	
 	T& back() {
 		return p_back->elem[p_back->write - 1];
+	}
+	
+	size_t size() {
+		size_t count = 0;
+		for(auto iter = begin(); iter != end(); ++iter) {
+			count++;
+		}
+		return count;
+	}
+	
+	void clear() {
+		for(auto iter = begin(); iter != end(); ++iter) {
+			iter->~T();
+		}
+		p_front->read = 0;
+		p_front->write = 0;
+		p_back->read = 0;
+		p_back->write = 0;
+		p_back = p_front;
 	}
 	
 	bool empty() const {
@@ -140,6 +172,14 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, p_back->write); }
 	
 protected:
+	struct block_t {
+		T elem[N];
+		block_t* next = 0;
+		short read = 0;
+		short write = 0;
+	};
+	
+private:
 	Region* mem;
 	block_t* p_front;
 	block_t* p_back;

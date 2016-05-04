@@ -35,7 +35,7 @@ private:
 private:
 	int stack_size;
 	
-	List<BoostFiber*> fibers;
+	Array<BoostFiber*> fibers;
 	Queue<BoostFiber*> avail;
 	
 };

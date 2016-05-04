@@ -11,8 +11,8 @@
 #include <assert.h>
 #include <utility>
 
+#include "phy/Array.h"
 #include "phy/Queue.h"
-#include "phy/List.h"
 
 
 namespace vnl { namespace phy {
@@ -28,10 +28,6 @@ public:
 	Map() {
 		assert(sizeof(K)+sizeof(V) <= Page::size/B - B*16);
 		clear();
-	}
-	
-	Map(int rows) {
-		clear(rows);
 	}
 	
 	Map(const Map& other) {
@@ -113,6 +109,7 @@ public:
 				} else {
 					count--;
 				}
+				row->pop();
 			}
 		}
 	}
@@ -157,6 +154,10 @@ protected:
 	
 	static const int M = TPage<Row*>::M;
 	
+	Map(int rows) {
+		clear(rows);
+	}
+	
 	void expand(int rows) {
 		Map tmp(rows);
 		tmp.insert(*this);
@@ -180,7 +181,7 @@ protected:
 	
 private:
 	Region mem;
-	List<TPage<Row*>*> index;
+	Array<TPage<Row*>*> index;
 	TPage<Row*>* table = 0;
 	size_t N = 0;
 	size_t count = 0;
