@@ -17,10 +17,10 @@ namespace vnl { namespace phy {
 
 class RingBuffer {
 public:
-	RingBuffer(Region* mem) : mem(mem), queue(mem) {
-		p_front = mem->get_page();
+	RingBuffer(Region* mem) : queue(mem) {
+		p_front = Page::alloc();
 		p_back = p_front;
-		left = Page::size;
+		pos = 0;
 	}
 	
 	RingBuffer(const RingBuffer&) = delete;
@@ -37,11 +37,6 @@ public:
 	};
 	
 	template<typename T>
-	entry_t* alloc() {
-		return alloc(sizeof(T));
-	}
-	
-	template<typename T>
 	T* create(entry_t*& p_entry) {
 		p_entry = alloc<T>();
 		return new(p_entry->ptr) T();
@@ -53,17 +48,22 @@ public:
 		free(entry);
 	}
 	
+	template<typename T>
+	entry_t* alloc() {
+		return alloc(sizeof(T));
+	}
+	
 	entry_t* alloc(int size) {
 		assert(size <= Page::size);
-		if(left < size) {
-			p_back->next = mem->get_page();
+		if(Page::size - pos < size) {
+			p_back->next = Page::alloc();
 			p_back = p_back->next;
-			left = Page::size;
+			pos = 0;
 		}
 		entry_t entry;
 		entry.page = p_back;
-		entry.ptr = p_back->mem + (Page::size - left);
-		left -= size;
+		entry.ptr = p_back->mem + pos;
+		pos += size;
 		return queue.push(entry);
 	}
 	
@@ -72,7 +72,7 @@ public:
 		while(!queue.empty()) {
 			entry_t& front = queue.front();
 			if(front.page != p_front) {
-				mem->free_page(p_front);
+				p_front->free();
 				p_front = front.page;
 			}
 			if(!front.free) {
@@ -83,11 +83,10 @@ public:
 	}
 	
 private:
-	Region* mem;
 	Queue<entry_t> queue;
 	Page* p_front;
 	Page* p_back;
-	int left;
+	int pos;
 	
 };
 

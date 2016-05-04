@@ -17,7 +17,7 @@
 #include <atomic>
 #include <assert.h>
 
-#include "util/mpsc_queue.h"
+#include "util/spinlock.h"
 #include "phy/Message.h"
 #include "phy/Node.h"
 #include "phy/Queue.h"
@@ -45,7 +45,9 @@ public:
 	// thread safe
 	virtual void receive(Message* msg) override {
 		msg->safe = true;
+		sync.lock();
 		queue.push(msg);
+		sync.unlock();
 		if(waiting-- == 1) {
 			lock();
 			notify();
@@ -128,6 +130,7 @@ protected:
 	Region memory;
 	
 private:
+	vnl::util::spinlock sync;
 	std::mutex mutex;
 	std::condition_variable cond;
 	std::unique_lock<std::mutex> ulock;
@@ -135,7 +138,7 @@ private:
 	
 	Fiber* current = 0;
 	std::atomic<int> waiting;
-	vnl::util::mpsc_queue<Message*> queue;
+	Queue<Message*> queue;
 	
 	RingBuffer buffer;
 	std::function<void(Message*)> async_cb;

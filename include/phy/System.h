@@ -10,7 +10,7 @@
 
 #include <chrono>
 
-namespace vnl {
+namespace vnl { namespace phy {
 
 class System {
 public:
@@ -29,6 +29,7 @@ public:
 	
 };
 
-}
+
+}}
 
 #endif /* INCLUDE_SYSTEM_H_ */

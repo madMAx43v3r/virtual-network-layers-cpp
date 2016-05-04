@@ -10,8 +10,8 @@
 
 #include "util/spinlock.h"
 
-#ifndef VNL_PHY_PAGESIZE
-#define VNL_PHY_PAGESIZE 4096
+#ifndef VNL_PHY_PAGE_SIZE
+#define VNL_PHY_PAGE_SIZE 4096
 #endif
 
 
@@ -19,7 +19,7 @@ namespace vnl { namespace phy {
 
 class Page {
 public:
-	static const int size = VNL_PHY_PAGESIZE;
+	static const int size = VNL_PHY_PAGE_SIZE;
 	
 	static Page* alloc() {
 		sync.lock();
@@ -84,12 +84,28 @@ private:
 };
 
 
+template<typename T>
+class TPage : public Page {
+public:
+	static const int M = Page::size / sizeof(T);
+	
+	static TPage* alloc() {
+		return (TPage*)Page::alloc();
+	}
+	
+	T& operator[](int index) {
+		return *(((T*)mem) + index);
+	}
+	
+};
+
+
 class Region {
 public:
 	Region() {
 		p_front = Page::alloc();
 		p_back = p_front;
-		left = Page::size;
+		pos = 0;
 	}
 	
 	Region(size_t bytes) : Region() {
@@ -120,22 +136,27 @@ public:
 	
 	void* alloc(int size) {
 		assert(size <= Page::size);
-		if(left < size) {
+		if(Page::size - pos < size) {
 			if(!p_back->next) {
 				p_back->next = Page::alloc();
 			}
 			p_back = p_back->next;
-			left = Page::size;
+			pos = 0;
 		}
-		void* ptr = p_back->mem + (Page::size - left);
-		left -= size;
+		void* ptr = p_back->mem + pos;
+		pos += size;
 		return ptr;
+	}
+	
+	void clear() {
+		p_back = p_front;
+		pos = 0;
 	}
 	
 private:
 	Page* p_front;
 	Page* p_back;
-	int left;
+	int pos;
 	
 };
 

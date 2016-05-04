@@ -18,7 +18,7 @@
 
 #include "util/CRC64.h"
 
-namespace vnl {
+namespace vnl { namespace phy {
 
 class Util {
 public:
@@ -89,6 +89,7 @@ public:
 	
 };
 
-}
+
+}}
 
 #endif /* INCLUDE_UTIL_H_ */

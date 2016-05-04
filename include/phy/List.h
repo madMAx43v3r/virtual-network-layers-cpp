@@ -1,81 +1,100 @@
 /*
  * List.h
  *
- *  Created on: May 2, 2016
+ *  Created on: May 3, 2016
  *      Author: mad
  */
 
 #ifndef INCLUDE_PHY_LIST_H_
 #define INCLUDE_PHY_LIST_H_
 
+#include <assert.h>
 #include "phy/Memory.h"
+
 
 namespace vnl { namespace phy {
 
 /*
  * This is a list.
- * Maximum element size is 4000 bytes.
+ * Maximum element size is 4096 bytes.
  */
 template<typename T>
 class List {
 public:
-	List(Region* mem) : mem(mem) {
-		p_front = 0;
-		p_back = 0;
+	List() {
+		assert(sizeof(T) <= Page::size);
 	}
 	
-protected:
-	struct entry_t {
-		T elem;
-		entry_t* next = 0;
-	};
+	List(const List& other) {
+		append(other);
+	}
 	
-public:
-	T& push(T obj) {
-		if(!p_front) {
-			p_front = mem->create<entry_t>();
-			p_back = p_front;
-		} else {
-			if(!p_back->next) {
-				p_back->next = mem->create<entry_t>();
-			}
-			p_back = p_back->next;
+	~List() {
+		clear();
+	}
+	
+	List& operator=(const List& other) {
+		clear();
+		append(other);
+		return *this;
+	}
+	
+	void append(List& other) {
+		for(auto iter = other.begin(); iter != other.end(); ++iter) {
+			push_back(*iter);
 		}
-		T& ref = &p_back->elem;
+	}
+	
+	T& push_back(const T& obj) {
+		if(!p_front) {
+			p_front = TPage<T>::alloc();
+			p_back = p_front;
+		}
+		if(pos >= M) {
+			p_back->next = TPage<T>::alloc();
+			p_back = p_back->next;
+			pos = 0;
+		}
+		T& ref = (*p_back)[pos];
 		ref = obj;
+		pos++;
 		return ref;
 	}
 	
-	T pop() {
-		entry_t* tmp = p_front;
-		p_front = p_front->next;
-		if(p_back != tmp) {
-			tmp->next = p_back->next;
-			p_back->next = tmp;
+	T& operator[](size_t index) {
+		int pi = index / M;
+		int ei = index % M;
+		TPage<T>* page = p_front;
+		for(int i = 0; i < pi; ++i) {
+			page = page->next;
 		}
-		return tmp->elem;
+		return (*page)[ei];
 	}
 	
-	bool pop(T& ref) {
-		if(!empty()) {
-			ref = pop();
-			return true;
+	void clear() {
+		if(p_front) {
+			for(auto iter = begin(); iter != end(); ++iter) {
+				iter->~T();
+			}
+			p_front->free_all();
+			p_front = 0;
+			p_back = 0;
+			pos = 0;
 		}
-		return false;
 	}
 	
-	T& front() {
-		return p_front->elem;
-	}
-	const T& front() const {
-		return p_front->elem;
-	}
-	
-	T& back() {
-		return p_back->elem;
-	}
-	const T& back() const {
-		return p_back->elem;
+	size_t size() const {
+		size_t count = 0;
+		Page* page = p_front;
+		while(page) {
+			if(page != p_back) {
+				count += M;
+			} else {
+				count += pos;
+			}
+			page = page->next;
+		}
+		return count;
 	}
 	
 	bool empty() const {
@@ -99,53 +118,59 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return current->elem;
+			return (*page)[pos];
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &current->elem;
+			return &(*page)[pos];
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
-			std::swap(lhs.current, rhs.current);
+			std::swap(lhs.page, rhs.page);
+			std::swap(lhs.pos, rhs.pos);
 		}
 		friend bool operator==(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.current == rhs.current;
+			return lhs.page == rhs.page && lhs.pos == rhs.pos;
 		}
 		friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.current != rhs.current;
+			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(entry_t* entry)
-			:	current(entry) {}
+		iterator_t(TPage<T>* page, int pos)
+			:	page(page), pos(pos) {}
 		void advance() {
-			current = current->next;
+			if(pos >= TPage<T>::M) {
+				page = page->next;
+				pos = 0;
+			} else {
+				pos++;
+			}
 		}
-		entry* current;
+		TPage<T>* page;
+		int pos;
 		friend class Queue;
 	};
 	
 	typedef iterator_t<T> iterator;
 	typedef iterator_t<const T> const_iterator;
 	
-	iterator begin() { return iterator(p_front); }
-	const_iterator begin() const { return const_iterator(p_front); }
-	const_iterator cbegin() const { return const_iterator(p_front); }
+	iterator begin() { return iterator(p_front, 0); }
+	const_iterator begin() const { return const_iterator(p_front, 0); }
+	const_iterator cbegin() const { return const_iterator(p_front, 0); }
 	
-	iterator end() { return iterator(p_back->next); }
-	const_iterator end() const { return const_iterator(p_back->next); }
-	const_iterator cend() const { return const_iterator(p_back->next); }
+	iterator end() { return iterator(p_back, pos); }
+	const_iterator end() const { return const_iterator(p_back, pos); }
+	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	Region* mem;
-	entry_t* p_front;
-	entry_t* p_back;
+	static const int M = TPage<T>::M;
 	
+	TPage<T>* p_front = 0;
+	TPage<T>* p_back = 0;
+	int pos = 0;
 	
 };
 
 
 
-
 }}
-
 
 #endif /* INCLUDE_PHY_LIST_H_ */
