@@ -9,6 +9,7 @@
 #define INCLUDE_SPINLOCK_H_
 
 #include <atomic>
+#include <thread>
 
 namespace vnl { namespace util {
 
@@ -17,7 +18,14 @@ public:
 	spinlock() : flag(ATOMIC_FLAG_INIT) {}
 	
 	void lock() {
-		while(flag.test_and_set(std::memory_order_acquire)) {}
+		int counter = 0;
+		while(flag.test_and_set(std::memory_order_acquire)) {
+			counter++;
+			if(counter > 1000) {
+				std::this_thread::yield();
+				counter = 0;
+			}
+		}
 	}
 	
 	void unlock() {
