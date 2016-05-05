@@ -24,6 +24,10 @@ public:
 		p_back = p_front;
 	}
 	
+	~Queue() {
+		destroy();
+	}
+	
 	Queue(const Queue&) = delete;
 	
 	Queue& operator=(const Queue& other) {
@@ -98,9 +102,7 @@ public:
 	}
 	
 	void clear() {
-		for(auto iter = begin(); iter != end(); ++iter) {
-			iter->~T();
-		}
+		destroy();
 		p_front->read = 0;
 		p_front->write = 0;
 		p_back->read = 0;
@@ -111,6 +113,8 @@ public:
 	bool empty() const {
 		return p_front->read == p_front->write && p_front == p_back;
 	}
+	
+	Region* mem;
 	
 public:
 	
@@ -172,6 +176,13 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, p_back->write); }
 	
 protected:
+	void destroy() {
+		for(auto iter = begin(); iter != end(); ++iter) {
+			iter->~T();
+		}
+	}
+	
+protected:
 	struct block_t {
 		T elem[N];
 		block_t* next = 0;
@@ -180,7 +191,6 @@ protected:
 	};
 	
 private:
-	Region* mem;
 	block_t* p_front;
 	block_t* p_back;
 	

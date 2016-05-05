@@ -11,6 +11,7 @@
 #include <atomic>
 #include <thread>
 
+
 namespace vnl { namespace util {
 
 class spinlock {

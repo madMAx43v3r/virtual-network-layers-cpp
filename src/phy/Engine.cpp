@@ -69,28 +69,18 @@ void Engine::flush() {
 
 Message* Engine::collect(int64_t timeout) {
 	Message* msg = 0;
-	sync.lock();
 	if(queue.pop(msg)) {
-		sync.unlock();
 		return msg;
-	} else {
-		sync.unlock();
 	}
 	if(timeout >= 0) {
 		lock();
 		waiting.store(1, std::memory_order_release);
-		sync.lock();
 		if(!queue.pop(msg)) {
-			sync.unlock();
 			wait(timeout);
-		} else {
-			sync.unlock();
 		}
 		waiting.store(0, std::memory_order_release);
 		unlock();
-		sync.lock();
 		queue.pop(msg);
-		sync.unlock();
 	}
 	return msg;
 }

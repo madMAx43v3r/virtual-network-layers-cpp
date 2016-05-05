@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_MEMORY_H_
 #define INCLUDE_PHY_MEMORY_H_
 
-#include "util/spinlock.h"
+#include <atomic>
 
 #ifndef VNL_PHY_PAGE_SIZE
 #define VNL_PHY_PAGE_SIZE 4096
@@ -22,16 +22,17 @@ public:
 	static const int size = VNL_PHY_PAGE_SIZE;
 	
 	static Page* alloc() {
-		sync.lock();
-		if(begin) {
-			Page* page = begin;
-			begin = begin->next;
-			sync.unlock();
+		Page* page = begin.load(std::memory_order_acquire);
+		if(page) {
+			while(begin.compare_exchange_strong(page, page->next, std::memory_order_acq_rel)) {
+				if(!page) {
+					return new Page();
+				}
+			}
 			page->next = 0;
 			return page;
 		} else {
-			sync.unlock();
-			return new Page(this);
+			return new Page();
 		}
 	}
 	
@@ -39,15 +40,17 @@ public:
 	Page& operator=(const Page&) = delete;
 	
 	void free() {
-		sync.lock();
-		_free();
-		sync.unlock();
+		next = begin.load(std::memory_order_acquire);
+		while(begin.compare_exchange_strong(next, this, std::memory_order_acq_rel)) {}
 	}
 	
 	void free_all() {
-		sync.lock();
-		_free_all();
-		sync.unlock();
+		Page* page = this;
+		while(page) {
+			Page* tmp = page;
+			page = page->next;
+			tmp->free();
+		}
 	}
 	
 	char* mem;
@@ -63,23 +66,8 @@ private:
 		::free(mem);
 	}
 	
-	void _free() {
-		next = begin;
-		begin = this;
-	}
-	
-	void _free_all() {
-		Page* page = this;
-		while(page) {
-			Page* tmp = page;
-			page = page->next;
-			tmp->_free();
-		}
-	}
-	
 private:
-	static vnl::util::spinlock sync;
-	static Page* begin;
+	static std::atomic<Page*> begin;
 	
 };
 
