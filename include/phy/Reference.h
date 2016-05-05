@@ -40,6 +40,10 @@ public:
 	{
 	}
 	
+	~Reference() {
+		close();
+	}
+	
 	Reference(const Reference&) = delete;
 	Reference& operator=(const Reference&) = delete;
 	
@@ -50,7 +54,7 @@ public:
 		return obj;
 	}
 	
-	~Reference() {
+	void close() {
 		if(obj) {
 			Engine::local->send_async(Registry::close_t(obj), Registry::instance);
 		}

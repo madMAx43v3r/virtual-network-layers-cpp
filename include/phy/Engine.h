@@ -147,6 +147,32 @@ private:
 };
 
 
+class Fiber {
+public:
+	virtual ~Fiber() {};
+	
+	virtual void sent(Message* msg, bool async) = 0;
+	
+	virtual bool poll(int64_t micro) = 0;
+	
+	virtual void flush() = 0;
+	
+protected:
+	Fiber* get_current(Engine* engine) {
+		return engine->current;
+	}
+	
+	void set_current(Engine* engine, Fiber* fiber) {
+		engine->current = fiber;
+	}
+	
+	void do_exec(Engine* engine, Object* object) {
+		engine->exec(object);
+	}
+	
+};
+
+
 
 }}
 
