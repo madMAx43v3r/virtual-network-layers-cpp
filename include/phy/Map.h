@@ -149,8 +149,6 @@ public:
 		return count == 0;
 	}
 	
-	Region mem;
-	
 protected:
 	typedef Queue<std::pair<K,V>,B> Row;
 	
@@ -180,6 +178,8 @@ protected:
 		}
 		return false;
 	}
+	
+	Region mem;
 	
 private:
 	Array<TPage<Row*>*> index;

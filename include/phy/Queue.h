@@ -114,8 +114,6 @@ public:
 		return p_front->read == p_front->write && p_front == p_back;
 	}
 	
-	Region* mem;
-	
 public:
 	
 	template<typename P>
@@ -182,13 +180,14 @@ protected:
 		}
 	}
 	
-protected:
 	struct block_t {
 		T elem[N];
 		block_t* next = 0;
 		short read = 0;
 		short write = 0;
 	};
+	
+	Region* mem;
 	
 private:
 	block_t* p_front;
