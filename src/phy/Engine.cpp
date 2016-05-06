@@ -11,7 +11,6 @@
 #include "phy/Engine.h"
 #include "phy/Stream.h"
 #include "phy/Object.h"
-#include "phy/Fiber.h"
 #include "phy/Registry.h"
 
 

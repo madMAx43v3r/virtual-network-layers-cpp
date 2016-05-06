@@ -17,15 +17,15 @@
 namespace vnl { namespace phy {
 
 template<typename T, int N = 20>
-class MPSC_Queue {
+class AtomicQueue {
 public:
-	MPSC_Queue(Region* mem) : mem(mem), avail(0) {
+	AtomicQueue(Region* mem) : mem(mem), avail(0) {
 		front = mem->create<block_t>();
 		write = front;
 		back = front;
 	}
 	
-	~MPSC_Queue() {
+	~AtomicQueue() {
 		block_t* block = front;
 		while(block) {
 			block_t* tmp = block->next;

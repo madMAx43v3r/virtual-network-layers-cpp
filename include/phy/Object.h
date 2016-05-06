@@ -95,8 +95,8 @@ private:
 	int64_t ref = 0;
 	bool dying = false;
 	
-	friend class Registry;
 	friend class Engine;
+	friend class Registry;
 	
 };
 

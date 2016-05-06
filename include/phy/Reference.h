@@ -57,6 +57,7 @@ public:
 	void close() {
 		if(obj) {
 			Engine::local->send_async(Registry::close_t(obj), Registry::instance);
+			obj = 0;
 		}
 	}
 	

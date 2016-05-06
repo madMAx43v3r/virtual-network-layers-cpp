@@ -13,7 +13,7 @@
 namespace vnl { namespace phy {
 
 
-Object::Object() : mac(0) {}
+Object::Object() : Object(0) {}
 
 Object::Object(uint64_t mac) : mac(mac) {}
 

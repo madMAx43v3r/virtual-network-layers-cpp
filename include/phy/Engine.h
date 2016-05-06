@@ -19,7 +19,7 @@
 
 #include "phy/Message.h"
 #include "phy/Node.h"
-#include "phy/MPSC_Queue.h"
+#include "phy/AtomicQueue.h"
 #include "phy/RingBuffer.h"
 #include "System.h"
 #include "Util.h"
@@ -43,6 +43,9 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
+		if(msg->dst == this) {
+			return;
+		}
 		msg->safe = true;
 		queue.push(msg);
 		if(waiting-- == 1) {
@@ -134,7 +137,7 @@ private:
 	
 	Fiber* current = 0;
 	std::atomic<int> waiting;
-	MPSC_Queue<Message*> queue;
+	AtomicQueue<Message*> queue;
 	
 	RingBuffer buffer;
 	std::function<void(Message*)> async_cb;

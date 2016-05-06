@@ -39,14 +39,25 @@ public:
 	
 	virtual void receive(Message* msg) override {
 		sync.lock();
-		if(!handle(msg)) {
-			msg->ack();
+		if(msg->isack) {
+			if(msg->callback) {
+				msg->callback(msg);
+			}
+		} else {
+			if(!handle(msg)) {
+				msg->ack();
+			}
 		}
 		sync.unlock();
 	}
 	
 protected:
 	virtual bool handle(Message* msg) = 0;
+	
+	void send_async(Message* msg, Node* dst) {
+		msg->src = this;
+		dst->receive(msg);
+	}
 	
 private:
 	vnl::util::spinlock sync;
@@ -64,6 +75,7 @@ public:
 	}
 	
 	void send(Message* msg, Node* dst) {
+		msg->src = this;
 		dst->receive(msg);
 		cond.wait(ulock);
 	}

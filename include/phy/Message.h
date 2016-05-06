@@ -20,11 +20,11 @@ class Fiber;
 
 class Message {
 public:
-	Message() {}
-	virtual ~Message() {}
+	Message() : mid(0) {}
 	
-	Message(uint32_t mid)
-		:	mid(mid) {}
+	Message(uint32_t mid) : mid(mid) {}
+	
+	virtual ~Message() {}
 	
 	Message(const Message&) = delete;
 	Message& operator=(const Message&) = delete;
@@ -33,7 +33,7 @@ public:
 	
 	void ack();
 	
-	uint32_t mid = 0;
+	uint32_t mid;
 	Node* src = 0;
 	Node* dst = 0;
 	Fiber* impl = 0;
@@ -58,7 +58,9 @@ template<typename T, uint32_t MID>
 class Generic : public Message {
 public:
 	Generic() : Message(MID) {}
-	Generic(const T& data) : Message(MID), data(data) {}
+	
+	template<typename R>
+	Generic(R&& data) : Message(MID), data(data) {}
 	
 	static const uint32_t id = MID;
 	
@@ -70,7 +72,9 @@ template<typename T, typename P, uint32_t MID>
 class Request : public Message {
 public:
 	Request() : Message(MID) {}
-	Request(const P& args) : Message(MID), args(args) {}
+	
+	template<typename R>
+	Request(R&& args) : Message(MID), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;
