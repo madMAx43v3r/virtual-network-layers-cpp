@@ -8,10 +8,10 @@
 #ifndef INCLUDE_PHY_LIST_H_
 #define INCLUDE_PHY_LIST_H_
 
-#include "phy/Queue.h"
+#include "Queue.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 /*
  * This is a list.
@@ -20,23 +20,23 @@ namespace vnl { namespace phy {
 template<typename T, int N = 8>
 class List : public Queue<T,N> {
 public:
-	List(Region* mem) : Queue(mem) {}
+	List(phy::Region* mem) : Queue<T,N>(mem) {}
 	
 	List(const List&) = delete;
 	
 	T& push_back(const T& obj) {
-		return push(obj);
+		return Queue<T,N>::push(obj);
 	}
 	
 	bool pop_front(T& obj) {
-		return pop(obj);
+		return Queue<T,N>::pop(obj);
 	}
 	
 };
 
 
 
-}}
+}
 
 
 #endif /* INCLUDE_PHY_LIST_H_ */

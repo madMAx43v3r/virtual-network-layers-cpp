@@ -11,11 +11,11 @@
 #include <assert.h>
 #include <utility>
 
-#include "phy/Array.h"
-#include "phy/Queue.h"
+#include "Array.h"
+#include "Queue.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 /*
  * This is a hash map.
@@ -26,7 +26,7 @@ template<typename K, typename V, int B = 4>
 class Map {
 public:
 	Map() {
-		assert(sizeof(K)+sizeof(V) <= Page::size/B - B*16);
+		assert(sizeof(K)+sizeof(V) <= phy::Page::size/B - B*16);
 		clear();
 	}
 	
@@ -48,8 +48,8 @@ public:
 		return *this;
 	}
 	
-	void insert(Map& other) {
-		TPage<Row*>* page = other.table;
+	void insert(const Map& other) {
+		phy::TPage<Row*>* page = other.table;
 		int i = 0;
 		while(page) {
 			for(int k = 0; k < M && i < other.N; ++k) {
@@ -59,31 +59,31 @@ public:
 				}
 				i++;
 			}
-			page = page->next;
+			page = (phy::TPage<Row*>*)page->next;
 		}
 	}
 	
 	V& insert(const K& key, const V& val) {
 		Row* row;
-		V* ptr;
+		std::pair<K,V>* ptr;
 		if(find(key, row, ptr)) {
-			*ptr = val;
+			ptr->second = val;
 		} else {
 			if(count >= N*B) {
 				expand(N*2);
 				return insert(key, val);
 			}
-			ptr = &row->push(val);
+			ptr = &row->push(std::make_pair(key, val));
 			count++;
 		}
-		return *ptr;
+		return ptr->second;
 	}
 	
 	V& operator[](const K& key) {
 		Row* row;
-		V* ptr;
+		std::pair<K,V>* ptr;
 		if(find(key, row, ptr)) {
-			return *ptr;
+			return ptr->second;
 		} else {
 			return insert(key, V());
 		}
@@ -91,19 +91,23 @@ public:
 	
 	V* find(const K& key) {
 		Row* row;
-		V* ptr;
+		std::pair<K,V>* ptr;
 		if(find(key, row, ptr)) {
-			return ptr;
+			return &ptr->second;
 		}
 		return 0;
 	}
 	
 	void erase(const K& key) {
 		Row* row;
-		V* ptr;
+		std::pair<K,V>* ptr;
 		if(find(key, row, ptr)) {
-			auto end_ = row->end();
-			for(auto iter = row->begin(); iter != end_; ++iter) {
+			auto row_end = row->end();
+			while(true) {
+				auto iter = row->begin();
+				if(iter == row_end) {
+					break;
+				}
 				if(iter->first != key) {
 					row->push(*iter);
 				} else {
@@ -120,7 +124,7 @@ public:
 			rows = 1;
 		}
 		if(!table) {
-			table = TPage<Row*>::alloc();
+			table = phy::TPage<Row*>::alloc();
 		}
 		N = rows;
 		index.clear();
@@ -129,9 +133,9 @@ public:
 		for(int i = 0; i < N; ++i) {
 			if(pos >= M) {
 				if(!table->next) {
-					table->next = TPage<Row*>::alloc();
+					table->next = phy::TPage<Row*>::alloc();
 				}
-				table = table->next;
+				table = (phy::TPage<Row*>*)table->next;
 				index.push_back(table);
 				pos = 0;
 			}
@@ -152,7 +156,7 @@ public:
 protected:
 	typedef Queue<std::pair<K,V>,B> Row;
 	
-	static const int M = TPage<Row*>::M;
+	static const int M = phy::TPage<Row*>::M;
 	
 	Map(int rows) {
 		clear(rows);
@@ -164,32 +168,32 @@ protected:
 		*this = tmp;
 	}
 	
-	bool find(const K& key, Row*& row, V*& val) {
-		size_t ri = std::hash(key) % N;
+	bool find(const K& key, Row*& row, std::pair<K,V>*& val) {
+		size_t ri = std::hash<K>{}(key) % N;
 		size_t pi = ri / M;
 		size_t qi = ri % M;
-		TPage<Row*>* page = index[pi];
+		phy::TPage<Row*>* page = index[pi];
 		row = (*page)[qi];
 		for(std::pair<K,V>& pair : *row) {
 			if(pair.first == key) {
-				val = &pair.second;
+				val = &pair;
 				return true;
 			}
 		}
 		return false;
 	}
 	
-	Region mem;
+	phy::Region mem;
 	
 private:
-	Array<TPage<Row*>*> index;
-	TPage<Row*>* table = 0;
+	Array<phy::TPage<Row*>*> index;
+	phy::TPage<Row*>* table = 0;
 	size_t N = 0;
 	size_t count = 0;
 	
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_MAP_H_ */

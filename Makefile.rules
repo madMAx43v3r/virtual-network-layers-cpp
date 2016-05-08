@@ -1,5 +1,5 @@
 
-CFLAGS = -std=c++11 -g -O2
+CFLAGS = -std=c++11 -g -O0
 INC := -I$(ROOT)/include
 
 SRC := $(wildcard *.cpp)

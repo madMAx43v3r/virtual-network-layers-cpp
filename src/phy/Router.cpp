@@ -10,6 +10,8 @@
 
 namespace vnl { namespace phy {
 
+Router* Router::instance = 0;
+
 Router::Router()
 	:	table(mem),
 		cb_rcv(std::bind(&Router::callback_rcv, this, std::placeholders::_1))
@@ -68,7 +70,7 @@ int Router::route(Packet* pkt, Node* src) {
 	Row** prow = table.find(pkt->dst);
 	if(prow) {
 		for(Node* dst : **prow) {
-			if(dst != src) {
+			if(dst && dst != src) {
 				forward(pkt, dst);
 			}
 		}

@@ -10,7 +10,7 @@
 
 #include "phy/Memory.h"
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 /*
  * This is a queue.
@@ -19,7 +19,7 @@ namespace vnl { namespace phy {
 template<typename T, int N = 8>
 class Queue {
 public:
-	Queue(Region* mem) : mem(mem) {
+	Queue(phy::Region* mem) : mem(mem) {
 		p_front = mem->create<block_t>();
 		p_back = p_front;
 	}
@@ -43,19 +43,23 @@ public:
 	}
 	
 	T& push(const T& obj) {
+		T& ref = p_back->elem[p_back->write++];
 		if(p_back->write >= N) {
 			if(!p_back->next) {
 				p_back->next = mem->create<block_t>();
 			}
 			p_back = p_back->next;
 		}
-		T& ref = &p_back->elem[p_back->write++];
 		ref = obj;
 		return ref;
 	}
 	
+	/*
+	 * Note: invalidates any iterator pointing to the front.
+	 */
 	bool pop(T& obj) {
 		if(!empty()) {
+			T& tmp = p_front->elem[p_front->read++];
 			if(p_front->read >= N) {
 				block_t* tmp = p_front;
 				tmp->read = 0;
@@ -64,7 +68,6 @@ public:
 				tmp->next = p_back->next;
 				p_back->next = tmp;
 			}
-			T& tmp = p_front->elem[p_front->read++];
 			obj = tmp;
 			tmp.~T();
 			return true;
@@ -90,7 +93,19 @@ public:
 	}
 	
 	T& back() {
-		return p_back->elem[p_back->write - 1];
+		T* ptr = 0;
+		if(p_back->write > 0) {
+			ptr = &p_back->elem[p_back->write - 1];
+		} else {
+			block_t* block = p_front;
+			while(true) {
+				if(block->next == p_back) {
+					ptr = &block->elem[N - 1];
+				}
+				block = block->next;
+			}
+		}
+		return *ptr;
 	}
 	
 	size_t size() {
@@ -113,6 +128,16 @@ public:
 	bool empty() const {
 		return p_front->read == p_front->write && p_front == p_back;
 	}
+	
+	phy::Region* mem;
+	
+protected:
+	struct block_t {
+		T elem[N];
+		block_t* next = 0;
+		short read = 0;
+		short write = 0;
+	};
 	
 public:
 	
@@ -150,7 +175,7 @@ public:
 		iterator_t(block_t* block, int pos)
 			:	block(block), pos(pos) {}
 		void advance() {
-			if(pos >= N) {
+			if(pos >= N-1) {
 				block = block->next;
 				pos = 0;
 			} else {
@@ -180,15 +205,6 @@ protected:
 		}
 	}
 	
-	struct block_t {
-		T elem[N];
-		block_t* next = 0;
-		short read = 0;
-		short write = 0;
-	};
-	
-	Region* mem;
-	
 private:
 	block_t* p_front;
 	block_t* p_back;
@@ -197,6 +213,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_QUEUE_H_ */

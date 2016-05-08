@@ -14,6 +14,10 @@
 #define VNL_PHY_PAGE_SIZE 4096
 #endif
 
+#ifndef VNL_PHY_MEMORY_DEBUG
+#define VNL_PHY_MEMORY_DEBUG false
+#endif
+
 
 namespace vnl { namespace phy {
 
@@ -21,10 +25,13 @@ class Page {
 public:
 	static const int size = VNL_PHY_PAGE_SIZE;
 	
+	static size_t num_alloc;
+	
 	static Page* alloc() {
+		num_alloc++;
 		Page* page = begin.load(std::memory_order_acquire);
 		if(page) {
-			while(begin.compare_exchange_strong(page, page->next, std::memory_order_acq_rel)) {
+			while(!begin.compare_exchange_strong(page, page->next, std::memory_order_acq_rel)) {
 				if(!page) {
 					return new Page();
 				}
@@ -40,8 +47,9 @@ public:
 	Page& operator=(const Page&) = delete;
 	
 	void free() {
+		num_alloc--;
 		next = begin.load(std::memory_order_acquire);
-		while(begin.compare_exchange_strong(next, this, std::memory_order_acq_rel)) {}
+		while(!begin.compare_exchange_strong(next, this, std::memory_order_acq_rel)) {}
 	}
 	
 	void free_all() {
@@ -90,6 +98,8 @@ public:
 
 class Region {
 public:
+	static const bool debug = VNL_PHY_MEMORY_DEBUG;
+	
 	Region() {
 		p_front = Page::alloc();
 		p_back = p_front;
@@ -114,12 +124,20 @@ public:
 	
 	template<typename T>
 	T* create() {
-		return new(alloc<T>()) T();
+		if(debug) {
+			return new T();
+		} else {
+			return new(alloc<T>()) T();
+		}
 	}
 	
 	template<typename T>
 	void* alloc() {
-		return alloc(sizeof(T));
+		if(debug) {
+			return malloc(sizeof(T));
+		} else {
+			return alloc(sizeof(T));
+		}
 	}
 	
 	void* alloc(int size) {

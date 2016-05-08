@@ -27,112 +27,20 @@ public:
 	typedef Signal<0x2aa87626> shutdown_t;
 	
 protected:
-	bool handle(Message* msg) override {
-		switch(msg->mid) {
-		case bind_t::id: {
-			bind_t* req = (bind_t*)msg;
-			req->ack(bind(req->args));
-			return true;
-		}
-		case connect_t::id: {
-			connect_t* req = (connect_t*)msg;
-			Object* obj = connect(req->args);
-			if(obj) {
-				req->ack(obj);
-			} else {
-				waiting[req->args].push_back(req);
-			}
-			return true;
-		}
-		case open_t::id:
-			open(((open_t*)msg)->data);
-			msg->ack();
-			return true;
-		case close_t::id:
-			close(((close_t*)msg)->data);
-			msg->ack();
-			return true;
-		case delete_t::id:
-			kill(((delete_t*)msg)->data);
-			msg->ack();
-			return true;
-		case finished_t::id:
-			close(((finished_t*)msg)->data);
-			msg->ack();
-			return true;
-		case shutdown_t::id:
-			if(!exit_msg) {
-				for(auto pair : map) {
-					kill(pair.second);
-				}
-				exit_msg = msg;
-			} else {
-				msg->ack();
-			}
-			return true;
-		}
-		if(exit_msg && map.empty()) {
-			exit_msg->ack();
-		}
-		return false;
-	}
+	bool handle(Message* msg) override;
 	
 private:
 	typedef Generic<Object*, 0x5a8a106d> finished_t;
 	
-	bool bind(Object* obj) {
-		uint64_t mac = obj->getMAC();
-		Object*& value = map[mac];
-		if(value == 0) {
-			value = obj;
-			obj->ref++;
-			if(waiting.count(mac)) {
-				for(connect_t* msg : waiting[mac]) {
-					obj->ref++;
-					msg->ack(obj);
-				}
-				waiting.erase(mac);
-			}
-			return true;
-		}
-		return false;
-	}
+	bool bind(Object* obj);
 	
-	Object* connect(uint64_t mac) {
-		auto iter = map.find(mac);
-		if(iter != map.end()) {
-			Object* obj = iter->second;
-			open(obj);
-			return obj;
-		}
-		return 0;
-	}
+	Object* connect(uint64_t mac);
 	
-	void open(Object* obj) {
-		obj->ref++;
-	}
+	void open(Object* obj);
 	
-	void close(Object* obj) {
-		obj->ref--;
-		if(obj->dying) {
-			if(obj->ref == 1) {
-				obj->receive(new Object::exit_t());
-			} else if(obj->ref == 0) {
-				map.erase(obj->getMAC());
-				delete obj;
-			}
-		}
-	}
+	void close(Object* obj);
 	
-	void kill(Object* obj) {
-		if(!obj->dying) {
-			obj->dying = true;
-			if(obj->ref == 1) {
-				obj->receive(new Object::exit_t());
-			}
-			obj->ref--;
-		}
-	}
+	void kill(Object* obj);
 	
 private:
 	vnl::util::spinlock sync;

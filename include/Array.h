@@ -12,7 +12,7 @@
 #include "phy/Memory.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 /*
  * This is a paged array.
@@ -22,7 +22,7 @@ template<typename T>
 class Array {
 public:
 	Array() {
-		assert(sizeof(T) <= Page::size);
+		assert(sizeof(T) <= phy::Page::size);
 	}
 	
 	Array(const Array& other) {
@@ -47,26 +47,25 @@ public:
 	
 	T& push_back(const T& obj) {
 		if(!p_front) {
-			p_front = TPage<T>::alloc();
+			p_front = phy::TPage<T>::alloc();
 			p_back = p_front;
 		}
 		if(pos >= M) {
-			p_back->next = TPage<T>::alloc();
-			p_back = p_back->next;
+			p_back->next = phy::TPage<T>::alloc();
+			p_back = (phy::TPage<T>*)p_back->next;
 			pos = 0;
 		}
-		T& ref = (*p_back)[pos];
+		T& ref = (*p_back)[pos++];
 		ref = obj;
-		pos++;
 		return ref;
 	}
 	
 	T& operator[](size_t index) {
 		int pi = index / M;
 		int ei = index % M;
-		TPage<T>* page = p_front;
+		phy::TPage<T>* page = p_front;
 		for(int i = 0; i < pi; ++i) {
-			page = page->next;
+			page = (phy::TPage<T>*)page->next;
 		}
 		return (*page)[ei];
 	}
@@ -85,7 +84,7 @@ public:
 	
 	size_t size() const {
 		size_t count = 0;
-		Page* page = p_front;
+		phy::Page* page = p_front;
 		while(page) {
 			if(page != p_back) {
 				count += M;
@@ -134,19 +133,19 @@ public:
 			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(TPage<T>* page, int pos)
+		iterator_t(phy::TPage<T>* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
-			if(pos >= TPage<T>::M) {
-				page = page->next;
+			if(pos >= phy::TPage<T>::M) {
+				page = (phy::TPage<T>*)page->next;
 				pos = 0;
 			} else {
 				pos++;
 			}
 		}
-		TPage<T>* page;
+		phy::TPage<T>* page;
 		int pos;
-		friend class Queue;
+		friend class Array;
 	};
 	
 	typedef iterator_t<T> iterator;
@@ -161,16 +160,16 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = TPage<T>::M;
+	static const int M = phy::TPage<T>::M;
 	
-	TPage<T>* p_front = 0;
-	TPage<T>* p_back = 0;
+	phy::TPage<T>* p_front = 0;
+	phy::TPage<T>* p_back = 0;
 	int pos = 0;
 	
 };
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_ARRAY_H_ */

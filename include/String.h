@@ -8,19 +8,20 @@
 #ifndef INCLUDE_PHY_STRING_H_
 #define INCLUDE_PHY_STRING_H_
 
+#include <string.h>
 #include <ostream>
 #include <streambuf>
 #include <string>
 #include <sstream>
 
-#include "phy/List.h"
+#include "List.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class String : public std::ostream, private std::streambuf {
 public:
-	String(Region* mem) : std::iostream(this), list(mem) {}
+	String(phy::Region* mem) : std::ostream(this), list(mem) {}
 	
 	~String() {
 		if(buf) {
@@ -30,13 +31,13 @@ public:
 	
 	String(const String& other) = delete;
 	
-	String& operator=(const String& other) {
+	String& operator=(String& other) {
 		list.clear();
 		(*this) << other;
 		return *this;
 	}
 	
-	std::ostream& operator<<(String& other) {
+	String& operator<<(String& other) {
 		other.sync();
 		for(const str_t& str : other.list) {
 			std::ostream::write(str.ptr, str.len);
@@ -51,6 +52,14 @@ public:
 			ss.write(str.ptr, str.len);
 		}
 		return ss.str();
+	}
+	
+	friend std::ostream& operator<<(std::ostream& stream, String& other) { 
+		other.sync();
+		for(const String::str_t& str : other.list) {
+			stream.write(str.ptr, str.len);
+		}
+		return stream;
 	}
 	
 	void clear() {
@@ -69,14 +78,14 @@ protected:
 	virtual int overflow(int c = std::char_traits<char>::eof()) override {
 		if(buf) {
 			str_t str;
-			str.len = Page::size;
-			str.ptr = list.mem->alloc(str.len);
-			memcpy(str.ptr, buf, Page::size);
+			str.len = phy::Page::size;
+			str.ptr = (char*)list.mem->alloc(str.len);
+			memcpy(str.ptr, buf->mem, phy::Page::size);
 			list.push_back(str);
 		} else {
-			buf = Page::alloc();
+			buf = phy::Page::alloc();
 		}
-		setp(buf->mem, buf->mem + Page::size);
+		setp(buf->mem, buf->mem + phy::Page::size);
 		sputc(c);
 		return c;
 	}
@@ -85,8 +94,8 @@ protected:
 		if(buf) {
 			str_t str;
 			str.len = pptr() - pbase();
-			str.ptr = list.mem->alloc(str.len);
-			memcpy(str.ptr, buf, str.len);
+			str.ptr = (char*)list.mem->alloc(str.len);
+			memcpy(str.ptr, buf->mem, str.len);
 			list.push_back(str);
 			setp(0, 0);
 			buf->free();
@@ -97,14 +106,14 @@ protected:
 	
 private:
 	List<str_t, 2> list;
-	Page* buf = 0;
+	phy::Page* buf = 0;
 	
 };
 
 
+} // vnl
 
 
 
-}}
 
 #endif /* INCLUDE_PHY_STRING_H_ */

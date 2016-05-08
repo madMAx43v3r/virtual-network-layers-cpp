@@ -8,11 +8,10 @@
 #ifndef INCLUDE_PHY_PACKET_H_
 #define INCLUDE_PHY_PACKET_H_
 
-#include "phy/Message.h"
-
 
 namespace vnl { namespace phy {
 
+class Router;
 
 class Packet {
 public:
@@ -23,9 +22,12 @@ public:
 	uint64_t src = 0;
 	uint64_t dst = 0;
 	
+private:
 	Packet* parent = 0;
 	int32_t count = 0;
 	int32_t acks = 0;
+	
+	friend class Router;
 	
 };
 
