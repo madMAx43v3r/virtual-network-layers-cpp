@@ -12,7 +12,7 @@
 
 namespace vnl { namespace phy {
 
-class BoostFiber;
+class Fiber;
 
 class FiberEngine : public Engine {
 public:
@@ -24,18 +24,29 @@ public:
 		}
 	}
 	
-	virtual void run(Object* object) override;
+	virtual void exec(Object* object) override;
+	
+	virtual void send_impl(Message* msg, Node* dst, bool async) = 0;
+	
+	virtual bool poll(Stream* stream, int64_t micros) = 0;
+	
+	virtual void flush() = 0;
+	
+protected:
+	virtual void fork(Object* object) override;
 	
 private:
-	virtual void FiberEngine::fork(Object* object) override;
-	
 	int timeout();
 	
 private:
 	int stack_size;
 	
-	Array<BoostFiber*> fibers;
-	Queue<BoostFiber*> avail;
+	Fiber* current = 0;
+	
+	Array<Fiber*> fibers;
+	Queue<Fiber*> avail;
+	
+	friend class Fiber;
 	
 };
 

@@ -9,83 +9,48 @@
 #define INCLUDE_PHY_THREADENGINE_H_
 
 #include "Engine.h"
-#include "Fiber.h"
+#include "Stream.h"
 
 
 namespace vnl { namespace phy {
 
 class ThreadEngine : public Engine {
 public:
-	ThreadEngine() : fiber(this) {}
-	
-	virtual void run(Object* object) override {
-		assert(Engine::local == this);
-		fiber.exec(object);
-	}
+	ThreadEngine() {}
 	
 protected:
 	
-	class ThreadFiber : public Fiber {
-	public:
-		ThreadFiber(ThreadEngine* engine) : engine(engine) {}
+	virtual void send_impl(Message* msg, Node* dst, bool async) override {
+		assert(msg->isack == false);
+		assert(dst);
 		
-		void exec(Object* object) {
-			do_exec(engine, object);
+		msg->impl = this;
+		dst->receive(msg);
+		pending++;
+		if(!async && pending > 0) {
+			wait_for_ack(msg);
 		}
+	}
+	
+	virtual bool poll(Stream* stream, int64_t micros) override {
+		assert(stream->getEngine() == this);
+		assert(stream);
 		
-		virtual void sent(Message* msg, bool async) override {
-			pending++;
-			if(!async && pending > 0) {
-				wait_msg = msg;
-				while(wait_msg) {
-					wait();
-				}
-			}
+		if(micros != 0) {
+			return timed_poll(stream, micros);
+		} else {
+			return inf_poll(stream);
 		}
-		
-		void acked(Message* msg) {
-			if(msg->callback) {
-				msg->callback(msg);
-			}
-			pending--;
-			if(msg == wait_msg) {
-				wait_msg = 0;
-			}
-		}
-		
-		virtual bool poll(int64_t millis) override {
-			Message* msg = engine->collect(millis);
+	}
+	
+	virtual void flush() override {
+		while(pending > 0) {
+			Message* msg = collect(-1);
 			if(msg) {
-				if(msg->isack) {
-					acked(msg);
-				} else {
-					Node* node = msg->dst;
-					node->receive(msg);
-				}
-				return true;
-			}
-			return false;
-		}
-		
-		virtual void flush() override {
-			while(pending) {
-				wait();
+				handle(msg);
 			}
 		}
-		
-	private:
-		void wait() {
-			poll(9223372036854775808LL);
-		}
-		
-	private:
-		ThreadEngine* engine;
-		int pending = 0;
-		bool result = false;
-		bool waiting = false;
-		Message* wait_msg = 0;
-		
-	};
+	}
 	
 	virtual void fork(Object* object) override {
 		std::thread thread(std::bind(&ThreadEngine::entry, object));
@@ -93,14 +58,73 @@ protected:
 	}
 	
 private:
+	void wait_for_ack(Message* snd) {
+		while(true) {
+			Message* msg = collect(-1);
+			if(msg) {
+				handle(msg);
+				if(msg == snd) {
+					return;
+				}
+			}
+		}
+	}
+	
+	bool inf_poll(Stream* stream) {
+		while(true) {
+			Message* msg = collect(-1);
+			if(msg) {
+				handle(msg);
+				if(msg->dst == stream && !msg->isack) {
+					return true;
+				}
+			} else {
+				return false;
+			}
+		}
+	}
+	
+	bool timed_poll(Stream* stream, int64_t micros) {
+		int64_t now = System::currentTimeMicros();
+		int64_t deadline = now + micros;
+		while(true) {
+			int64_t to = deadline - now;
+			if(to < 0) {
+				return false;
+			}
+			Message* msg = collect(to);
+			if(msg) {
+				handle(msg);
+				if(msg->dst == stream && !msg->isack) {
+					return true;
+				}
+			} else {
+				return false;
+			}
+			now = System::currentTimeMicros();
+		}
+	}
+	
+	void handle(Message* msg) {
+		if(msg->isack) {
+			if(msg->callback) {
+				msg->callback(msg);
+			}
+			pending--;
+		} else {
+			msg->dst->receive(msg);
+		}
+	}
 	
 	static void entry(Object* object) {
 		ThreadEngine engine;
-		engine.run(object);
+		object->impl
+		engine.exec(object);
 	}
 	
 private:
-	ThreadFiber fiber;
+	int pending = 0;
+	
 	
 };
 

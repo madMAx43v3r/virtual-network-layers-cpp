@@ -11,61 +11,62 @@
 #include "phy/Node.h"
 #include "phy/Engine.h"
 #include "phy/Memory.h"
-#include "phy/Queue.h"
+#include "Queue.h"
 
 
 namespace vnl { namespace phy {
 
 class Engine;
 
-class Stream : public Node {
+class Stream final : public Node {
 public:
-	Stream() : Stream(Engine::local) {}
+	typedef Generic<Stream*, 0xe39e616f> signal_t;
 	
-	Stream(Engine* engine)
-		:	engine(engine), queue(&mem) {}
+	Stream(Engine* engine, Region* mem)
+		:	engine(engine), queue(mem) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
+	Engine* getEngine() const {
+		return engine;
+	}
+	
 	// thread safe
 	virtual void receive(Message* msg) override {
-		if(msg->safe) {
+		if(msg->gate == engine) {
 			push(msg);
 		} else {
-			msg->dst = this;
+			if(!msg->dst) {
+				msg->dst = this;
+			}
 			engine->receive(msg);
 		}
 	}
 	
-	uint64_t rand() {
-		return engine->rand();
-	}
-	
-	void fork(Object* object) {
-		engine->fork(object);
-	}
-	
 	template<typename T>
 	void send(T&& msg, Node* dst) {
-		engine->send(msg, dst);
+		send(msg, dst);
 	}
 	
 	template<typename T>
 	void send_async(T&& msg, Node* dst) {
-		engine->send_async(msg, dst);
+		send_async(msg, dst);
 	}
 	
 	template<typename T, typename R>
 	T request(R&& req, Node* dst) {
+		req->src = this;
 		return engine->request<T>(req, dst);
 	}
 	
 	void send(Message* msg, Node* dst) {
+		msg->src = this;
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Node* dst) {
+		msg->src = this;
 		engine->send_async(msg, dst);
 	}
 	
@@ -73,14 +74,18 @@ public:
 		engine->flush();
 	}
 	
-	Message* poll() {
-		return poll(9223372036854775808LL);
+	void listen(Node* rcv) {
+		impl = rcv;
 	}
 	
-	Message* poll(int64_t millis) {
+	Message* poll() {
+		return poll(-1);
+	}
+	
+	Message* poll(int64_t micros) {
 		Message* msg = 0;
-		if(!queue.pop(msg) && millis >= 0) {
-			if(engine->poll(this, millis)) {
+		if(!queue.pop(msg) && micros != 0) {
+			if(engine->poll(this, micros)) {
 				queue.pop(msg);
 			}
 		}
@@ -89,13 +94,20 @@ public:
 	
 	void push(Message* msg) {
 		queue.push(msg);
+		if(impl) {
+			send_async(signal_t(this), impl);
+			impl = 0;
+		}
 	}
 	
-protected:
-	Engine* engine;
+	Message* pop() {
+		Message* msg = 0;
+		queue.pop(msg);
+		return msg;
+	}
 	
 private:
-	Region mem;
+	Engine* engine;
 	Queue<Message*> queue;
 	
 	friend class Engine;

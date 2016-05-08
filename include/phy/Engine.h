@@ -25,14 +25,12 @@
 namespace vnl { namespace phy {
 
 class Page;
-class Fiber;
 class Stream;
 class Object;
 
 class Engine : public Node {
 public:
 	Engine();
-	Engine(uint64_t mac);
 	Engine(const std::string& name);
 	virtual ~Engine();
 	
@@ -40,19 +38,20 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
+		msg->gate = this;
 		if(msg->dst == this) {
-			return;
-		}
-		msg->safe = true;
-		queue.push(msg);
-		if(waiting-- == 1) {
-			lock();
-			notify();
-			unlock();
+			msg->ack();
+		} else {
+			queue.push(msg);
+			if(waiting-- == 1) {
+				mutex.lock();
+				cond.notify_all();
+				mutex.unlock();
+			}
 		}
 	}
 	
-	virtual void run(Object* object) = 0;
+	virtual void exec(Object* object);
 	
 protected:
 	bool dorun = true;
@@ -90,35 +89,38 @@ protected:
 		send_impl(msg, dst, true);
 	}
 	
-	bool poll(Stream* stream, int64_t micro);
+	virtual void send_impl(Message* msg, Node* dst, bool async) = 0;
 	
-	void flush();
+	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
-	void lock() {
-		mutex.lock();
-	}
-	
-	void unlock() {
-		mutex.unlock();
-	}
-	
-	virtual void notify() {
-		cond.notify_all();
-	}
-	
-	virtual void wait(int64_t micro) {
-		cond.wait_for(ulock, std::chrono::microseconds(micro));
-	}
-	
-	Message* collect(int64_t micro);
+	virtual void flush() = 0;
 	
 	virtual void fork(Object* object) = 0;
 	
+	Message* Engine::collect(int64_t timeout) {
+		Message* msg = 0;
+		if(queue.pop(msg)) {
+			return msg;
+		}
+		if(timeout != 0) {
+			{
+				std::unique_lock<std::mutex> ulock(mutex);
+				waiting.store(1, std::memory_order_release);
+				if(!queue.pop(msg)) {
+					if(timeout > 0) {
+						cond.wait_for(ulock, std::chrono::microseconds(timeout));
+					} else {
+						cond.wait(ulock);
+					}
+				}
+				waiting.store(0, std::memory_order_release);
+			}
+			queue.pop(msg);
+		}
+		return msg;
+	}
+	
 private:
-	void exec(Object* object);
-	
-	void send_impl(Message* msg, Node* dst, bool async);
-	
 	void async_ack(Message* msg) {
 		buffer.destroy<Message>((RingBuffer::entry_t*)msg->user);
 	}
@@ -130,9 +132,7 @@ protected:
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
-	std::unique_lock<std::mutex> ulock;
 	
-	Fiber* current = 0;
 	std::atomic<int> waiting;
 	AtomicQueue<Message*> queue;
 	
@@ -141,36 +141,10 @@ private:
 	
 	friend class Stream;
 	friend class Object;
-	friend class Fiber;
 	friend class Page;
 	
 };
 
-
-class Fiber {
-public:
-	virtual ~Fiber() {};
-	
-	virtual void sent(Message* msg, bool async) = 0;
-	
-	virtual bool poll(int64_t micro) = 0;
-	
-	virtual void flush() = 0;
-	
-protected:
-	Fiber* get_current(Engine* engine) {
-		return engine->current;
-	}
-	
-	void set_current(Engine* engine, Fiber* fiber) {
-		engine->current = fiber;
-	}
-	
-	void do_exec(Engine* engine, Object* object) {
-		engine->exec(object);
-	}
-	
-};
 
 
 

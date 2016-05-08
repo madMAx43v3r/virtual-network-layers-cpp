@@ -19,6 +19,9 @@ namespace vnl { namespace phy {
 
 class Message;
 class Engine;
+class Fiber;
+class Stream;
+
 
 class Node {
 public:
@@ -33,9 +36,11 @@ protected:
 	uint64_t mac = 0;
 	
 private:
-	Fiber* impl = 0;
+	Node* impl = 0;
 	
 	friend class Engine;
+	friend class Stream;
+	friend class Fiber;
 	
 };
 
@@ -47,6 +52,10 @@ public:
 	}
 	
 	virtual void receive(Message* msg) override {
+		msg->gate = this;
+		if(!msg->dst) {
+			msg->dst = this;
+		}
 		sync.lock();
 		if(msg->isack) {
 			if(msg->callback) {

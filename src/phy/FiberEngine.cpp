@@ -13,15 +13,16 @@
 #include "phy/FiberEngine.h"
 #include "phy/Stream.h"
 
+
 namespace vnl { namespace phy {
 
-class BoostFiber : public Fiber {
+class Fiber final : public Node {
 public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
-	BoostFiber(FiberEngine* engine, int stack_size)
-		: 	engine(engine),
-			_call(	boost::bind(&BoostFiber::entry, this, boost::arg<1>()),
+	Fiber(FiberEngine* engine, int stack_size)
+		: 	engine(engine), cbs(engine->memory),
+			_call(	boost::bind(&Fiber::entry, this, boost::arg<1>()),
 					boost::coroutines::attributes(stack_size),
 					boost::coroutines::protected_stack_allocator()	)
 	{
@@ -33,30 +34,49 @@ public:
 		call();
 	}
 	
-	virtual void sent(Message* msg, bool async) override {
+	void receive(Message* msg) override {
+		if(msg->isack) {
+			if(msg->callback) {
+				cbs.push(msg);
+			}
+			pending--;
+			if(msg == wait_msg) {
+				wait_msg = 0;
+			}
+			if(waiting) {
+				call();
+			}
+		} else {
+			if(msg->mid == Stream::signal_t::id) {
+				if(((Stream::signal_t*)msg)->data == polling) {
+					notify(true);
+				}
+			}
+			msg->ack();
+		}
+	}
+	
+	void sent(Message* msg, bool async) {
 		pending++;
 		if(!async && pending > 0) {
 			wait_msg = msg;
-			wait();
-			wait_msg = 0;
+			while(wait_msg) {
+				wait();
+			}
 		}
 	}
 	
-	void acked(Message* msg) {
-		if(msg->callback) {
-			cbs.push_back(msg);
+	bool poll(Stream* stream, int64_t micro) {
+		stream->listen(this);
+		if(micro >= 0) {
+			deadline = System::currentTimeMicros() + micro;
+		} else {
+			deadline = -1;
 		}
-		pending--;
-		if(waiting && (wait_msg == msg || pending == 0)) {
-			call();
-		}
-	}
-	
-	virtual bool poll(int64_t micro) override {
-		timeout = System::currentTimeMicros() + micro;
-		polling = true;
+		polling = stream;
 		yield();
-		polling = false;
+		polling = 0;
+		stream->listen(0);
 		return result;
 	}
 	
@@ -67,20 +87,20 @@ public:
 		}
 	}
 	
-	virtual void flush() override {
-		while(pending) {
+	void flush() {
+		while(pending > 0) {
 			wait();
 		}
 	}
 	
-	int64_t timeout = 0;
-	bool polling = false;
+	int64_t deadline = 0;
+	Stream* polling = 0;
 	
 protected:
 	void run() {
 		while(true) {
 			yield();
-			do_exec(engine, obj);
+			engine->Engine::exec(obj);
 			engine->avail.push(this);
 		}
 	}
@@ -92,19 +112,17 @@ protected:
 	}
 	
 	void call() {
-		Fiber* tmp = get_current(engine);
-		set_current(engine, this);
+		Fiber* tmp = engine->current;
+		engine->current = this;
 		_call();
-		set_current(engine, tmp);
+		engine->current = tmp;
 	}
 	
 	void yield() {
 		(*_yield)();
-		if(cbs.size()) {
-			for(Message* msg : cbs) {
-				msg->callback(msg);
-			}
-			cbs.clear();
+		Message* msg;
+		while(cbs.pop(msg)) {
+			msg->callback(msg);
 		}
 	}
 	
@@ -114,7 +132,7 @@ protected:
 	}
 	
 	FiberEngine* engine;
-	std::vector<Message*> cbs;
+	Queue<Message*> cbs;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
 	Object* obj;
@@ -127,46 +145,61 @@ protected:
 
 
 FiberEngine::FiberEngine(int stack_size)
-	:	stack_size(stack_size), fibers(memory), avail(memory)
+	:	stack_size(stack_size), fibers(&memory), avail(&memory)
 {
 }
 
-void FiberEngine::run(Object* object) {
+void FiberEngine::exec(Object* object) {
 	assert(Engine::local == this);
-	Region mem;
 	fork(object);
-	Queue<Node*> list(&mem);
 	while(dorun) {
 		int64_t micros = timeout();
 		while(true) {
 			Message* msg = collect(micros);
 			if(msg) {
-				if(msg->isack) {
-					((BoostFiber*)msg->impl)->acked(msg);
+				if(msg->impl) {
+					msg->impl->receive(msg);
 				} else {
-					Node* node = msg->dst;
-					node->receive(msg);
-					list.push(node);
+					msg->ack();
 				}
 			} else {
 				break;
 			}
 		}
-		Node* node;
-		while(list.pop(node)) {
-			if(node->impl) {
-				((BoostFiber*)node->impl)->notify(true);
-			}
-		}
 	}
+}
+
+void FiberEngine::send_impl(Message* msg, Node* dst, bool async) {
+	assert(msg->isack == false);
+	assert(dst);
+	assert(current);
+	
+	msg->impl = current;
+	dst->receive(msg);
+	current->sent(msg, async);
+}
+
+bool FiberEngine::poll(Stream* stream, int64_t micros) {
+	assert(stream->getEngine() == this);
+	assert(stream);
+	assert(current);
+	
+	return current->poll(stream, micros);
+}
+
+void FiberEngine::flush() {
+	assert(Engine::local == this);
+	assert(current);
+	
+	current->flush();
 }
 
 void FiberEngine::fork(Object* object) {
 	assert(Engine::local == this);
-	BoostFiber* fiber;
+	Fiber* fiber;
 	if(!avail.pop(fiber)) {
-		fiber = new BoostFiber(this);
-		fibers.push(fiber);
+		fiber = new Fiber(this);
+		fibers.push_back(fiber);
 	}
 	fiber->exec(object);
 }
@@ -174,12 +207,12 @@ void FiberEngine::fork(Object* object) {
 int FiberEngine::timeout() {
 	Region mem;
 	int64_t now = System::currentTimeMicros();
-	int64_t micros = 9223372036854775808LL;
-	Queue<BoostFiber*> list(&mem);
+	int64_t micros = 1000*1000;
+	Queue<Fiber*> list(&mem);
 	while(true) {
-		for(BoostFiber* fiber : fibers) {
-			if(fiber->polling) {
-				int64_t diff = fiber->timeout - now;
+		for(Fiber* fiber : fibers) {
+			if(fiber->polling && fiber->deadline >= 0) {
+				int64_t diff = fiber->deadline - now;
 				if(diff <= 0) {
 					list.push(fiber);
 				} else if(diff < micros) {
@@ -188,7 +221,7 @@ int FiberEngine::timeout() {
 			}
 		}
 		if(!list.empty()) {
-			BoostFiber* fiber;
+			Fiber* fiber;
 			while(list.pop(fiber)) {
 				fiber->notify(false);
 			}

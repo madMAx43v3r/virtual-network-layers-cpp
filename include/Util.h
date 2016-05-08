@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string>
 
 #include <cxxabi.h>
 
@@ -26,6 +27,12 @@ public:
 	static uint64_t hash64(const char* str) {
 		util::CRC64 func;
 		func.update(str, strlen(str));
+		return func.getValue();
+	}
+	
+	static uint64_t hash64(const std::string& str) {
+		util::CRC64 func;
+		func.update(str.c_str(), str.size());
 		return func.getValue();
 	}
 	

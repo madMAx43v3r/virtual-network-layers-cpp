@@ -12,19 +12,19 @@
 #include "phy/Stream.h"
 #include "phy/Object.h"
 #include "phy/Registry.h"
+#include "phy/Random.h"
 
 
 namespace vnl { namespace phy {
 
 thread_local Engine* Engine::local = 0;
 
-Engine::Engine(uint64_t mac)
-	:	Object(mac),
-	 	ulock(mutex), queue(&memory), buffer(&memory)
+Engine::Engine()
+	:	queue(&memory), buffer(&memory)
 {
 	assert(Engine::local == 0);
 	Engine::local = this;
-	ulock.unlock();
+	mac = Random64::global_rand();
 	async_cb = std::bind(&Engine::async_ack, this, std::placeholders::_1);
 }
 
@@ -33,55 +33,10 @@ Engine::~Engine() {
 }
 
 void Engine::exec(Object* object) {
+	assert(Engine::local == this);
 	object->run(this);
 	send_async(Registry::finished_t(object), Registry::instance);
 }
-
-void Engine::send_impl(Message* msg, Node* dst, bool async) {
-	assert(Engine::local == this);
-	assert(msg->impl == 0);
-	assert(msg->isack == false);
-	assert(dst);
-	assert(current);
-	
-	msg->src = this;
-	msg->impl = current;
-	dst->receive(msg);
-	current->sent(msg, async);
-}
-
-bool Engine::poll(Stream* stream, int64_t millis) {
-	assert(Engine::local == this);
-	assert(stream->engine == this);
-	assert(current);
-	
-	stream->impl = current;
-	return current->poll(millis);
-}
-
-void Engine::flush() {
-	assert(Engine::local == this);
-	current->flush();
-}
-
-Message* Engine::collect(int64_t timeout) {
-	Message* msg = 0;
-	if(queue.pop(msg)) {
-		return msg;
-	}
-	if(timeout >= 0) {
-		lock();
-		waiting.store(1, std::memory_order_release);
-		if(!queue.pop(msg)) {
-			wait(timeout);
-		}
-		waiting.store(0, std::memory_order_release);
-		unlock();
-		queue.pop(msg);
-	}
-	return msg;
-}
-
 
 
 

@@ -36,11 +36,11 @@ public:
 	
 protected:
 	uint64_t rand() {
-		return stream->rand();
+		return engine->rand();
 	}
 	
 	void fork(Object* object) {
-		stream->fork(object);
+		engine->fork(object);
 	}
 	
 	template<typename T>
@@ -77,6 +77,9 @@ protected:
 	}
 	
 	virtual void shutdown() {}
+	
+	Region memory;
+	Engine* engine = 0;
 	
 private:
 	typedef Generic<uint32_t, 0x33145536> timeout_t;

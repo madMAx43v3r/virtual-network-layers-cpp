@@ -34,7 +34,7 @@ bool Router::handle(Message* msg) {
 		msg->ack();
 		return true;
 	case packet_t::id: {
-		Packet* pkt = (Packet*)((packet_t*)msg)->data;
+		Packet* pkt = ((packet_t*)msg)->data;
 		route(pkt, src, table.find(pkt->dst));
 		route(pkt, src, table.find(Address(pkt->dst.A, 0)));
 		if(!pkt->count) {

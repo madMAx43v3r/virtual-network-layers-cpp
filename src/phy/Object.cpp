@@ -31,11 +31,12 @@ void Object::die() {
 	stream->send(Registry::delete_t(this), Registry::instance);
 }
 
-void Object::run(Engine* engine) {
-	Stream tmp(engine);
+void Object::run(Engine* engine_) {
+	engine = engine_;
+	Stream tmp(engine, &memory);
 	stream = &tmp;
 	if(mac == 0) {
-		mac = stream->rand();
+		mac = engine->rand();
 	}
 	if(!stream->request<bool>(Registry::bind_t(this), Registry::instance)) {
 		return;
@@ -47,6 +48,7 @@ void Object::run(Engine* engine) {
 		}
 		if(msg->mid == exit_t::id) {
 			shutdown();
+			stream->flush();
 			msg->ack();
 			break;
 		}

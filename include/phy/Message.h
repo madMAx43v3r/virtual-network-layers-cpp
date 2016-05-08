@@ -16,7 +16,6 @@
 namespace vnl { namespace phy {
 
 class Node;
-class Fiber;
 
 class Message {
 public:
@@ -36,12 +35,13 @@ public:
 	uint32_t mid;
 	Node* src = 0;
 	Node* dst = 0;
-	Fiber* impl = 0;
 	bool isack = false;
-	bool safe = false;
 	
 	void* user = 0;
 	std::function<void(Message*)> callback;
+	
+	Node* gate = 0;
+	Node* impl = 0;
 	
 };
 
