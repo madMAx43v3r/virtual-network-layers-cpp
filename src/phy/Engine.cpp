@@ -25,8 +25,6 @@ Engine::Engine(uint64_t mac)
 	assert(Engine::local == 0);
 	Engine::local = this;
 	ulock.unlock();
-	static std::atomic<int> counter;
-	generator.seed(Util::hash64(counter++, (uint64_t)std::hash(std::this_thread::get_id()), System::nanoTime()));
 	async_cb = std::bind(&Engine::async_ack, this, std::placeholders::_1);
 }
 

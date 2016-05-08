@@ -8,19 +8,16 @@
 #ifndef INCLUDE_PHY_ENGINE_H_
 #define INCLUDE_PHY_ENGINE_H_
 
-#include <random>
-#include <atomic>
 #include <unordered_set>
-#include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
-#include <assert.h>
 
 #include "phy/Message.h"
 #include "phy/Node.h"
 #include "phy/AtomicQueue.h"
+#include "phy/Memory.h"
 #include "phy/RingBuffer.h"
+#include "phy/Random.h"
 #include "System.h"
 #include "Util.h"
 
@@ -61,7 +58,7 @@ protected:
 	bool dorun = true;
 	
 	uint64_t rand() {
-		return generator();
+		return generator.rand();
 	}
 	
 	template<typename T>
@@ -128,12 +125,12 @@ private:
 	
 protected:
 	Region memory;
+	Random64 generator;
 	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	std::unique_lock<std::mutex> ulock;
-	std::mt19937_64 generator;
 	
 	Fiber* current = 0;
 	std::atomic<int> waiting;

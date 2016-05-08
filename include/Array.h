@@ -8,7 +8,6 @@
 #ifndef INCLUDE_PHY_ARRAY_H_
 #define INCLUDE_PHY_ARRAY_H_
 
-#include <assert.h>
 #include "phy/Memory.h"
 
 
@@ -47,15 +46,15 @@ public:
 	
 	T& push_back(const T& obj) {
 		if(!p_front) {
-			p_front = phy::TPage<T>::alloc();
+			p_front = phy::Page::alloc();
 			p_back = p_front;
 		}
 		if(pos >= M) {
-			p_back->next = phy::TPage<T>::alloc();
-			p_back = (phy::TPage<T>*)p_back->next;
+			p_back->next = phy::Page::alloc();
+			p_back = p_back->next;
 			pos = 0;
 		}
-		T& ref = (*p_back)[pos++];
+		T& ref = p_back->get<T>(pos++);
 		ref = obj;
 		return ref;
 	}
@@ -63,11 +62,11 @@ public:
 	T& operator[](size_t index) {
 		int pi = index / M;
 		int ei = index % M;
-		phy::TPage<T>* page = p_front;
+		phy::Page* page = p_front;
 		for(int i = 0; i < pi; ++i) {
-			page = (phy::TPage<T>*)page->next;
+			page = page->next;
 		}
-		return (*page)[ei];
+		return p_back->get<T>(ei);
 	}
 	
 	void clear() {
@@ -117,10 +116,10 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return (*page)[pos];
+			return page->get<P>(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &(*page)[pos];
+			return &page->get<P>(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
 			std::swap(lhs.page, rhs.page);
@@ -133,17 +132,17 @@ public:
 			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(phy::TPage<T>* page, int pos)
+		iterator_t(phy::Page* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
-			if(pos >= phy::TPage<T>::M) {
-				page = (phy::TPage<T>*)page->next;
+			if(pos >= Array<P>::M) {
+				page = page->next;
 				pos = 0;
 			} else {
 				pos++;
 			}
 		}
-		phy::TPage<T>* page;
+		phy::Page* page;
 		int pos;
 		friend class Array;
 	};
@@ -160,10 +159,10 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = phy::TPage<T>::M;
+	static const int M = phy::Page::size / sizeof(T);
 	
-	phy::TPage<T>* p_front = 0;
-	phy::TPage<T>* p_back = 0;
+	phy::Page* p_front = 0;
+	phy::Page* p_back = 0;
 	int pos = 0;
 	
 };

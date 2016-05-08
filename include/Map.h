@@ -49,17 +49,17 @@ public:
 	}
 	
 	void insert(const Map& other) {
-		phy::TPage<Row*>* page = other.table;
+		phy::Page* page = other.table;
 		int i = 0;
 		while(page) {
 			for(int k = 0; k < M && i < other.N; ++k) {
-				Row* row = (*page)[k];
+				Row* row = page->get<Row*>(k);
 				for(std::pair<K,V>& pair : *row) {
 					insert(pair.first, pair.second);
 				}
 				i++;
 			}
-			page = (phy::TPage<Row*>*)page->next;
+			page = page->next;
 		}
 	}
 	
@@ -124,7 +124,7 @@ public:
 			rows = 1;
 		}
 		if(!table) {
-			table = phy::TPage<Row*>::alloc();
+			table = phy::Page::alloc();
 		}
 		N = rows;
 		index.clear();
@@ -133,13 +133,13 @@ public:
 		for(int i = 0; i < N; ++i) {
 			if(pos >= M) {
 				if(!table->next) {
-					table->next = phy::TPage<Row*>::alloc();
+					table->next = phy::Page::alloc();
 				}
-				table = (phy::TPage<Row*>*)table->next;
+				table = table->next;
 				index.push_back(table);
 				pos = 0;
 			}
-			(*table)[pos] = new(mem.alloc<Row>()) Row(&mem);
+			table->get<Row*>(pos) = new(mem.alloc<Row>()) Row(&mem);
 			pos++;
 		}
 		count = 0;
@@ -156,7 +156,7 @@ public:
 protected:
 	typedef Queue<std::pair<K,V>,B> Row;
 	
-	static const int M = phy::TPage<Row*>::M;
+	static const int M = phy::Page::size / sizeof(void*);
 	
 	Map(int rows) {
 		clear(rows);
@@ -172,8 +172,8 @@ protected:
 		size_t ri = std::hash<K>{}(key) % N;
 		size_t pi = ri / M;
 		size_t qi = ri % M;
-		phy::TPage<Row*>* page = index[pi];
-		row = (*page)[qi];
+		phy::Page* page = index[pi];
+		row = page->get<Row*>(qi);
 		for(std::pair<K,V>& pair : *row) {
 			if(pair.first == key) {
 				val = &pair;
@@ -186,8 +186,8 @@ protected:
 	phy::Region mem;
 	
 private:
-	Array<phy::TPage<Row*>*> index;
-	phy::TPage<Row*>* table = 0;
+	Array<phy::Page*> index;
+	phy::Page* table = 0;
 	size_t N = 0;
 	size_t count = 0;
 	

@@ -14,8 +14,8 @@
 #include <cstdlib>
 #include <atomic>
 
-#include "phy/Util.h"
-#include "phy/System.h"
+#include "Util.h"
+#include "System.h"
 
 #include "Queue.h"
 #include "List.h"
@@ -70,7 +70,7 @@ int main() {
 		for(int iter = 0; iter < N; ++iter) {
 			std::vector<uint64_t> keys;
 			for(int i = 0; i < 100; ++i) {
-				uint64_t key = vnl::phy::Util::hash64(rand());
+				uint64_t key = vnl::Util::hash64(rand());
 				keys.push_back(key);
 				test[key] = i;
 			}
@@ -103,11 +103,11 @@ int main() {
 			str << std::string("BLUBB_") << 1.1;
 		}
 		std::cout << str << std::endl;
-		std::cout << str.to_str() << std::endl;
+		std::cout << str.to_string() << std::endl;
 	}
 	
-	std::cout << "Pages still allocated: " << vnl::phy::Page::num_alloc << std::endl;
-	assert(vnl::phy::Page::num_alloc == 0);
+	vnl::phy::Page::cleanup();
+	assert(vnl::phy::Page::get_num_alloc() == 0);
 	
 }
 

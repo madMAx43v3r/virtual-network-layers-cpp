@@ -12,6 +12,7 @@
 #include <condition_variable>
 
 #include "util/spinlock.h"
+#include "phy/Random.h"
 
 
 namespace vnl { namespace phy {
@@ -23,8 +24,13 @@ class Node {
 public:
 	virtual ~Node() {}
 	
+	uint64_t getMAC() const { return mac; }
+	
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
+	
+protected:
+	uint64_t mac = 0;
 	
 private:
 	Fiber* impl = 0;
@@ -36,6 +42,9 @@ private:
 
 class Reactor : public Node {
 public:
+	Reactor() {
+		mac = Random64::global_rand();
+	}
 	
 	virtual void receive(Message* msg) override {
 		sync.lock();

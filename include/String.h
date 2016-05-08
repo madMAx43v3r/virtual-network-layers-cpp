@@ -45,7 +45,7 @@ public:
 		return *this;
 	}
 	
-	std::string to_str() {
+	std::string to_string() {
 		sync();
 		std::ostringstream ss;
 		for(const str_t& str : list) {
@@ -54,7 +54,7 @@ public:
 		return ss.str();
 	}
 	
-	friend std::ostream& operator<<(std::ostream& stream, String& other) { 
+	friend std::ostream& operator<<(std::ostream& stream, String& other) {
 		other.sync();
 		for(const String::str_t& str : other.list) {
 			stream.write(str.ptr, str.len);

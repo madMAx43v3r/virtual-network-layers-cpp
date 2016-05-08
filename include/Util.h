@@ -18,18 +18,18 @@
 
 #include "util/CRC64.h"
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Util {
 public:
 	
-	static uint64_t hash64(const std::string& str) {
+	static uint64_t hash64(const char* str) {
 		util::CRC64 func;
-		func.update(str.c_str(), str.length());
+		func.update(str, strlen(str));
 		return func.getValue();
 	}
 	
-	static uint64_t hash64(char* data, int size) {
+	static uint64_t hash64(const char* data, size_t size) {
 		util::CRC64 func;
 		func.update(data, size);
 		return func.getValue();
@@ -90,6 +90,6 @@ public:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_UTIL_H_ */

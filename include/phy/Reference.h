@@ -21,7 +21,6 @@ public:
 	Reference(Object* obj)
 		:	mac(obj->getMAC()), obj(obj)
 	{
-		assert(Engine::local);
 		Engine::local->send_async(Registry::open_t(obj), Registry::instance);
 	}
 	

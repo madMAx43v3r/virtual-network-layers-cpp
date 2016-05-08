@@ -25,7 +25,6 @@ public:
 	Object(const std::string& name);
 	Object(Object* parent, const std::string& name);
 	
-	uint64_t getMAC() const { return mac; }
 	const std::string& getName() const { return name; }
 	
 	typedef Signal<0xfe6ccd6f> delete_t;
@@ -88,7 +87,6 @@ private:
 	void run(Engine* engine);
 	
 private:
-	uint64_t mac;
 	std::string name;
 	Stream* stream = 0;
 	

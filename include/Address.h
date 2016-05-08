@@ -9,10 +9,10 @@
 #define INCLUDE_ADDRESS_H_
 
 #include <stdint.h>
-#include <string>
-#include <sstream>
+#include <ostream>
 
 #include "Util.h"
+
 
 namespace vnl {
 
@@ -32,15 +32,16 @@ public:
 		B = B_;
 	}
 	
-	Address(const std::string& A_, const std::string& B_) {
+	Address(const char* A_, const char* B_) {
 		A = Util::hash64(A_);
 		B = Util::hash64(B_);
 	}
 	
-	std::string toString() {
-		std::stringstream ss;
-		ss << std::hex << A << ":" << B;
-		return ss.str();
+	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {
+		auto state = stream.flags(std::ios::hex);
+		stream << A << ":" << B;
+		stream.flags(state);
+		return stream;
 	}
 	
 };
@@ -54,14 +55,13 @@ inline bool operator==(const Address& A, const Address& B) {
 }
 
 
-}
+} // vnl
 
 namespace std {
 	template<>
 	struct hash<vnl::Address> {
 		size_t operator()(const vnl::Address& x) const {
-			//return vnl::Util::hash64(x.A, x.B);
-			return x.A ^ x.B;
+			return x.A xor x.B;
 		}
 	};
 }

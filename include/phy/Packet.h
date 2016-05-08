@@ -8,6 +8,8 @@
 #ifndef INCLUDE_PHY_PACKET_H_
 #define INCLUDE_PHY_PACKET_H_
 
+#include "Address.h"
+
 
 namespace vnl { namespace phy {
 
@@ -19,8 +21,8 @@ public:
 	
 	Packet(uint64_t dst) : dst(dst) {}
 	
-	uint64_t src = 0;
-	uint64_t dst = 0;
+	Address src = 0;
+	Address dst = 0;
 	
 private:
 	Packet* parent = 0;
