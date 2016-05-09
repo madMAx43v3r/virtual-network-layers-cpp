@@ -55,16 +55,22 @@ int main() {
 			if(!msg) {
 				break;
 			}
+			// see what type of message we got
 			if(msg->mid == vnl::phy::Router::packet_t::id) {
-				// we got a packet
-				vnl::phy::Packet* packet = ((vnl::phy::Router::packet_t*)msg)->data.payload;
+				// we got a packet from a router
+				vnl::phy::Packet* packet = ((vnl::phy::Router::packet_t*)msg)->data.packet;
 				if(packet->dst == address) {
 					// we got a test_packet_t
-					vnl::String payload = ((test_packet_t*)packet)->data;
-					if(i == 0) {
-						std::cout << payload << std::endl;
+					test_packet_t* test = dynamic_cast<test_packet_t*>(packet);
+					if(test) {
+						vnl::String payload = test->payload;
+						if(i == 0) {
+							std::cout << payload << std::endl;
+						}
+						assert(payload == "Hello World");
+					} else {
+						std::cout << "ERROR: dynamic_cast<test_packet_t*> failed" << std::endl;
 					}
-					assert(payload == "Hello World");
 				}
 			}
 			msg->ack();

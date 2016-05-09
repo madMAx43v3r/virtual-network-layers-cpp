@@ -28,7 +28,7 @@ public:
 		Message* parent = 0;
 		int32_t count = 0;
 		int32_t acks = 0;
-		Packet* payload = 0;
+		Packet* packet = 0;
 	};
 	
 	typedef Generic<Address, 0xdfd4dd65> connect_t;
@@ -39,7 +39,7 @@ public:
 			packet->dst = dst;
 		}
 		packet_t(Packet* packet) {
-			data.payload = packet;
+			data.packet = packet;
 		}
 		packet_t() {}
 	};
@@ -53,7 +53,7 @@ protected:
 	void close(const Address& addr, Node* src);
 	
 	void route(packet_t* packet, Node* src, Row** prow);
-	void forward(packet_t* packet, Node* dst);
+	void forward(packet_t* org, Node* dst);
 	
 	void callback(Message* msg);
 	

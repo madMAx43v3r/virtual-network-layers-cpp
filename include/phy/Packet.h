@@ -18,6 +18,7 @@ class Router;
 class Packet {
 public:
 	Packet() {}
+	virtual ~Packet() {}
 	
 	Address src;
 	Address dst;
@@ -31,9 +32,9 @@ public:
 	PacketType() : Packet() {}
 	
 	template<typename R>
-	PacketType(R&& data_) : Packet(), data(data_) {}
+	PacketType(R&& data_) : Packet(), payload(data_) {}
 	
-	T data;
+	T payload;
 	
 	
 };

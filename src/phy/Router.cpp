@@ -35,7 +35,7 @@ bool Router::handle(Message* msg) {
 		return true;
 	case packet_t::id: {
 		packet_t* packet = (packet_t*)msg;
-		Packet* pkt = packet->data.payload;
+		Packet* pkt = packet->data.packet;
 		if(pkt->src.A == 0) {
 			pkt->src.A = mac;
 		}
@@ -95,11 +95,11 @@ void Router::route(packet_t* packet, Node* src, Row** prow) {
 	}
 }
 
-void Router::forward(packet_t* packet, Node* dst) {
-	packet->data.count++;
+void Router::forward(packet_t* org, Node* dst) {
+	org->data.count++;
 	packet_t* msg = factory.create();
-	msg->data.parent = packet;
-	msg->data.payload = packet->data.payload;
+	msg->data.parent = org;
+	msg->data.packet = org->data.packet;
 	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);
 }
