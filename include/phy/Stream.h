@@ -23,7 +23,10 @@ public:
 	typedef Generic<Stream*, 0xe39e616f> signal_t;
 	
 	Stream(Engine* engine, Region* mem)
-		:	engine(engine), queue(mem) {}
+		:	engine(engine), queue(mem)
+	{
+		mac = engine->rand();
+	}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -74,8 +77,8 @@ public:
 		engine->flush();
 	}
 	
-	void listen(Node* rcv) {
-		impl = rcv;
+	void listen(Node* dst) {
+		listener = dst;
 	}
 	
 	Message* poll() {
@@ -94,9 +97,9 @@ public:
 	
 	void push(Message* msg) {
 		queue.push(msg);
-		if(impl) {
-			send_async(signal_t(this), impl);
-			impl = 0;
+		if(listener) {
+			send_async(signal_t(this), listener);
+			listener = 0;
 		}
 	}
 	
@@ -109,6 +112,7 @@ public:
 private:
 	Engine* engine;
 	Queue<Message*> queue;
+	Node* listener = 0;
 	
 	friend class Engine;
 	

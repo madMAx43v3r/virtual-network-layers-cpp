@@ -15,6 +15,7 @@ namespace vnl {
 /*
  * This is a queue.
  * Maximum element size at default is 500 bytes.
+ * Maximum block size is 256
  */
 template<typename T, int N = 8>
 class Queue {
@@ -25,7 +26,9 @@ public:
 	}
 	
 	~Queue() {
-		destroy();
+		for(auto iter = begin(); iter != end(); ++iter) {
+			iter->~T();
+		}
 	}
 	
 	Queue(const Queue&) = delete;
@@ -43,41 +46,44 @@ public:
 	}
 	
 	T& push(const T& obj) {
-		T& ref = p_back->elem[p_back->write++];
 		if(p_back->write >= N) {
 			if(!p_back->next) {
 				p_back->next = mem->create<block_t>();
 			}
 			p_back = p_back->next;
+			p_back->write = 0;
 		}
+		T& ref = p_back->elem[p_back->write++];
 		ref = obj;
+		count++;
 		return ref;
 	}
 	
-	/*
-	 * Note: invalidates any iterator pointing to the front.
-	 */
 	bool pop(T& obj) {
-		if(!empty()) {
-			T& tmp = p_front->elem[p_front->read++];
-			if(p_front->read >= N) {
+		if(empty()) {
+			return false;
+		}
+		T& tmp = p_front->elem[p_front->read++];
+		if(p_front->read >= N) {
+			if(p_front != p_back) {
 				block_t* tmp = p_front;
-				tmp->read = 0;
-				tmp->write = 0;
 				p_front = p_front->next;
 				tmp->next = p_back->next;
 				p_back->next = tmp;
+			} else {
+				p_front->write = 0;
 			}
-			obj = tmp;
-			tmp.~T();
-			return true;
+			p_front->read = 0;
 		}
-		return false;
+		obj = tmp;
+		count--;
+		return true;
 	}
 	
-	bool pop() {
+	T pop() {
 		T obj;
-		return pop(obj);
+		pop(obj);
+		return obj;
 	}
 	
 	T& operator[](size_t index) {
@@ -93,40 +99,22 @@ public:
 	}
 	
 	T& back() {
-		T* ptr = 0;
-		if(p_back->write > 0) {
-			ptr = &p_back->elem[p_back->write - 1];
-		} else {
-			block_t* block = p_front;
-			while(true) {
-				if(block->next == p_back) {
-					ptr = &block->elem[N - 1];
-				}
-				block = block->next;
-			}
-		}
-		return *ptr;
+		return p_back->elem[p_back->write - 1];
 	}
 	
 	size_t size() {
-		size_t count = 0;
-		for(auto iter = begin(); iter != end(); ++iter) {
-			count++;
-		}
 		return count;
 	}
 	
 	void clear() {
-		destroy();
 		p_front->read = 0;
 		p_front->write = 0;
-		p_back->read = 0;
-		p_back->write = 0;
 		p_back = p_front;
+		count = 0;
 	}
 	
 	bool empty() const {
-		return p_front->read == p_front->write && p_front == p_back;
+		return count == 0;
 	}
 	
 	phy::Region* mem;
@@ -135,8 +123,8 @@ protected:
 	struct block_t {
 		T elem[N];
 		block_t* next = 0;
-		short read = 0;
-		short write = 0;
+		uint8_t read = 0;
+		uint8_t write = 0;
 	};
 	
 public:
@@ -173,7 +161,13 @@ public:
 		}
 	private:
 		iterator_t(block_t* block, int pos)
-			:	block(block), pos(pos) {}
+			:	block(block), pos(pos)
+		{
+			if(pos >= N) {
+				this->block = block->next;
+				this->pos = 0;
+			}
+		}
 		void advance() {
 			if(pos >= N-1) {
 				block = block->next;
@@ -198,16 +192,10 @@ public:
 	const_iterator end() const { return const_iterator(p_back, p_back->write); }
 	const_iterator cend() const { return const_iterator(p_back, p_back->write); }
 	
-protected:
-	void destroy() {
-		for(auto iter = begin(); iter != end(); ++iter) {
-			iter->~T();
-		}
-	}
-	
 private:
 	block_t* p_front;
 	block_t* p_back;
+	size_t count = 0;
 	
 	
 };

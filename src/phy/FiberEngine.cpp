@@ -5,6 +5,10 @@
  *      Author: mad
  */
 
+#include "build/config.h"
+
+#ifdef VNL_HAVE_BOOST_COROUTINE
+
 #include <chrono>
 #include <boost/bind.hpp>
 #include <boost/coroutine/symmetric_coroutine.hpp>
@@ -16,7 +20,7 @@
 
 namespace vnl { namespace phy {
 
-class Fiber final : public Node {
+class Fiber {
 public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
@@ -34,28 +38,6 @@ public:
 		call();
 	}
 	
-	void receive(Message* msg) override {
-		if(msg->isack) {
-			if(msg->callback) {
-				cbs.push(msg);
-			}
-			pending--;
-			if(msg == wait_msg) {
-				wait_msg = 0;
-			}
-			if(waiting) {
-				call();
-			}
-		} else {
-			if(msg->mid == Stream::signal_t::id) {
-				if(((Stream::signal_t*)msg)->data == polling) {
-					notify(true);
-				}
-			}
-			msg->ack();
-		}
-	}
-	
 	void sent(Message* msg, bool async) {
 		pending++;
 		if(!async && pending > 0) {
@@ -66,8 +48,21 @@ public:
 		}
 	}
 	
+	void acked(Message* msg) {
+		if(msg->callback) {
+			cbs.push(msg);
+		}
+		pending--;
+		if(msg == wait_msg) {
+			wait_msg = 0;
+		}
+		if(waiting) {
+			call();
+		}
+	}
+	
 	bool poll(Stream* stream, int64_t micro) {
-		stream->listen(this);
+		stream->_impl = this;
 		if(micro >= 0) {
 			deadline = System::currentTimeMicros() + micro;
 		} else {
@@ -76,7 +71,7 @@ public:
 		polling = stream;
 		yield();
 		polling = 0;
-		stream->listen(0);
+		stream->_impl = 0;
 		return result;
 	}
 	
@@ -157,10 +152,15 @@ void FiberEngine::exec(Object* object) {
 		while(true) {
 			Message* msg = collect(micros);
 			if(msg) {
-				if(msg->impl) {
-					msg->impl->receive(msg);
+				if(msg->isack) {
+					assert(msg->_impl);
+					msg->_impl->acked(msg);
 				} else {
-					msg->ack();
+					msg->dst->receive(msg);
+					Fiber* fiber = msg->dst->_impl;
+					if(fiber) {
+						fiber->notify(true);
+					}
 				}
 			} else {
 				break;
@@ -174,14 +174,14 @@ void FiberEngine::send_impl(Message* msg, Node* dst, bool async) {
 	assert(dst);
 	assert(current);
 	
-	msg->impl = current;
+	msg->_impl = current;
 	dst->receive(msg);
 	current->sent(msg, async);
 }
 
 bool FiberEngine::poll(Stream* stream, int64_t micros) {
-	assert(stream->getEngine() == this);
 	assert(stream);
+	assert(stream->getEngine() == this);
 	assert(current);
 	
 	return current->poll(stream, micros);
@@ -235,3 +235,5 @@ int FiberEngine::timeout() {
 
 
 }}
+
+#endif // VNL_HAVE_BOOST_COROUTINE

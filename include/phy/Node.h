@@ -18,9 +18,6 @@
 namespace vnl { namespace phy {
 
 class Message;
-class Engine;
-class Fiber;
-class Stream;
 
 
 class Node {
@@ -32,15 +29,10 @@ public:
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
 	
+	Fiber* _impl = 0;
+	
 protected:
 	uint64_t mac = 0;
-	
-private:
-	Node* impl = 0;
-	
-	friend class Engine;
-	friend class Stream;
-	friend class Fiber;
 	
 };
 

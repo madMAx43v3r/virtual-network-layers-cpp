@@ -14,6 +14,7 @@
 #include "phy/Engine.h"
 #include "phy/Stream.h"
 #include "phy/Reference.h"
+#include "String.h"
 #include "System.h"
 
 namespace vnl { namespace phy {
@@ -22,8 +23,8 @@ class Object : Node {
 public:
 	Object();
 	Object(uint64_t mac);
-	Object(const std::string& name);
-	Object(Object* parent, const std::string& name);
+	Object(const vnl::String& name);
+	Object(Object* parent, const vnl::String& name);
 	
 	const std::string& getName() const { return name; }
 	

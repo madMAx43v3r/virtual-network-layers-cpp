@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string>
+#include <string.h>
 
 #include <cxxabi.h>
 

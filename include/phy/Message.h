@@ -16,6 +16,9 @@
 namespace vnl { namespace phy {
 
 class Node;
+class Engine;
+class Fiber;
+
 
 class Message {
 public:
@@ -24,9 +27,6 @@ public:
 	Message(uint32_t mid) : mid(mid) {}
 	
 	virtual ~Message() {}
-	
-	Message(const Message&) = delete;
-	Message& operator=(const Message&) = delete;
 	
 	virtual std::string toString();
 	
@@ -41,9 +41,16 @@ public:
 	std::function<void(Message*)> callback;
 	
 	Node* gate = 0;
-	Node* impl = 0;
+	Fiber* _impl = 0;
+	
+private:
+	Message(const Message&) = default;
+	Message& operator=(const Message&) = default;
+	
+	friend class Engine;
 	
 };
+
 
 template<uint32_t MID>
 class Signal : public Message {
@@ -53,6 +60,7 @@ public:
 	static const uint32_t id = MID;
 	
 };
+
 
 template<typename T, uint32_t MID>
 class Generic : public Message {
@@ -67,6 +75,7 @@ public:
 	T data;
 	
 };
+
 
 template<typename T, typename P, uint32_t MID>
 class Request : public Message {

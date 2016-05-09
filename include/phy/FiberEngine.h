@@ -26,11 +26,11 @@ public:
 	
 	virtual void exec(Object* object) override;
 	
-	virtual void send_impl(Message* msg, Node* dst, bool async) = 0;
+	virtual void send_impl(Message* msg, Node* dst, bool async) override;
 	
-	virtual bool poll(Stream* stream, int64_t micros) = 0;
+	virtual bool poll(Stream* stream, int64_t micros) override;
 	
-	virtual void flush() = 0;
+	virtual void flush() override;
 	
 protected:
 	virtual void fork(Object* object) override;

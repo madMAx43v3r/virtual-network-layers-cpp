@@ -18,24 +18,24 @@ class Object;
 
 class Reference {
 public:
-	Reference(Object* obj)
-		:	mac(obj->getMAC()), obj(obj)
+	Reference(Engine* engine, Object* obj)
+		:	mac(obj->getMAC()), engine(engine), obj(obj)
 	{
-		Engine::local->send_async(Registry::open_t(obj), Registry::instance);
+		engine->send_async(Registry::open_t(obj), Registry::instance);
 	}
 	
-	Reference(uint64_t mac)
-		:	mac(mac)
-	{
-	}
-	
-	Reference(const std::string& name) 
-		:	Reference(Util::hash64(name))
+	Reference(Engine* engine, uint64_t mac)
+		:	mac(mac), engine(engine)
 	{
 	}
 	
-	Reference(Object* parent, const std::string& name)
-		:	Reference(parent->name + name)
+	Reference(Engine* engine, const std::string& name) 
+		:	Reference(engine, Util::hash64(name))
+	{
+	}
+	
+	Reference(Engine* engine, Object* parent, const std::string& name)
+		:	Reference(engine, parent->name + name)
 	{
 	}
 	
@@ -48,23 +48,22 @@ public:
 	
 	Object* get() {
 		if(!obj) {
-			obj = Engine::local->request<Object*>(Registry::connect_t(mac), Registry::instance);
+			obj = engine->request<Object*>(Registry::connect_t(mac), Registry::instance);
 		}
 		return obj;
 	}
 	
 	void close() {
 		if(obj) {
-			Engine::local->send_async(Registry::close_t(obj), Registry::instance);
+			engine->send_async(Registry::close_t(obj), Registry::instance);
 			obj = 0;
 		}
 	}
 	
 private:
 	uint64_t mac;
+	Engine* engine = 0;
 	Object* obj = 0;
-	
-	friend class Object;
 	
 };
 

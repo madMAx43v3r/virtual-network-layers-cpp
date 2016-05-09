@@ -19,20 +19,18 @@ namespace vnl {
 
 /*
  * This is a hash map.
- * Maximum pair size is 960 bytes at default.
- * B = block size
+ * Maximum pair size is 4080 bytes.
+ * Memory overhead is 50 bytes per element.
  */
-template<typename K, typename V, int B = 4>
+template<typename K, typename V>
 class Map {
 public:
-	Map() {
-		assert(sizeof(K)+sizeof(V) <= phy::Page::size/B - B*16);
-		clear();
+	Map(size_t rows = 64) {
+		resize(rows);
 	}
 	
 	Map(const Map& other) {
-		clear(other.N);
-		insert(other);
+		*this = other;
 	}
 	
 	~Map() {
@@ -43,24 +41,34 @@ public:
 	}
 	
 	Map& operator=(const Map& other) {
-		clear(other.N);
+		resize(other.N);
 		insert(other);
 		return *this;
 	}
 	
 	void insert(const Map& other) {
-		phy::Page* page = other.table;
+		for(auto& pair : other.entries()) {
+			insert(pair.first, pair.second);
+		}
+	}
+	
+	Array<std::pair<K,V> > entries() const {
+		Array<std::pair<K,V> > res;
+		phy::Page* page = table;
 		int i = 0;
-		while(page) {
-			for(int k = 0; k < M && i < other.N; ++k) {
+		while(page && i < N) {
+			int max = N - i;
+			if(max > M) { max = M; }
+			for(int k = 0; k < max; ++k) {
 				Row* row = page->get<Row*>(k);
-				for(std::pair<K,V>& pair : *row) {
-					insert(pair.first, pair.second);
+				for(auto& pair : *row) {
+					res.push_back(pair);
 				}
-				i++;
 			}
 			page = page->next;
+			i += max;
 		}
+		return res;
 	}
 	
 	V& insert(const K& key, const V& val) {
@@ -69,7 +77,7 @@ public:
 		if(find(key, row, ptr)) {
 			ptr->second = val;
 		} else {
-			if(count >= N*B) {
+			if(count >= N) {
 				expand(N*2);
 				return insert(key, val);
 			}
@@ -102,14 +110,11 @@ public:
 		Row* row;
 		std::pair<K,V>* ptr;
 		if(find(key, row, ptr)) {
-			auto row_end = row->end();
-			while(true) {
-				auto iter = row->begin();
-				if(iter == row_end) {
-					break;
-				}
-				if(iter->first != key) {
-					row->push(*iter);
+			int n = row->size();
+			for(int i = 0; i < n; ++i) {
+				const auto& pair = row->front();
+				if(pair.first != key) {
+					row->push(pair);
 				} else {
 					count--;
 				}
@@ -118,7 +123,11 @@ public:
 		}
 	}
 	
-	void clear(size_t rows = 64) {
+	void clear() {
+		resize(N);
+	}
+	
+	void resize(size_t rows) {
 		mem.clear();
 		if(rows < 1) {
 			rows = 1;
@@ -127,22 +136,23 @@ public:
 			table = phy::Page::alloc();
 		}
 		N = rows;
+		count = 0;
 		index.clear();
 		index.push_back(table);
 		int pos = 0;
+		phy::Page* page = table;
 		for(int i = 0; i < N; ++i) {
 			if(pos >= M) {
-				if(!table->next) {
-					table->next = phy::Page::alloc();
+				if(!page->next) {
+					page->next = phy::Page::alloc();
 				}
-				table = table->next;
-				index.push_back(table);
+				page = page->next;
+				index.push_back(page);
 				pos = 0;
 			}
-			table->get<Row*>(pos) = new(mem.alloc<Row>()) Row(&mem);
+			page->get<Row*>(pos) = new(mem.alloc<Row>()) Row(&mem);
 			pos++;
 		}
-		count = 0;
 	}
 	
 	size_t size() const {
@@ -154,18 +164,16 @@ public:
 	}
 	
 protected:
-	typedef Queue<std::pair<K,V>,B> Row;
+	typedef Queue<std::pair<K,V>,1> Row;
 	
 	static const int M = phy::Page::size / sizeof(void*);
 	
-	Map(int rows) {
-		clear(rows);
-	}
-	
 	void expand(int rows) {
-		Map tmp(rows);
-		tmp.insert(*this);
-		*this = tmp;
+		auto tmp = entries();
+		resize(rows);
+		for(auto& pair : tmp) {
+			insert(pair.first, pair.second);
+		}
 	}
 	
 	bool find(const K& key, Row*& row, std::pair<K,V>*& val) {

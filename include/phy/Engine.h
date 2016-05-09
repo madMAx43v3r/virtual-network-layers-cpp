@@ -24,9 +24,10 @@
 
 namespace vnl { namespace phy {
 
-class Page;
 class Stream;
 class Object;
+class Reference;
+
 
 class Engine : public Node {
 public:
@@ -38,10 +39,10 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
-		msg->gate = this;
-		if(msg->dst == this) {
+		if(!msg->dst || msg->dst == this) {
 			msg->ack();
 		} else {
+			msg->gate = this;
 			queue.push(msg);
 			if(waiting-- == 1) {
 				mutex.lock();
@@ -89,14 +90,6 @@ protected:
 		send_impl(msg, dst, true);
 	}
 	
-	virtual void send_impl(Message* msg, Node* dst, bool async) = 0;
-	
-	virtual bool poll(Stream* stream, int64_t micros) = 0;
-	
-	virtual void flush() = 0;
-	
-	virtual void fork(Object* object) = 0;
-	
 	Message* Engine::collect(int64_t timeout) {
 		Message* msg = 0;
 		if(queue.pop(msg)) {
@@ -120,6 +113,14 @@ protected:
 		return msg;
 	}
 	
+	virtual void send_impl(Message* msg, Node* dst, bool async) = 0;
+	
+	virtual bool poll(Stream* stream, int64_t micros) = 0;
+	
+	virtual void flush() = 0;
+	
+	virtual void fork(Object* object) = 0;
+	
 private:
 	void async_ack(Message* msg) {
 		buffer.destroy<Message>((RingBuffer::entry_t*)msg->user);
@@ -127,7 +128,6 @@ private:
 	
 protected:
 	Region memory;
-	Random64 generator;
 	
 private:
 	std::mutex mutex;
@@ -136,12 +136,14 @@ private:
 	std::atomic<int> waiting;
 	AtomicQueue<Message*> queue;
 	
+	Random64 generator;
+	
 	RingBuffer buffer;
 	std::function<void(Message*)> async_cb;
 	
 	friend class Stream;
 	friend class Object;
-	friend class Page;
+	friend class Reference;
 	
 };
 

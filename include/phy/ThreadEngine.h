@@ -15,16 +15,12 @@
 namespace vnl { namespace phy {
 
 class ThreadEngine : public Engine {
-public:
-	ThreadEngine() {}
-	
 protected:
 	
 	virtual void send_impl(Message* msg, Node* dst, bool async) override {
 		assert(msg->isack == false);
 		assert(dst);
 		
-		msg->impl = this;
 		dst->receive(msg);
 		pending++;
 		if(!async && pending > 0) {
@@ -33,8 +29,8 @@ protected:
 	}
 	
 	virtual bool poll(Stream* stream, int64_t micros) override {
-		assert(stream->getEngine() == this);
 		assert(stream);
+		assert(stream->getEngine() == this);
 		
 		if(micros != 0) {
 			return timed_poll(stream, micros);
@@ -118,7 +114,6 @@ private:
 	
 	static void entry(Object* object) {
 		ThreadEngine engine;
-		object->impl
 		engine.exec(object);
 	}
 	

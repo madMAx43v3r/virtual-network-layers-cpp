@@ -13,11 +13,7 @@
 #include <atomic>
 #include <iostream>
 
-#ifndef VNL_PAGE_SIZE
-#define VNL_PAGE_SIZE 4096
-#endif
-
-//#define VNL_MEMORY_DEBUG
+#include "build/config.h"
 
 
 namespace vnl { namespace phy {

@@ -135,7 +135,7 @@ public:
 		iterator_t(phy::Page* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
-			if(pos >= Array<P>::M) {
+			if(pos >= Array::M) {
 				page = page->next;
 				pos = 0;
 			} else {

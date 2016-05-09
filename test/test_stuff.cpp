@@ -39,6 +39,11 @@ int main() {
 			}
 			int c = 0;
 			for(int k : test) {
+				c++;
+			}
+			assert(c == 100);
+			c = 0;
+			for(int k : test) {
 				assert(k == c);
 				c++;
 			}
@@ -46,6 +51,13 @@ int main() {
 				int k = 0;
 				assert(test.pop(k));
 				assert(k == i);
+			}
+			for(int i = 0; i < 100; ++i) {
+				test.push(i);
+			}
+			test.clear();
+			for(int k : test) {
+				assert(false);
 			}
 		}
 	}
@@ -58,10 +70,18 @@ int main() {
 			}
 			int c = 0;
 			for(int k : test) {
+				c++;
+			}
+			assert(c == 100);
+			c = 0;
+			for(int k : test) {
 				assert(k == c);
 				c++;
 			}
 			test.clear();
+			for(int k : test) {
+				assert(false);
+			}
 		}
 	}
 	
@@ -76,6 +96,11 @@ int main() {
 			}
 			assert(test.size() == 100);
 			int i = 0;
+			for(auto pair : test.entries()) {
+				i++;
+			}
+			assert(i == 100);
+			i = 0;
 			for(uint64_t key : keys) {
 				int* val = test.find(key);
 				assert(val != 0);
@@ -85,10 +110,8 @@ int main() {
 				i++;
 			}
 			assert(test.size() == 0);
-			i = 0;
 			for(uint64_t key : keys) {
-				test[key] = i;
-				i++;
+				test[key] = 1337;
 			}
 			test.clear();
 			assert(test.size() == 0);
