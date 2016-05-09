@@ -10,7 +10,6 @@
 
 #include "util/spinlock.h"
 #include "Queue.h"
-#include "AtomicQueue.h"
 
 
 namespace vnl { namespace phy {
@@ -45,33 +44,24 @@ protected:
 
 
 template<typename T>
-class AtomicPool {
+class AtomicPool : public Pool<T> {
 public:
-	AtomicPool(Region& mem) : mem(mem), list(mem) {}
-	
-	AtomicPool(const AtomicPool&) = delete;
-	AtomicPool& operator=(const AtomicPool&) = delete;
+	AtomicPool(Region& mem) : Pool<T>(mem) {}
 	
 	T* create() {
-		T* obj;
-		if(list.pop(obj)) {
-			obj = new(obj) T();
-		} else {
-			sync.lock();
-			obj = mem.create<T>();
-			sync.unlock();
-		}
+		sync.lock();
+		T* obj = Pool<T>::create();
+		sync.unlock();
 		return obj;
 	}
 	
 	void destroy(T* obj) {
-		obj->~T();
-		list.push(obj);
+		sync.lock();
+		Pool<T>::destroy(obj);
+		sync.unlock();
 	}
 	
 protected:
-	Region& mem;
-	AtomicQueue<T*> list;
 	vnl::util::spinlock sync;
 	
 };
