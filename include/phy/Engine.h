@@ -77,7 +77,7 @@ protected:
 		T* cpy = buffer.create<T>(entry);
 		*cpy = *msg;
 		cpy->user = entry;
-		cpy->callback = async_cb;
+		cpy->callback = &async_cb;
 		send_impl(cpy, dst, true);
 	}
 	

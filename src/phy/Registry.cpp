@@ -124,7 +124,7 @@ void Registry::kill(Object* obj) {
 
 void Registry::send_exit(Object* obj) {
 	Object::exit_t* msg = exit_buf.create();
-	msg->callback = cb_func;
+	msg->callback = &cb_func;
 	send_async(msg, obj);
 }
 

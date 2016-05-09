@@ -38,7 +38,7 @@ public:
 	bool isack = false;
 	
 	void* user = 0;
-	std::function<void(Message*)> callback;
+	std::function<void(Message*)>* callback = 0;
 	
 	Node* gate = 0;
 	Fiber* _impl = 0;

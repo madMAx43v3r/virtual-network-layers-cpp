@@ -34,17 +34,17 @@ bool Router::handle(Message* msg) {
 		msg->ack();
 		return true;
 	case packet_t::id: {
-		header_t* header = &((packet_t*)msg)->data;
-		Packet* pkt = header->payload;
+		packet_t* packet = (packet_t*)msg;
+		Packet* pkt = packet->data.payload;
 		if(pkt->src.A == 0) {
 			pkt->src.A = mac;
 		}
 		if(pkt->src.B == 0) {
 			pkt->src.B = src->getMAC();
 		}
-		route(header, src, table.find(pkt->dst));
-		route(header, src, table.find(Address(pkt->dst.A, 0)));
-		if(!header->count) {
+		route(packet, src, table.find(pkt->dst));
+		route(packet, src, table.find(Address(pkt->dst.A, 0)));
+		if(!packet->data.count) {
 			msg->ack();
 		}
 		return true;
@@ -85,30 +85,30 @@ void Router::close(const Address& addr, Node* src) {
 	}
 }
 
-void Router::route(header_t* header, Node* src, Row** prow) {
+void Router::route(packet_t* packet, Node* src, Row** prow) {
 	if(prow) {
 		for(Node* dst : **prow) {
 			if(dst && dst != src) {
-				forward(header, dst);
+				forward(packet, dst);
 			}
 		}
 	}
 }
 
-void Router::forward(header_t* header, Node* dst) {
-	header->count++;
+void Router::forward(packet_t* packet, Node* dst) {
+	packet->data.count++;
 	packet_t* msg = factory.create();
-	msg->data.parent = header;
-	msg->data.payload = header->payload;
-	msg->callback = cb_func;
+	msg->data.parent = packet;
+	msg->data.payload = packet->data.payload;
+	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);
 }
 
 void Router::callback(phy::Message* msg_) {
 	packet_t* msg = (packet_t*)msg_;
-	header_t* parent = msg->data.parent;
-	if(++(parent->acks) == parent->count) {
-		msg->ack();
+	packet_t* parent = (packet_t*)msg->data.parent;
+	if(++(parent->data.acks) == parent->data.count) {
+		parent->ack();
 	}
 	factory.destroy(msg);
 }

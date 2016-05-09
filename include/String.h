@@ -10,7 +10,6 @@
 
 #include <string.h>
 #include <ostream>
-#include <streambuf>
 #include <string>
 #include <sstream>
 
@@ -19,7 +18,7 @@
 
 namespace vnl {
 
-class String : public std::ostream, private std::streambuf {
+class String {
 public:
 	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - sizeof(short);
 	
@@ -31,17 +30,17 @@ public:
 	
 	static phy::AtomicPool<chunk_t>* chunks;
 	
-	String() : std::ostream(this) {}
+	String() {}
 	
-	String(const char* str) : std::ostream(this) {
+	String(const char* str) {
 		*this << str;
 	}
 	
-	String(const std::string& str) : std::ostream(this) {
+	String(const std::string& str) {
 		*this << str;
 	}
 	
-	String(String& str) : std::ostream(this) {
+	String(const String& str) {
 		*this << str;
 	}
 	
@@ -49,24 +48,52 @@ public:
 		clear();
 	}
 	
-	String& operator=(String& str) {
+	bool operator!=(const String& other) const {
+		return !(*this == other);
+	}
+	
+	bool operator==(const String& other) const {
+		chunk_t* A = p_front;
+		chunk_t* B = other.p_front;
+		while(A && B) {
+			if(A->len != B->len) {
+				return false;
+			}
+			if(strncmp(A->str, B->str, A->len)) {
+				return false;
+			}
+			A = A->next;
+			B = B->next;
+		}
+		return A == B;
+	}
+	
+	String& operator=(const String& str) {
 		clear();
 		*this << str;
 		return *this;
 	}
 	
-	String& operator<<(String& str) {
-		str.sync();
+	String& operator<<(const char* str) {
+		write(str, strlen(str));
+		return *this;
+	}
+	
+	String& operator<<(const std::string& str) {
+		write(str.c_str(), str.size());
+		return *this;
+	}
+	
+	String& operator<<(const String& str) {
 		chunk_t* chunk = str.p_front;
 		while(chunk) {
-			std::ostream::write(chunk->str, chunk->len);
+			write(chunk->str, chunk->len);
 			chunk = chunk->next;
 		}
 		return *this;
 	}
 	
 	std::string to_string() {
-		sync();
 		std::ostringstream stream;
 		chunk_t* chunk = p_front;
 		while(chunk) {
@@ -76,8 +103,7 @@ public:
 		return stream.str();
 	}
 	
-	friend std::ostream& operator<<(std::ostream& stream, String& str) {
-		str.sync();
+	friend std::ostream& operator<<(std::ostream& stream, const String& str) {
 		chunk_t* chunk = str.p_front;
 		while(chunk) {
 			stream.write(chunk->str, chunk->len);
@@ -86,19 +112,16 @@ public:
 		return stream;
 	}
 	
+	void write(const char* str, size_t len);
+	
 	void clear();
 	
 protected:
-	virtual int overflow(int c = std::char_traits<char>::eof()) override;
-	
-	virtual int sync() override;
-	
 	void push_back(chunk_t* chunk);
 	
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
-	chunk_t* buf = 0;
 	
 };
 

@@ -32,10 +32,10 @@ protected:
 		assert(stream);
 		assert(stream->getEngine() == this);
 		
-		if(micros >= 0) {
+		if(micros > 0) {
 			return timed_poll(stream, micros);
 		} else {
-			return inf_poll(stream);
+			return simple_poll(stream, micros);
 		}
 	}
 	
@@ -66,9 +66,9 @@ private:
 		}
 	}
 	
-	bool inf_poll(Stream* stream) {
+	bool simple_poll(Stream* stream, int64_t micros) {
 		while(true) {
-			Message* msg = collect(-1);
+			Message* msg = collect(micros);
 			if(msg) {
 				handle(msg);
 				if(msg->dst == stream && !msg->isack) {
@@ -104,7 +104,7 @@ private:
 	void handle(Message* msg) {
 		if(msg->isack) {
 			if(msg->callback) {
-				msg->callback(msg);
+				(*msg->callback)(msg);
 			}
 			pending--;
 		} else {

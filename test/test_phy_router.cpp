@@ -20,6 +20,11 @@
 #include "../src/phy/Registry.cpp"
 #include "../src/String.cpp"
 
+/*
+ * Showcasing the basic vnl::phy functionality regarding the vnl::phy::Router.
+ * This example will send 1M messages through the router.
+ * Note that this entire program only makes ~30 calls to malloc().
+ */
 
 typedef vnl::phy::PacketType<vnl::String> test_packet_t;
 
@@ -38,23 +43,36 @@ int main() {
 	// subscribe
 	sub.send(vnl::phy::Router::connect_t(address), &router);
 	
-	// publish
-	test_packet_t message("Hello World");
-	router.send_async(pub, &message, address);
-	
-	// see if we got anything
-	vnl::phy::Message* msg = sub.poll();
-	if(msg->mid == vnl::phy::Router::packet_t::id) {
-		// we got a packet
-		vnl::phy::Packet* packet = ((vnl::phy::Router::packet_t*)msg)->data.payload;
-		if(packet->dst == address) {
-			// we got a test_packet_t
-			vnl::String payload = ((test_packet_t*)packet)->data;
-			std::cout << payload << std::endl;
+	for(int i = 0; i < 1000*1000; ++i) {
+		
+		// publish
+		test_packet_t message("Hello World");
+		router.send_async(pub, &message, address);
+		
+		// see if we got anything
+		while(true) {
+			vnl::phy::Message* msg = sub.poll(0);
+			if(!msg) {
+				break;
+			}
+			if(msg->mid == vnl::phy::Router::packet_t::id) {
+				// we got a packet
+				vnl::phy::Packet* packet = ((vnl::phy::Router::packet_t*)msg)->data.payload;
+				if(packet->dst == address) {
+					// we got a test_packet_t
+					vnl::String payload = ((test_packet_t*)packet)->data;
+					if(i == 0) {
+						std::cout << payload << std::endl;
+					}
+					assert(payload == "Hello World");
+				}
+			}
+			msg->ack();
 		}
 		
 	}
-	msg->ack();
+	
+	std::cout << "Number of pages allocated: " << vnl::phy::Page::get_num_alloc() << std::endl;
 	
 	// unsubscribe
 	sub.send(vnl::phy::Router::close_t(address), &router);

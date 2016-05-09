@@ -66,7 +66,7 @@ public:
 		if(micro >= 0) {
 			deadline = System::currentTimeMicros() + micro;
 		} else {
-			deadline = -1;
+			deadline = 0;
 		}
 		polling = stream;
 		yield();
@@ -117,7 +117,7 @@ protected:
 		(*_yield)();
 		Message* msg;
 		while(cbs.pop(msg)) {
-			msg->callback(msg);
+			(*msg->callback)(msg);
 		}
 	}
 	
@@ -211,7 +211,7 @@ int FiberEngine::timeout() {
 	Queue<Fiber*> list(&mem);
 	while(true) {
 		for(Fiber* fiber : fibers) {
-			if(fiber->polling && fiber->deadline >= 0) {
+			if(fiber->polling && fiber->deadline > 0) {
 				int64_t diff = fiber->deadline - now;
 				if(diff <= 0) {
 					list.push(fiber);

@@ -13,26 +13,22 @@ namespace vnl {
 phy::AtomicPool<String::chunk_t>* String::chunks = 0;
 
 
-int String::overflow(int c) {
-	if(buf) {
-		buf->len = CHUNK_SIZE;
-		push_back(buf);
+void String::write(const char* str, size_t len) {
+		size_t pos = 0;
+		chunk_t* buf = p_back;
+		while(len > pos) {
+			if(!buf || buf->len == CHUNK_SIZE) {
+				buf = chunks->create();
+				push_back(buf);
+			}
+			size_t num = len - pos;
+			size_t left = CHUNK_SIZE - buf->len;
+			if(num > left) { num = left; }
+			memcpy(buf->str + buf->len, str+pos, num);
+			buf->len += num;
+			pos += num;
+		}
 	}
-	buf = chunks->create();
-	setp(buf->str, buf->str + CHUNK_SIZE);
-	sputc(c);
-	return c;
-}
-
-int String::sync() {
-	if(buf) {
-		buf->len = pptr() - pbase();
-		push_back(buf);
-		setp(0, 0);
-		buf = 0;
-	}
-	return 0;
-}
 
 void String::push_back(chunk_t* chunk) {
 	chunk->next = 0;
@@ -54,10 +50,6 @@ void String::clear() {
 	}
 	p_front = 0;
 	p_back = 0;
-	if(buf) {
-		chunks->destroy(buf);
-		buf = 0;
-	}
 }
 
 

@@ -144,6 +144,7 @@ int main() {
 	{
 		vnl::String str("BLUBB");
 		//std::cout << str << std::endl;
+		assert(str == vnl::String("BLUBB"));
 		assert(str.to_string() == std::string("BLUBB"));
 		assert(vnl::String(str).to_string() == std::string("BLUBB"));
 	}

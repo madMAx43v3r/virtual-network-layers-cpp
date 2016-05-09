@@ -19,14 +19,16 @@ Page* Page::alloc() {
 	if(page) {
 		while(!begin.compare_exchange_strong(page, page->next, std::memory_order_acq_rel)) {
 			if(!page) {
-				return new Page();
+				page = new Page();
+				break;
 			}
 		}
 		page->next = 0;
-		return page;
 	} else {
-		return new Page();
+		page = new Page();
 	}
+	assert(page != OUT_OF_MEMORY);
+	return page;
 }
 
 void Page::free() {

@@ -25,7 +25,7 @@ public:
 	Router();
 	
 	struct header_t {
-		header_t* parent = 0;
+		Message* parent = 0;
 		int32_t count = 0;
 		int32_t acks = 0;
 		Packet* payload = 0;
@@ -61,8 +61,8 @@ protected:
 	void connect(const Address& addr, Node* src);
 	void close(const Address& addr, Node* src);
 	
-	void route(header_t* header, Node* src, Row** prow);
-	void forward(header_t* header, Node* dst);
+	void route(packet_t* packet, Node* src, Row** prow);
+	void forward(packet_t* packet, Node* dst);
 	
 	void callback(Message* msg);
 	

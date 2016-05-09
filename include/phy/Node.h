@@ -49,7 +49,7 @@ public:
 		sync.lock();
 		if(msg->isack) {
 			if(msg->callback) {
-				msg->callback(msg);
+				(*msg->callback)(msg);
 			}
 		} else {
 			if(!handle(msg)) {

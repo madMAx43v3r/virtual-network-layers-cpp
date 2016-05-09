@@ -89,7 +89,7 @@ public:
 	
 	Message* poll(int64_t micros) {
 		Message* msg = 0;
-		if(!queue.pop(msg) && micros != 0) {
+		if(!queue.pop(msg)) {
 			if(engine->poll(this, micros)) {
 				queue.pop(msg);
 			}
@@ -103,12 +103,6 @@ public:
 			send_async(signal_t(this), listener);
 			listener = 0;
 		}
-	}
-	
-	Message* pop() {
-		Message* msg = 0;
-		queue.pop(msg);
-		return msg;
 	}
 	
 private:
