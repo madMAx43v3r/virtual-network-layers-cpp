@@ -33,25 +33,16 @@ public:
 	
 	typedef Generic<Address, 0xdfd4dd65> connect_t;
 	typedef Generic<Address, 0x90bbb93d> close_t;
-	typedef Generic<header_t, 0xe46e436d> packet_t;
 	
-	// thread safe
-	template<typename T>
-	void send(T&& node, Packet* packet, Address dst) {
-		packet->dst = dst;
-		header_t header;
-		header.payload = packet;
-		node.send(packet_t(header), this);
-	}
-	
-	// thread safe
-	template<typename T>
-	void send_async(T&& node, Packet* packet, Address dst) {
-		packet->dst = dst;
-		header_t header;
-		header.payload = packet;
-		node.send_async(packet_t(header), this);
-	}
+	struct packet_t : Generic<header_t, 0xe46e436d> {
+		packet_t(Packet* packet, Address dst) : packet_t(packet) {
+			packet->dst = dst;
+		}
+		packet_t(Packet* packet) {
+			data.payload = packet;
+		}
+		packet_t() {}
+	};
 	
 protected:
 	typedef List<Node*> Row;

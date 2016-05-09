@@ -47,7 +47,7 @@ int main() {
 		
 		// publish
 		test_packet_t message("Hello World");
-		router.send_async(pub, &message, address);
+		pub.send_async(vnl::phy::Router::packet_t(&message, address), &router);
 		
 		// see if we got anything
 		while(true) {
