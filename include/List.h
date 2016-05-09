@@ -20,7 +20,7 @@ namespace vnl {
 template<typename T, int N = 8>
 class List : public Queue<T,N> {
 public:
-	List(phy::Region* mem) : Queue<T,N>(mem) {}
+	List(phy::Region& mem) : Queue<T,N>(mem) {}
 	
 	List(const List&) = delete;
 	

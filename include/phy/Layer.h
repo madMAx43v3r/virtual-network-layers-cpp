@@ -10,9 +10,11 @@
 
 #include <assert.h>
 
+#include "phy/Random.h"
 #include "phy/Node.h"
 #include "phy/Registry.h"
 #include "phy/Router.h"
+#include "String.h"
 
 
 namespace vnl { namespace phy {
@@ -20,8 +22,13 @@ namespace vnl { namespace phy {
 class Layer {
 public:
 	Layer() {
+		assert(vnl::String::chunks == 0);
+		vnl::String::chunks = new AtomicPool<String::chunk_t>(memory);
+		
+		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
 		assert(Router::instance == 0);
+		Random64::instance = new Random64();
 		Registry::instance = new Registry();
 		Router::instance = new Router();
 	}
@@ -33,10 +40,19 @@ public:
 			msg.src = &node;
 			node.send(&msg, Registry::instance);
 		}
+		
 		delete Router::instance;
 		delete Registry::instance;
+		delete Random64::instance;
+		
+		delete vnl::String::chunks;
+		
+		memory.free_all();
+		vnl::phy::Page::cleanup();
 	}
 	
+private:
+	Region memory;
 	
 };
 

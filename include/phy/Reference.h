@@ -8,7 +8,6 @@
 #ifndef INCLUDE_PHY_REFERENCE_H_
 #define INCLUDE_PHY_REFERENCE_H_
 
-#include "phy/Registry.h"
 #include "phy/Engine.h"
 
 
@@ -18,26 +17,13 @@ class Object;
 
 class Reference {
 public:
-	Reference(Engine* engine, Object* obj)
-		:	mac(obj->getMAC()), engine(engine), obj(obj)
-	{
-		engine->send_async(Registry::open_t(obj), Registry::instance);
-	}
+	Reference(Engine* engine, Object* obj);
 	
-	Reference(Engine* engine, uint64_t mac)
-		:	mac(mac), engine(engine)
-	{
-	}
+	Reference(Engine* engine, uint64_t mac);
 	
-	Reference(Engine* engine, const std::string& name) 
-		:	Reference(engine, Util::hash64(name))
-	{
-	}
+	Reference(Engine* engine, const std::string& name);
 	
-	Reference(Engine* engine, Object* parent, const std::string& name)
-		:	Reference(engine, parent->name + name)
-	{
-	}
+	Reference(Engine* engine, Object* parent, const std::string& name);
 	
 	~Reference() {
 		close();
@@ -46,19 +32,9 @@ public:
 	Reference(const Reference&) = delete;
 	Reference& operator=(const Reference&) = delete;
 	
-	Object* get() {
-		if(!obj) {
-			obj = engine->request<Object*>(Registry::connect_t(mac), Registry::instance);
-		}
-		return obj;
-	}
+	Object* get();
 	
-	void close() {
-		if(obj) {
-			engine->send_async(Registry::close_t(obj), Registry::instance);
-			obj = 0;
-		}
-	}
+	void close();
 	
 private:
 	uint64_t mac;

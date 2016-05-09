@@ -19,30 +19,19 @@ class Packet {
 public:
 	Packet() {}
 	
-	Packet(uint64_t dst) : dst(dst) {}
-	
-	Address src = 0;
-	Address dst = 0;
-	
-private:
-	Packet* parent = 0;
-	int32_t count = 0;
-	int32_t acks = 0;
-	
-	friend class Router;
+	Address src;
+	Address dst;
 	
 };
 
 
-template<typename T, uint64_t MAC>
+template<typename T>
 class PacketType : public Packet {
 public:
-	PacketType() : Packet(id) {}
+	PacketType() : Packet() {}
 	
 	template<typename R>
-	PacketType(R&& data) : Packet(id), data(data) {}
-	
-	static const uint64_t id = MAC;
+	PacketType(R&& data_) : Packet(), data(data_) {}
 	
 	T data;
 	

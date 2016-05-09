@@ -150,7 +150,7 @@ public:
 				index.push_back(page);
 				pos = 0;
 			}
-			page->get<Row*>(pos) = new(mem.alloc<Row>()) Row(&mem);
+			page->get<Row*>(pos) = new(mem.alloc<Row>()) Row(mem);
 			pos++;
 		}
 	}

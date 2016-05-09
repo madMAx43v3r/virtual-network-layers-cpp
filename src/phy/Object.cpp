@@ -15,11 +15,15 @@ namespace vnl { namespace phy {
 
 Object::Object() : Object(0) {}
 
-Object::Object(uint64_t mac) : mac(mac) {}
+Object::Object(uint64_t mac)
+{
+	this->mac = mac;
+}
 
 Object::Object(const std::string& name)
-	:	Object::Object(Util::hash64(name)), name(name)
+	:	Object::Object(Util::hash64(name))
 {
+	this->name = name;
 }
 
 Object::Object(Object* parent, const std::string& name)
@@ -33,7 +37,7 @@ void Object::die() {
 
 void Object::run(Engine* engine_) {
 	engine = engine_;
-	Stream tmp(engine, &memory);
+	Stream tmp(engine, memory);
 	stream = &tmp;
 	if(mac == 0) {
 		mac = engine->rand();
@@ -55,6 +59,42 @@ void Object::run(Engine* engine_) {
 		if(!handle(msg)) {
 			msg->ack();
 		}
+	}
+}
+
+
+Reference::Reference(Engine* engine, Object* obj)
+	:	mac(obj->getMAC()), engine(engine), obj(obj)
+{
+	engine->send_async(Registry::open_t(obj), Registry::instance);
+}
+
+Reference::Reference(Engine* engine, uint64_t mac)
+	:	mac(mac), engine(engine)
+{
+}
+
+Reference::Reference(Engine* engine, const std::string& name) 
+	:	Reference(engine, Util::hash64(name))
+{
+}
+
+Reference::Reference(Engine* engine, Object* parent, const std::string& name)
+	:	Reference(engine, parent->getName() + name)
+{
+}
+
+Object* Reference::get() {
+	if(!obj) {
+		obj = engine->request<Object*>(Registry::connect_t(mac), Registry::instance);
+	}
+	return obj;
+}
+
+void Reference::close() {
+	if(obj) {
+		engine->send_async(Registry::close_t(obj), Registry::instance);
+		obj = 0;
 	}
 }
 

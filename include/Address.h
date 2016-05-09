@@ -39,7 +39,7 @@ public:
 	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {
 		auto state = stream.flags(std::ios::hex);
-		stream << A << ":" << B;
+		stream << addr.A << ":" << addr.B;
 		stream.flags(state);
 		return stream;
 	}

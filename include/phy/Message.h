@@ -43,7 +43,7 @@ public:
 	Node* gate = 0;
 	Fiber* _impl = 0;
 	
-private:
+protected:
 	Message(const Message&) = default;
 	Message& operator=(const Message&) = default;
 	

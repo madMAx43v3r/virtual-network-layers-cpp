@@ -8,16 +8,14 @@
 #ifndef INCLUDE_PHY_RINGBUFFER_H_
 #define INCLUDE_PHY_RINGBUFFER_H_
 
-#include <assert.h>
-#include "phy/Queue.h"
-#include "phy/Memory.h"
+#include "Queue.h"
 
 
 namespace vnl { namespace phy {
 
 class RingBuffer {
 public:
-	RingBuffer(Region* mem) : queue(mem) {
+	RingBuffer(Region& mem) : queue(mem) {
 		p_front = Page::alloc();
 		p_back = p_front;
 		pos = 0;
@@ -64,7 +62,7 @@ public:
 		entry.page = p_back;
 		entry.ptr = p_back->mem + pos;
 		pos += size;
-		return queue.push(entry);
+		return &queue.push(entry);
 	}
 	
 	void free(entry_t* entry) {

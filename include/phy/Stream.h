@@ -22,7 +22,7 @@ class Stream final : public Node {
 public:
 	typedef Generic<Stream*, 0xe39e616f> signal_t;
 	
-	Stream(Engine* engine, Region* mem)
+	Stream(Engine* engine, Region& mem)
 		:	engine(engine), queue(mem)
 	{
 		mac = engine->rand();
@@ -49,17 +49,19 @@ public:
 	
 	template<typename T>
 	void send(T&& msg, Node* dst) {
-		send(msg, dst);
+		msg.src = this;
+		engine->send(msg, dst);
 	}
 	
 	template<typename T>
 	void send_async(T&& msg, Node* dst) {
-		send_async(msg, dst);
+		msg.src = this;
+		engine->send_async(msg, dst);
 	}
 	
 	template<typename T, typename R>
 	T request(R&& req, Node* dst) {
-		req->src = this;
+		req.src = this;
 		return engine->request<T>(req, dst);
 	}
 	

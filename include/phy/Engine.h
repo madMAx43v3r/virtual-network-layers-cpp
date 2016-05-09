@@ -63,22 +63,27 @@ protected:
 	
 	template<typename T>
 	void send(T&& msg, Node* dst) {
-		send(&msg, dst);
+		send_impl(&msg, dst, false);
 	}
 	
 	template<typename T>
 	void send_async(T&& msg, Node* dst) {
+		send_async(&msg, dst);
+	}
+	
+	template<typename T>
+	void send_async(T* msg, Node* dst) {
 		RingBuffer::entry_t* entry;
 		T* cpy = buffer.create<T>(entry);
-		*cpy = msg;
+		*cpy = *msg;
 		cpy->user = entry;
 		cpy->callback = async_cb;
-		send(cpy, dst);
+		send_impl(cpy, dst, true);
 	}
 	
 	template<typename T, typename R>
 	T request(R&& req, Node* dst) {
-		send(&req, dst);
+		send(req, dst);
 		return req.res;
 	}
 	
@@ -90,7 +95,7 @@ protected:
 		send_impl(msg, dst, true);
 	}
 	
-	Message* Engine::collect(int64_t timeout) {
+	Message* collect(int64_t timeout) {
 		Message* msg = 0;
 		if(queue.pop(msg)) {
 			return msg;

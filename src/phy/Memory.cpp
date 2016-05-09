@@ -58,6 +58,10 @@ void Page::cleanup() {
 
 void* Region::alloc(int size) {
 	assert(size <= Page::size);
+	if(!p_back) {
+		p_front = Page::alloc();
+		p_back = p_front;
+	}
 	if(Page::size - pos < size) {
 		if(!p_back->next) {
 			p_back->next = Page::alloc();

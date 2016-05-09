@@ -67,14 +67,10 @@ private:
 
 class Region {
 public:
-	Region() {
-		p_front = Page::alloc();
-		p_back = p_front;
-		pos = 0;
-	}
+	Region() {}
 	
 	~Region() {
-		p_front->free_all();
+		free_all();
 	}
 	
 	Region(const Region&) = delete;
@@ -90,7 +86,7 @@ public:
 #ifndef VNL_MEMORY_DEBUG
 		return alloc(sizeof(T));
 #else
-		return malloc(sizeof(T);
+		return malloc(sizeof(T));
 #endif
 	}
 	
@@ -98,10 +94,19 @@ public:
 	
 	void clear();
 	
+	void free_all() {
+		if(p_front) {
+			p_front->free_all();
+			p_front = 0;
+			p_back = 0;
+			pos = 0;
+		}
+	}
+	
 private:
-	Page* p_front;
-	Page* p_back;
-	int pos;
+	Page* p_front = 0;
+	Page* p_back = 0;
+	int pos = 0;
 	
 };
 

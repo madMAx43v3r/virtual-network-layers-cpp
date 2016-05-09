@@ -8,9 +8,10 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
-#include <unordered_map>
-
 #include "phy/Object.h"
+#include "phy/Pool.h"
+#include "Array.h"
+#include "Map.h"
 
 
 namespace vnl { namespace phy {
@@ -18,6 +19,8 @@ namespace vnl { namespace phy {
 class Registry : public vnl::phy::Reactor {
 public:
 	static Registry* instance;
+	
+	Registry();
 	
 	typedef Request<bool, Object*, 0x51d42b41> bind_t;
 	typedef Request<Object*, uint64_t, 0x3127424a> connect_t;
@@ -42,11 +45,18 @@ private:
 	
 	void kill(Object* obj);
 	
-private:
-	vnl::util::spinlock sync;
-	std::unordered_map<uint64_t, Object*> map;
-	std::unordered_map<uint64_t, std::vector<connect_t*> > waiting;
+	void send_exit(Object* obj);
 	
+	void callback(Message* msg);
+	
+private:
+	Region mem;
+	Pool<Object::exit_t> exit_buf;
+	
+	Map<uint64_t, Object*> map;
+	Map<uint64_t, Array<connect_t*> > waiting;
+	
+	std::function<void(phy::Message*)> cb_func;
 	Message* exit_msg = 0;
 	
 	friend class Engine;

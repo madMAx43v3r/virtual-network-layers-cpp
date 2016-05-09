@@ -14,99 +14,91 @@
 #include <string>
 #include <sstream>
 
-#include "List.h"
+#include "phy/Pool.h"
 
 
 namespace vnl {
 
 class String : public std::ostream, private std::streambuf {
 public:
-	String(phy::Region* mem) : std::ostream(this), list(mem) {}
+	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - sizeof(short);
 	
-	~String() {
-		if(buf) {
-			buf->free();
-		}
+	struct chunk_t {
+		char str[CHUNK_SIZE];
+		chunk_t* next = 0;
+		short len = 0;
+	};
+	
+	static phy::AtomicPool<chunk_t>* chunks;
+	
+	String() : std::ostream(this) {}
+	
+	String(const char* str) : std::ostream(this) {
+		*this << str;
 	}
 	
-	String(const String& other) = delete;
+	String(const std::string& str) : std::ostream(this) {
+		*this << str;
+	}
 	
-	String& operator=(String& other) {
-		list.clear();
-		(*this) << other;
+	String(String& str) : std::ostream(this) {
+		*this << str;
+	}
+	
+	~String() {
+		clear();
+	}
+	
+	String& operator=(String& str) {
+		clear();
+		*this << str;
 		return *this;
 	}
 	
-	String& operator<<(String& other) {
-		other.sync();
-		for(const str_t& str : other.list) {
-			std::ostream::write(str.ptr, str.len);
+	String& operator<<(String& str) {
+		str.sync();
+		chunk_t* chunk = str.p_front;
+		while(chunk) {
+			std::ostream::write(chunk->str, chunk->len);
+			chunk = chunk->next;
 		}
 		return *this;
 	}
 	
 	std::string to_string() {
 		sync();
-		std::ostringstream ss;
-		for(const str_t& str : list) {
-			ss.write(str.ptr, str.len);
+		std::ostringstream stream;
+		chunk_t* chunk = p_front;
+		while(chunk) {
+			stream.write(chunk->str, chunk->len);
+			chunk = chunk->next;
 		}
-		return ss.str();
+		return stream.str();
 	}
 	
-	friend std::ostream& operator<<(std::ostream& stream, String& other) {
-		other.sync();
-		for(const String::str_t& str : other.list) {
-			stream.write(str.ptr, str.len);
+	friend std::ostream& operator<<(std::ostream& stream, String& str) {
+		str.sync();
+		chunk_t* chunk = str.p_front;
+		while(chunk) {
+			stream.write(chunk->str, chunk->len);
+			chunk = chunk->next;
 		}
 		return stream;
 	}
 	
-	void clear() {
-		list.clear();
-		if(buf) {
-			buf->free();
-		}
-	}
+	void clear();
 	
 protected:
-	struct str_t {
-		char* ptr = 0;
-		size_t len = 0;
-	};
+	virtual int overflow(int c = std::char_traits<char>::eof()) override;
 	
-	virtual int overflow(int c = std::char_traits<char>::eof()) override {
-		if(buf) {
-			str_t str;
-			str.len = phy::Page::size;
-			str.ptr = (char*)list.mem->alloc(str.len);
-			memcpy(str.ptr, buf->mem, phy::Page::size);
-			list.push_back(str);
-		} else {
-			buf = phy::Page::alloc();
-		}
-		setp(buf->mem, buf->mem + phy::Page::size);
-		sputc(c);
-		return c;
-	}
+	virtual int sync() override;
 	
-	virtual int sync() override {
-		if(buf) {
-			str_t str;
-			str.len = pptr() - pbase();
-			str.ptr = (char*)list.mem->alloc(str.len);
-			memcpy(str.ptr, buf->mem, str.len);
-			list.push_back(str);
-			setp(0, 0);
-			buf->free();
-			buf = 0;
-		}
-		return 0;
-	}
+	void push_back(chunk_t* chunk);
 	
 private:
-	List<str_t, 2> list;
-	phy::Page* buf = 0;
+	chunk_t* p_front = 0;
+	chunk_t* p_back = 0;
+	chunk_t* buf = 0;
 	
 };
 

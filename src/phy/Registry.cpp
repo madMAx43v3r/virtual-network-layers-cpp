@@ -12,6 +12,12 @@ namespace vnl { namespace phy {
 
 Registry* Registry::instance = 0;
 
+Registry::Registry()
+	:	exit_buf(mem),
+		cb_func(std::bind(&Registry::callback, this, std::placeholders::_1))
+{
+}
+
 bool Registry::handle(Message* msg) {
 	switch(msg->mid) {
 	case bind_t::id: {
@@ -46,18 +52,15 @@ bool Registry::handle(Message* msg) {
 		msg->ack();
 		return true;
 	case shutdown_t::id:
-		if(!exit_msg) {
-			for(auto pair : map) {
+		if(exit_msg || map.empty()) {
+			msg->ack();
+		} else {
+			for(auto pair : map.entries()) {
 				kill(pair.second);
 			}
 			exit_msg = msg;
-		} else {
-			msg->ack();
 		}
 		return true;
-	}
-	if(exit_msg && map.empty()) {
-		exit_msg->ack();
 	}
 	return false;
 }
@@ -68,7 +71,7 @@ bool Registry::bind(Object* obj) {
 	if(value == 0) {
 		value = obj;
 		obj->ref++;
-		if(waiting.count(mac)) {
+		if(waiting.find(mac)) {
 			for(connect_t* msg : waiting[mac]) {
 				obj->ref++;
 				msg->ack(obj);
@@ -81,9 +84,9 @@ bool Registry::bind(Object* obj) {
 }
 
 Object* Registry::connect(uint64_t mac) {
-	auto iter = map.find(mac);
-	if(iter != map.end()) {
-		Object* obj = iter->second;
+	Object** pobj = map.find(mac);
+	if(pobj) {
+		Object* obj = *pobj;
 		open(obj);
 		return obj;
 	}
@@ -98,11 +101,14 @@ void Registry::close(Object* obj) {
 	obj->ref--;
 	if(obj->dying) {
 		if(obj->ref == 1) {
-			obj->receive(new Object::exit_t());
+			send_exit(obj);
 		} else if(obj->ref == 0) {
 			map.erase(obj->getMAC());
 			delete obj;
 		}
+	}
+	if(exit_msg && map.empty()) {
+		exit_msg->ack();
 	}
 }
 
@@ -110,10 +116,20 @@ void Registry::kill(Object* obj) {
 	if(!obj->dying) {
 		obj->dying = true;
 		if(obj->ref == 1) {
-			obj->receive(new Object::exit_t());
+			send_exit(obj);
 		}
 		obj->ref--;
 	}
+}
+
+void Registry::send_exit(Object* obj) {
+	Object::exit_t* msg = exit_buf.create();
+	msg->callback = cb_func;
+	send_async(msg, obj);
+}
+
+void Registry::callback(Message* msg) {
+	exit_buf.destroy((Object::exit_t*)msg);
 }
 
 

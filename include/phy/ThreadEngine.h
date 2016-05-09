@@ -32,7 +32,7 @@ protected:
 		assert(stream);
 		assert(stream->getEngine() == this);
 		
-		if(micros != 0) {
+		if(micros >= 0) {
 			return timed_poll(stream, micros);
 		} else {
 			return inf_poll(stream);

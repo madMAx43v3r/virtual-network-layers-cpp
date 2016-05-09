@@ -15,6 +15,11 @@
 #define VNL_PAGE_SIZE 4096
 
 /*
+ * The block size of strings in bytes
+ */
+#define VNL_STRING_BLOCK_SIZE 64
+
+/*
  * Defining this will use new() instead of paged memory.
  * Useful for valgrind debugging.
  * The memory allocated will not be deleted however.

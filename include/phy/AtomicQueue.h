@@ -19,19 +19,10 @@ namespace vnl { namespace phy {
 template<typename T, int N = 20>
 class AtomicQueue {
 public:
-	AtomicQueue(Region* mem) : mem(mem), avail(0) {
-		front = mem->create<block_t>();
+	AtomicQueue(Region& mem) : mem(mem), avail(0) {
+		front = mem.create<block_t>();
 		write = front;
 		back = front;
-	}
-	
-	~AtomicQueue() {
-		block_t* block = front;
-		while(block) {
-			block_t* tmp = block->next;
-			delete block;
-			block = tmp;
-		}
 	}
 	
 	void push(T obj) {
@@ -43,7 +34,7 @@ public:
 				block_t* next = block->next.load(std::memory_order_acquire);
 				if(next == 0) {
 					sync.lock();
-					block_t* add = mem->create<block_t>();
+					block_t* add = mem.create<block_t>();
 					sync.unlock();
 					push_node(add);
 					do {
@@ -90,7 +81,7 @@ private:
 	}
 	
 private:
-	Region* mem;
+	Region& mem;
 	block_t* front;
 	std::atomic<block_t*> write;
 	std::atomic<block_t*> back;

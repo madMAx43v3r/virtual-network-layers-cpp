@@ -13,12 +13,10 @@
 
 #include "util/spinlock.h"
 #include "phy/Random.h"
+#include "phy/Message.h"
 
 
 namespace vnl { namespace phy {
-
-class Message;
-
 
 class Node {
 public:
@@ -80,20 +78,30 @@ public:
 	SyncNode() : ulock(mutex) {}
 	
 	virtual void receive(Message* msg) override {
-		std::unique_lock<std::mutex> lock(mutex);
-		cond.notify_all();
+		if(msg->isack) {
+			std::unique_lock<std::mutex> lock(mutex);
+			acked = true;
+			cond.notify_all();
+		}
 	}
 	
 	void send(Message* msg, Node* dst) {
 		msg->src = this;
+		acked = false;
+		ulock.unlock();
 		dst->receive(msg);
-		cond.wait(ulock);
+		ulock.lock();
+		if(!acked) {
+			cond.wait(ulock);
+		}
 	}
 	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	std::unique_lock<std::mutex> ulock;
+	
+	bool acked = false;
 	
 };
 

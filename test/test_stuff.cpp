@@ -17,6 +17,7 @@
 #include "Util.h"
 #include "System.h"
 
+#include "phy/Pool.h"
 #include "Queue.h"
 #include "List.h"
 #include "Array.h"
@@ -25,14 +26,18 @@
 
 #include "../src/phy/Memory.cpp"
 #include "../src/util/CRC64.cpp"
+#include "../src/String.cpp"
 
 int main() {
+	
+	vnl::phy::Region* string_memory = new vnl::phy::Region();
+	vnl::String::chunks = new vnl::phy::AtomicPool<vnl::String::chunk_t>(*string_memory);
 	
 	int N = 1000;
 	
 	{
 		vnl::phy::Region mem;
-		vnl::Queue<int> test(&mem);
+		vnl::Queue<int> test(mem);
 		for(int iter = 0; iter < N; ++iter) {
 			for(int i = 0; i < 100; ++i) {
 				test.push(i);
@@ -119,15 +124,32 @@ int main() {
 	}
 	
 	{
-		vnl::phy::Region mem;
-		vnl::String str(&mem);
-		for(int i = 0; i < 10; ++i) {
-			str << "BLUBB_" << 1;
-			str << std::string("BLUBB_") << 1.1;
+		vnl::String str;
+		for(int iter = 0; iter < N; ++iter) {
+			std::string std_str;
+			for(int i = 0; i < 100; ++i) {
+				str << "BLUBB_";
+				std_str += "BLUBB_";
+			}
+			std::ostringstream ss;
+			ss << str;
+			//std::cout << ss.str() << std::endl;
+			//std::cout << str.to_string() << std::endl;
+			assert(str.to_string() == std_str);
+			assert(ss.str() == std_str);
+			str.clear();
 		}
-		std::cout << str << std::endl;
-		std::cout << str.to_string() << std::endl;
 	}
+	
+	{
+		vnl::String str("BLUBB");
+		//std::cout << str << std::endl;
+		assert(str.to_string() == std::string("BLUBB"));
+		assert(vnl::String(str).to_string() == std::string("BLUBB"));
+	}
+	
+	delete vnl::String::chunks;
+	delete string_memory;
 	
 	vnl::phy::Page::cleanup();
 	assert(vnl::phy::Page::get_num_alloc() == 0);

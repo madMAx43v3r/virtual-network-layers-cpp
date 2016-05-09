@@ -20,8 +20,8 @@ namespace vnl {
 template<typename T, int N = 8>
 class Queue {
 public:
-	Queue(phy::Region* mem) : mem(mem) {
-		p_front = mem->create<block_t>();
+	Queue(phy::Region& mem) : mem(mem) {
+		p_front = mem.create<block_t>();
 		p_back = p_front;
 	}
 	
@@ -48,7 +48,7 @@ public:
 	T& push(const T& obj) {
 		if(p_back->write >= N) {
 			if(!p_back->next) {
-				p_back->next = mem->create<block_t>();
+				p_back->next = mem.create<block_t>();
 			}
 			p_back = p_back->next;
 			p_back->write = 0;
@@ -117,7 +117,7 @@ public:
 		return count == 0;
 	}
 	
-	phy::Region* mem;
+	phy::Region& mem;
 	
 protected:
 	struct block_t {
