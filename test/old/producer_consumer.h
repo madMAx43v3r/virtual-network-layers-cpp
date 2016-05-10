@@ -43,7 +43,7 @@ public:
 		launch(std::bind(&Consumer::setup, this));
 	}
 	
-	typedef Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> count_seq_t;
+	typedef MessageType<std::pair<uint64_t, uint64_t>, 0x337f8543> count_seq_t;
 	
 protected:
 	void setup() {

@@ -23,10 +23,9 @@
 /*
  * Showcasing the basic vnl::phy functionality regarding the vnl::phy::Router.
  * This example will send 1M messages through the router.
- * Note that this entire program only makes ~30 calls to malloc().
  */
 
-typedef vnl::phy::PacketType<std::pair<int, vnl::String> > test_packet_t;
+typedef vnl::phy::PacketType<std::pair<int, std::string>, 0x1b343d38> test_packet_t;
 
 vnl::Address address("domain", "topic");
 
@@ -35,39 +34,36 @@ public:
 	Consumer(vnl::phy::Router* router) : router(router) {}
 	
 protected:
-	virtual bool startup() override {
-		vnl::Util::stick_to_core(2);
+	virtual void main() override {
+		vnl::Util::stick_to_core(1);
+		
 		// subscribe
 		std::cout << "Consumer " << mac << ": subscribe " << address << std::endl;
-		send(vnl::phy::Router::connect_t(address), router);
-		return true;
-	}
-	
-	virtual void shutdown() override {
+		vnl::phy::Router::connect_t connect(address);
+		send(&connect, router);
+		
+		run();
+		
 		// unsubscribe
 		std::cout << "Consumer " << mac << ": unsubscribe " << address << std::endl;
-		send(vnl::phy::Router::close_t(address), router);
+		vnl::phy::Router::close_t close(address);
+		send(&close, router);
 	}
 	
 	virtual bool handle(vnl::phy::Message* msg) override {
 		// see what type of message we got
-		if(msg->mid == vnl::phy::Router::packet_t::id) {
+		if(msg->mid == vnl::phy::Packet::MID) {
 			// we got a packet from a router
-			vnl::phy::Packet* packet = ((vnl::phy::Router::packet_t*)msg)->data.packet;
-			if(packet->dst == address) {
+			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
+			if(packet->pid == test_packet_t::PID) {
 				// we got a test_packet_t
-				test_packet_t* test = dynamic_cast<test_packet_t*>(packet);
-				if(test) {
-					std::pair<int, vnl::String>& payload = test->payload;
-					if(payload.first % (1000*1000) == 0) {
-						std::cout << vnl::System::currentTimeMillis() << " " << payload.first << " " << payload.second << std::endl;
-					}
-					assert(payload.second == "Hello World");
-					msg->ack();
-					return true;
-				} else {
-					std::cout << "ERROR: dynamic_cast<test_packet_t*> failed" << std::endl;
+				const std::pair<int, std::string>* payload = (test_packet_t::data_t*)packet->payload;
+				if(payload->first % (1000*1000) == 0) {
+					std::cout << vnl::System::currentTimeMillis() << " " << payload->first << " " << payload->second << std::endl;
 				}
+				assert(payload->second == "Hello World");
+				msg->ack();
+				return true;
 			}
 		}
 		return false;
@@ -80,7 +76,6 @@ private:
 
 
 int main() {
-	
 	vnl::Util::stick_to_core(0);
 	
 	vnl::phy::Layer layer;
@@ -90,16 +85,26 @@ int main() {
 	vnl::phy::Region mem;
 	vnl::phy::Stream pub(&engine, mem);
 	
-	for(int i = 0; i < 3; ++i) {
-		engine.fork(new Consumer(&router));
+	Consumer* consumer;
+	for(int i = 0; i < 4; ++i) {
+		consumer = new Consumer(&router);
+		engine.fork(consumer);
 	}
+	
+	vnl::phy::MessageBuffer buffer(mem);
 	
 	int counter = 0;
 	for(int i = 0; i < 1000*1000*1000; ++i) {
 		
-		// publish
-		test_packet_t message(std::make_pair(counter++, "Hello World"));
-		pub.send(vnl::phy::Router::packet_t(&message, address), &router);
+		for(int k = 0; k < 100; ++k) {
+			// publish
+			test_packet_t* msg = buffer.create<test_packet_t>(std::make_pair(counter++, "Hello World"), address);
+			//pub.send(msg, &router);
+			pub.send_async(msg, &router);
+		}
+		
+		pub.flush();
+		//std::this_thread::yield();	// for valgrind to switch threads
 		
 	}
 	

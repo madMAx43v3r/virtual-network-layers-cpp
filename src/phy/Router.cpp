@@ -13,7 +13,7 @@ namespace vnl { namespace phy {
 Router* Router::instance = 0;
 
 Router::Router()
-	:	factory(mem),
+	:	buffer(mem),
 		cb_func(std::bind(&Router::callback, this, std::placeholders::_1))
 {
 }
@@ -21,30 +21,29 @@ Router::Router()
 bool Router::handle(Message* msg) {
 	Node* src = msg->src;
 	switch(msg->mid) {
-	case connect_t::id:
+	case connect_t::MID:
 		if(src) {
 			connect(((connect_t*)msg)->data, src);
 		}
 		msg->ack();
 		return true;
-	case close_t::id:
+	case close_t::MID:
 		if(src) {
 			close(((close_t*)msg)->data, src);
 		}
 		msg->ack();
 		return true;
-	case packet_t::id: {
-		packet_t* packet = (packet_t*)msg;
-		Packet* pkt = packet->data.packet;
-		if(pkt->src.A == 0) {
-			pkt->src.A = mac;
+	case Packet::MID: {
+		Packet* pkt = (Packet*)msg;
+		if(pkt->psrc.A == 0) {
+			pkt->psrc.A = mac;
 		}
-		if(pkt->src.B == 0) {
-			pkt->src.B = src->getMAC();
+		if(pkt->psrc.B == 0) {
+			pkt->psrc.B = src->getMAC();
 		}
-		route(packet, src, table.find(pkt->dst));
-		route(packet, src, table.find(Address(pkt->dst.A, 0)));
-		if(!packet->data.count) {
+		route(pkt, src, table.find(pkt->pdst));
+		route(pkt, src, table.find(Address(pkt->pdst.A, 0)));
+		if(!pkt->count) {
 			msg->ack();
 		}
 		return true;
@@ -85,32 +84,32 @@ void Router::close(const Address& addr, Node* src) {
 	}
 }
 
-void Router::route(packet_t* packet, Node* src, Row** prow) {
+void Router::route(Packet* pkt, Node* src, Row** prow) {
 	if(prow) {
 		for(Node* dst : **prow) {
 			if(dst && dst != src) {
-				forward(packet, dst);
+				forward(pkt, dst);
 			}
 		}
 	}
 }
 
-void Router::forward(packet_t* org, Node* dst) {
-	org->data.count++;
-	packet_t* msg = factory.create();
-	msg->data.parent = org;
-	msg->data.packet = org->data.packet;
+void Router::forward(Packet* org, Node* dst) {
+	org->count++;
+	Packet* msg = buffer.create<Packet>(org->pid);
+	msg->parent = org;
+	msg->psrc = org->psrc;
+	msg->pdst = org->pdst;
+	msg->payload = org->payload;
 	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);
 }
 
 void Router::callback(phy::Message* msg_) {
-	packet_t* msg = (packet_t*)msg_;
-	packet_t* parent = (packet_t*)msg->data.parent;
-	if(++(parent->data.acks) == parent->data.count) {
-		parent->ack();
+	Packet* msg = (Packet*)msg_;
+	if(++(msg->parent->acks) == msg->parent->count) {
+		msg->parent->ack();
 	}
-	factory.destroy(msg);
 }
 
 

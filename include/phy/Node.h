@@ -51,6 +51,7 @@ public:
 			if(msg->callback) {
 				(*msg->callback)(msg);
 			}
+			msg->release();
 		} else {
 			if(!handle(msg)) {
 				msg->ack();

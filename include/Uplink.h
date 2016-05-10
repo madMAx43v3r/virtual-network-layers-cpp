@@ -17,8 +17,8 @@ class Uplink : public Node {
 public:
 	Uplink(Uplink* uplink) : Node::Node(uplink) {}
 	
-	typedef phy::Signal<0x85490083> connect_t;
-	typedef phy::Signal<0x06824d17> disconnect_t;
+	typedef phy::SignalType<0x85490083> connect_t;
+	typedef phy::SignalType<0x06824d17> disconnect_t;
 	
 };
 

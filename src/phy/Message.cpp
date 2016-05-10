@@ -21,7 +21,7 @@ void Message::ack() {
 	}
 }
 
-std::string Message::toString() {
+std::string Message::to_string() {
 	std::ostringstream ss;
 	ss << "[" << Util::demangle(this) << "] mid=0x" << std::hex << mid << std::dec
 			<< " src=" << src << " dst=" << dst << " isack=" << isack;

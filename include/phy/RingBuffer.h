@@ -89,6 +89,53 @@ private:
 };
 
 
+class MessageBuffer : public RingBuffer {
+public:
+	MessageBuffer(Region& mem) : RingBuffer(mem) {}
+	
+	template<typename T>
+	T* create() {
+		entry_t* entry = RingBuffer::alloc<T>();
+		T* msg = new(entry->ptr) T();
+		msg->buffer = this;
+		msg->entry = entry;
+		return msg;
+	}
+	
+	template<typename T, typename A>
+	T* create(A arg0) {
+		entry_t* entry = RingBuffer::alloc<T>();
+		T* msg = new(entry->ptr) T(arg0);
+		msg->buffer = this;
+		msg->entry = entry;
+		return msg;
+	}
+	
+	template<typename T, typename A, typename B>
+	T* create(A arg0, B arg1) {
+		entry_t* entry = RingBuffer::alloc<T>();
+		T* msg = new(entry->ptr) T(arg0, arg1);
+		msg->buffer = this;
+		msg->entry = entry;
+		return msg;
+	}
+	
+	template<typename T, typename A, typename B, typename C>
+	T* create(A arg0, B arg1, C arg2) {
+		entry_t* entry = RingBuffer::alloc<T>();
+		T* msg = new(entry->ptr) T(arg0, arg1, arg2);
+		msg->buffer = this;
+		msg->entry = entry;
+		return msg;
+	}
+	
+};
+
+
+
+
 }}
+
+
 
 #endif /* INCLUDE_PHY_RINGBUFFER_H_ */

@@ -26,7 +26,7 @@ public:
 	~TcpUplink();
 	
 protected:
-	typedef phy::Signal<0x1fa3586f> acksig_t;
+	typedef phy::SignalType<0x1fa3586f> acksig_t;
 	
 	virtual bool handle(phy::Message* msg) override;
 	

@@ -26,7 +26,7 @@ public:
 	
 	virtual void exec(Object* object) override;
 	
-	virtual void send_impl(Message* msg, Node* dst, bool async) override;
+	virtual void send_impl(Node* src, Message* msg, Node* dst, bool async) override;
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;
 	

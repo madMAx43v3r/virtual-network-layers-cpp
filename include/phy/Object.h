@@ -14,6 +14,7 @@
 #include "phy/Engine.h"
 #include "phy/Stream.h"
 #include "phy/Reference.h"
+#include "phy/RingBuffer.h"
 #include "String.h"
 #include "System.h"
 
@@ -28,7 +29,7 @@ public:
 	
 	const vnl::String& getName() const { return name; }
 	
-	typedef Signal<0xfe6ccd6f> delete_t;
+	typedef SignalType<0xfe6ccd6f> delete_t;
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
@@ -44,42 +45,12 @@ protected:
 		engine->fork(object);
 	}
 	
-	template<typename T>
-	void send(T&& msg, Node* dst) {
-		stream->send(msg, dst);
-	}
-	
-	template<typename T>
-	void send_async(T&& msg, Node* dst) {
-		stream->send_async(msg, dst);
-	}
-	
-	template<typename T, typename R>
-	T request(R&& req, Node* dst) {
-		return stream->request<T>(req, dst);
-	}
-	
 	void send(Message* msg, Node* dst) {
 		stream->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Node* dst) {
 		stream->send_async(msg, dst);
-	}
-	
-	template<typename T>
-	void send(T&& msg, Reference& dst) {
-		stream->send(msg, dst.get());
-	}
-	
-	template<typename T>
-	void send_async(T&& msg, Reference& dst) {
-		stream->send_async(msg, dst.get());
-	}
-	
-	template<typename T, typename R>
-	T request(R&& req, Reference& dst) {
-		return stream->request<T>(req, dst.get());
 	}
 	
 	void send(Message* msg, Reference& dst) {
@@ -96,28 +67,27 @@ protected:
 	
 	void die();
 	
-	virtual bool handle(Message* msg) {
-		return false;
-	}
+	void run();
 	
-	virtual bool startup() { return true; }
+	virtual bool handle(Message* msg) { return false; }
 	
-	virtual void shutdown() {}
+	virtual void main() = 0;
 	
 	Region memory;
+	MessageBuffer buffer;
 	Engine* engine = 0;
 	
 protected:
-	typedef Generic<uint32_t, 0x33145536> timeout_t;
+	typedef MessageType<uint32_t, 0x33145536> timeout_t;
 	
 	virtual ~Object() {
 		std::cout << "Object " << this << " being deleted" << std::endl;
 	}
 	
 private:
-	typedef Signal<0x9a4ac2ca> exit_t;
+	typedef SignalType<0x9a4ac2ca> exit_t;
 	
-	void run(Engine* engine);
+	void main(Engine* engine);
 	
 private:
 	vnl::String name;
@@ -125,6 +95,7 @@ private:
 	
 	int64_t ref = 0;
 	bool dying = false;
+	Message* exit_msg = 0;
 	
 	friend class Engine;
 	friend class Registry;

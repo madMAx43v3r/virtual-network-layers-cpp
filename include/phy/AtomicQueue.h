@@ -54,9 +54,10 @@ public:
 		if(avail) {
 			if(front->read >= N) {
 				block_t* tmp = front;
+				front = front->next;
 				tmp->read = 0;
-				tmp->write.store(0);
-				front = front->next.exchange(0);
+				tmp->write = 0;
+				tmp->next = 0;
 				push_node(tmp);
 			}
 			ref = front->elem[front->read++];
@@ -77,7 +78,7 @@ private:
 	
 	void push_node(block_t* next) {
 		block_t* node = back.exchange(next);
-		node->next.store(next);
+		node->next = next;
 	}
 	
 private:

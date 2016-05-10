@@ -28,13 +28,13 @@ public:
 		last = vnl::System::currentTimeMillis();
 	}
 	
-	class count_seq_t : public Generic<std::pair<uint64_t, uint64_t>, 0x337f8543> {
+	class count_seq_t : public MessageType<std::pair<uint64_t, uint64_t>, 0x337f8543> {
 	public:
 		count_seq_t() : Generic() {}
 		count_seq_t(const std::pair<uint64_t, uint64_t>& data) : Generic(data) {}
-		virtual std::string toString() override {
+		virtual std::string to_string() override {
 			std::ostringstream ss;
-			ss << Message::toString() << " pid=" << data.first << " seq=" << data.second;
+			ss << Message::to_string() << " pid=" << data.first << " seq=" << data.second;
 			return ss.str();
 		}
 	};

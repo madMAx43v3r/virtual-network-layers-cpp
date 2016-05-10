@@ -20,12 +20,11 @@ namespace vnl { namespace phy {
 thread_local Engine* Engine::local = 0;
 
 Engine::Engine()
-	:	queue(memory), buffer(memory), waiting(0)
+	:	queue(memory), buffer(memory)
 {
 	assert(Engine::local == 0);
 	Engine::local = this;
 	mac = Random64::global_rand();
-	async_cb = std::bind(&Engine::async_ack, this, std::placeholders::_1);
 }
 
 Engine::~Engine() {
@@ -34,8 +33,9 @@ Engine::~Engine() {
 
 void Engine::exec(Object* object) {
 	assert(Engine::local == this);
-	object->run(this);
-	send_async(Registry::finished_t(object), Registry::instance);
+	object->main(this);
+	Registry::finished_t msg(object);
+	send(this, &msg, Registry::instance);
 }
 
 

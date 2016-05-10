@@ -31,14 +31,26 @@ public:
 	
 	virtual ~Message() {}
 	
-	virtual std::string toString();
+	Message(const Message&) = delete;
+	Message& operator=(const Message&) = delete;
+	
+	virtual std::string to_string();
 	
 	void ack();
+	
+	void release() {
+		if(buffer) {
+			buffer->destroy<Message>(entry);
+		}
+	}
 	
 	uint32_t mid;
 	Node* src = 0;
 	Node* dst = 0;
 	bool isack = false;
+	
+	RingBuffer* buffer = 0;
+	RingBuffer::entry_t* entry = 0;
 	
 	void* user = 0;
 	std::function<void(Message*)>* callback = 0;
@@ -46,54 +58,50 @@ public:
 	Node* gate = 0;
 	Fiber* _impl = 0;
 	
-protected:
-	Message(const Message&) = default;
-	Message& operator=(const Message&) = default;
+};
+
+
+template<uint32_t MID_>
+class SignalType : public Message {
+public:
+	SignalType() : Message(MID_) {}
 	
-	friend class Engine;
+	static const uint32_t MID = MID_;
 	
 };
 
 
-template<uint32_t MID>
-class Signal : public Message {
+template<typename T, uint32_t MID_>
+class MessageType : public Message {
 public:
-	Signal() : Message(MID) {}
-	
-	static const uint32_t id = MID;
-	
-};
-
-
-template<typename T, uint32_t MID>
-class Generic : public Message {
-public:
-	Generic() : Message(MID) {}
+	MessageType() : Message(MID_) {}
 	
 	template<typename R>
-	Generic(R&& data) : Message(MID), data(data) {}
+	MessageType(R&& data) : Message(MID_), data(data) {}
 	
-	static const uint32_t id = MID;
+	static const uint32_t MID = MID_;
 	
 	T data;
 	
+	typedef T data_t;
+	
 };
 
 
-template<typename T, typename P, uint32_t MID>
-class Request : public Message {
+template<typename T, typename P, uint32_t MID_>
+class RequestType : public Message {
 public:
-	Request() : Message(MID) {}
+	RequestType() : Message(MID_) {}
 	
 	template<typename R>
-	Request(R&& args) : Message(MID), args(args) {}
+	RequestType(R&& args) : Message(MID_), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;
 		Message::ack();
 	}
 	
-	static const uint32_t id = MID;
+	static const uint32_t MID = MID_;
 	
 	typedef T res_t;
 	typedef P args_t;

@@ -22,18 +22,18 @@ public:
 	
 	Registry();
 	
-	typedef Request<bool, Object*, 0x51d42b41> bind_t;
-	typedef Request<Object*, uint64_t, 0x3127424a> connect_t;
-	typedef Generic<Object*, 0x88b4365a> open_t;
-	typedef Generic<Object*, 0x2120ef0e> close_t;
-	typedef Generic<Object*, 0x4177d786> delete_t;
-	typedef Signal<0x2aa87626> shutdown_t;
+	typedef RequestType<bool, Object*, 0x51d42b41> bind_t;
+	typedef RequestType<Object*, uint64_t, 0x3127424a> connect_t;
+	typedef MessageType<Object*, 0x88b4365a> open_t;
+	typedef MessageType<Object*, 0x2120ef0e> close_t;
+	typedef MessageType<Object*, 0x4177d786> delete_t;
+	typedef SignalType<0x2aa87626> shutdown_t;
 	
 protected:
 	bool handle(Message* msg) override;
 	
 private:
-	typedef Generic<Object*, 0x5a8a106d> finished_t;
+	typedef MessageType<Object*, 0x5a8a106d> finished_t;
 	
 	bool bind(Object* obj);
 	

@@ -49,13 +49,15 @@ public:
 	}
 	
 	void acked(Message* msg) {
-		if(msg->callback) {
-			cbs.push(msg);
-		}
-		pending--;
 		if(msg == wait_msg) {
 			wait_msg = 0;
 		}
+		if(msg->callback) {
+			cbs.push(msg);
+		} else {
+			msg->release();
+		}
+		pending--;
 		if(waiting) {
 			call();
 		}
@@ -118,6 +120,7 @@ protected:
 		Message* msg;
 		while(cbs.pop(msg)) {
 			(*msg->callback)(msg);
+			msg->release();
 		}
 	}
 	
@@ -169,11 +172,12 @@ void FiberEngine::exec(Object* object) {
 	}
 }
 
-void FiberEngine::send_impl(Message* msg, Node* dst, bool async) {
+void FiberEngine::send_impl(Node* src, Message* msg, Node* dst, bool async) {
 	assert(msg->isack == false);
 	assert(dst);
 	assert(current);
 	
+	msg->src = src;
 	msg->_impl = current;
 	dst->receive(msg);
 	current->sent(msg, async);

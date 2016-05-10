@@ -17,7 +17,7 @@
 /*
  * The block size of strings in bytes
  */
-#define VNL_STRING_BLOCK_SIZE 64
+#define VNL_STRING_BLOCK_SIZE 256
 
 /*
  * Defining this will use new() instead of paged memory.

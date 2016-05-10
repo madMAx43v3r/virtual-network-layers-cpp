@@ -16,6 +16,7 @@ namespace vnl { namespace phy {
 Object::Object() : Object(0) {}
 
 Object::Object(uint64_t mac)
+	:	buffer(memory)
 {
 	this->mac = mac;
 }
@@ -32,33 +33,19 @@ Object::Object(Object* parent, const vnl::String& name)
 }
 
 void Object::die() {
-	stream->send(Registry::delete_t(this), Registry::instance);
+	Registry::delete_t msg(this);
+	stream->send(&msg, Registry::instance);
 }
 
-void Object::run(Engine* engine_) {
-	engine = engine_;
-	Stream tmp(engine, memory);
-	stream = &tmp;
-	if(mac == 0) {
-		mac = engine->rand();
-	}
-	if(!stream->request<bool>(Registry::bind_t(this), Registry::instance)) {
-		return;
-	}
-	if(!startup()) {
-		stream->flush();
-		return;
-	}
+void Object::run() {
 	while(true) {
 		Message* msg = stream->poll();
 		if(!msg) {
 			break;
 		}
-		if(msg->mid == exit_t::id) {
+		if(msg->mid == exit_t::MID) {
+			exit_msg = msg;
 			std::cout << "Object " << this << " got exit_t message" << std::endl;
-			shutdown();
-			stream->flush();
-			msg->ack();
 			break;
 		}
 		if(!handle(msg)) {
@@ -67,11 +54,31 @@ void Object::run(Engine* engine_) {
 	}
 }
 
+void Object::main(Engine* engine_) {
+	engine = engine_;
+	Stream tmp(engine, memory);
+	stream = &tmp;
+	if(mac == 0) {
+		mac = engine->rand();
+	}
+	Registry::bind_t bind(this);
+	stream->send(&bind, Registry::instance);
+	if(!bind.res) {
+		return;
+	}
+	main();
+	stream->flush();
+	if(exit_msg) {
+		exit_msg->ack();
+	}
+}
+
 
 Reference::Reference(Engine* engine, Object* obj)
 	:	mac(obj->getMAC()), engine(engine), obj(obj)
 {
-	engine->send_async(Registry::open_t(obj), Registry::instance);
+	Registry::open_t msg(obj);
+	engine->send(engine, &msg, Registry::instance);
 }
 
 Reference::Reference(Engine* engine, uint64_t mac)
@@ -91,14 +98,17 @@ Reference::Reference(Engine* engine, Object* parent, const vnl::String& name)
 
 Object* Reference::get() {
 	if(!obj) {
-		obj = engine->request<Object*>(Registry::connect_t(mac), Registry::instance);
+		Registry::connect_t req(mac);
+		engine->send(engine, &req, Registry::instance);
+		obj = req.res;
 	}
 	return obj;
 }
 
 void Reference::close() {
 	if(obj) {
-		engine->send_async(Registry::close_t(obj), Registry::instance);
+		Registry::close_t msg(obj);
+		engine->send(engine, &msg, Registry::instance);
 		obj = 0;
 	}
 }

@@ -20,12 +20,12 @@ Registry::Registry()
 
 bool Registry::handle(Message* msg) {
 	switch(msg->mid) {
-	case bind_t::id: {
+	case bind_t::MID: {
 		bind_t* req = (bind_t*)msg;
 		req->ack(bind(req->args));
 		return true;
 	}
-	case connect_t::id: {
+	case connect_t::MID: {
 		connect_t* req = (connect_t*)msg;
 		Object* obj = connect(req->args);
 		if(obj) {
@@ -35,23 +35,23 @@ bool Registry::handle(Message* msg) {
 		}
 		return true;
 	}
-	case open_t::id:
+	case open_t::MID:
 		open(((open_t*)msg)->data);
 		msg->ack();
 		return true;
-	case close_t::id:
+	case close_t::MID:
 		close(((close_t*)msg)->data);
 		msg->ack();
 		return true;
-	case delete_t::id:
+	case delete_t::MID:
 		kill(((delete_t*)msg)->data);
 		msg->ack();
 		return true;
-	case finished_t::id:
+	case finished_t::MID:
 		close(((finished_t*)msg)->data);
 		msg->ack();
 		return true;
-	case shutdown_t::id:
+	case shutdown_t::MID:
 		if(exit_msg || map.empty()) {
 			msg->ack();
 		} else {

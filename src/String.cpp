@@ -22,7 +22,7 @@ void String::write(const char* str, size_t len) {
 				push_back(buf);
 			}
 			size_t num = len - pos;
-			size_t left = CHUNK_SIZE - buf->len;
+			int left = CHUNK_SIZE - buf->len;
 			if(num > left) { num = left; }
 			memcpy(buf->str + buf->len, str+pos, num);
 			buf->len += num;

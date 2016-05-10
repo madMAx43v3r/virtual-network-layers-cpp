@@ -20,7 +20,7 @@ class Engine;
 
 class Stream final : public Node {
 public:
-	typedef Generic<Stream*, 0xe39e616f> signal_t;
+	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
 	Stream(Engine* engine, Region& mem)
 		:	engine(engine), queue(mem)
@@ -47,32 +47,12 @@ public:
 		}
 	}
 	
-	template<typename T>
-	void send(T&& msg, Node* dst) {
-		msg.src = this;
-		engine->send(msg, dst);
-	}
-	
-	template<typename T>
-	void send_async(T&& msg, Node* dst) {
-		msg.src = this;
-		engine->send_async(msg, dst);
-	}
-	
-	template<typename T, typename R>
-	T request(R&& req, Node* dst) {
-		req.src = this;
-		return engine->request<T>(req, dst);
-	}
-	
 	void send(Message* msg, Node* dst) {
-		msg->src = this;
-		engine->send(msg, dst);
+		engine->send(this, msg, dst);
 	}
 	
 	void send_async(Message* msg, Node* dst) {
-		msg->src = this;
-		engine->send_async(msg, dst);
+		engine->send_async(this, msg, dst);
 	}
 	
 	void flush() {
@@ -100,7 +80,7 @@ public:
 	void push(Message* msg) {
 		queue.push(msg);
 		if(listener) {
-			send_async(signal_t(this), listener);
+			send_async(engine->buffer.create<signal_t>(this), listener);
 			listener = 0;
 		}
 	}

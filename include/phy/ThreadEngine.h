@@ -23,10 +23,11 @@ public:
 	
 protected:
 	
-	virtual void send_impl(Message* msg, Node* dst, bool async) override {
+	virtual void send_impl(Node* src, Message* msg, Node* dst, bool async) override {
 		assert(msg->isack == false);
 		assert(dst);
 		
+		msg->src = src;
 		dst->receive(msg);
 		pending++;
 		if(!async && pending > 0) {
@@ -109,6 +110,7 @@ private:
 			if(msg->callback) {
 				(*msg->callback)(msg);
 			}
+			msg->release();
 			pending--;
 		} else {
 			msg->dst->receive(msg);
