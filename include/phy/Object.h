@@ -23,10 +23,10 @@ class Object : public Node {
 public:
 	Object();
 	Object(uint64_t mac);
-	Object(const std::string& name);
-	Object(Object* parent, const std::string& name);
+	Object(const vnl::String& name);
+	Object(Object* parent, const vnl::String& name);
 	
-	const std::string& getName() const { return name; }
+	const vnl::String& getName() const { return name; }
 	
 	typedef Signal<0xfe6ccd6f> delete_t;
 	
@@ -42,6 +42,29 @@ protected:
 	
 	void fork(Object* object) {
 		engine->fork(object);
+	}
+	
+	template<typename T>
+	void send(T&& msg, Node* dst) {
+		stream->send(msg, dst);
+	}
+	
+	template<typename T>
+	void send_async(T&& msg, Node* dst) {
+		stream->send_async(msg, dst);
+	}
+	
+	template<typename T, typename R>
+	T request(R&& req, Node* dst) {
+		return stream->request<T>(req, dst);
+	}
+	
+	void send(Message* msg, Node* dst) {
+		stream->send(msg, dst);
+	}
+	
+	void send_async(Message* msg, Node* dst) {
+		stream->send_async(msg, dst);
 	}
 	
 	template<typename T>
@@ -77,21 +100,27 @@ protected:
 		return false;
 	}
 	
+	virtual bool startup() { return true; }
+	
 	virtual void shutdown() {}
 	
 	Region memory;
 	Engine* engine = 0;
 	
-private:
+protected:
 	typedef Generic<uint32_t, 0x33145536> timeout_t;
-	typedef Signal<0x9a4ac2ca> exit_t;
 	
-	virtual ~Object() {}
+	virtual ~Object() {
+		std::cout << "Object " << this << " being deleted" << std::endl;
+	}
+	
+private:
+	typedef Signal<0x9a4ac2ca> exit_t;
 	
 	void run(Engine* engine);
 	
 private:
-	std::string name;
+	vnl::String name;
 	Stream* stream = 0;
 	
 	int64_t ref = 0;

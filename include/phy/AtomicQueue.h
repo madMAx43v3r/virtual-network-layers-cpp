@@ -26,41 +26,41 @@ public:
 	}
 	
 	void push(T obj) {
-		block_t* block = write.load(std::memory_order_acquire);
+		block_t* block = write;
 		int index;
 		while(true) {
-			index = block->write.fetch_add(1, std::memory_order_acq_rel);
+			index = block->write++;
 			if(index >= N) {
-				block_t* next = block->next.load(std::memory_order_acquire);
+				block_t* next = block->next;
 				if(next == 0) {
 					sync.lock();
 					block_t* add = mem.create<block_t>();
 					sync.unlock();
 					push_node(add);
 					do {
-						next = block->next.load(std::memory_order_acquire);
+						next = block->next;
 					} while(next == 0);
 				}
-				write.compare_exchange_strong(block, next, std::memory_order_acq_rel);
+				write.compare_exchange_strong(block, next);
 			} else {
 				break;
 			}
 		}
 		block->elem[index] = obj;
-		avail.fetch_add(1, std::memory_order_acq_rel);
+		avail++;
 	}
 	
 	bool pop(T& ref) {
-		if(avail.load(std::memory_order_acquire)) {
+		if(avail) {
 			if(front->read >= N) {
 				block_t* tmp = front;
 				tmp->read = 0;
 				tmp->write.store(0);
-				front = front->next.exchange(0, std::memory_order_relaxed);
+				front = front->next.exchange(0);
 				push_node(tmp);
 			}
 			ref = front->elem[front->read++];
-			avail.fetch_sub(1, std::memory_order_acq_rel);
+			avail--;
 			return true;
 		}
 		return false;
@@ -76,8 +76,8 @@ private:
 	};
 	
 	void push_node(block_t* next) {
-		block_t* node = back.exchange(next, std::memory_order_acq_rel);
-		node->next.store(next, std::memory_order_release);
+		block_t* node = back.exchange(next);
+		node->next.store(next);
 	}
 	
 private:

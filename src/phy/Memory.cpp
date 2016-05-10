@@ -15,9 +15,9 @@ std::atomic<Page*> Page::begin;
 size_t Page::num_alloc = 0;
 
 Page* Page::alloc() {
-	Page* page = begin.load(std::memory_order_acquire);
+	Page* page = begin;
 	if(page) {
-		while(!begin.compare_exchange_strong(page, page->next, std::memory_order_acq_rel)) {
+		while(!begin.compare_exchange_weak(page, page->next)) {
 			if(!page) {
 				page = new Page();
 				break;
@@ -32,8 +32,8 @@ Page* Page::alloc() {
 }
 
 void Page::free() {
-	next = begin.load(std::memory_order_acquire);
-	while(!begin.compare_exchange_strong(next, this, std::memory_order_acq_rel)) {}
+	next = begin;
+	while(!begin.compare_exchange_weak(next, this)) {}
 }
 
 void Page::free_all() {

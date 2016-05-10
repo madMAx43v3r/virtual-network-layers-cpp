@@ -20,14 +20,14 @@ Object::Object(uint64_t mac)
 	this->mac = mac;
 }
 
-Object::Object(const std::string& name)
+Object::Object(const vnl::String& name)
 	:	Object::Object(Util::hash64(name))
 {
 	this->name = name;
 }
 
-Object::Object(Object* parent, const std::string& name)
-	:	Object::Object(parent->name + name)
+Object::Object(Object* parent, const vnl::String& name)
+	:	Object::Object(vnl::String() << parent->name << name)
 {
 }
 
@@ -45,12 +45,17 @@ void Object::run(Engine* engine_) {
 	if(!stream->request<bool>(Registry::bind_t(this), Registry::instance)) {
 		return;
 	}
+	if(!startup()) {
+		stream->flush();
+		return;
+	}
 	while(true) {
 		Message* msg = stream->poll();
 		if(!msg) {
 			break;
 		}
 		if(msg->mid == exit_t::id) {
+			std::cout << "Object " << this << " got exit_t message" << std::endl;
 			shutdown();
 			stream->flush();
 			msg->ack();
@@ -74,13 +79,13 @@ Reference::Reference(Engine* engine, uint64_t mac)
 {
 }
 
-Reference::Reference(Engine* engine, const std::string& name) 
+Reference::Reference(Engine* engine, const vnl::String& name) 
 	:	Reference(engine, Util::hash64(name))
 {
 }
 
-Reference::Reference(Engine* engine, Object* parent, const std::string& name)
-	:	Reference(engine, parent->getName() + name)
+Reference::Reference(Engine* engine, Object* parent, const vnl::String& name)
+	:	Reference(engine, vnl::String() << parent->getName() << name)
 {
 }
 

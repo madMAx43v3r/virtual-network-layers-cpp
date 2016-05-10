@@ -15,6 +15,12 @@
 namespace vnl { namespace phy {
 
 class ThreadEngine : public Engine {
+public:
+	virtual void fork(Object* object) override {
+		std::thread thread(std::bind(&ThreadEngine::entry, object));
+		thread.detach();
+	}
+	
 protected:
 	
 	virtual void send_impl(Message* msg, Node* dst, bool async) override {
@@ -48,11 +54,6 @@ protected:
 		}
 	}
 	
-	virtual void fork(Object* object) override {
-		std::thread thread(std::bind(&ThreadEngine::entry, object));
-		thread.detach();
-	}
-	
 private:
 	void wait_for_ack(Message* snd) {
 		while(true) {
@@ -75,9 +76,10 @@ private:
 					return true;
 				}
 			} else {
-				return false;
+				break;
 			}
 		}
+		return false;
 	}
 	
 	bool timed_poll(Stream* stream, int64_t micros) {
@@ -95,10 +97,11 @@ private:
 					return true;
 				}
 			} else {
-				return false;
+				break;
 			}
 			now = System::currentTimeMicros();
 		}
+		return false;
 	}
 	
 	void handle(Message* msg) {

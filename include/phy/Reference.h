@@ -9,6 +9,7 @@
 #define INCLUDE_PHY_REFERENCE_H_
 
 #include "phy/Engine.h"
+#include "String.h"
 
 
 namespace vnl { namespace phy {
@@ -21,9 +22,9 @@ public:
 	
 	Reference(Engine* engine, uint64_t mac);
 	
-	Reference(Engine* engine, const std::string& name);
+	Reference(Engine* engine, const vnl::String& name);
 	
-	Reference(Engine* engine, Object* parent, const std::string& name);
+	Reference(Engine* engine, Object* parent, const vnl::String& name);
 	
 	~Reference() {
 		close();

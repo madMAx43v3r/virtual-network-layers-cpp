@@ -13,6 +13,9 @@
 #include <sstream>
 #include <functional>
 
+#include "phy/RingBuffer.h"
+
+
 namespace vnl { namespace phy {
 
 class Node;

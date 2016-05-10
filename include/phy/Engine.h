@@ -103,7 +103,7 @@ protected:
 		if(timeout != 0) {
 			{
 				std::unique_lock<std::mutex> ulock(mutex);
-				waiting.store(1, std::memory_order_release);
+				waiting = 1;
 				if(!queue.pop(msg)) {
 					if(timeout > 0) {
 						cond.wait_for(ulock, std::chrono::microseconds(timeout));
@@ -111,7 +111,7 @@ protected:
 						cond.wait(ulock);
 					}
 				}
-				waiting.store(0, std::memory_order_release);
+				waiting = 0;
 			}
 			queue.pop(msg);
 		}

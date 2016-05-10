@@ -20,7 +20,7 @@ namespace vnl { namespace phy {
 thread_local Engine* Engine::local = 0;
 
 Engine::Engine()
-	:	queue(memory), buffer(memory)
+	:	queue(memory), buffer(memory), waiting(0)
 {
 	assert(Engine::local == 0);
 	Engine::local = this;

@@ -13,11 +13,8 @@
 
 namespace vnl { namespace phy {
 
-class Router;
-
 class Packet {
 public:
-	Packet() {}
 	virtual ~Packet() {}
 	
 	Address src;

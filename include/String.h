@@ -112,6 +112,12 @@ public:
 		return stream;
 	}
 	
+	chunk_t* front() { return p_front; }
+	chunk_t* back() { return p_back; }
+	
+	const chunk_t* front() const { return p_front; }
+	const chunk_t* back() const { return p_back; }
+	
 	void write(const char* str, size_t len);
 	
 	void clear();

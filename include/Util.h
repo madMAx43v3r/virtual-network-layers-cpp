@@ -19,6 +19,8 @@
 #include <cxxabi.h>
 
 #include "util/CRC64.h"
+#include "String.h"
+
 
 namespace vnl {
 
@@ -34,6 +36,15 @@ public:
 	static uint64_t hash64(const std::string& str) {
 		util::CRC64 func;
 		func.update(str.c_str(), str.size());
+		return func.getValue();
+	}
+	
+	static uint64_t hash64(const vnl::String& str) {
+		util::CRC64 func;
+		auto* chunk = str.front();
+		while(chunk) {
+			func.update(chunk->str, chunk->len);
+		}
 		return func.getValue();
 	}
 	
