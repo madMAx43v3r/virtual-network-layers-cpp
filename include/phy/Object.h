@@ -80,9 +80,7 @@ protected:
 protected:
 	typedef MessageType<uint32_t, 0x33145536> timeout_t;
 	
-	virtual ~Object() {
-		std::cout << "Object " << this << " being deleted" << std::endl;
-	}
+	virtual ~Object() {}
 	
 private:
 	typedef SignalType<0x9a4ac2ca> exit_t;

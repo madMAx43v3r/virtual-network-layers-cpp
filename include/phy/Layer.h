@@ -19,7 +19,7 @@
 
 namespace vnl { namespace phy {
 
-class Layer {
+class Layer : public SyncNode {
 public:
 	Layer() {
 		assert(vnl::String::chunks == 0);
@@ -33,14 +33,12 @@ public:
 		Router::instance = new Router();
 	}
 	
+	void shutdown() {
+		Registry::shutdown_t msg;
+		send(&msg, Registry::instance);
+	}
+	
 	~Layer() {
-		SyncNode node;
-		{
-			Registry::shutdown_t msg;
-			msg.src = &node;
-			node.send(&msg, Registry::instance);
-		}
-		
 		delete Router::instance;
 		delete Registry::instance;
 		delete Random64::instance;

@@ -21,11 +21,10 @@
 #include "../src/String.cpp"
 
 /*
- * Showcasing the basic vnl::phy functionality regarding the vnl::phy::Router.
- * This example will send 1M messages through the router.
+ * Showcasing the basic vnl::phy functionality.
  */
 
-typedef vnl::phy::PacketType<std::pair<int, std::string>, 0x1b343d38> test_packet_t;
+typedef vnl::phy::PacketType<std::pair<int, vnl::String>, 0x1b343d38> test_packet_t;
 
 vnl::Address address("domain", "topic");
 
@@ -57,7 +56,7 @@ protected:
 			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
 			if(packet->pid == test_packet_t::PID) {
 				// we got a test_packet_t
-				const std::pair<int, std::string>* payload = (test_packet_t::data_t*)packet->payload;
+				const std::pair<int, vnl::String>* payload = (test_packet_t::data_t*)packet->payload;
 				if(payload->first % (1000*1000) == 0) {
 					std::cout << vnl::System::currentTimeMillis() << " " << payload->first << " " << payload->second << std::endl;
 				}
@@ -86,7 +85,7 @@ int main() {
 	vnl::phy::Stream pub(&engine, mem);
 	
 	Consumer* consumer;
-	for(int i = 0; i < 4; ++i) {
+	for(int i = 0; i < 1; ++i) {
 		consumer = new Consumer(&router);
 		engine.fork(consumer);
 	}
@@ -94,7 +93,7 @@ int main() {
 	vnl::phy::MessageBuffer buffer(mem);
 	
 	int counter = 0;
-	for(int i = 0; i < 1000*1000*1000; ++i) {
+	while(counter < 1000*1000) {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish
@@ -111,7 +110,7 @@ int main() {
 	std::cout << "Number of pages allocated: " << vnl::phy::Page::get_num_alloc() << std::endl;
 	
 	
-	
+	layer.shutdown();
 }
 
 

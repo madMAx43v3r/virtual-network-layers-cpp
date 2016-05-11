@@ -45,7 +45,6 @@ void Object::run() {
 		}
 		if(msg->mid == exit_t::MID) {
 			exit_msg = msg;
-			std::cout << "Object " << this << " got exit_t message" << std::endl;
 			break;
 		}
 		if(!handle(msg)) {

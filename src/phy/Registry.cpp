@@ -78,7 +78,6 @@ bool Registry::bind(Object* obj) {
 			}
 			waiting.erase(mac);
 		}
-		std::cout << "Registry::bind(" << obj << ") to " << mac << std::endl;
 		return true;
 	}
 	return false;
@@ -104,7 +103,6 @@ void Registry::close(Object* obj) {
 		if(obj->ref == 1) {
 			send_exit(obj);
 		} else if(obj->ref == 0) {
-			std::cout << "Registry::close(" << obj << "): deleting with ref = " << obj->ref << std::endl;
 			map.erase(obj->getMAC());
 			delete obj;
 		}
@@ -120,12 +118,10 @@ void Registry::kill(Object* obj) {
 		if(obj->ref == 1) {
 			send_exit(obj);
 		}
-		obj->ref--;
 	}
 }
 
 void Registry::send_exit(Object* obj) {
-	std::cout << "Registry::send_exit(" << obj << "): ref = " << obj->ref << std::endl;
 	Object::exit_t* msg = exit_buf.create();
 	msg->callback = &cb_func;
 	send_async(msg, obj);
