@@ -30,6 +30,8 @@
 
 int main() {
 	
+	vnl::String::memory = new vnl::phy::Region();
+	
 	int N = 1000;
 	
 	{
@@ -145,6 +147,8 @@ int main() {
 		assert(str.to_string() == std::string("BLUBB"));
 		assert(vnl::String(str).to_string() == std::string("BLUBB"));
 	}
+	
+	delete vnl::String::memory;
 	
 	vnl::phy::Page::cleanup();
 	assert(vnl::phy::Page::get_num_alloc() == 0);

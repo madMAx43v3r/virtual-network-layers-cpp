@@ -33,7 +33,7 @@ Engine::~Engine() {
 
 void Engine::exec(Object* object) {
 	assert(Engine::local == this);
-	object->main(this);
+	object->exec(this);
 	Registry::finished_t msg(object);
 	send(this, &msg, Registry::instance);
 }

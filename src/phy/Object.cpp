@@ -99,7 +99,7 @@ void Object::run() {
 	}
 }
 
-void Object::main(Engine* engine_) {
+void Object::exec(Engine* engine_) {
 	engine = engine_;
 	Stream tmp(engine, memory);
 	stream = &tmp;
@@ -111,7 +111,7 @@ void Object::main(Engine* engine_) {
 	if(!bind.res) {
 		return;
 	}
-	main();
+	main(engine_);
 	stream->flush();
 	if(exit_msg) {
 		exit_msg->ack();

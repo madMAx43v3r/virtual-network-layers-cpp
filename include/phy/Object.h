@@ -91,18 +91,18 @@ protected:
 	
 	virtual bool handle(Message* msg) { return false; }
 	
-	virtual void main() = 0;
+	virtual void main(Engine* engine) = 0;
 	
 	Region memory;
 	MessageBuffer buffer;
-	Engine* engine = 0;
 	
 private:
-	void main(Engine* engine);
+	void exec(Engine* engine);
 	
 private:
 	vnl::String name;
 	Stream* stream = 0;
+	Engine* engine = 0;
 	
 	Timer* timer_begin = 0;
 	Pool<Timer> timers;

@@ -30,8 +30,8 @@ vnl::Address address("domain", "topic");
 
 class Consumer : public vnl::phy::Object {
 protected:
-	virtual void main() override {
-		vnl::Util::stick_to_core(mac % 3 + 1);
+	virtual void main(vnl::phy::Engine* engine) override {
+		//vnl::Util::stick_to_core(mac % 3 + 1);
 		
 		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::phy::Timer::REPEAT);
 		
@@ -75,7 +75,7 @@ private:
 
 
 int main() {
-	vnl::Util::stick_to_core(0);
+	//vnl::Util::stick_to_core(0);
 	
 	vnl::phy::Layer layer;
 	vnl::phy::ThreadEngine engine;

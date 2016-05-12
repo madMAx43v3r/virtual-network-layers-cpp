@@ -14,7 +14,7 @@
 #include <sstream>
 #include <atomic>
 
-#include "build/config.h"
+#include "phy/Memory.h"
 
 
 namespace vnl {
@@ -121,7 +121,7 @@ public:
 	
 	void clear();
 	
-	static void cleanup();
+	static phy::Region* memory;
 	
 protected:
 	void push_back(chunk_t* chunk);

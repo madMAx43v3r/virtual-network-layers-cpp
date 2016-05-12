@@ -12,6 +12,7 @@
 namespace vnl {
 
 std::atomic<String::chunk_t*> String::begin;
+phy::Region* String::memory = 0;
 
 
 void String::write(const char* str, size_t len) {
@@ -54,20 +55,20 @@ void String::clear() {
 }
 
 String::chunk_t* String::alloc() {
-	static vnl::util::spinlock mutex;	// GCC bug workaround
+	static vnl::util::spinlock mutex;
 	mutex.lock();
 	chunk_t* chunk = begin;
 	if(chunk) {
 		while(!begin.compare_exchange_weak(chunk, chunk->next)) {
 			if(!chunk) {
-				chunk = new chunk_t();
+				chunk = memory->create<chunk_t>();
 				break;
 			}
 		}
 		chunk->next = 0;
 		chunk->len = 0;
 	} else {
-		chunk = new chunk_t();
+		chunk = memory->create<chunk_t>();
 	}
 	mutex.unlock();
 	assert(chunk != 0);
@@ -77,15 +78,6 @@ String::chunk_t* String::alloc() {
 void String::free(chunk_t* chunk) {
 	chunk->next = begin;
 	while(!begin.compare_exchange_weak(chunk->next, chunk)) {}
-}
-
-void String::cleanup() {
-	chunk_t* chunk = begin;
-	while(chunk) {
-		chunk_t* tmp = chunk;
-		chunk = chunk->next;
-		delete tmp;
-	}
 }
 
 
