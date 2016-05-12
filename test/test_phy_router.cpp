@@ -33,7 +33,7 @@ protected:
 	virtual void main() override {
 		vnl::Util::stick_to_core(mac % 3 + 1);
 		
-		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), REPEAT);
+		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::phy::Timer::REPEAT);
 		
 		// subscribe
 		std::cout << "Consumer " << mac << ": subscribe " << address << std::endl;
@@ -63,7 +63,7 @@ protected:
 		return false;
 	}
 	
-	void print_stats(Timer* timer) {
+	void print_stats(vnl::phy::Timer* timer) {
 		std::cout << mac << " " << counter << std::endl;
 		counter = 0;
 	}

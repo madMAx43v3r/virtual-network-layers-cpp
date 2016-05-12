@@ -17,6 +17,7 @@
 #include "phy/Reference.h"
 #include "phy/RingBuffer.h"
 #include "phy/Pool.h"
+#include "phy/Timer.h"
 #include "String.h"
 #include "System.h"
 
@@ -37,34 +38,10 @@ public:
 		stream->receive(msg);
 	}
 	
-	typedef SignalType<0xfe6ccd6f> delete_t;
-	
 protected:
 	typedef SignalType<0x9a4ac2ca> exit_t;
 	
 	virtual ~Object() {}
-	
-	enum timer_type { REPEAT, MANUAL, ONCE };
-	
-	class Timer {
-	public:
-		void reset() {
-			active = true;
-			deadline = vnl::System::currentTimeMicros() + interval;
-		}
-		void stop() { active = false; }
-		void destroy() { free = true; }
-		int64_t now() const { return deadline; }
-	private:
-		int64_t deadline;
-		int64_t interval;
-		std::function<void(Timer*)> func;
-		timer_type type;
-		bool active = true;
-		bool free = false;
-		Timer* next = 0;
-		friend class Object;
-	};
 	
 	uint64_t rand() {
 		return engine->rand();
@@ -104,7 +81,7 @@ protected:
 		stream->send_async(msg, dst.get());
 	}
 	
-	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, timer_type type);
+	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	
 	void run();
 	

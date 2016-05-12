@@ -41,7 +41,7 @@ void Object::exit(Message* msg) {
 	exit_msg = msg;
 }
 
-Object::Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, timer_type type) {
+Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
 	Timer* timer = timer_begin;
 	while(timer) {
 		if(timer->free) {
@@ -74,10 +74,10 @@ void Object::run() {
 					timer->active = false;
 					timer->func(timer);
 					switch(timer->type) {
-						case REPEAT: timer->active = true;
+						case Timer::REPEAT: timer->active = true;
 									 timer->deadline += timer->interval;	break;
-						case MANUAL: 										break;
-						case ONCE: timer->destroy(); 						break;
+						case Timer::MANUAL: 								break;
+						case Timer::ONCE: timer->destroy(); 				break;
 					}
 				} else if(diff < to || to == -1) {
 					to = diff;
