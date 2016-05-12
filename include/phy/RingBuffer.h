@@ -66,6 +66,7 @@ public:
 	}
 	
 	void free(entry_t* entry) {
+		assert(entry->free == false);
 		entry->free = true;
 		while(!queue.empty()) {
 			entry_t& front = queue.front();

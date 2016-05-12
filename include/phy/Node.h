@@ -11,7 +11,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "util/spinlock.h"
 #include "phy/Random.h"
 #include "phy/Message.h"
 
@@ -46,7 +45,7 @@ public:
 		if(!msg->dst) {
 			msg->dst = this;
 		}
-		sync.lock();
+		mutex.lock();
 		if(msg->isack) {
 			if(msg->callback) {
 				(*msg->callback)(msg);
@@ -57,7 +56,7 @@ public:
 				msg->ack();
 			}
 		}
-		sync.unlock();
+		mutex.unlock();
 	}
 	
 protected:
@@ -69,7 +68,7 @@ protected:
 	}
 	
 private:
-	vnl::util::spinlock sync;
+	std::mutex mutex;
 	
 };
 

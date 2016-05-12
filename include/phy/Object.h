@@ -13,10 +13,12 @@
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
+#include "phy/Router.h"
 #include "phy/Reference.h"
 #include "phy/RingBuffer.h"
 #include "String.h"
 #include "System.h"
+
 
 namespace vnl { namespace phy {
 
@@ -29,12 +31,12 @@ public:
 	
 	const vnl::String& getName() const { return name; }
 	
-	typedef SignalType<0xfe6ccd6f> delete_t;
-	
 	// thread safe
 	virtual void receive(Message* msg) override {
 		stream->receive(msg);
 	}
+	
+	typedef SignalType<0xfe6ccd6f> delete_t;
 	
 protected:
 	uint64_t rand() {
@@ -45,10 +47,25 @@ protected:
 		engine->fork(object);
 	}
 	
+	void connect(vnl::Address address) {
+		Router::connect_t connect(address);
+		send(&connect, Router::instance);
+	}
+	void close(vnl::Address address) {
+		Router::close_t close(address);
+		send(&close, Router::instance);
+	}
+	
+	void send(Packet* packet) {
+		send(packet, Router::instance);
+	}
+	void send_async(Packet* packet) {
+		send_async(packet, Router::instance);
+	}
+	
 	void send(Message* msg, Node* dst) {
 		stream->send(msg, dst);
 	}
-	
 	void send_async(Message* msg, Node* dst) {
 		stream->send_async(msg, dst);
 	}
@@ -56,7 +73,6 @@ protected:
 	void send(Message* msg, Reference& dst) {
 		stream->send(msg, dst.get());
 	}
-	
 	void send_async(Message* msg, Reference& dst) {
 		stream->send_async(msg, dst.get());
 	}

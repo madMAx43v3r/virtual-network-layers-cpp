@@ -30,9 +30,6 @@
 
 int main() {
 	
-	vnl::phy::Region* string_memory = new vnl::phy::Region();
-	vnl::String::chunks = new vnl::phy::AtomicPool<vnl::String::chunk_t>(*string_memory);
-	
 	int N = 1000;
 	
 	{
@@ -148,9 +145,6 @@ int main() {
 		assert(str.to_string() == std::string("BLUBB"));
 		assert(vnl::String(str).to_string() == std::string("BLUBB"));
 	}
-	
-	delete vnl::String::chunks;
-	delete string_memory;
 	
 	vnl::phy::Page::cleanup();
 	assert(vnl::phy::Page::get_num_alloc() == 0);

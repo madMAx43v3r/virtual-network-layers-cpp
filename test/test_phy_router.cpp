@@ -29,24 +29,19 @@ typedef vnl::phy::PacketType<std::pair<int, vnl::String>, 0x1b343d38> test_packe
 vnl::Address address("domain", "topic");
 
 class Consumer : public vnl::phy::Object {
-public:
-	Consumer(vnl::phy::Router* router) : router(router) {}
-	
 protected:
 	virtual void main() override {
 		vnl::Util::stick_to_core(1);
 		
 		// subscribe
 		std::cout << "Consumer " << mac << ": subscribe " << address << std::endl;
-		vnl::phy::Router::connect_t connect(address);
-		send(&connect, router);
+		connect(address);
 		
 		run();
 		
 		// unsubscribe
 		std::cout << "Consumer " << mac << ": unsubscribe " << address << std::endl;
-		vnl::phy::Router::close_t close(address);
-		send(&close, router);
+		close(address);
 	}
 	
 	virtual bool handle(vnl::phy::Message* msg) override {
@@ -78,7 +73,6 @@ int main() {
 	vnl::Util::stick_to_core(0);
 	
 	vnl::phy::Layer layer;
-	vnl::phy::Router router;
 	vnl::phy::ThreadEngine engine;
 	
 	vnl::phy::Region mem;
@@ -86,7 +80,7 @@ int main() {
 	
 	Consumer* consumer;
 	for(int i = 0; i < 1; ++i) {
-		consumer = new Consumer(&router);
+		consumer = new Consumer();
 		engine.fork(consumer);
 	}
 	
@@ -98,8 +92,8 @@ int main() {
 		for(int k = 0; k < 100; ++k) {
 			// publish
 			test_packet_t* msg = buffer.create<test_packet_t>(std::make_pair(counter++, "Hello World"), address);
-			//pub.send(msg, &router);
-			pub.send_async(msg, &router);
+			//pub.send(msg, vnl::phy::Router::instance);
+			pub.send_async(msg, vnl::phy::Router::instance);
 		}
 		
 		pub.flush();
@@ -109,8 +103,8 @@ int main() {
 	
 	std::cout << "Number of pages allocated: " << vnl::phy::Page::get_num_alloc() << std::endl;
 	
-	
 	layer.shutdown();
+	
 }
 
 

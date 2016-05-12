@@ -6,6 +6,7 @@
  */
 
 #include "phy/Memory.h"
+#include "util/spinlock.h"
 
 
 namespace vnl { namespace phy {
@@ -15,6 +16,8 @@ std::atomic<Page*> Page::begin;
 size_t Page::num_alloc = 0;
 
 Page* Page::alloc() {
+	static vnl::util::spinlock mutex;	// GCC bug workaround
+	mutex.lock();
 	Page* page = begin;
 	if(page) {
 		while(!begin.compare_exchange_weak(page, page->next)) {
@@ -23,11 +26,12 @@ Page* Page::alloc() {
 				break;
 			}
 		}
-		page->next = 0;
 	} else {
 		page = new Page();
 	}
+	mutex.unlock();
 	assert(page != OUT_OF_MEMORY);
+	page->next = 0;
 	return page;
 }
 

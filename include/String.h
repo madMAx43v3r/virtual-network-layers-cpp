@@ -12,8 +12,9 @@
 #include <ostream>
 #include <string>
 #include <sstream>
+#include <atomic>
 
-#include "phy/Pool.h"
+#include "build/config.h"
 
 
 namespace vnl {
@@ -27,8 +28,6 @@ public:
 		chunk_t* next = 0;
 		short len = 0;
 	};
-	
-	static phy::AtomicPool<chunk_t>* chunks;
 	
 	String() {}
 	
@@ -125,9 +124,15 @@ public:
 protected:
 	void push_back(chunk_t* chunk);
 	
+	static chunk_t* alloc();
+	static void free(chunk_t* chunk);
+	static void cleanup();
+	
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
+	
+	static std::atomic<chunk_t*> begin;
 	
 };
 

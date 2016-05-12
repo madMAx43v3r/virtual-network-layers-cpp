@@ -16,13 +16,13 @@ namespace vnl { namespace util {
 
 class spinlock {
 public:
-	spinlock() : flag(ATOMIC_FLAG_INIT) {}
+	spinlock(int max_spin = 1000) : flag(ATOMIC_FLAG_INIT), max_spin(max_spin) {}
 	
 	void lock() {
 		int counter = 0;
 		while(flag.test_and_set(std::memory_order_acquire)) {
 			counter++;
-			if(counter > 1000) {
+			if(counter > max_spin) {
 				std::this_thread::yield();
 				counter = 0;
 			}
@@ -35,6 +35,7 @@ public:
 	
 private:
 	std::atomic_flag flag;
+	int max_spin;
 	
 };
 

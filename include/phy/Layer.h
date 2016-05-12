@@ -22,9 +22,6 @@ namespace vnl { namespace phy {
 class Layer : public SyncNode {
 public:
 	Layer() {
-		assert(vnl::String::chunks == 0);
-		vnl::String::chunks = new AtomicPool<String::chunk_t>(memory);
-		
 		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
 		assert(Router::instance == 0);
@@ -43,14 +40,8 @@ public:
 		delete Registry::instance;
 		delete Random64::instance;
 		
-		delete vnl::String::chunks;
-		
-		memory.free_all();
 		vnl::phy::Page::cleanup();
 	}
-	
-private:
-	Region memory;
 	
 };
 
