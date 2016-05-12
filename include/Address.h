@@ -37,6 +37,14 @@ public:
 		B = Util::hash64(B_);
 	}
 	
+	uint64_t domain() const {
+		return A;
+	}
+	
+	uint64_t topic() const {
+		return B;
+	}
+	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {
 		auto state = stream.flags(std::ios::hex);
 		stream << addr.A << ":" << addr.B;

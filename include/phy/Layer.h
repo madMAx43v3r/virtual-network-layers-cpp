@@ -40,6 +40,7 @@ public:
 		delete Registry::instance;
 		delete Random64::instance;
 		
+		vnl::String::cleanup();
 		vnl::phy::Page::cleanup();
 	}
 	

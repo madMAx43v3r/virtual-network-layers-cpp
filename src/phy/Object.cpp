@@ -16,7 +16,7 @@ namespace vnl { namespace phy {
 Object::Object() : Object(0) {}
 
 Object::Object(uint64_t mac)
-	:	buffer(memory)
+	:	buffer(memory), timers(memory)
 {
 	this->mac = mac;
 }
@@ -37,14 +37,60 @@ void Object::die() {
 	stream->send(&msg, Registry::instance);
 }
 
-void Object::run() {
-	while(true) {
-		Message* msg = stream->poll();
-		if(!msg) {
+void Object::exit(Message* msg) {
+	exit_msg = msg;
+}
+
+Object::Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, timer_type type) {
+	Timer* timer = timer_begin;
+	while(timer) {
+		if(timer->free) {
+			timer->free = false;
 			break;
 		}
+		timer = timer->next;
+	}
+	if(!timer) {
+		timer = timers.create();
+		timer->next = timer_begin;
+		timer_begin = timer;
+	}
+	timer->interval = micros;
+	timer->func = func;
+	timer->type = type;
+	timer->reset();
+	return timer;
+}
+
+void Object::run() {
+	while(true) {
+		int64_t to = -1;
+		int64_t now = vnl::System::currentTimeMicros();
+		Timer* timer = timer_begin;
+		while(timer) {
+			if(timer->active) {
+				int64_t diff = timer->deadline - now;
+				if(diff <= 0) {
+					timer->active = false;
+					timer->func(timer);
+					switch(timer->type) {
+						case REPEAT: timer->active = true;
+									 timer->deadline += timer->interval;	break;
+						case MANUAL: 										break;
+						case ONCE: timer->destroy(); 						break;
+					}
+				} else if(diff < to || to == -1) {
+					to = diff;
+				}
+			}
+			timer = timer->next;
+		}
+		Message* msg = stream->poll(to);
+		if(!msg) {
+			continue;
+		}
 		if(msg->mid == exit_t::MID) {
-			exit_msg = msg;
+			exit(msg);
 			break;
 		}
 		if(!handle(msg)) {

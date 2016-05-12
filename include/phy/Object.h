@@ -16,6 +16,7 @@
 #include "phy/Router.h"
 #include "phy/Reference.h"
 #include "phy/RingBuffer.h"
+#include "phy/Pool.h"
 #include "String.h"
 #include "System.h"
 
@@ -39,6 +40,32 @@ public:
 	typedef SignalType<0xfe6ccd6f> delete_t;
 	
 protected:
+	typedef SignalType<0x9a4ac2ca> exit_t;
+	
+	virtual ~Object() {}
+	
+	enum timer_type { REPEAT, MANUAL, ONCE };
+	
+	class Timer {
+	public:
+		void reset() {
+			active = true;
+			deadline = vnl::System::currentTimeMicros() + interval;
+		}
+		void stop() { active = false; }
+		void destroy() { free = true; }
+		int64_t now() const { return deadline; }
+	private:
+		int64_t deadline;
+		int64_t interval;
+		std::function<void(Timer*)> func;
+		timer_type type;
+		bool active = true;
+		bool free = false;
+		Timer* next = 0;
+		friend class Object;
+	};
+	
 	uint64_t rand() {
 		return engine->rand();
 	}
@@ -77,13 +104,13 @@ protected:
 		stream->send_async(msg, dst.get());
 	}
 	
-	void timeout(int64_t micro, const std::function<void()>& func, bool repeat = false) {
-		// TODO
-	}
+	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, timer_type type);
+	
+	void run();
 	
 	void die();
 	
-	void run();
+	void exit(Message* msg);
 	
 	virtual bool handle(Message* msg) { return false; }
 	
@@ -93,19 +120,15 @@ protected:
 	MessageBuffer buffer;
 	Engine* engine = 0;
 	
-protected:
-	typedef MessageType<uint32_t, 0x33145536> timeout_t;
-	
-	virtual ~Object() {}
-	
 private:
-	typedef SignalType<0x9a4ac2ca> exit_t;
-	
 	void main(Engine* engine);
 	
 private:
 	vnl::String name;
 	Stream* stream = 0;
+	
+	Timer* timer_begin = 0;
+	Pool<Timer> timers;
 	
 	int64_t ref = 0;
 	bool dying = false;

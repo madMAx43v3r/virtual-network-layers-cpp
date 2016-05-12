@@ -8,7 +8,6 @@
 #ifndef INCLUDE_UTIL_POOL_H_
 #define INCLUDE_UTIL_POOL_H_
 
-#include "util/spinlock.h"
 #include "Queue.h"
 
 
@@ -39,30 +38,6 @@ public:
 protected:
 	Region& mem;
 	Queue<T*> list;
-	
-};
-
-
-template<typename T>
-class AtomicPool : public Pool<T> {
-public:
-	AtomicPool(Region& mem) : Pool<T>(mem) {}
-	
-	T* create() {
-		sync.lock();
-		T* obj = Pool<T>::create();
-		sync.unlock();
-		return obj;
-	}
-	
-	void destroy(T* obj) {
-		sync.lock();
-		Pool<T>::destroy(obj);
-		sync.unlock();
-	}
-	
-protected:
-	vnl::util::spinlock sync;
 	
 };
 

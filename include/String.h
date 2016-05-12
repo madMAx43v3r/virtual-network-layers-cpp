@@ -92,7 +92,7 @@ public:
 		return *this;
 	}
 	
-	std::string to_string() {
+	std::string to_string() const {
 		std::ostringstream stream;
 		chunk_t* chunk = p_front;
 		while(chunk) {
@@ -121,12 +121,13 @@ public:
 	
 	void clear();
 	
+	static void cleanup();
+	
 protected:
 	void push_back(chunk_t* chunk);
 	
 	static chunk_t* alloc();
 	static void free(chunk_t* chunk);
-	static void cleanup();
 	
 private:
 	chunk_t* p_front = 0;

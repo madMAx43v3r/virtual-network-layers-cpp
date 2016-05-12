@@ -46,11 +46,13 @@ private:
 spinlock mutex;
 
 mydata_t* alloc() {
-	mutex.lock();			// locking here WORKS
+	//mutex.lock();			// locking here WORKS
 	mydata_t* data = begin;
 	if(data) {
 		//mutex.lock();		// locking here doesn't work
-		while(!begin.compare_exchange_strong(data, data->next)) {
+		mydata_t* tmp = data;
+		while(!begin.compare_exchange_weak(tmp, tmp->next)) {
+			data = tmp;
 			if(!data) {
 				data = new mydata_t();
 				break;
@@ -60,7 +62,7 @@ mydata_t* alloc() {
 	} else {
 		data = new mydata_t();
 	}
-	mutex.unlock();			// locking here WORKS
+	//mutex.unlock();			// locking here WORKS
 	
 	/* This is the assert that fails,
 	 * indicating that two threads got the same data struct.
@@ -74,7 +76,7 @@ void free(mydata_t* data) {
 	assert(data->free == false);
 	data->free = true;
 	data->next = begin;
-	while(!begin.compare_exchange_strong(data->next, data)) {}
+	while(!begin.compare_exchange_weak(data->next, data)) {}
 }
 
 void func() {

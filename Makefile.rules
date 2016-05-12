@@ -1,5 +1,5 @@
 
-CFLAGS = -std=c++11 -pthread -g -O0
+CFLAGS = -std=c++11 -pthread -g -O3
 INC := -I$(ROOT)/include
 
 SRC := $(wildcard *.cpp)

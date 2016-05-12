@@ -24,14 +24,16 @@
  * Showcasing the basic vnl::phy functionality.
  */
 
-typedef vnl::phy::PacketType<std::pair<int, vnl::String>, 0x1b343d38> test_packet_t;
+typedef vnl::phy::PacketType<vnl::String, 0x1b343d38> test_packet_t;
 
 vnl::Address address("domain", "topic");
 
 class Consumer : public vnl::phy::Object {
 protected:
 	virtual void main() override {
-		vnl::Util::stick_to_core(1);
+		vnl::Util::stick_to_core(mac % 3 + 1);
+		
+		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), REPEAT);
 		
 		// subscribe
 		std::cout << "Consumer " << mac << ": subscribe " << address << std::endl;
@@ -51,20 +53,23 @@ protected:
 			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
 			if(packet->pid == test_packet_t::PID) {
 				// we got a test_packet_t
-				const std::pair<int, vnl::String>* payload = (test_packet_t::data_t*)packet->payload;
-				if(payload->first % (1000*1000) == 0) {
-					std::cout << vnl::System::currentTimeMillis() << " " << payload->first << " " << payload->second << std::endl;
-				}
-				assert(payload->second == "Hello World");
+				const vnl::String* payload = (test_packet_t::data_t*)packet->payload;
+				assert(*payload == "Hello World");
 				msg->ack();
+				counter++;
 				return true;
 			}
 		}
 		return false;
 	}
 	
+	void print_stats(Timer* timer) {
+		std::cout << mac << " " << counter << std::endl;
+		counter = 0;
+	}
+	
 private:
-	vnl::phy::Router* router;
+	int counter = 0;
 	
 };
 
@@ -79,7 +84,7 @@ int main() {
 	vnl::phy::Stream pub(&engine, mem);
 	
 	Consumer* consumer;
-	for(int i = 0; i < 1; ++i) {
+	for(int i = 0; i < 2; ++i) {
 		consumer = new Consumer();
 		engine.fork(consumer);
 	}
@@ -91,7 +96,7 @@ int main() {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish
-			test_packet_t* msg = buffer.create<test_packet_t>(std::make_pair(counter++, "Hello World"), address);
+			test_packet_t* msg = buffer.create<test_packet_t>("Hello World", address);
 			//pub.send(msg, vnl::phy::Router::instance);
 			pub.send_async(msg, vnl::phy::Router::instance);
 		}
