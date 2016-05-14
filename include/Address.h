@@ -34,8 +34,8 @@ public:
 	
 	template<typename T_a, typename T_b>
 	Address(T_a&& A_, T_b&& B_) {
-		A = Util::hash64(A_);
-		B = Util::hash64(B_);
+		A = hash64(A_);
+		B = hash64(B_);
 	}
 	
 	uint64_t domain() const {

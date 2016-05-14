@@ -22,7 +22,7 @@ Object::Object(uint64_t mac)
 }
 
 Object::Object(const vnl::String& name)
-	:	Object::Object(Util::hash64(name))
+	:	Object::Object(vnl::hash64(name))
 {
 	this->my_name = name;
 }
@@ -89,12 +89,27 @@ void Object::run() {
 		if(!msg) {
 			continue;
 		}
-		if(msg->msg_id == exit_t::MID) {
+		if(msg->msg_id == Registry::exit_t::MID) {
 			exit(msg);
 			break;
-		}
-		if(!handle(msg)) {
-			msg->ack();
+		} else if(msg->msg_id == Packet::MID) {
+			vnl::phy::Packet* pkt = (vnl::phy::Packet*)msg;
+			switch(pkt->pkt_id) {
+				case BIND: handle_bind(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
+				case CONNECT: handle_connect(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
+				case CLOSE: handle_close(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
+				case SAMPLE:
+					if(!handle(pkt)) {
+						msg->ack();
+					}
+					break;
+				default:
+					msg->ack();
+			}
+		} else {
+			if(!handle(msg)) {
+				msg->ack();
+			}
 		}
 	}
 }
@@ -127,44 +142,6 @@ void Object::exec(Engine* engine_) {
 }
 
 
-Reference::Reference(Engine* engine, Object* obj)
-	:	mac(obj->getMAC()), engine(engine), obj(obj)
-{
-	Registry::open_t msg(obj);
-	engine->send(engine, &msg, Registry::instance);
-}
-
-Reference::Reference(Engine* engine, uint64_t mac)
-	:	mac(mac), engine(engine)
-{
-}
-
-Reference::Reference(Engine* engine, const vnl::String& name) 
-	:	Reference(engine, Util::hash64(name))
-{
-}
-
-Reference::Reference(Engine* engine, Object* parent, const vnl::String& name)
-	:	Reference(engine, vnl::String() << parent->getName() << name)
-{
-}
-
-Object* Reference::get() {
-	if(!obj) {
-		Registry::connect_t req(mac);
-		engine->send(engine, &req, Registry::instance);
-		obj = req.res;
-	}
-	return obj;
-}
-
-void Reference::close() {
-	if(obj) {
-		Registry::close_t msg(obj);
-		engine->send(engine, &msg, Registry::instance);
-		obj = 0;
-	}
-}
 
 
 }}

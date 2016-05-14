@@ -25,11 +25,8 @@
  */
 
 struct test_msg_t {
-	
 	vnl::String text;
-	
 	VNL_SAMPLE(test_msg_t);
-	
 };
 
 vnl::Address address("domain", "topic");
@@ -46,19 +43,14 @@ protected:
 		run();
 	}
 	
-	virtual bool handle(vnl::phy::Message* msg) override {
-		// see what type of message we got
-		if(msg->msg_id == vnl::phy::Packet::MID) {
-			// we got a packet from a router
-			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
-			if(packet->dst_addr == address && packet->pkt_id == vnl::phy::SAMPLE) {
-				// we got a test_packet_t
-				vnl::String& text = ((test_msg_t*)packet->payload)->text;
-				assert(text == "Hello World");
-				msg->ack();
-				counter++;
-				return true;
-			}
+	virtual bool handle(vnl::phy::Packet* pkt) override {
+		if(pkt->dst_addr == address) {
+			// we got a test_packet_t
+			vnl::String& text = ((test_msg_t*)pkt->payload)->text;
+			assert(text == "Hello World");
+			pkt->ack();
+			counter++;
+			return true;
 		}
 		return false;
 	}
@@ -95,7 +87,7 @@ int main() {
 	test.text = "Hello World";
 	
 	int counter = 0;
-	while(counter < 1000) {
+	while(counter < 1000*1000) {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish

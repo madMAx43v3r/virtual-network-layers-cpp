@@ -94,7 +94,7 @@ int main() {
 		for(int iter = 0; iter < N; ++iter) {
 			std::vector<uint64_t> keys;
 			for(int i = 0; i < 100; ++i) {
-				uint64_t key = vnl::Util::hash64(rand());
+				uint64_t key = vnl::hash64(rand());
 				keys.push_back(key);
 				test[key] = i;
 			}

@@ -52,11 +52,11 @@ public:
 		payload = &data;
 	}
 	
-	PacketType(T data_) : Packet(PID_), data(data_) {
+	PacketType(const T& data_) : Packet(PID_), data(data_) {
 		payload = &data;
 	}
 	
-	PacketType(T data_, const Address& dst_) : Packet(PID_), data(data_) {
+	PacketType(const T& data_, const Address& dst_) : Packet(PID_), data(data_) {
 		payload = &data;
 		dst_addr = dst_;
 	}
@@ -75,9 +75,9 @@ class SampleType : public PacketType<T, SAMPLE> {
 public:
 	SampleType() : PacketType<T, SAMPLE>() {}
 	
-	SampleType(T data_) : PacketType<T, SAMPLE>(data_) {}
+	SampleType(const T& data_) : PacketType<T, SAMPLE>(data_) {}
 	
-	SampleType(T data_, const Address& dst_) : PacketType<T, SAMPLE>(data_, dst_) {}
+	SampleType(const T& data_, const Address& dst_) : PacketType<T, SAMPLE>(data_, dst_) {}
 	
 	
 };

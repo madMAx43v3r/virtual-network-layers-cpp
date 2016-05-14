@@ -24,89 +24,97 @@
 
 namespace vnl {
 
-class Util {
-public:
-	
-	static uint64_t hash64(const char* str) {
-		util::CRC64 func;
-		func.update(str, strlen(str));
-		return func.getValue();
+static int64_t currentTimeMillis() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+static int64_t currentTimeMicros() {
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+static int64_t nanoTime() {
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+static uint64_t hash64(const char* str) {
+	util::CRC64 func;
+	func.update(str, strlen(str));
+	return func.getValue();
+}
+
+static uint64_t hash64(const std::string& str) {
+	util::CRC64 func;
+	func.update(str.c_str(), str.size());
+	return func.getValue();
+}
+
+static uint64_t hash64(const vnl::String& str) {
+	util::CRC64 func;
+	auto* chunk = str.front();
+	while(chunk) {
+		func.update(chunk->str, chunk->len);
 	}
-	
-	static uint64_t hash64(const std::string& str) {
-		util::CRC64 func;
-		func.update(str.c_str(), str.size());
-		return func.getValue();
-	}
-	
-	static uint64_t hash64(const vnl::String& str) {
-		util::CRC64 func;
-		auto* chunk = str.front();
-		while(chunk) {
-			func.update(chunk->str, chunk->len);
-		}
-		return func.getValue();
-	}
-	
-	static uint64_t hash64(const char* data, size_t size) {
-		util::CRC64 func;
-		func.update(data, size);
-		return func.getValue();
-	}
-	
-	static uint64_t hash64(uint64_t a) {
-		util::CRC64 func;
-		func.update(a);
-		return func.getValue();
-	}
-	
-	static uint64_t hash64(uint64_t a, uint64_t b) {
-		util::CRC64 func;
-		func.update(a*31);
-		func.update(b*37);
-		return func.getValue();
-	}
-	
-	static uint64_t hash64(uint64_t a, uint64_t b, uint64_t c) {
-		util::CRC64 func;
-		func.update(a*31);
-		func.update(b*37);
-		func.update(c*41);
-		return func.getValue();
-	}
-	
-	static int stick_to_core(int core_id) {
-	   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-	   if (core_id < 0 || core_id >= num_cores) {
-		   printf("invalid core_id!\n");
-		   return EINVAL;
-	   }
-	   cpu_set_t cpuset;
-	   CPU_ZERO(&cpuset);
-	   CPU_SET(core_id, &cpuset);
-	   pthread_t current_thread = pthread_self();    
-	   return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
-	}
-	
-	template<typename T>
-	static std::string demangle(T* ptr) {
-		return demangle(typeid(*ptr).name());
-	}
-	
-	template<typename T>
-	static std::string demangle(const T& ptr) {
-		return demangle(typeid(ptr).name());
-	}
-	
-	static std::string demangle(const char* abiName) {
-		int status;    
-		char* ret = abi::__cxa_demangle(abiName, 0, 0, &status);  
-		std::string str(ret);
-		free((void*)ret);
-		return str;
-	}
-	
-};
+	return func.getValue();
+}
+
+static uint64_t hash64(const char* data, size_t size) {
+	util::CRC64 func;
+	func.update(data, size);
+	return func.getValue();
+}
+
+static uint64_t hash64(uint64_t a) {
+	util::CRC64 func;
+	func.update(a);
+	return func.getValue();
+}
+
+static uint64_t hash64(uint64_t a, uint64_t b) {
+	util::CRC64 func;
+	func.update(a*31);
+	func.update(b*37);
+	return func.getValue();
+}
+
+static uint64_t hash64(uint64_t a, uint64_t b, uint64_t c) {
+	util::CRC64 func;
+	func.update(a*31);
+	func.update(b*37);
+	func.update(c*41);
+	return func.getValue();
+}
+
+static int stick_to_core(int core_id) {
+   int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+   if (core_id < 0 || core_id >= num_cores) {
+	   printf("invalid core_id!\n");
+	   return EINVAL;
+   }
+   cpu_set_t cpuset;
+   CPU_ZERO(&cpuset);
+   CPU_SET(core_id, &cpuset);
+   pthread_t current_thread = pthread_self();    
+   return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
+}
+
+template<typename T>
+static std::string demangle(T* ptr) {
+	return demangle(typeid(*ptr).name());
+}
+
+template<typename T>
+static std::string demangle(const T& ptr) {
+	return demangle(typeid(ptr).name());
+}
+
+static std::string demangle(const char* abiName) {
+	int status;    
+	char* ret = abi::__cxa_demangle(abiName, 0, 0, &status);  
+	std::string str(ret);
+	free((void*)ret);
+	return str;
+}
+
 
 
 }

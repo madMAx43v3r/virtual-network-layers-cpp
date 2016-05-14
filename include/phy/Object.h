@@ -43,8 +43,6 @@ public:
 	}
 	
 protected:
-	typedef SignalType<0x9a4ac2ca> exit_t;
-	
 	virtual ~Object() {}
 	
 	uint64_t rand() {
@@ -82,10 +80,12 @@ protected:
 		stream->send_async(msg, dst);
 	}
 	
-	void send(Message* msg, Reference& dst) {
+	template<typename T>
+	void send(Message* msg, Reference<T>& dst) {
 		stream->send(msg, dst.get());
 	}
-	void send_async(Message* msg, Reference& dst) {
+	template<typename T>
+	void send_async(Message* msg, Reference<T>& dst) {
 		stream->send_async(msg, dst.get());
 	}
 	
@@ -98,6 +98,10 @@ protected:
 	void exit(Message* msg);
 	
 	virtual bool handle(Message* msg) { return false; }
+	virtual bool handle(Packet* pkt) { return false; }
+	virtual void handle_bind(const Address& src, const Address& dst) {}
+	virtual void handle_connect(const Address& src, const Address& dst) {}
+	virtual void handle_close(const Address& src, const Address& dst) {}
 	
 	virtual void main(Engine* engine) = 0;
 	
@@ -168,6 +172,32 @@ private:
 	
 };
 
+
+template<typename T>
+Reference<T>::Reference(Engine* engine, T* obj)
+	:	mac(obj->getMAC()), engine(engine), obj(obj)
+{
+	Registry::open_t msg(obj);
+	engine->send(engine, &msg, Registry::instance);
+}
+
+template<typename T>
+Reference<T>::Reference(Engine* engine, uint64_t mac)
+	:	mac(mac), engine(engine)
+{
+}
+
+template<typename T>
+Reference<T>::Reference(Engine* engine, const vnl::String& name) 
+	:	Reference(engine, vnl::hash64(name))
+{
+}
+
+template<typename T>
+Reference<T>::Reference(Engine* engine, Object* parent, const vnl::String& name)
+	:	Reference(engine, vnl::String() << parent->getName() << name)
+{
+}
 
 
 }}

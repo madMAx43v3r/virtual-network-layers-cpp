@@ -84,7 +84,7 @@ private:
 	}
 	
 	bool timed_poll(Stream* stream, int64_t micros) {
-		int64_t now = System::currentTimeMicros();
+		int64_t now = vnl::currentTimeMicros();
 		int64_t deadline = now + micros;
 		while(true) {
 			int64_t to = deadline - now;
@@ -100,7 +100,7 @@ private:
 			} else {
 				break;
 			}
-			now = System::currentTimeMicros();
+			now = vnl::currentTimeMicros();
 		}
 		return false;
 	}

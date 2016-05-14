@@ -8,13 +8,15 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
-#include "phy/Object.h"
 #include "phy/Pool.h"
 #include "Array.h"
 #include "Map.h"
 
 
 namespace vnl { namespace phy {
+
+class Object;
+
 
 class Registry : public vnl::phy::Reactor {
 public:
@@ -27,6 +29,7 @@ public:
 	typedef MessageType<Object*, 0x88b4365a> open_t;
 	typedef MessageType<Object*, 0x2120ef0e> close_t;
 	typedef MessageType<Object*, 0x4177d786> delete_t;
+	typedef SignalType<0x9a4ac2ca> exit_t;
 	typedef SignalType<0x2aa87626> shutdown_t;
 	
 protected:
@@ -51,7 +54,7 @@ private:
 	
 private:
 	Region mem;
-	Pool<Object::exit_t> exit_buf;
+	Pool<exit_t> exit_buf;
 	
 	Map<uint64_t, Object*> map;
 	Map<uint64_t, Array<connect_t*> > waiting;

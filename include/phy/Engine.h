@@ -18,7 +18,6 @@
 #include "phy/RingBuffer.h"
 #include "phy/Random.h"
 #include "Queue.h"
-#include "System.h"
 #include "Util.h"
 
 
@@ -26,7 +25,7 @@ namespace vnl { namespace phy {
 
 class Stream;
 class Object;
-class Reference;
+template<typename T> class Reference;
 
 
 class Engine : public Node {
@@ -106,7 +105,7 @@ private:
 	
 	friend class Stream;
 	friend class Object;
-	friend class Reference;
+	template<typename T> friend class Reference;
 	
 };
 
