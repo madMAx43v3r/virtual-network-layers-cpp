@@ -31,7 +31,7 @@ public:
 	PacketTmpl() {}
 	
 	PacketTmpl(const Frame& frame_, bool async_ = false) {
-		mid = id;
+		msg_id = id;
 		async = async_;
 		frame = frame_;
 	}
@@ -47,7 +47,7 @@ public:
 		ByteBuffer in(stream);
 		seq = in.getInt();
 		in.error |= !frame.deserialize(stream);
-		return !in.error && Message::mid == id;
+		return !in.error && Message::msg_id == id;
 	}
 	
 	static const uint32_t id = MID;

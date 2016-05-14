@@ -22,7 +22,7 @@ TcpUplink::~TcpUplink() {
 }
 
 bool TcpUplink::handle(phy::Message* msg) {
-	switch(msg->mid) {
+	switch(msg->msg_id) {
 	case connect_t::id:
 		node = (Node*)msg->src;
 		downstate.set();
@@ -64,7 +64,7 @@ bool TcpUplink::handle(phy::Message* msg) {
 
 void TcpUplink::write(send_t* msg) {
 	ByteBuffer buf(&stream);
-	buf.putInt(msg->mid);
+	buf.putInt(msg->msg_id);
 	msg->serialize(&stream);
 	stream.flush();
 }

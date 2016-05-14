@@ -25,9 +25,9 @@ class Fiber;
 
 class Message {
 public:
-	Message() : mid(0) {}
+	Message() : msg_id(0) {}
 	
-	Message(uint32_t mid) : mid(mid) {}
+	Message(uint32_t mid) : msg_id(mid) {}
 	
 	virtual ~Message() {}
 	
@@ -44,7 +44,7 @@ public:
 		}
 	}
 	
-	uint32_t mid;
+	uint32_t msg_id;
 	Node* src = 0;
 	Node* dst = 0;
 	bool isack = false;

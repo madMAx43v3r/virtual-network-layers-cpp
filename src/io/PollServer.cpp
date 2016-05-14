@@ -33,7 +33,7 @@ PollServer::~PollServer() {
 }
 
 bool PollServer::handle(Message* msg) {
-	switch(msg->mid) {
+	switch(msg->msg_id) {
 	case poll_t::id: {
 		poll_t* req = ((poll_t*)msg);
 		req->res = update(req->args);

@@ -54,7 +54,7 @@ protected:
 		}
 	}
 	virtual bool handle(Message* msg) {
-		switch(msg->mid) {
+		switch(msg->msg_id) {
 			case count_seq_t::id: {
 				count_seq(msg, ((count_seq_t*)msg)->data);
 				msg->ack();
@@ -96,7 +96,7 @@ protected:
 		std::cout << "Producer task exit " << pid << std::endl;
 	}
 	virtual bool handle(Message* msg) {
-		if(msg->mid == delete_t::id) {
+		if(msg->msg_id == delete_t::id) {
 			dst = 0;
 		}
 		return false;

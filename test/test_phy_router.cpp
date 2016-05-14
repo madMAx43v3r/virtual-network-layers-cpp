@@ -24,7 +24,7 @@
  * Showcasing the basic vnl::phy functionality.
  */
 
-typedef vnl::phy::PacketType<vnl::String, 0x1b343d38> test_packet_t;
+typedef vnl::phy::SampleType<vnl::String> test_packet_t;
 
 vnl::Address address("domain", "topic");
 
@@ -48,10 +48,10 @@ protected:
 	
 	virtual bool handle(vnl::phy::Message* msg) override {
 		// see what type of message we got
-		if(msg->mid == vnl::phy::Packet::MID) {
+		if(msg->msg_id == vnl::phy::Packet::MID) {
 			// we got a packet from a router
 			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
-			if(packet->pid == test_packet_t::PID) {
+			if(packet->dst_addr == address && packet->pkt_id == vnl::phy::SAMPLE) {
 				// we got a test_packet_t
 				const vnl::String* payload = (test_packet_t::data_t*)packet->payload;
 				assert(*payload == "Hello World");
@@ -92,7 +92,7 @@ int main() {
 	vnl::phy::MessageBuffer buffer(mem);
 	
 	int counter = 0;
-	while(counter < 1000*1000) {
+	while(counter < 1000) {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish
@@ -103,6 +103,7 @@ int main() {
 		
 		pub.flush();
 		//std::this_thread::yield();	// for valgrind to switch threads
+		counter++;
 		
 	}
 	

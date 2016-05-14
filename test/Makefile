@@ -26,4 +26,5 @@ clean:
 	$(RM) test_phy
 	$(RM) test_phy_router
 	$(RM) test_stuff
+	$(RM) test_atomics
 

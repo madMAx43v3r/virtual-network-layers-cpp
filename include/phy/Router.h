@@ -24,8 +24,20 @@ public:
 	
 	Router();
 	
-	typedef MessageType<Address, 0xdfd4dd65> connect_t;
-	typedef MessageType<Address, 0x90bbb93d> close_t;
+	class bind_t : public Packet {
+	public:
+		bind_t(const Address& addr) : Packet(BIND) { dst_addr = addr; }
+	};
+	
+	class connect_t : public Packet {
+	public:
+		connect_t(const Address& addr) : Packet(CONNECT) { dst_addr = addr; }
+	};
+	
+	class close_t : public Packet {
+	public:
+		close_t(const Address& addr) : Packet(CLOSE) { dst_addr = addr; }
+	};
 	
 protected:
 	typedef List<Node*> Row;

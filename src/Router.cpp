@@ -24,7 +24,7 @@ Router::~Router() {
 bool Router::handle(phy::Message* msg) {
 	Node* node = (Node*)msg->src;
 	uint64_t srcmac = node ? node->MAC() : 0;
-	switch(msg->mid) {
+	switch(msg->msg_id) {
 	case connect_t::id:
 		if(node) {
 			nodes[srcmac] = node;

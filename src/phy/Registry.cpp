@@ -19,7 +19,7 @@ Registry::Registry()
 }
 
 bool Registry::handle(Message* msg) {
-	switch(msg->mid) {
+	switch(msg->msg_id) {
 	case bind_t::MID: {
 		bind_t* req = (bind_t*)msg;
 		req->ack(bind(req->args));

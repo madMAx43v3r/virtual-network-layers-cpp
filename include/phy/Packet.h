@@ -14,20 +14,26 @@
 
 namespace vnl { namespace phy {
 
+const uint32_t BIND = 0x2f45ca52;
+const uint32_t CONNECT = 0xef835d78;
+const uint32_t CLOSE = 0x9a9e3705;
+const uint32_t SAMPLE = 0xe1167cfe;
+
+
 class Packet : public Message {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	
-	Packet(uint32_t pid) : Message(MID), pid(pid) {}
+	Packet(uint32_t pid) : Message(MID), pkt_id(pid) {}
 	
 	struct payload_t {
 		RingBuffer* buffer = 0;
 		RingBuffer::entry_t* entry = 0;
 	};
 	
-	uint32_t pid;
-	Address psrc;
-	Address pdst;
+	uint32_t pkt_id;
+	Address src_addr;
+	Address dst_addr;
 	void* payload = 0;
 	
 	Packet* parent = 0;
@@ -50,7 +56,7 @@ public:
 	
 	PacketType(T data_, const Address& dst_) : Packet(PID_), data(data_) {
 		payload = &data;
-		pdst = dst_;
+		dst_addr = dst_;
 	}
 	
 	static const uint32_t PID = PID_;
@@ -58,6 +64,19 @@ public:
 	typedef T data_t;
 	
 	T data;
+	
+};
+
+
+template<typename T>
+class SampleType : public PacketType<T, SAMPLE> {
+public:
+	SampleType() : PacketType<T, SAMPLE>() {}
+	
+	SampleType(T data_) : PacketType<T, SAMPLE>(data_) {}
+	
+	SampleType(T data_, const Address& dst_) : PacketType<T, SAMPLE>(data_, dst_) {}
+	
 	
 };
 

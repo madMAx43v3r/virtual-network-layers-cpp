@@ -89,7 +89,7 @@ void Object::run() {
 		if(!msg) {
 			continue;
 		}
-		if(msg->mid == exit_t::MID) {
+		if(msg->msg_id == exit_t::MID) {
 			exit(msg);
 			break;
 		}
@@ -113,6 +113,14 @@ void Object::main(Engine* engine_) {
 	}
 	main();
 	stream->flush();
+	while(true) {
+		Message* msg = stream->poll(0);
+		if(msg) {
+			msg->ack();
+		} else {
+			break;
+		}
+	}
 	if(exit_msg) {
 		exit_msg->ack();
 	}

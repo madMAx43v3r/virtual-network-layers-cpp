@@ -19,35 +19,28 @@ Router::Router()
 }
 
 bool Router::handle(Message* msg) {
-	Node* src = msg->src;
-	switch(msg->mid) {
-	case connect_t::MID:
-		if(src) {
-			connect(((connect_t*)msg)->data, src);
-		}
-		msg->ack();
-		return true;
-	case close_t::MID:
-		if(src) {
-			close(((close_t*)msg)->data, src);
-		}
-		msg->ack();
-		return true;
-	case Packet::MID: {
+	if(msg->msg_id == Packet::MID) {
+		Node* src = msg->src;
 		Packet* pkt = (Packet*)msg;
-		if(pkt->psrc.A == 0) {
-			pkt->psrc.A = mac;
+		if(pkt->src_addr.A == 0) {
+			pkt->src_addr.A = mac;
 		}
-		if(pkt->psrc.B == 0) {
-			pkt->psrc.B = src->getMAC();
+		if(src) {
+			if(pkt->src_addr.B == 0) {
+				pkt->src_addr.B = src->getMAC();
+			}
+			if(pkt->pkt_id == CONNECT) {
+				connect(pkt->dst_addr, src);
+			} else if(pkt->pkt_id == CLOSE) {
+				close(pkt->dst_addr, src);
+			}
 		}
-		route(pkt, src, table.find(pkt->pdst));
-		route(pkt, src, table.find(Address(pkt->pdst.A, 0)));
+		route(pkt, src, table.find(pkt->dst_addr));
+		route(pkt, src, table.find(Address(pkt->dst_addr.A, 0)));
 		if(!pkt->count) {
 			msg->ack();
 		}
 		return true;
-	}
 	}
 	return false;
 }
@@ -96,10 +89,10 @@ void Router::route(Packet* pkt, Node* src, Row** prow) {
 
 void Router::forward(Packet* org, Node* dst) {
 	org->count++;
-	Packet* msg = buffer.create<Packet>(org->pid);
+	Packet* msg = buffer.create<Packet>(org->pkt_id);
 	msg->parent = org;
-	msg->psrc = org->psrc;
-	msg->pdst = org->pdst;
+	msg->src_addr = org->src_addr;
+	msg->dst_addr = org->dst_addr;
 	msg->payload = org->payload;
 	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);

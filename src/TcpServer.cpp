@@ -24,7 +24,7 @@ public:
 	}
 	
 	virtual bool handle(phy::Message* msg) override {
-		if(msg->mid == receive_t::id) {
+		if(msg->msg_id == receive_t::id) {
 			receive_t* packet = (receive_t*)msg;
 			packet->seq = nextseq++;
 			if(msg->src) {
@@ -32,7 +32,7 @@ public:
 			}
 			write(packet);
 			return true;
-		} else if(msg->mid == acksig_t::id) {
+		} else if(msg->msg_id == acksig_t::id) {
 			ByteBuffer buf(&stream);
 			buf.putInt(acksig_t::id);
 			buf.putInt(ackbuf.size());
@@ -50,7 +50,7 @@ public:
 	
 	void write(receive_t* msg) {
 		ByteBuffer buf(&stream);
-		buf.putInt(msg->mid);
+		buf.putInt(msg->msg_id);
 		msg->serialize(&stream);
 		stream.flush();
 	}

@@ -63,7 +63,7 @@ protected:
 		}
 	}
 	virtual void handle(Message* msg) {
-		switch(msg->mid) {
+		switch(msg->msg_id) {
 			case count_seq_t::id: {
 				count_seq(msg, msg->cast<count_seq_t>()->data);
 				break;
