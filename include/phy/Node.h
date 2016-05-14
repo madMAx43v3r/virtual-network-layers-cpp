@@ -19,6 +19,11 @@ namespace vnl { namespace phy {
 
 class Node {
 public:
+	Node() {}
+	
+	Node(const Node&) = delete;
+	Node& operator=(const Node&) = delete;
+	
 	virtual ~Node() {}
 	
 	uint64_t getMAC() const { return mac; }

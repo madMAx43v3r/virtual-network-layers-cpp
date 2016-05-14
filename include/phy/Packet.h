@@ -11,6 +11,8 @@
 #include "Address.h"
 #include "phy/Message.h"
 
+#define VNL_SAMPLE(type) typedef vnl::phy::SampleType<type> sample_t;
+
 
 namespace vnl { namespace phy {
 

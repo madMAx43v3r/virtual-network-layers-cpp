@@ -24,7 +24,13 @@
  * Showcasing the basic vnl::phy functionality.
  */
 
-typedef vnl::phy::SampleType<vnl::String> test_packet_t;
+struct test_msg_t {
+	
+	vnl::String text;
+	
+	VNL_SAMPLE(test_msg_t);
+	
+};
 
 vnl::Address address("domain", "topic");
 
@@ -35,15 +41,9 @@ protected:
 		
 		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::phy::Timer::REPEAT);
 		
-		// subscribe
-		std::cout << "Consumer " << mac << ": subscribe " << address << std::endl;
-		connect(address);
+		vnl::phy::Receiver test(this, address);
 		
 		run();
-		
-		// unsubscribe
-		std::cout << "Consumer " << mac << ": unsubscribe " << address << std::endl;
-		close(address);
 	}
 	
 	virtual bool handle(vnl::phy::Message* msg) override {
@@ -53,8 +53,8 @@ protected:
 			vnl::phy::Packet* packet = (vnl::phy::Packet*)msg;
 			if(packet->dst_addr == address && packet->pkt_id == vnl::phy::SAMPLE) {
 				// we got a test_packet_t
-				const vnl::String* payload = (test_packet_t::data_t*)packet->payload;
-				assert(*payload == "Hello World");
+				vnl::String& text = ((test_msg_t*)packet->payload)->text;
+				assert(text == "Hello World");
 				msg->ack();
 				counter++;
 				return true;
@@ -91,12 +91,15 @@ int main() {
 	
 	vnl::phy::MessageBuffer buffer(mem);
 	
+	test_msg_t test;
+	test.text = "Hello World";
+	
 	int counter = 0;
 	while(counter < 1000) {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish
-			test_packet_t* msg = buffer.create<test_packet_t>("Hello World", address);
+			test_msg_t::sample_t* msg = buffer.create<test_msg_t::sample_t>(test, address);
 			//pub.send(msg, vnl::phy::Router::instance);
 			pub.send_async(msg, vnl::phy::Router::instance);
 		}

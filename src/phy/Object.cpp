@@ -24,11 +24,11 @@ Object::Object(uint64_t mac)
 Object::Object(const vnl::String& name)
 	:	Object::Object(Util::hash64(name))
 {
-	this->name = name;
+	this->my_name = name;
 }
 
 Object::Object(Object* parent, const vnl::String& name)
-	:	Object::Object(vnl::String() << parent->name << name)
+	:	Object::Object(vnl::String() << parent->my_name << name)
 {
 }
 

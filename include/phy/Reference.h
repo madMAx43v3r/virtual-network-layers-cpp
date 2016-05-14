@@ -16,31 +16,53 @@ namespace vnl { namespace phy {
 
 class Object;
 
+
+template<typename T>
 class Reference {
 public:
-	Reference(Engine* engine, Object* obj);
-	
-	Reference(Engine* engine, uint64_t mac);
-	
-	Reference(Engine* engine, const vnl::String& name);
-	
-	Reference(Engine* engine, Object* parent, const vnl::String& name);
-	
-	~Reference() {
-		close();
+	Reference(Engine* engine, T* obj)
+		:	mac(obj->getMAC()), engine(engine), obj(obj)
+	{
+		Registry::open_t msg(obj);
+		engine->send(engine, &msg, Registry::instance);
 	}
 	
-	Reference(const Reference&) = delete;
-	Reference& operator=(const Reference&) = delete;
+	Reference(Engine* engine, uint64_t mac)
+		:	mac(mac), engine(engine)
+	{
+	}
 	
-	Object* get();
+	Reference(Engine* engine, const vnl::String& name) 
+		:	Reference(engine, Util::hash64(name))
+	{
+	}
 	
-	void close();
+	Reference(Engine* engine, Object* parent, const vnl::String& name)
+		:	Reference(engine, vnl::String() << parent->getName() << name)
+	{
+	}
+	
+	T* get() {
+		if(!obj) {
+			Registry::connect_t req(mac);
+			engine->send(engine, &req, Registry::instance);
+			obj = req.res;
+		}
+		return obj;
+	}
+	
+	void close() {
+		if(obj) {
+			Registry::close_t msg(obj);
+			engine->send(engine, &msg, Registry::instance);
+			obj = 0;
+		}
+	}
 	
 private:
 	uint64_t mac;
 	Engine* engine = 0;
-	Object* obj = 0;
+	T* obj = 0;
 	
 };
 
