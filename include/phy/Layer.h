@@ -22,9 +22,12 @@ namespace vnl { namespace phy {
 class Layer : public SyncNode {
 public:
 	Layer() {
+		assert(vnl::String::memory == 0);
 		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
 		assert(Router::instance == 0);
+		
+		vnl::String::memory = new Region();
 		Random64::instance = new Random64();
 		Registry::instance = new Registry();
 		Router::instance = new Router();
@@ -39,8 +42,8 @@ public:
 		delete Router::instance;
 		delete Registry::instance;
 		delete Random64::instance;
+		delete vnl::String::memory;
 		
-		vnl::String::cleanup();
 		vnl::phy::Page::cleanup();
 	}
 	
