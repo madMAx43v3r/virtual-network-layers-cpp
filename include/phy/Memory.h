@@ -93,6 +93,10 @@ public:
 	
 	void* alloc(int size);
 	
+	Page* front() {
+		return p_front;
+	}
+	
 	void clear();
 	
 	void free_all() {

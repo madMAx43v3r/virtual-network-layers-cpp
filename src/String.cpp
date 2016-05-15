@@ -15,15 +15,15 @@ std::atomic<String::chunk_t*> String::begin;
 phy::Region* String::memory = 0;
 
 
-void String::write(const char* str, size_t len) {
-	size_t pos = 0;
+void String::write(const char* str, int len) {
+	int pos = 0;
 	chunk_t* buf = p_back;
 	while(len > pos) {
 		if(!buf || buf->len == CHUNK_SIZE) {
 			buf = alloc();
 			push_back(buf);
 		}
-		size_t num = len - pos;
+		int num = len - pos;
 		int left = CHUNK_SIZE - buf->len;
 		if(num > left) { num = left; }
 		memcpy(buf->str + buf->len, str+pos, num);
@@ -41,6 +41,7 @@ void String::push_back(chunk_t* chunk) {
 		p_back = chunk;
 		p_front = chunk;
 	}
+	count += chunk->len;
 }
 
 void String::clear() {
@@ -52,6 +53,7 @@ void String::clear() {
 	}
 	p_front = 0;
 	p_back = 0;
+	count = 0;
 }
 
 String::chunk_t* String::alloc() {

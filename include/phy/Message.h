@@ -20,7 +20,6 @@ namespace vnl { namespace phy {
 
 class Node;
 class Engine;
-class Fiber;
 
 
 class Message {
@@ -56,7 +55,7 @@ public:
 	std::function<void(Message*)>* callback = 0;
 	
 	Node* gate = 0;
-	Fiber* _impl = 0;
+	void* _impl = 0;
 	
 };
 

@@ -1,0 +1,103 @@
+/*
+ * ByteInput.h
+ *
+ *  Created on: May 15, 2016
+ *      Author: mad
+ */
+
+#ifndef INCLUDE_IO_BYTEINPUT_H_
+#define INCLUDE_IO_BYTEINPUT_H_
+
+#include "util/types.h"
+#include "phy/Memory.h"
+
+
+namespace vnl { namespace io {
+
+template<typename TStream>
+class ByteInput {
+public:
+	ByteInput(TStream& stream) : stream(stream) {}
+	
+	void get(void* buf, int len) {
+		err |= stream.read(buf, len);
+	}
+	
+	void get(phy::Page* buf, int len) {
+		while(len > 0) {
+			int n = std::min(len, phy::Page::size);
+			get(buf->mem, n);
+			len -= n;
+			if(len) {
+				if(!buf->next) {
+					buf->next = phy::Page::alloc();
+				}
+				buf = buf->next;
+			}
+		}
+	}
+	
+	void getString(vnl::String& str, int len) {
+		while(len > 0) {
+			vnl::String::chunk_t* chunk = vnl::String::alloc();
+			chunk->len = std::min(len, vnl::String::CHUNK_SIZE);
+			get(chunk->str, chunk->len);
+			str.push_back(chunk);
+			len -= chunk->len;
+		}
+	}
+	
+	void getChar(int8_t& value) {
+		read(value);
+	}
+	
+	void getShort(int16_t& value) {
+		uint16_t tmp;
+		read(tmp);
+		value = vnl_ntohs(tmp);
+	}
+	
+	void getInt(int32_t& value) {
+		uint32_t tmp;
+		read(tmp);
+		value = vnl_ntohl(tmp);
+	}
+	
+	void getLong(int64_t& value) {
+		uint64_t tmp;
+		read(tmp);
+		value = vnl_ntohll(tmp);
+	}
+	
+	void getFloat(float& value) {
+		uint32_t tmp;
+		read(tmp);
+		value = vnl_ntohf(tmp);
+	}
+	
+	void getDouble(double& value) {
+		uint64_t tmp;
+		read(tmp);
+		value = vnl_ntohd(tmp);
+	}
+	
+	bool error() {
+		return err;
+	}
+	
+protected:
+	template<typename T>
+	void read(T& data) {
+		err |= stream->read(&data, sizeof(T));
+	}
+	
+	TStream& stream;
+	bool err = false;
+	
+};
+
+
+
+}}
+
+#endif /* INCLUDE_IO_BYTEINPUT_H_ */

@@ -111,27 +111,31 @@ public:
 		return stream;
 	}
 	
+	int size() const {
+		return count;
+	}
+	
 	chunk_t* front() { return p_front; }
 	chunk_t* back() { return p_back; }
 	
 	const chunk_t* front() const { return p_front; }
 	const chunk_t* back() const { return p_back; }
 	
-	void write(const char* str, size_t len);
+	void write(const char* str, int len);
 	
 	void clear();
 	
-	static phy::Region* memory;
-	
-protected:
 	void push_back(chunk_t* chunk);
 	
 	static chunk_t* alloc();
 	static void free(chunk_t* chunk);
 	
+	static phy::Region* memory;
+	
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
+	int count = 0;
 	
 	static std::atomic<chunk_t*> begin;
 	

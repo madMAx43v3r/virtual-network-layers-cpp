@@ -25,7 +25,7 @@ public:
 	typedef boost::coroutines::symmetric_coroutine<void> fiber;
 	
 	Fiber(FiberEngine* engine, int stack_size)
-		: 	engine(engine), cbs(engine->memory),
+		: 	engine(engine),
 			_call(	boost::bind(&Fiber::entry, this, boost::arg<1>()),
 					boost::coroutines::attributes(stack_size),
 					boost::coroutines::protected_stack_allocator()	)
@@ -49,15 +49,16 @@ public:
 	}
 	
 	void acked(Message* msg) {
+		pending--;
 		if(msg == wait_msg) {
 			wait_msg = 0;
 		}
 		if(msg->callback) {
-			cbs.push(msg);
-		} else {
-			msg->release();
+			engine->current = this;
+			(*msg->callback)(msg);
+			engine->current = 0;
 		}
-		pending--;
+		msg->release();
 		if(waiting) {
 			call();
 		}
@@ -117,11 +118,6 @@ protected:
 	
 	void yield() {
 		(*_yield)();
-		Message* msg;
-		while(cbs.pop(msg)) {
-			(*msg->callback)(msg);
-			msg->release();
-		}
 	}
 	
 	void entry(fiber::yield_type& yield_) {
@@ -130,7 +126,6 @@ protected:
 	}
 	
 	FiberEngine* engine;
-	Queue<Message*> cbs;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
 	Object* obj;
@@ -163,10 +158,10 @@ void FiberEngine::exec(Object* object) {
 			if(msg) {
 				if(msg->isack) {
 					assert(msg->_impl);
-					msg->_impl->acked(msg);
+					((Fiber*)msg->_impl)->acked(msg);
 				} else {
 					msg->dst->receive(msg);
-					Fiber* fiber = msg->dst->_impl;
+					Fiber* fiber = (Fiber*)msg->dst->_impl;
 					if(fiber) {
 						fiber->notify(true);
 					}
@@ -191,6 +186,7 @@ void FiberEngine::send_impl(Node* src, Message* msg, Node* dst, bool async) {
 
 bool FiberEngine::poll(Stream* stream, int64_t micros) {
 	assert(stream);
+	assert(stream->_impl == 0);
 	assert(stream->getEngine() == this);
 	assert(current);
 	

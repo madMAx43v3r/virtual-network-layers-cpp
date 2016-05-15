@@ -31,7 +31,7 @@ public:
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
 	
-	Fiber* _impl = 0;
+	void* _impl = 0;
 	
 protected:
 	uint64_t mac = 0;

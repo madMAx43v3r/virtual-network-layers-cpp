@@ -24,7 +24,7 @@ class Layer;
 class Random64 {
 public:
 	Random64() {
-		generator.seed(vnl::hash64(counter++, (uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), vnl::nanoTime()));
+		generator.seed(vnl::hash64((uint64_t)counter++, (uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)vnl::nanoTime()));
 	}
 	
 	uint64_t rand() {

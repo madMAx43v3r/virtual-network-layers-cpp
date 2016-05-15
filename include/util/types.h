@@ -39,12 +39,12 @@ inline uint32_t vnl_ntohl(uint32_t v) {
 inline uint64_t vnl_ntohll(uint64_t v) {
 	return be64toh(v);
 }
-inline float vnl_ntohf(float v) {
-	uint32_t tmp = vnl_ntohl(*((uint32_t*)&v));
+inline float vnl_ntohf(uint32_t v) {
+	uint32_t tmp = vnl_ntohl(v);
 	return *((float*)&tmp);
 }
-inline double vnl_ntohd(double v) {
-	uint64_t tmp = vnl_ntohll(*((uint64_t*)&v));
+inline double vnl_ntohd(uint64_t v) {
+	uint64_t tmp = vnl_ntohll(v);
 	return *((double*)&tmp);
 }
 
