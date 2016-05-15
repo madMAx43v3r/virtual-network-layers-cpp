@@ -8,11 +8,10 @@
 #ifndef INCLUDE_PHY_MAP_H_
 #define INCLUDE_PHY_MAP_H_
 
-#include <assert.h>
 #include <utility>
+#include <string.h>
 
 #include "Array.h"
-#include "Queue.h"
 
 
 namespace vnl {
@@ -25,8 +24,8 @@ namespace vnl {
 template<typename K, typename V>
 class Map {
 public:
-	Map(size_t rows = 512) {
-		resize(rows);
+	Map() {
+		resize(512);
 	}
 	
 	Map(const Map& other) {
@@ -172,15 +171,12 @@ protected:
 	
 	void expand(int rows) {
 		auto tmp = entries();
-		assert(tmp.size() == count);
 		resize(rows);
 		int c = 0;
 		for(auto& pair : tmp) {
 			insert(pair.first, pair.second);
 			c++;
 		}
-		assert(c == count);
-		assert(tmp.size() == count);
 	}
 	
 	bool find(const K& key, entry_t**& p_row, std::pair<K,V>*& val) {

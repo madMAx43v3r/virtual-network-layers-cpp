@@ -143,8 +143,14 @@ protected:
 
 
 FiberEngine::FiberEngine(int stack_size)
-	:	stack_size(stack_size), fibers(&memory), avail(&memory)
+	:	stack_size(stack_size), avail(memory)
 {
+}
+
+FiberEngine::~FiberEngine() {
+	for(Fiber* fiber : fibers) {
+		delete fiber;
+	}
 }
 
 void FiberEngine::exec(Object* object) {
@@ -202,7 +208,7 @@ void FiberEngine::fork(Object* object) {
 	assert(Engine::local == this);
 	Fiber* fiber;
 	if(!avail.pop(fiber)) {
-		fiber = new Fiber(this);
+		fiber = new Fiber(this, stack_size);
 		fibers.push_back(fiber);
 	}
 	fiber->exec(object);
@@ -212,7 +218,7 @@ int FiberEngine::timeout() {
 	Region mem;
 	int64_t now = System::currentTimeMicros();
 	int64_t micros = 1000*1000;
-	Queue<Fiber*> list(&mem);
+	Queue<Fiber*> list(mem);
 	while(true) {
 		for(Fiber* fiber : fibers) {
 			if(fiber->polling && fiber->deadline > 0) {

@@ -6,6 +6,7 @@
  */
 
 #include "phy/Registry.h"
+#include "phy/Object.h"
 
 
 namespace vnl { namespace phy {

@@ -8,6 +8,7 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
+#include "phy/Node.h"
 #include "phy/Pool.h"
 #include "Array.h"
 #include "Map.h"

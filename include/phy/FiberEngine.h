@@ -9,6 +9,8 @@
 #define INCLUDE_PHY_FIBERENGINE_H_
 
 #include "phy/Engine.h"
+#include "Array.h"
+
 
 namespace vnl { namespace phy {
 
@@ -18,11 +20,7 @@ class FiberEngine : public Engine {
 public:
 	FiberEngine(int stack_size = 64*1024);
 	
-	~FiberEngine() {
-		for(Fiber* fiber : fibers) {
-			delete fiber;
-		}
-	}
+	~FiberEngine();
 	
 	virtual void exec(Object* object) override;
 	
