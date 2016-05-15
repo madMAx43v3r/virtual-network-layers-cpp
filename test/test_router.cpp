@@ -18,7 +18,6 @@
 #include "../src/phy/Object.cpp"
 #include "../src/phy/Registry.cpp"
 #include "../src/Router.cpp"
-#include "../src/Node.cpp"
 #include "../src/String.cpp"
 
 
@@ -95,6 +94,7 @@ int main() {
 		}
 		
 		pub.flush();
+		std::this_thread::yield();	// for valgrind to switch threads
 		counter++;
 		
 	}

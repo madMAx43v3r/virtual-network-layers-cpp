@@ -60,7 +60,13 @@ protected:
 		Object::send_async(packet, Router::instance);
 	}
 	
-	virtual bool handle(phy::Message* msg) override;
+	virtual bool handle(phy::Message* msg) override {
+		if(msg->msg_id == Packet::MID) {
+			vnl::Packet* pkt = (vnl::Packet*)msg;
+			return handle(pkt);
+		}
+		return false;
+	}
 	
 	virtual bool handle(Packet* pkt) { return false; }
 	

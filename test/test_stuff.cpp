@@ -33,30 +33,31 @@ int main() {
 	vnl::String::memory = new vnl::phy::Region();
 	
 	int N = 1000;
+	int M = 1000;
 	
 	{
 		vnl::phy::Region mem;
 		vnl::Queue<int> test(mem);
 		for(int iter = 0; iter < N; ++iter) {
-			for(int i = 0; i < 100; ++i) {
+			for(int i = 0; i < M; ++i) {
 				test.push(i);
 			}
 			int c = 0;
 			for(int k : test) {
 				c++;
 			}
-			assert(c == 100);
+			assert(c == M);
 			c = 0;
 			for(int k : test) {
 				assert(k == c);
 				c++;
 			}
-			for(int i = 0; i < 100; ++i) {
+			for(int i = 0; i < M; ++i) {
 				int k = 0;
 				assert(test.pop(k));
 				assert(k == i);
 			}
-			for(int i = 0; i < 100; ++i) {
+			for(int i = 0; i < M; ++i) {
 				test.push(i);
 			}
 			test.clear();
@@ -69,19 +70,16 @@ int main() {
 	{
 		vnl::Array<int> test;
 		for(int iter = 0; iter < N; ++iter) {
-			for(int i = 0; i < 100; ++i) {
+			for(int i = 0; i < M; ++i) {
 				test.push_back(i);
 			}
+			assert(test.size() == M);
 			int c = 0;
-			for(int k : test) {
-				c++;
-			}
-			assert(c == 100);
-			c = 0;
 			for(int k : test) {
 				assert(k == c);
 				c++;
 			}
+			assert(c == M);
 			test.clear();
 			for(int k : test) {
 				assert(false);
@@ -93,17 +91,18 @@ int main() {
 		vnl::Map<uint64_t, int> test;
 		for(int iter = 0; iter < N; ++iter) {
 			std::vector<uint64_t> keys;
-			for(int i = 0; i < 100; ++i) {
-				uint64_t key = vnl::hash64(rand());
+			for(int i = 0; i < M; ++i) {
+				uint64_t key = vnl::hash64(i);
 				keys.push_back(key);
+				assert(test.find(key) == 0);
 				test[key] = i;
+				assert(test.size() == i+1);
 			}
-			assert(test.size() == 100);
 			int i = 0;
 			for(auto pair : test.entries()) {
 				i++;
 			}
-			assert(i == 100);
+			assert(i == M);
 			i = 0;
 			for(uint64_t key : keys) {
 				int* val = test.find(key);
@@ -126,7 +125,7 @@ int main() {
 		vnl::String str;
 		for(int iter = 0; iter < N; ++iter) {
 			std::string std_str;
-			for(int i = 0; i < 100; ++i) {
+			for(int i = 0; i < M; ++i) {
 				str << "BLUBB_";
 				std_str += "BLUBB_";
 			}
