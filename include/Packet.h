@@ -11,27 +11,18 @@
 #include "Address.h"
 #include "phy/Message.h"
 
-#define VNL_SAMPLE(type) typedef vnl::phy::SampleType<type> sample_t;
+#define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::SAMPLE> sample_t;
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-const uint32_t BIND = 0x2f45ca52;
-const uint32_t CONNECT = 0xef835d78;
-const uint32_t CLOSE = 0x9a9e3705;
-const uint32_t SAMPLE = 0xe1167cfe;
+static const uint32_t SAMPLE = 0x12ed1215;
 
-
-class Packet : public Message {
+class Packet : public phy::Message {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	
 	Packet(uint32_t pid) : Message(MID), pkt_id(pid) {}
-	
-	struct payload_t {
-		RingBuffer* buffer = 0;
-		RingBuffer::entry_t* entry = 0;
-	};
 	
 	uint32_t pkt_id;
 	Address src_addr;
@@ -70,19 +61,7 @@ public:
 };
 
 
-template<typename T>
-class SampleType : public PacketType<T, SAMPLE> {
-public:
-	SampleType() : PacketType<T, SAMPLE>() {}
-	
-	SampleType(const T& data_) : PacketType<T, SAMPLE>(data_) {}
-	
-	SampleType(const T& data_, const Address& dst_) : PacketType<T, SAMPLE>(data_, dst_) {}
-	
-	
-};
 
-
-}}
+}
 
 #endif /* INCLUDE_PHY_PACKET_H_ */

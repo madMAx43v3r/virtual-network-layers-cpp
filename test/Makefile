@@ -2,7 +2,7 @@
 ROOT := ..
 LDFLAGS := -lboost_coroutine -lboost_context -lboost_system -lpthread
 
-all: test_stuff test_phy_router test_atomics
+all: test_stuff test_router test_atomics
 
 include $(ROOT)/Makefile.rules
 
@@ -12,7 +12,7 @@ vnl:
 test_phy: bin/test_phy.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
-test_phy_router: bin/test_phy_router.o
+test_router: bin/test_router.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 test_stuff: bin/test_stuff.o
@@ -24,7 +24,7 @@ test_atomics: bin/test_atomics.o
 clean:
 	$(RM) bin/*
 	$(RM) test_phy
-	$(RM) test_phy_router
+	$(RM) test_router
 	$(RM) test_stuff
 	$(RM) test_atomics
 

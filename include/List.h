@@ -22,8 +22,6 @@ class List : public Queue<T,N> {
 public:
 	List(phy::Region& mem) : Queue<T,N>(mem) {}
 	
-	List(const List&) = delete;
-	
 	T& push_back(const T& obj) {
 		return Queue<T,N>::push(obj);
 	}

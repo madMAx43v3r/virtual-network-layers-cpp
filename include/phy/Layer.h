@@ -13,7 +13,6 @@
 #include "phy/Random.h"
 #include "phy/Node.h"
 #include "phy/Registry.h"
-#include "phy/Router.h"
 #include "String.h"
 
 
@@ -25,12 +24,10 @@ public:
 		assert(vnl::String::memory == 0);
 		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
-		assert(Router::instance == 0);
 		
 		vnl::String::memory = new Region();
 		Random64::instance = new Random64();
 		Registry::instance = new Registry();
-		Router::instance = new Router();
 	}
 	
 	void shutdown() {
@@ -39,7 +36,6 @@ public:
 	}
 	
 	~Layer() {
-		delete Router::instance;
 		delete Registry::instance;
 		delete Random64::instance;
 		delete vnl::String::memory;

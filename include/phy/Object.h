@@ -13,7 +13,6 @@
 
 #include "phy/Engine.h"
 #include "phy/Stream.h"
-#include "phy/Router.h"
 #include "phy/Reference.h"
 #include "phy/RingBuffer.h"
 #include "phy/Pool.h"
@@ -23,10 +22,6 @@
 
 
 namespace vnl { namespace phy {
-
-class Receiver;
-class Sender;
-
 
 class Object : public Node {
 public:
@@ -51,26 +46,6 @@ protected:
 	
 	void fork(Object* object) {
 		engine->fork(object);
-	}
-	
-	void bind(vnl::Address address) {
-		Router::bind_t msg(address);
-		send(&msg, Router::instance);
-	}
-	void connect(vnl::Address address) {
-		Router::connect_t msg(address);
-		send(&msg, Router::instance);
-	}
-	void close(vnl::Address address) {
-		Router::close_t msg(address);
-		send(&msg, Router::instance);
-	}
-	
-	void send(Packet* packet) {
-		send(packet, Router::instance);
-	}
-	void send_async(Packet* packet) {
-		send_async(packet, Router::instance);
 	}
 	
 	void send(Message* msg, Node* dst) {
@@ -98,10 +73,6 @@ protected:
 	void exit(Message* msg);
 	
 	virtual bool handle(Message* msg) { return false; }
-	virtual bool handle(Packet* pkt) { return false; }
-	virtual void handle_bind(const Address& src, const Address& dst) {}
-	virtual void handle_connect(const Address& src, const Address& dst) {}
-	virtual void handle_close(const Address& src, const Address& dst) {}
 	
 	virtual void main(Engine* engine) = 0;
 	
@@ -127,48 +98,6 @@ private:
 	
 	friend class Engine;
 	friend class Registry;
-	friend class Receiver;
-	friend class Sender;
-	
-};
-
-
-class Receiver {
-public:
-	Receiver(Object* obj, const Address& addr) : object(obj), address(addr) {
-		object->connect(address);
-	}
-	
-	Receiver(const Receiver&) = delete;
-	Receiver& operator=(const Receiver&) = delete;
-	
-	~Receiver() {
-		object->close(address);
-	}
-	
-private:
-	Object* object;
-	Address address;
-	
-};
-
-
-class Sender {
-public:
-	Sender(Object* obj, const Address& addr) : object(obj), address(addr) {
-		object->bind(address);
-	}
-	
-	Sender(const Sender&) = delete;
-	Sender& operator=(const Sender&) = delete;
-	
-	~Sender() {
-		object->close(address);
-	}
-	
-private:
-	Object* object;
-	Address address;
 	
 };
 

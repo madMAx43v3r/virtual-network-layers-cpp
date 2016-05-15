@@ -92,20 +92,6 @@ void Object::run() {
 		if(msg->msg_id == Registry::exit_t::MID) {
 			exit(msg);
 			break;
-		} else if(msg->msg_id == Packet::MID) {
-			vnl::phy::Packet* pkt = (vnl::phy::Packet*)msg;
-			switch(pkt->pkt_id) {
-				case BIND: handle_bind(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
-				case CONNECT: handle_connect(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
-				case CLOSE: handle_close(pkt->src_addr, pkt->dst_addr); msg->ack(); break;
-				case SAMPLE:
-					if(!handle(pkt)) {
-						msg->ack();
-					}
-					break;
-				default:
-					msg->ack();
-			}
 		} else {
 			if(!handle(msg)) {
 				msg->ack();

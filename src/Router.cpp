@@ -5,10 +5,10 @@
  *      Author: mad
  */
 
-#include "phy/Router.h"
+#include "Router.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 Router* Router::instance = 0;
 
@@ -18,9 +18,9 @@ Router::Router()
 {
 }
 
-bool Router::handle(Message* msg) {
+bool Router::handle(phy::Message* msg) {
+	phy::Node* src = msg->src;
 	if(msg->msg_id == Packet::MID) {
-		Node* src = msg->src;
 		Packet* pkt = (Packet*)msg;
 		if(pkt->src_addr.A == 0) {
 			pkt->src_addr.A = mac;
@@ -29,11 +29,6 @@ bool Router::handle(Message* msg) {
 			if(pkt->src_addr.B == 0) {
 				pkt->src_addr.B = src->getMAC();
 			}
-			if(pkt->pkt_id == CONNECT) {
-				connect(pkt->dst_addr, src);
-			} else if(pkt->pkt_id == CLOSE) {
-				close(pkt->dst_addr, src);
-			}
 		}
 		route(pkt, src, table.find(pkt->dst_addr));
 		route(pkt, src, table.find(Address(pkt->dst_addr.A, 0)));
@@ -41,17 +36,25 @@ bool Router::handle(Message* msg) {
 			msg->ack();
 		}
 		return true;
+	} else if(msg->msg_id == open_t::MID) {
+		open(((open_t*)msg)->data, src);
+		msg->ack();
+		return true;
+	} else if(msg->msg_id == close_t::MID) {
+		close(((close_t*)msg)->data, src);
+		msg->ack();
+		return true;
 	}
 	return false;
 }
 
-void Router::connect(const Address& addr, Node* src) {
+void Router::open(const Address& addr, phy::Node* src) {
 	Row*& row = table[addr];
 	if(!row) {
 		row = new(mem.alloc<Row>()) Row(mem);
 	}
-	Node** pcol = 0;
-	for(Node*& col : *row) {
+	phy::Node** pcol = 0;
+	for(phy::Node*& col : *row) {
 		if(col == 0) {
 			pcol = &col;
 		} else if(col == src) {
@@ -66,10 +69,10 @@ void Router::connect(const Address& addr, Node* src) {
 	}
 }
 
-void Router::close(const Address& addr, Node* src) {
+void Router::close(const Address& addr, phy::Node* src) {
 	Row* row = table[addr];
 	if(row) {
-		for(Node*& col : *row) {
+		for(phy::Node*& col : *row) {
 			if(col == src) {
 				col = 0;
 			}
@@ -77,9 +80,9 @@ void Router::close(const Address& addr, Node* src) {
 	}
 }
 
-void Router::route(Packet* pkt, Node* src, Row** prow) {
+void Router::route(Packet* pkt, phy::Node* src, Row** prow) {
 	if(prow) {
-		for(Node* dst : **prow) {
+		for(phy::Node* dst : **prow) {
 			if(dst && dst != src) {
 				forward(pkt, dst);
 			}
@@ -87,7 +90,7 @@ void Router::route(Packet* pkt, Node* src, Row** prow) {
 	}
 }
 
-void Router::forward(Packet* org, Node* dst) {
+void Router::forward(Packet* org, phy::Node* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>(org->pkt_id);
 	msg->parent = org;
@@ -107,6 +110,6 @@ void Router::callback(phy::Message* msg_) {
 
 
 
-}}
+}
 
 
