@@ -27,8 +27,6 @@ public:
 	
 	Reference(Engine* engine, const vnl::String& name);
 	
-	Reference(Engine* engine, Object* parent, const vnl::String& name);
-	
 	T* get() {
 		if(!obj) {
 			Registry::connect_t req(mac);

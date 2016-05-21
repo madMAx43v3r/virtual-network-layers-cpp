@@ -28,7 +28,6 @@ public:
 	Object();
 	Object(uint64_t mac);
 	Object(const vnl::String& name);
-	Object(Object* parent, const vnl::String& name);
 	
 	const vnl::String& getName() const { return my_name; }
 	
@@ -119,12 +118,6 @@ Reference<T>::Reference(Engine* engine, uint64_t mac)
 template<typename T>
 Reference<T>::Reference(Engine* engine, const vnl::String& name) 
 	:	Reference(engine, vnl::hash64(name))
-{
-}
-
-template<typename T>
-Reference<T>::Reference(Engine* engine, Object* parent, const vnl::String& name)
-	:	Reference(engine, vnl::String() << parent->getName() << name)
 {
 }
 

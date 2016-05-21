@@ -27,11 +27,6 @@ Object::Object(const vnl::String& name)
 	this->my_name = name;
 }
 
-Object::Object(Object* parent, const vnl::String& name)
-	:	Object::Object(vnl::String() << parent->my_name << name)
-{
-}
-
 void Object::die() {
 	Registry::delete_t msg(this);
 	stream->send(&msg, Registry::instance);
