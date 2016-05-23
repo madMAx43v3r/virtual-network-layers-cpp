@@ -89,7 +89,6 @@ private:
 	Engine* engine = 0;
 	
 	Timer* timer_begin = 0;
-	Pool<Timer> timers;
 	
 	int64_t ref = 0;
 	bool dying = false;

@@ -16,7 +16,7 @@ namespace vnl { namespace phy {
 Object::Object() : Object(0) {}
 
 Object::Object(uint64_t mac)
-	:	buffer(memory), timers(memory)
+	:	buffer(memory)
 {
 	this->mac = mac;
 }
@@ -46,7 +46,7 @@ Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, 
 		timer = timer->next;
 	}
 	if(!timer) {
-		timer = timers.create();
+		timer = memory.create<Timer>();
 		timer->next = timer_begin;
 		timer_begin = timer;
 	}

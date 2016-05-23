@@ -35,7 +35,7 @@ protected:
 		
 		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::phy::Timer::REPEAT);
 		
-		vnl::Connection test(this, address);
+		vnl::Receiver test(this, address);
 		
 		run();
 	}

@@ -14,7 +14,7 @@
 
 namespace vnl {
 
-class Connection;
+class Receiver;
 
 
 class Node : public vnl::phy::Object {
@@ -24,8 +24,6 @@ public:
 	Node(uint64_t mac) : Object(mac) {}
 	
 	Node(const vnl::String& name) : Object(name) {}
-	
-	Node(Node* parent, const vnl::String& name) : Object(parent, name) {}
 	
 protected:
 	void open(Address address) {
@@ -70,21 +68,21 @@ protected:
 	
 	virtual bool handle(Packet* pkt) { return false; }
 	
-	friend class Connection;
+	friend class Receiver;
 	
 };
 
 
-class Connection {
+class Receiver {
 public:
-	Connection(Node* node, const Address& addr) : node(node), address(addr) {
+	Receiver(Node* node, const Address& addr) : node(node), address(addr) {
 		node->open(address);
 	}
 	
-	Connection(const Connection&) = delete;
-	Connection& operator=(const Connection&) = delete;
+	Receiver(const Receiver&) = delete;
+	Receiver& operator=(const Receiver&) = delete;
 	
-	~Connection() {
+	~Receiver() {
 		node->close(address);
 	}
 	

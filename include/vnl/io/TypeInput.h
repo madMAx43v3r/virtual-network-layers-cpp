@@ -18,9 +18,9 @@ class TypeInput : public io::ByteInput<TStream> {
 public:
 	TypeInput(TStream& stream) : ByteInput<TStream>(stream), in(*this) {}
 	
-	void beginType(uint64_t& hash, int32_t& num_entries) {
+	void beginType(uint64_t& hash, int16_t& num_entries) {
 		in.getLong(hash);
-		in.getInt(num_entries);
+		in.getShort(num_entries);
 	}
 	
 	void beginEntry(uint32_t& hash, int16_t& size) {

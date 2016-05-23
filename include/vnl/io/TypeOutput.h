@@ -20,9 +20,13 @@ public:
 	
 	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream), out(*this) {}
 	
-	void beginType(uint64_t hash, int32_t num_entries) {
+	void beginType(uint64_t hash, int16_t num_entries) {
 		out.putLong(hash);
-		out.putInt(num_entries);
+		out.putShort(num_entries);
+	}
+	
+	void putNull() {
+		beginType(0, 0);
 	}
 	
 	void beginEntry(uint32_t hash, int16_t size) {
@@ -31,7 +35,11 @@ public:
 	}
 	
 	void putType(uint32_t hash) {
-		beginEntry(hash, -1);
+		beginEntry(hash, -32001);
+	}
+	
+	void putFunc(uint32_t hash, int16_t num_args) {
+		beginEntry(hash, -num_args);
 	}
 	
 	void putChar(uint32_t hash, int8_t value) {
