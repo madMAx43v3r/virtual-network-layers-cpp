@@ -18,6 +18,8 @@ namespace vnl {
 
 static const uint32_t SAMPLE = 0x12ed1215;
 
+class Router;
+
 class Packet : public phy::Message {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
@@ -29,9 +31,12 @@ public:
 	Address dst_addr;
 	void* payload = 0;
 	
+private:
 	Packet* parent = 0;
 	int32_t count = 0;
 	int32_t acks = 0;
+	
+	friend class Router;
 	
 };
 
