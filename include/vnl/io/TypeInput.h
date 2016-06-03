@@ -14,27 +14,22 @@
 namespace vnl { namespace io {
 
 template<typename TStream>
-class TypeInput : public io::ByteInput<TStream> {
+class TypeInput {
 public:
-	TypeInput(TStream& stream) : ByteInput<TStream>(stream), in(*this) {}
+	TypeInput(TStream& stream) : in(stream) {}
 	
-	void beginType(uint64_t& hash, int16_t& num_entries) {
-		in.getLong(hash);
-		in.getShort(num_entries);
-	}
-	
-	void beginEntry(uint32_t& hash, int16_t& size) {
+	void getEntry(uint32_t& hash, int32_t& size) {
 		in.getInt(hash);
-		in.getShort(size);
+		int8_t tmp;
+		in.getChar(tmp);
+		if(tmp == -128) {
+			in.getInt(size);
+		} else {
+			size = tmp;
+		}
 	}
 	
-	bool getType(uint32_t& hash) {
-		int16_t size;
-		beginEntry(hash, size);
-		return size == -1;
-	}
-	
-	void getChar(int8_t& value, int size) {
+	void getChar(int8_t& value, int32_t size) {
 		switch(size) {
 			case 1: { in.getChar(value); break; }
 			case 2: { int16_t tmp; in.getShort(tmp); value = tmp; break; }
@@ -44,7 +39,7 @@ public:
 		}
 	}
 	
-	void getShort(int16_t& value, int size) {
+	void getShort(int16_t& value, int32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; in.getChar(tmp); value = tmp; break; }
 			case 2: { in.getShort(value); break; }
@@ -54,7 +49,7 @@ public:
 		}
 	}
 	
-	void getInt(int32_t& value, int size) {
+	void getInt(int32_t& value, int32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; in.getChar(tmp); value = tmp; break; }
 			case 2: { int16_t tmp; in.getShort(tmp); value = tmp; break; }
@@ -64,7 +59,7 @@ public:
 		}
 	}
 	
-	void getLong(int64_t& value, int size) {
+	void getLong(int64_t& value, int32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; in.getChar(tmp); value = tmp; break; }
 			case 2: { int16_t tmp; in.getShort(tmp); value = tmp; break; }
@@ -74,7 +69,7 @@ public:
 		}
 	}
 	
-	void getFloat(float& value, int size) {
+	void getFloat(float& value, int32_t size) {
 		switch(size) {
 			case 4: { in.getFloat(value); break; }
 			case 8: { double tmp; in.getDouble(tmp); value = tmp; break; }
@@ -82,7 +77,7 @@ public:
 		}
 	}
 	
-	void getDouble(double& value, int size) {
+	void getDouble(double& value, int32_t size) {
 		switch(size) {
 			case 4: { float tmp; in.getFloat(tmp); value = tmp; break; }
 			case 8: { in.getDouble(value); break; }
@@ -90,8 +85,8 @@ public:
 		}
 	}
 	
-	void getBinary(void* data, int len, int max_len) {
-		int n = std::min(len, max_len);
+	void getBinary(void* data, int32_t len, int32_t max_len) {
+		int32_t n = std::min(len, max_len);
 		in.get(data, n);
 		len -= n;
 		if(len) {
@@ -99,16 +94,14 @@ public:
 		}
 	}
 	
-	void getString(uint32_t& hash, vnl::String& str) {
-		int16_t size;
-		beginEntry(hash, size);
+	void getString(vnl::String& str, int32_t size) {
 		in.getString(str, size);
 	}
 	
-	void skip(int len) {
+	void skip(int32_t len) {
 		char buf[1024];
 		while(len > 0) {
-			int n = std::min(len, 1024);
+			int32_t n = std::min(len, 1024);
 			in.get(buf, n);
 			len -= n;
 		}

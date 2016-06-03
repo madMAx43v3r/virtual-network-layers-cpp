@@ -8,9 +8,9 @@
 #ifndef INCLUDE_PHY_REFERENCE_H_
 #define INCLUDE_PHY_REFERENCE_H_
 
-#include "phy/Engine.h"
-#include "phy/Registry.h"
-#include "String.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/phy/Registry.h"
+#include "vnl/String.h"
 
 
 namespace vnl { namespace phy {

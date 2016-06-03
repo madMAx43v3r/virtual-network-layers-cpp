@@ -8,7 +8,7 @@
 #ifndef INCLUDE_UTIL_POOL_H_
 #define INCLUDE_UTIL_POOL_H_
 
-#include "Queue.h"
+#include "vnl/Queue.h"
 
 
 namespace vnl { namespace phy {

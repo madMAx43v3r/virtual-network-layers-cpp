@@ -5,9 +5,9 @@
  *      Author: mad
  */
 
-#include "phy/Object.h"
-#include "phy/Registry.h"
-#include "Util.h"
+#include "vnl/phy/Object.h"
+#include "vnl/phy/Registry.h"
+#include "vnl/Util.h"
 
 
 namespace vnl { namespace phy {
@@ -16,7 +16,7 @@ namespace vnl { namespace phy {
 Object::Object() : Object(0) {}
 
 Object::Object(uint64_t mac)
-	:	buffer(memory)
+	:	buffer(memory), my_name(memory)
 {
 	this->mac = mac;
 }

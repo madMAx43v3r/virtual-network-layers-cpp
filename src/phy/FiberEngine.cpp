@@ -14,8 +14,8 @@
 #include <boost/coroutine/symmetric_coroutine.hpp>
 #include <boost/coroutine/protected_stack_allocator.hpp>
 
-#include "phy/FiberEngine.h"
-#include "phy/Stream.h"
+#include "vnl/phy/FiberEngine.h"
+#include "vnl/phy/Stream.h"
 
 
 namespace vnl { namespace phy {

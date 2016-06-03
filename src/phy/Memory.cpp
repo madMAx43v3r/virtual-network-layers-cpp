@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#include "phy/Memory.h"
-#include "util/spinlock.h"
+#include "vnl/phy/Memory.h"
+#include "vnl/util/spinlock.h"
 
 
 namespace vnl { namespace phy {

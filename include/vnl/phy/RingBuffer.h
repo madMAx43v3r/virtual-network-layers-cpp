@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_RINGBUFFER_H_
 #define INCLUDE_PHY_RINGBUFFER_H_
 
-#include "Queue.h"
+#include "vnl/Queue.h"
 
 
 namespace vnl { namespace phy {

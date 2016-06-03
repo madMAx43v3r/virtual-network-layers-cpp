@@ -5,7 +5,7 @@
  *      Author: mad
  */
 
-#include "phy/Random.h"
+#include "vnl/phy/Random.h"
 
 
 namespace vnl { namespace phy {

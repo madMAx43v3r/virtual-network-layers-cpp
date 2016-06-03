@@ -5,10 +5,10 @@
  *      Author: mad
  */
 
-#include "phy/ThreadEngine.h"
-#include "Layer.h"
-#include "Router.h"
-#include "Node.h"
+#include "vnl/phy/ThreadEngine.h"
+#include "vnl/Layer.h"
+#include "vnl/Router.h"
+#include "vnl/Node.h"
 
 #include "../src/util/CRC64.cpp"
 #include "../src/phy/Engine.cpp"
@@ -18,10 +18,10 @@
 #include "../src/phy/Object.cpp"
 #include "../src/phy/Registry.cpp"
 #include "../src/Router.cpp"
-#include "../src/String.cpp"
 
 
 struct test_msg_t {
+	test_msg_t(vnl::phy::Region& mem) : text(mem) {}
 	vnl::String text;
 	VNL_SAMPLE(test_msg_t);
 };
@@ -80,8 +80,8 @@ int main() {
 	
 	vnl::phy::MessageBuffer buffer(mem);
 	
-	test_msg_t test;
-	test.text = "Hello World";
+	test_msg_t test(mem);
+	test.text << "Hello World";
 	
 	int counter = 0;
 	while(counter < 1000*1000) {

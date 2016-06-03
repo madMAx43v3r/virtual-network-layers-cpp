@@ -13,7 +13,7 @@
 #include <atomic>
 #include <iostream>
 
-#include "build/config.h"
+#include "vnl/build/config.h"
 
 
 namespace vnl { namespace phy {

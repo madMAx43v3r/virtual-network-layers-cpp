@@ -8,8 +8,8 @@
 #ifndef INCLUDE_PHY_FIBERENGINE_H_
 #define INCLUDE_PHY_FIBERENGINE_H_
 
-#include "phy/Engine.h"
-#include "Array.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/Array.h"
 
 
 namespace vnl { namespace phy {

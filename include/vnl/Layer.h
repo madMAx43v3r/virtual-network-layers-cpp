@@ -8,8 +8,8 @@
 #ifndef INCLUDE_LAYER_H_
 #define INCLUDE_LAYER_H_
 
-#include "phy/Layer.h"
-#include "Router.h"
+#include "vnl/phy/Layer.h"
+#include "vnl/Router.h"
 
 
 namespace vnl {

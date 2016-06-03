@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#include "phy/Message.h"
-#include "phy/Object.h"
+#include "vnl/phy/Message.h"
+#include "vnl/phy/Object.h"
 
 namespace vnl { namespace phy {
 

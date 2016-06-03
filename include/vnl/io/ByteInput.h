@@ -19,13 +19,13 @@ class ByteInput {
 public:
 	ByteInput(TStream& stream) : stream(stream) {}
 	
-	void get(void* buf, int len) {
+	void get(void* buf, int32_t len) {
 		err |= stream.read(buf, len);
 	}
 	
-	void get(phy::Page* buf, int len) {
+	void get(phy::Page* buf, int32_t len) {
 		while(len > 0) {
-			int n = std::min(len, phy::Page::size);
+			int32_t n = std::min(len, phy::Page::size);
 			get(buf->mem, n);
 			len -= n;
 			if(len) {
@@ -37,13 +37,13 @@ public:
 		}
 	}
 	
-	void getString(vnl::String& str, int len) {
+	void getString(vnl::String& str, int32_t len) {
 		while(len > 0) {
-			vnl::String::chunk_t* chunk = vnl::String::alloc();
-			chunk->len = std::min(len, vnl::String::CHUNK_SIZE);
-			get(chunk->str, chunk->len);
-			str.push_back(chunk);
-			len -= chunk->len;
+			char buf[1024];
+			int32_t n = std::min(len, 1024);
+			get(buf, n);
+			str.write(buf, n);
+			len -= n;
 		}
 	}
 	

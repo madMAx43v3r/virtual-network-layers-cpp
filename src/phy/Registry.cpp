@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#include "phy/Registry.h"
-#include "phy/Object.h"
+#include "vnl/phy/Registry.h"
+#include "vnl/phy/Object.h"
 
 
 namespace vnl { namespace phy {

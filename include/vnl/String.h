@@ -14,7 +14,7 @@
 #include <sstream>
 #include <atomic>
 
-#include "phy/Memory.h"
+#include "vnl/phy/Memory.h"
 
 
 namespace vnl {
@@ -26,21 +26,12 @@ public:
 	struct chunk_t {
 		char str[CHUNK_SIZE];
 		chunk_t* next = 0;
-		short len = 0;
+		int16_t len = 0;
 	};
 	
-	String() {}
-	
-	String(const char* str) {
-		*this << str;
-	}
-	
-	String(const std::string& str) {
-		*this << str;
-	}
-	
-	String(const String& str) {
-		*this << str;
+	String(phy::Region& memory) : memory(memory) {
+		p_front = memory.create<chunk_t>();
+		p_back = p_front;
 	}
 	
 	~String() {
@@ -65,6 +56,16 @@ public:
 			B = B->next;
 		}
 		return A == B;
+	}
+	
+	bool operator==(const std::string& other) const {
+		// TODO
+		return false;
+	}
+	
+	bool operator==(const char* other) const {
+		// TODO
+		return false;
 	}
 	
 	String& operator=(const String& str) {
@@ -111,31 +112,51 @@ public:
 		return stream;
 	}
 	
-	int size() const {
+	void write(const char* str, int32_t len) {
+		int32_t pos = 0;
+		while(len > pos) {
+			if(p_back->len == CHUNK_SIZE) {
+				if(!p_back->next) {
+					p_back->next = memory.create<chunk_t>();
+				}
+				p_back = p_back->next;
+			}
+			int32_t num = len - pos;
+			int32_t left = CHUNK_SIZE - p_back->len;
+			if(num > left) { num = left; }
+			memcpy(p_back->str + p_back->len, str+pos, num);
+			p_back->len += num;
+			pos += num;
+		}
+	}
+	
+	void clear() {
+		chunk_t* chunk = p_front;
+		while(chunk) {
+			chunk->len = 0;
+			chunk = chunk->next;
+		}
+		p_back = p_front;
+		count = 0;
+	}
+	
+	int32_t size() const {
 		return count;
 	}
 	
-	chunk_t* front() { return p_front; }
-	chunk_t* back() { return p_back; }
+	chunk_t* front() const {
+		return p_front;
+	}
 	
-	const chunk_t* front() const { return p_front; }
-	const chunk_t* back() const { return p_back; }
-	
-	void write(const char* str, int len);
-	
-	void clear();
-	
-	void push_back(chunk_t* chunk);
-	
-	static chunk_t* alloc();
-	static void free(chunk_t* chunk);
-	
-	static phy::Region* memory;
+	chunk_t* back() const {
+		return p_back;
+	}
 	
 private:
-	chunk_t* p_front = 0;
-	chunk_t* p_back = 0;
-	int count = 0;
+	phy::Region& memory;
+	chunk_t* p_front;
+	chunk_t* p_back;
+	int32_t count = 0;
 	
 	static std::atomic<chunk_t*> begin;
 	

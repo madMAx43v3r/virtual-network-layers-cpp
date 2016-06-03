@@ -8,10 +8,10 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include "phy/Node.h"
-#include "phy/Engine.h"
-#include "phy/Memory.h"
-#include "Queue.h"
+#include "vnl/phy/Node.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/phy/Memory.h"
+#include "vnl/Queue.h"
 
 
 namespace vnl { namespace phy {

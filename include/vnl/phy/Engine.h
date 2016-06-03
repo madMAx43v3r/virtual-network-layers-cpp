@@ -12,13 +12,13 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "phy/Message.h"
-#include "phy/Node.h"
-#include "phy/Memory.h"
-#include "phy/RingBuffer.h"
-#include "phy/Random.h"
-#include "Queue.h"
-#include "Util.h"
+#include "vnl/phy/Message.h"
+#include "vnl/phy/Node.h"
+#include "vnl/phy/Memory.h"
+#include "vnl/phy/RingBuffer.h"
+#include "vnl/phy/Random.h"
+#include "vnl/Queue.h"
+#include "vnl/Util.h"
 
 
 namespace vnl { namespace phy {

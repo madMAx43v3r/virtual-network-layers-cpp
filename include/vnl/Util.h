@@ -18,8 +18,8 @@
 
 #include <cxxabi.h>
 
-#include "util/CRC64.h"
-#include "String.h"
+#include "vnl/util/CRC64.h"
+#include "vnl/String.h"
 
 
 namespace vnl {

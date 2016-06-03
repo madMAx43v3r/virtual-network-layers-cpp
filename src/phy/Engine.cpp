@@ -8,11 +8,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "phy/Engine.h"
-#include "phy/Stream.h"
-#include "phy/Object.h"
-#include "phy/Registry.h"
-#include "phy/Random.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/phy/Stream.h"
+#include "vnl/phy/Object.h"
+#include "vnl/phy/Registry.h"
+#include "vnl/phy/Random.h"
 
 
 namespace vnl { namespace phy {

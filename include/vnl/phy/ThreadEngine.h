@@ -8,8 +8,8 @@
 #ifndef INCLUDE_PHY_THREADENGINE_H_
 #define INCLUDE_PHY_THREADENGINE_H_
 
-#include "Engine.h"
-#include "Stream.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/phy/Stream.h"
 
 
 namespace vnl { namespace phy {

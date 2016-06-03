@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <ostream>
 
-#include "Util.h"
+#include "vnl/Util.h"
 
 
 namespace vnl {

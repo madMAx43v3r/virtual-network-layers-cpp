@@ -8,8 +8,8 @@
 #ifndef INCLUDE_PHY_PIPE_H_
 #define INCLUDE_PHY_PIPE_H_
 
-#include "phy/Node.h"
-#include "phy/Reference.h"
+#include "vnl/phy/Node.h"
+#include "vnl/phy/Reference.h"
 
 
 namespace vnl { namespace phy {

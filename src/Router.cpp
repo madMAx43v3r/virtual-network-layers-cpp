@@ -5,7 +5,7 @@
  *      Author: mad
  */
 
-#include "Router.h"
+#include "vnl/Router.h"
 
 
 namespace vnl {

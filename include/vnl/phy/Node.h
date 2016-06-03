@@ -11,8 +11,8 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "phy/Random.h"
-#include "phy/Message.h"
+#include "vnl/phy/Random.h"
+#include "vnl/phy/Message.h"
 
 
 namespace vnl { namespace phy {

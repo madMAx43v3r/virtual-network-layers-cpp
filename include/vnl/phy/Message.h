@@ -13,7 +13,7 @@
 #include <sstream>
 #include <functional>
 
-#include "phy/RingBuffer.h"
+#include "vnl/phy/RingBuffer.h"
 
 
 namespace vnl { namespace phy {

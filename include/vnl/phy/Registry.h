@@ -8,10 +8,10 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
-#include "phy/Node.h"
-#include "phy/Pool.h"
-#include "Array.h"
-#include "Map.h"
+#include "vnl/phy/Node.h"
+#include "vnl/phy/Pool.h"
+#include "vnl/Array.h"
+#include "vnl/Map.h"
 
 
 namespace vnl { namespace phy {

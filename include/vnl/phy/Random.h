@@ -11,9 +11,9 @@
 #include <random>
 #include <thread>
 
-#include "util/spinlock.h"
-#include "System.h"
-#include "Util.h"
+#include "vnl/util/spinlock.h"
+#include "vnl/System.h"
+#include "vnl/Util.h"
 
 
 namespace vnl { namespace phy {

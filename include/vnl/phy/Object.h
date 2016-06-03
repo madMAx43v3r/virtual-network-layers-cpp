@@ -11,14 +11,14 @@
 #include <functional>
 #include <unordered_map>
 
-#include "phy/Engine.h"
-#include "phy/Stream.h"
-#include "phy/Reference.h"
-#include "phy/RingBuffer.h"
-#include "phy/Pool.h"
-#include "phy/Timer.h"
-#include "String.h"
-#include "System.h"
+#include "vnl/phy/Engine.h"
+#include "vnl/phy/Stream.h"
+#include "vnl/phy/Reference.h"
+#include "vnl/phy/RingBuffer.h"
+#include "vnl/phy/Pool.h"
+#include "vnl/phy/Timer.h"
+#include "vnl/String.h"
+#include "vnl/System.h"
 
 
 namespace vnl { namespace phy {

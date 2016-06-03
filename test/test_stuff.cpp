@@ -14,23 +14,20 @@
 #include <cstdlib>
 #include <atomic>
 
-#include "Util.h"
-#include "System.h"
+#include "vnl/Util.h"
+#include "vnl/System.h"
 
-#include "phy/Pool.h"
-#include "Queue.h"
-#include "List.h"
-#include "Array.h"
-#include "Map.h"
-#include "String.h"
+#include "vnl/phy/Pool.h"
+#include "vnl/Queue.h"
+#include "vnl/List.h"
+#include "vnl/Array.h"
+#include "vnl/Map.h"
+#include "vnl/String.h"
 
 #include "../src/phy/Memory.cpp"
 #include "../src/util/CRC64.cpp"
-#include "../src/String.cpp"
 
 int main() {
-	
-	vnl::String::memory = new vnl::phy::Region();
 	
 	int N = 1000;
 	int M = 1000;
@@ -122,7 +119,8 @@ int main() {
 	}
 	
 	{
-		vnl::String str;
+		vnl::phy::Region mem;
+		vnl::String str(mem);
 		for(int iter = 0; iter < N; ++iter) {
 			std::string std_str;
 			for(int i = 0; i < M; ++i) {
@@ -140,14 +138,14 @@ int main() {
 	}
 	
 	{
-		vnl::String str("BLUBB");
-		//std::cout << str << std::endl;
-		assert(str == vnl::String("BLUBB"));
+		vnl::phy::Region mem;
+		vnl::String str(mem);
+		str << "BLUBB";
+		std::cout << str << std::endl;
+		assert(str == str);
+		assert(str == (vnl::String(mem) << "BLUBB"));
 		assert(str.to_string() == std::string("BLUBB"));
-		assert(vnl::String(str).to_string() == std::string("BLUBB"));
 	}
-	
-	delete vnl::String::memory;
 	
 	vnl::phy::Page::cleanup();
 	assert(vnl::phy::Page::get_num_alloc() == 0);

@@ -10,10 +10,10 @@
 
 #include <assert.h>
 
-#include "phy/Random.h"
-#include "phy/Node.h"
-#include "phy/Registry.h"
-#include "String.h"
+#include "vnl/phy/Random.h"
+#include "vnl/phy/Node.h"
+#include "vnl/phy/Registry.h"
+#include "vnl/String.h"
 
 
 namespace vnl { namespace phy {
@@ -21,11 +21,9 @@ namespace vnl { namespace phy {
 class Layer : public SyncNode {
 public:
 	Layer() {
-		assert(vnl::String::memory == 0);
 		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
 		
-		vnl::String::memory = new Region();
 		Random64::instance = new Random64();
 		Registry::instance = new Registry();
 	}
@@ -38,7 +36,6 @@ public:
 	~Layer() {
 		delete Registry::instance;
 		delete Random64::instance;
-		delete vnl::String::memory;
 		
 		vnl::phy::Page::cleanup();
 	}

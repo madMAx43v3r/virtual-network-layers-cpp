@@ -20,26 +20,25 @@ class ByteOutput {
 public:
 	ByteOutput(TStream& stream) : stream(stream) {}
 	
-	void put(const void* buf, int len) {
+	void put(const void* buf, int32_t len) {
 		err |= stream.write(buf, len);
 	}
 	
-	void put(phy::Page* buf, int len) {
+	void put(phy::Page* buf, int32_t len) {
 		while(len > 0) {
-			int n = std::min(len, phy::Page::size);
+			int32_t n = std::min(len, phy::Page::size);
 			put(buf->mem, n);
 			len -= n;
 			buf = buf->next;
 		}
 	}
 	
-	void putString(const vnl::String& str, int len) {
-		const vnl::String::chunk_t* chunk = str.front();
-		while(chunk) {
-			int n = std::min((int)chunk->len, len);
+	void putString(const vnl::String& str, int32_t len) {
+		vnl::String::chunk_t* chunk = str.front();
+		while(chunk && chunk->len) {
+			int32_t n = std::min((int32_t)chunk->len, len);
 			put(chunk->str, n);
 			len -= n;
-			if(!len) break;
 			chunk = chunk->next;
 		}
 	}

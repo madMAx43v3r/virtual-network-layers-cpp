@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_ARRAY_H_
 #define INCLUDE_PHY_ARRAY_H_
 
-#include "phy/Memory.h"
+#include "vnl/phy/Memory.h"
 
 
 namespace vnl {

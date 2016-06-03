@@ -14,73 +14,65 @@
 namespace vnl { namespace io {
 
 template<typename TStream>
-class TypeOutput : public io::ByteOutput<TStream> {
+class TypeOutput {
 public:
-	static const int MAX_ENTRY_SIZE = 32000;
+	static const int MAX_ENTRY_SIZE = 2147483642;
 	
-	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream), out(*this) {}
+	TypeOutput(TStream& stream) : out(stream) {}
 	
-	void beginType(uint64_t hash, int16_t num_entries) {
-		out.putLong(hash);
-		out.putShort(num_entries);
+	void putEntry(uint32_t hash, int32_t size) {
+		out.putInt(hash);
+		if(size > -128 && size < 128) {
+			out.putChar(size);
+		} else {
+			out.putChar(-128);
+			out.putInt(size);
+		}
 	}
 	
 	void putNull() {
-		beginType(0, 0);
-	}
-	
-	void beginEntry(uint32_t hash, int16_t size) {
-		out.putInt(hash);
-		out.putShort(size);
-	}
-	
-	void putType(uint32_t hash) {
-		beginEntry(hash, -32001);
-	}
-	
-	void putFunc(uint32_t hash, int16_t num_args) {
-		beginEntry(hash, -num_args);
+		putEntry(0, 0);
 	}
 	
 	void putChar(uint32_t hash, int8_t value) {
-		beginEntry(hash, 1);
+		putEntry(hash, 1);
 		out.putChar(value);
 	}
 	
 	void putShort(uint32_t hash, int16_t value) {
-		beginEntry(hash, 2);
+		putEntry(hash, 2);
 		out.putShort(value);
 	}
 	
 	void putInt(uint32_t hash, int32_t value) {
-		beginEntry(hash, 4);
+		putEntry(hash, 4);
 		out.putInt(value);
 	}
 	
 	void putLong(uint32_t hash, int64_t value) {
-		beginEntry(hash, 8);
+		putEntry(hash, 8);
 		out.putLong(value);
 	}
 	
 	void putFloat(uint32_t hash, float value) {
-		beginEntry(hash, 4);
+		putEntry(hash, 4);
 		out.putFloat(value);
 	}
 	
 	void putDouble(uint32_t hash, double value) {
-		beginEntry(hash, 8);
+		putEntry(hash, 8);
 		out.putDouble(value);
 	}
 	
-	void putBinary(uint32_t hash, int len, const void* data) {
+	void putBinary(uint32_t hash, int32_t len, const void* data) {
 		int size = std::min(len, MAX_ENTRY_SIZE);
-		beginEntry(hash, size);
+		putEntry(hash, size);
 		out.put(data, size);
 	}
 	
 	void putString(uint32_t hash, const vnl::String& str) {
 		int size = std::min(str.size(), MAX_ENTRY_SIZE);
-		beginEntry(hash, size);
+		putEntry(hash, size);
 		out.putString(str, size);
 	}
 	
