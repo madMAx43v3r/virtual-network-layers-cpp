@@ -8,80 +8,76 @@
 #ifndef INCLUDE_IO_TYPEOUTPUT_H_
 #define INCLUDE_IO_TYPEOUTPUT_H_
 
-#include "io/ByteOutput.h"
+#include "vnl/io/ByteOutput.h"
 
 
 namespace vnl { namespace io {
 
 template<typename TStream>
-class TypeOutput {
+class TypeOutput : public ByteOutput<TStream> {
 public:
-	static const int MAX_ENTRY_SIZE = 2147483642;
+	static const int MAX_SIZE = 2147483642;
 	
-	TypeOutput(TStream& stream) : out(stream) {}
+	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream) {}
 	
-	void putEntry(uint32_t hash, int32_t size) {
-		out.putInt(hash);
+	void putHash(uint32_t hash) {
+		ByteOutput<TStream>::writeInt(hash);
+	}
+	
+	void putSize(int32_t size) {
 		if(size > -128 && size < 128) {
-			out.putChar(size);
+			ByteOutput<TStream>::writeChar(size);
 		} else {
-			out.putChar(-128);
-			out.putInt(size);
+			ByteOutput<TStream>::writeChar(-128);
+			ByteOutput<TStream>::writeInt(size);
 		}
 	}
 	
 	void putNull() {
-		putEntry(0, 0);
+		putSize(0);
 	}
 	
-	void putChar(uint32_t hash, int8_t value) {
-		putEntry(hash, 1);
-		out.putChar(value);
+	void putChar(int8_t value) {
+		putSize(1);
+		ByteOutput<TStream>::writeChar(value);
 	}
 	
-	void putShort(uint32_t hash, int16_t value) {
-		putEntry(hash, 2);
-		out.putShort(value);
+	void putShort(int16_t value) {
+		putSize(2);
+		ByteOutput<TStream>::writeShort(value);
 	}
 	
-	void putInt(uint32_t hash, int32_t value) {
-		putEntry(hash, 4);
-		out.putInt(value);
+	void putInt(int32_t value) {
+		putSize(4);
+		ByteOutput<TStream>::writeInt(value);
 	}
 	
-	void putLong(uint32_t hash, int64_t value) {
-		putEntry(hash, 8);
-		out.putLong(value);
+	void putLong(int64_t value) {
+		putSize(8);
+		ByteOutput<TStream>::writeLong(value);
 	}
 	
-	void putFloat(uint32_t hash, float value) {
-		putEntry(hash, 4);
-		out.putFloat(value);
+	void putFloat(float value) {
+		putSize(4);
+		ByteOutput<TStream>::writeFloat(value);
 	}
 	
-	void putDouble(uint32_t hash, double value) {
-		putEntry(hash, 8);
-		out.putDouble(value);
+	void putDouble(double value) {
+		putSize(8);
+		ByteOutput<TStream>::writeDouble(value);
 	}
 	
-	void putBinary(uint32_t hash, int32_t len, const void* data) {
-		int size = std::min(len, MAX_ENTRY_SIZE);
-		putEntry(hash, size);
-		out.put(data, size);
+	void putBinary(phy::Page* buf, int32_t len) {
+		int32_t size = std::min(len, MAX_SIZE);
+		putSize(size);
+		ByteOutput<TStream>::writeBinary(buf, size);
 	}
 	
-	void putString(uint32_t hash, const vnl::String& str) {
-		int size = std::min(str.size(), MAX_ENTRY_SIZE);
-		putEntry(hash, size);
-		out.putString(str, size);
+	void putString(const vnl::String& str) {
+		int32_t size = std::min(str.size(), MAX_SIZE);
+		putSize(size);
+		ByteOutput<TStream>::writeString(str, size);
 	}
-	
-	bool error() {
-		return out.error();
-	}
-	
-protected:
-	io::ByteOutput<TStream>& out;
 	
 };
 

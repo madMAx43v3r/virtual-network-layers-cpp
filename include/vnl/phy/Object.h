@@ -40,7 +40,8 @@ public:
 		ERROR = 1, WARN = 2, INFO = 3
 	};
 	
-	int log_level = INFO;
+	static int global_log_level;
+	int log_level = global_log_level;
 	
 protected:
 	virtual ~Object() {}

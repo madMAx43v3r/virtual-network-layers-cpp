@@ -12,7 +12,7 @@
 #include <ostream>
 #include <string>
 #include <sstream>
-#include <atomic>
+#include <mutex>
 
 #include "vnl/phy/Memory.h"
 
@@ -245,14 +245,13 @@ class StringStream : public StringOutput {
 public:
 	StringStream(std::ostream& stream) : stream(stream) {}
 	virtual void write(const String& str) {
-		String::chunk_t* chunk = str.front();
-		while(chunk) {
-			stream.write(chunk->str, chunk->len);
-			chunk = chunk->next;
-		}
+		mutex.lock();
+		stream << str;
+		mutex.unlock();
 	}
 private:
 	std::ostream& stream;
+	std::mutex mutex;
 };
 
 extern StringStream cout;
@@ -262,15 +261,12 @@ extern StringStream cerr;
 class StringWriter {
 public:
 	StringWriter(StringOutput* func) : out(memory), func(func) {}
-	
 	StringWriter(const StringWriter& other) : out(memory), func(other.func) {}
-	
 	~StringWriter() {
 		if(func) {
 			func->write(out);
 		}
 	}
-	
 private:
 	phy::Region memory;
 	StringOutput* func;

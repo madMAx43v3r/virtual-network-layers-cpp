@@ -8,9 +8,9 @@
 #ifndef INCLUDE_VNL_IO_SERIALIZABLE_H_
 #define INCLUDE_VNL_IO_SERIALIZABLE_H_
 
-#include "io/TypeInput.h"
-#include "io/TypeOutput.h"
-#include "io/PageBuffer.h"
+#include "vnl/io/TypeInput.h"
+#include "vnl/io/TypeOutput.h"
+#include "vnl/io/PageBuffer.h"
 
 
 namespace vnl { namespace io {

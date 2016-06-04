@@ -9,7 +9,8 @@
 #define INCLUDE_IO_PAGEBUFFER_H_
 
 #include <string.h>
-#include "phy/Memory.h"
+#include "vnl/phy/Memory.h"
+#include "vnl/io/Error.h"
 
 
 namespace vnl { namespace io {
@@ -43,6 +44,7 @@ public:
 			int left = phy::Page::size - off;
 			if(!left) {
 				if(!buf->next) {
+					err = UNDERFLOW;
 					return false;
 				}
 				buf = buf->next;
@@ -59,6 +61,7 @@ public:
 		if(pos <= limit) {
 			return true;
 		} else {
+			err = UNDERFLOW;
 			return false;
 		}
 	}
@@ -84,12 +87,17 @@ public:
 		return true;
 	}
 	
+	int error() {
+		return err;
+	}
+	
 protected:
 	phy::Page* buf;
 	phy::Page* first;
 	int limit = 0;
 	int pos = 0;
 	int off = 0;
+	int err = 0;
 	
 };
 

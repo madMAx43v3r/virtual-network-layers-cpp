@@ -5,7 +5,7 @@
  *      Author: mad
  */
 
-#include "build/config.h"
+#include "vnl/build/config.h"
 
 #ifdef VNL_HAVE_BOOST_COROUTINE
 

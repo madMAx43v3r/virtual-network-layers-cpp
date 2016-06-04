@@ -12,6 +12,7 @@
 
 namespace vnl { namespace phy {
 
+int Object::global_log_level = Object::INFO;
 
 Object::Object() : Object(0) {}
 
@@ -44,9 +45,9 @@ vnl::StringWriter Object::log(int level) {
 	vnl::StringWriter writer(out);
 	writer.out << "[" << my_name << "] ";
 	switch(level) {
-	case ERROR: writer.out << "ERROR: "; break;
-	case WARN: writer.out << "WARNING: "; break;
-	case INFO: writer.out << "INFO: "; break;
+		case ERROR: writer.out << "ERROR: "; break;
+		case WARN: writer.out << "WARNING: "; break;
+		case INFO: writer.out << "INFO: "; break;
 	}
 	return writer;
 }

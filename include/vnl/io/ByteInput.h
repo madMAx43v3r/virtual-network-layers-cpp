@@ -8,8 +8,8 @@
 #ifndef INCLUDE_IO_BYTEINPUT_H_
 #define INCLUDE_IO_BYTEINPUT_H_
 
-#include "util/types.h"
-#include "phy/Memory.h"
+#include "vnl/util/types.h"
+#include "vnl/phy/Memory.h"
 
 
 namespace vnl { namespace io {

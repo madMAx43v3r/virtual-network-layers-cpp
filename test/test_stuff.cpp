@@ -26,6 +26,7 @@
 
 #include "../src/phy/Memory.cpp"
 #include "../src/util/CRC64.cpp"
+#include "../src/String.cpp"
 
 int main() {
 	

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_IO_TYPEINPUT_H_
 #define INCLUDE_IO_TYPEINPUT_H_
 
-#include "io/ByteInput.h"
+#include "vnl/io/ByteInput.h"
 
 
 namespace vnl { namespace io {
