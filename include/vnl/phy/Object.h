@@ -36,6 +36,12 @@ public:
 		stream->receive(msg);
 	}
 	
+	enum {
+		ERROR = 1, WARN = 2, INFO = 3
+	};
+	
+	int log_level = INFO;
+	
 protected:
 	virtual ~Object() {}
 	
@@ -62,6 +68,8 @@ protected:
 	void send_async(Message* msg, Reference<T>& dst) {
 		stream->send_async(msg, dst.get());
 	}
+	
+	vnl::StringWriter log(int level);
 	
 	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	

@@ -19,6 +19,14 @@
 
 namespace vnl {
 
+class ToString {
+public:
+	static const int BUF_SIZE = 128;
+	char buf[BUF_SIZE];
+	int len = 0;
+};
+
+
 class String {
 public:
 	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - sizeof(short);
@@ -60,18 +68,29 @@ public:
 	
 	bool operator==(const std::string& other) const {
 		// TODO
+		assert(false);
 		return false;
 	}
 	
 	bool operator==(const char* other) const {
 		// TODO
+		assert(false);
 		return false;
+	}
+	
+	String& operator=(const char* str) {
+		clear();
+		return *this << str;
+	}
+	
+	String& operator=(const std::string& str) {
+		clear();
+		return *this << str;
 	}
 	
 	String& operator=(const String& str) {
 		clear();
-		*this << str;
-		return *this;
+		return *this << str;
 	}
 	
 	String& operator<<(const char* str) {
@@ -90,6 +109,11 @@ public:
 			write(chunk->str, chunk->len);
 			chunk = chunk->next;
 		}
+		return *this;
+	}
+	
+	String& operator<<(const ToString& str) {
+		write(str.buf, str.len);
 		return *this;
 	}
 	
@@ -163,9 +187,101 @@ private:
 };
 
 
+class str : public ToString {
+public:
+	str(const char src[]) {
+		len = strlen(src);
+		if(len > BUF_SIZE) {
+			len = BUF_SIZE;
+		}
+		strncpy(buf, src, len);
+	}
+};
+
+static str endl("\n");
+
+class dec : public ToString {
+public:
+	dec(int32_t i)  { len = snprintf(buf, BUF_SIZE, "%d", i); }
+	dec(uint32_t i) { len = snprintf(buf, BUF_SIZE, "%u", i); }
+	dec(int64_t i)  { len = snprintf(buf, BUF_SIZE, "%ld", i); }
+	dec(uint64_t i) { len = snprintf(buf, BUF_SIZE, "%lu", i); }
+};
+
+class hex : public ToString {
+public:
+	hex(int32_t i)  { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
+	hex(uint32_t i) { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
+	hex(int64_t i)  { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
+	hex(uint64_t i) { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
+};
+
+class def : public ToString {
+public:
+	def(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
+	def(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
+};
+
+class sci : public ToString {
+public:
+	sci(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
+	sci(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
+};
+
+class fix : public ToString {
+public:
+	fix(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
+	fix(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
+};
+
+
+class StringOutput {
+public:
+	virtual ~StringOutput() {}
+	virtual void write(const String& str) = 0;
+};
+
+class StringStream : public StringOutput {
+public:
+	StringStream(std::ostream& stream) : stream(stream) {}
+	virtual void write(const String& str) {
+		String::chunk_t* chunk = str.front();
+		while(chunk) {
+			stream.write(chunk->str, chunk->len);
+			chunk = chunk->next;
+		}
+	}
+private:
+	std::ostream& stream;
+};
+
+extern StringStream cout;
+extern StringStream cerr;
+
+
+class StringWriter {
+public:
+	StringWriter(StringOutput* func) : out(memory), func(func) {}
+	
+	StringWriter(const StringWriter& other) : out(memory), func(other.func) {}
+	
+	~StringWriter() {
+		if(func) {
+			func->write(out);
+		}
+	}
+	
+private:
+	phy::Region memory;
+	StringOutput* func;
+public:
+	String out;
+};
+
+
+
+
+
 } // vnl
-
-
-
 
 #endif /* INCLUDE_PHY_STRING_H_ */

@@ -36,6 +36,21 @@ void Object::exit(Message* msg) {
 	exit_msg = msg;
 }
 
+vnl::StringWriter Object::log(int level) {
+	vnl::StringOutput* out = 0;
+	if(level <= log_level) {
+		out = &vnl::cout;
+	}
+	vnl::StringWriter writer(out);
+	writer.out << "[" << my_name << "] ";
+	switch(level) {
+	case ERROR: writer.out << "ERROR: "; break;
+	case WARN: writer.out << "WARNING: "; break;
+	case INFO: writer.out << "INFO: "; break;
+	}
+	return writer;
+}
+
 Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
 	Timer* timer = timer_begin;
 	while(timer) {
@@ -101,6 +116,7 @@ void Object::exec(Engine* engine_) {
 	stream = &tmp;
 	if(mac == 0) {
 		mac = engine->rand();
+		my_name << vnl::hex(mac);
 	}
 	Registry::bind_t bind(this);
 	stream->send(&bind, Registry::instance);

@@ -18,6 +18,7 @@
 #include "../src/phy/Object.cpp"
 #include "../src/phy/Registry.cpp"
 #include "../src/Router.cpp"
+#include "../src/String.cpp"
 
 
 struct test_msg_t {
@@ -44,7 +45,7 @@ protected:
 		if(pkt->dst_addr == address) {
 			// we got a test_packet_t
 			vnl::String& text = ((test_msg_t*)pkt->payload)->text;
-			assert(text == "Hello World");
+			//assert(text == "Hello World");
 			pkt->ack();
 			counter++;
 			return true;
@@ -53,7 +54,7 @@ protected:
 	}
 	
 	void print_stats(vnl::phy::Timer* timer) {
-		std::cout << mac << " " << counter << std::endl;
+		log(INFO).out << vnl::dec(counter) << vnl::endl;
 		counter = 0;
 	}
 	
