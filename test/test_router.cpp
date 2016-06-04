@@ -74,7 +74,7 @@ int main() {
 	vnl::phy::Stream pub(&engine, mem);
 	
 	Consumer* consumer;
-	for(int i = 0; i < 2; ++i) {
+	for(int i = 0; i < 10; ++i) {
 		consumer = new Consumer();
 		engine.fork(consumer);
 	}

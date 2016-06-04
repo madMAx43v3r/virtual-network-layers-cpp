@@ -6,26 +6,21 @@
  */
 
 #include "vnl/phy/Memory.h"
-#include "vnl/util/spinlock.h"
 
 
 namespace vnl { namespace phy {
 
-std::atomic<Page*> Page::begin;
+vnl::util::spinlock Page::mutex;
+
+Page* Page::begin = 0;
 
 size_t Page::num_alloc = 0;
 
 Page* Page::alloc() {
-	static vnl::util::spinlock mutex;	// GCC bug workaround
 	mutex.lock();
 	Page* page = begin;
 	if(page) {
-		while(!begin.compare_exchange_weak(page, page->next)) {
-			if(!page) {
-				page = new Page();
-				break;
-			}
-		}
+		begin = page->next;
 	} else {
 		page = new Page();
 	}
@@ -36,8 +31,10 @@ Page* Page::alloc() {
 }
 
 void Page::free() {
+	mutex.lock();
 	next = begin;
-	while(!begin.compare_exchange_weak(next, this)) {}
+	begin = this;
+	mutex.unlock();
 }
 
 void Page::free_all() {
@@ -50,6 +47,7 @@ void Page::free_all() {
 }
 
 void Page::cleanup() {
+	mutex.lock();
 	Page* page = begin;
 	while(page) {
 		Page* tmp = page;
@@ -59,6 +57,8 @@ void Page::cleanup() {
 	if(num_alloc) {
 		std::cout << "WARNING: " << num_alloc << " pages still being used at exit." << std::endl;
 	}
+	begin = 0;
+	mutex.unlock();
 }
 
 

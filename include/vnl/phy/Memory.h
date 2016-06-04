@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "vnl/build/config.h"
+#include "vnl/util/spinlock.h"
 
 
 namespace vnl { namespace phy {
@@ -60,7 +61,8 @@ private:
 	
 private:
 	static const int OUT_OF_MEMORY = 0;
-	static std::atomic<Page*> begin;
+	static vnl::util::spinlock mutex;
+	static Page* begin;
 	static size_t num_alloc;
 	
 };

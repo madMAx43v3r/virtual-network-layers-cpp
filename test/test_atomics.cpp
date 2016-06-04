@@ -25,7 +25,7 @@ mydata_t* alloc() {
 	mydata_t* data = begin;
 	if(data) {
 		mutex.lock();		// locking here doesn't work
-		while(!begin.compare_exchange_weak(data, data->next)) {
+		while(!begin.compare_exchange_strong(data, data->next)) {
 			if(!data) {
 				data = new mydata_t();
 				break;
@@ -37,20 +37,24 @@ mydata_t* alloc() {
 	}
 	//mutex.unlock();		// locking here WORKS
 	
+	mutex.lock();
 	if(data->free != true) {
-		mutex.lock();
-		std::cerr << "data = " << data << std::endl;
+		std::cout << "data = " << data << std::endl;
 		mutex.unlock();
 		return 0;
 	}
 	data->free = false;
+	data->next = 0;
+	mutex.unlock();
 	return data;
 }
 
 void free(mydata_t* data) {
+	//mutex.lock();
 	data->free = true;
 	data->next = begin;
-	while(!begin.compare_exchange_weak(data->next, data)) {}
+	while(!begin.compare_exchange_strong(data->next, data)) {}
+	//mutex.unlock();
 }
 
 void func() {
