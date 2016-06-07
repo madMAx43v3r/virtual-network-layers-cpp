@@ -5,9 +5,9 @@
  *      Author: mad
  */
 
-#include "vnl/util/CRC64.h"
+#include "vnl/CRC64.h"
 
-namespace vnl { namespace util {
+namespace vnl {
 
 struct CRC64::init {
 	init() {
@@ -31,4 +31,4 @@ uint64_t CRC64::crcTable[256];
 CRC64::init CRC64::initializer;
 
 
-}}
+}

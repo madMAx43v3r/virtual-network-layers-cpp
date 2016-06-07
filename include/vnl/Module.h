@@ -11,24 +11,24 @@
 #include <functional>
 #include <unordered_map>
 
-#include "vnl/phy/Engine.h"
-#include "vnl/phy/Stream.h"
-#include "vnl/phy/Reference.h"
-#include "vnl/phy/RingBuffer.h"
-#include "vnl/phy/Pool.h"
-#include "vnl/phy/Timer.h"
+#include "vnl/Engine.h"
+#include "vnl/Stream.h"
+#include "vnl/Reference.h"
+#include "vnl/RingBuffer.h"
+#include "vnl/Pool.h"
+#include "vnl/Timer.h"
 #include "vnl/String.h"
 #include "vnl/System.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-class Object : public Node {
+class Module : public Base {
 public:
-	Object();
-	Object(uint64_t mac);
-	Object(const char* name);
-	Object(const vnl::String& name);
+	Module();
+	Module(uint64_t mac);
+	Module(const char* name);
+	Module(const vnl::String& name);
 	
 	const vnl::String& getName() const { return my_name; }
 	
@@ -45,20 +45,20 @@ public:
 	int log_level = global_log_level;
 	
 protected:
-	virtual ~Object() {}
+	virtual ~Module() {}
 	
 	uint64_t rand() {
 		return engine->rand();
 	}
 	
-	void fork(Object* object) {
+	void fork(Module* object) {
 		engine->fork(object);
 	}
 	
-	void send(Message* msg, Node* dst) {
+	void send(Message* msg, Base* dst) {
 		stream->send(msg, dst);
 	}
-	void send_async(Message* msg, Node* dst) {
+	void send_async(Message* msg, Base* dst) {
 		stream->send_async(msg, dst);
 	}
 	
@@ -135,6 +135,6 @@ Reference<T>::Reference(Engine* engine, const vnl::String& name)
 }
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_OBJECT_H_ */

@@ -8,12 +8,12 @@
 #ifndef INCLUDE_PHY_REFERENCE_H_
 #define INCLUDE_PHY_REFERENCE_H_
 
-#include "vnl/phy/Engine.h"
-#include "vnl/phy/Registry.h"
+#include "vnl/Engine.h"
+#include "vnl/Registry.h"
 #include "vnl/String.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Object;
 
@@ -54,6 +54,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_REFERENCE_H_ */

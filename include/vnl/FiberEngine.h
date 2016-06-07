@@ -8,11 +8,11 @@
 #ifndef INCLUDE_PHY_FIBERENGINE_H_
 #define INCLUDE_PHY_FIBERENGINE_H_
 
-#include "vnl/phy/Engine.h"
+#include "vnl/Engine.h"
 #include "vnl/Array.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Fiber;
 
@@ -20,18 +20,18 @@ class FiberEngine : public Engine {
 public:
 	FiberEngine(int stack_size = 64*1024);
 	
-	~FiberEngine();
+	virtual ~FiberEngine();
 	
-	virtual void exec(Object* object) override;
+	virtual void exec(Module* object) override;
 	
-	virtual void send_impl(Node* src, Message* msg, Node* dst, bool async) override;
+	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) override;
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;
 	
 	virtual void flush() override;
 	
 protected:
-	virtual void fork(Object* object) override;
+	virtual void fork(Module* object) override;
 	
 private:
 	int timeout();
@@ -49,6 +49,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_FIBERENGINE_H_ */

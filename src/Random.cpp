@@ -5,10 +5,10 @@
  *      Author: mad
  */
 
-#include "vnl/phy/Random.h"
+#include "vnl/Random.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 vnl::util::spinlock Random64::sync;
 
@@ -17,6 +17,6 @@ Random64* Random64::instance = 0;
 std::atomic<int> Random64::counter;
 
 
-}}
 
+}
 

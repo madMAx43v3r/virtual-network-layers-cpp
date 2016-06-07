@@ -13,12 +13,12 @@
 #include <sstream>
 #include <functional>
 
-#include "vnl/phy/RingBuffer.h"
+#include "vnl/RingBuffer.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-class Node;
+class Base;
 class Engine;
 
 
@@ -44,8 +44,8 @@ public:
 	}
 	
 	uint32_t msg_id;
-	Node* src = 0;
-	Node* dst = 0;
+	Base* src = 0;
+	Base* dst = 0;
 	bool isack = false;
 	
 	RingBuffer* buffer = 0;
@@ -54,7 +54,7 @@ public:
 	void* user = 0;
 	std::function<void(Message*)>* callback = 0;
 	
-	Node* gate = 0;
+	Base* gate = 0;
 	void* _impl = 0;
 	
 };
@@ -112,6 +112,6 @@ public:
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_MESSAGE_H_ */

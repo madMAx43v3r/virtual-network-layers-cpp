@@ -8,8 +8,8 @@
 #ifndef INCLUDE_NODE_H_
 #define INCLUDE_NODE_H_
 
-#include "phy/Object.h"
-#include "Router.h"
+#include "vnl/Module.h"
+#include "vnl/Router.h"
 
 
 namespace vnl {
@@ -17,50 +17,50 @@ namespace vnl {
 class Receiver;
 
 
-class Node : public vnl::phy::Object {
+class Node : public vnl::Module {
 public:
-	Node() : Object() {}
+	Node() : Module() {}
 	
-	Node(uint64_t mac) : Object(mac) {}
+	Node(uint64_t mac) : Module(mac) {}
 	
-	Node(const char* name) : Object(name) {}
+	Node(const char* name) : Module(name) {}
 	
-	Node(const vnl::String& name) : Object(name) {}
+	Node(const vnl::String& name) : Module(name) {}
 	
 protected:
 	void open(Address address) {
 		Router::open_t msg(address);
-		Object::send(&msg, Router::instance);
+		Module::send(&msg, Router::instance);
 	}
 	void close(Address address) {
 		Router::close_t msg(address);
-		Object::send(&msg, Router::instance);
+		Module::send(&msg, Router::instance);
 	}
 	
-	void send(phy::Message* msg, Node* dst) {
-		Object::send(msg, dst);
+	void send(Message* msg, Node* dst) {
+		Module::send(msg, dst);
 	}
-	void send_async(phy::Message* msg, Node* dst) {
-		Object::send_async(msg, dst);
+	void send_async(Message* msg, Node* dst) {
+		Module::send_async(msg, dst);
 	}
 	
 	template<typename T>
-	void send(phy::Message* msg, phy::Reference<T>& dst) {
-		Object::send(msg, dst.get());
+	void send(Message* msg, Reference<T>& dst) {
+		Module::send(msg, dst.get());
 	}
 	template<typename T>
-	void send_async(phy::Message* msg, phy::Reference<T>& dst) {
-		Object::send_async(msg, dst.get());
+	void send_async(Message* msg, Reference<T>& dst) {
+		Module::send_async(msg, dst.get());
 	}
 	
 	void send(Packet* packet) {
-		Object::send(packet, Router::instance);
+		Module::send(packet, Router::instance);
 	}
 	void send_async(Packet* packet) {
-		Object::send_async(packet, Router::instance);
+		Module::send_async(packet, Router::instance);
 	}
 	
-	virtual bool handle(phy::Message* msg) override {
+	virtual bool handle(Message* msg) override {
 		if(msg->msg_id == Packet::MID) {
 			vnl::Packet* pkt = (vnl::Packet*)msg;
 			return handle(pkt);

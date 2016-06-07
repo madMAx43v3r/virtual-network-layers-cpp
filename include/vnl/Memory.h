@@ -17,7 +17,7 @@
 #include "vnl/util/spinlock.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Page {
 public:
@@ -119,6 +119,6 @@ private:
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_MEMORY_H_ */

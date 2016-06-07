@@ -16,7 +16,7 @@ namespace vnl { namespace io {
 template<typename TStream>
 class TypeOutput : public ByteOutput<TStream> {
 public:
-	static const int MAX_SIZE = 2147483642;
+	static const int MAX_SIZE = 2147483647;
 	
 	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream) {}
 	

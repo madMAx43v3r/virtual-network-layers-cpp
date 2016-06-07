@@ -53,7 +53,7 @@ public:
 	
 	Array<std::pair<K,V> > entries() const {
 		Array<std::pair<K,V> > res;
-		phy::Page* page = table;
+		Page* page = table;
 		while(page) {
 			for(int i = 0; i < M; ++i) {
 				entry_t* row = page->get<entry_t*>(i);
@@ -141,7 +141,7 @@ protected:
 		entry_t* next;
 	};
 	
-	static const int M = phy::Page::size / sizeof(void*);
+	static const int M = Page::size / sizeof(void*);
 	
 	void resize(size_t rows) {
 		mem.clear();
@@ -150,20 +150,20 @@ protected:
 		count = 0;
 		index.clear();
 		if(!table) {
-			table = phy::Page::alloc();
+			table = Page::alloc();
 		}
 		int num_pages = N / M;
 		int i = 0;
-		phy::Page* page = table;
+		Page* page = table;
 		while(true) {
-			memset(page->mem, 0, phy::Page::size);
+			memset(page->mem, 0, Page::size);
 			index.push_back(page);
 			i++;
 			if(i >= num_pages) {
 				break;
 			}
 			if(!page->next) {
-				page->next = phy::Page::alloc();
+				page->next = Page::alloc();
 			}
 			page = page->next;
 		}
@@ -183,7 +183,7 @@ protected:
 		size_t ri = std::hash<K>{}(key) % N;
 		size_t pi = ri / M;
 		size_t qi = ri % M;
-		phy::Page* page = index[pi];
+		Page* page = index[pi];
 		p_row = &page->get<entry_t*>(qi);
 		while(true) {
 			entry_t* row = *p_row;
@@ -199,11 +199,11 @@ protected:
 		return false;
 	}
 	
-	phy::Region mem;
+	Region mem;
 	
 private:
-	Array<phy::Page*> index;
-	phy::Page* table = 0;
+	Array<Page*> index;
+	Page* table = 0;
 	entry_t* p_front = 0;
 	size_t N = 0;
 	size_t count = 0;

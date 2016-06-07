@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_ARRAY_H_
 #define INCLUDE_PHY_ARRAY_H_
 
-#include "vnl/phy/Memory.h"
+#include "vnl/Memory.h"
 
 
 namespace vnl {
@@ -21,7 +21,7 @@ template<typename T>
 class Array {
 public:
 	Array() {
-		assert(sizeof(T) <= phy::Page::size);
+		assert(sizeof(T) <= Page::size);
 	}
 	
 	Array(const Array& other) {
@@ -46,11 +46,11 @@ public:
 	
 	T& push_back(const T& obj) {
 		if(!p_front) {
-			p_front = phy::Page::alloc();
+			p_front = Page::alloc();
 			p_back = p_front;
 		}
 		if(pos >= M) {
-			p_back->next = phy::Page::alloc();
+			p_back->next = Page::alloc();
 			p_back = p_back->next;
 			pos = 0;
 		}
@@ -62,7 +62,7 @@ public:
 	T& operator[](size_t index) {
 		int pi = index / M;
 		int ei = index % M;
-		phy::Page* page = p_front;
+		Page* page = p_front;
 		for(int i = 0; i < pi; ++i) {
 			page = page->next;
 		}
@@ -83,7 +83,7 @@ public:
 	
 	size_t size() const {
 		size_t count = 0;
-		phy::Page* page = p_front;
+		Page* page = p_front;
 		while(page) {
 			if(page != p_back) {
 				count += M;
@@ -132,7 +132,7 @@ public:
 			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(phy::Page* page, int pos)
+		iterator_t(Page* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
 			if(pos >= Array::M-1 && page->next) {
@@ -142,7 +142,7 @@ public:
 				pos++;
 			}
 		}
-		phy::Page* page;
+		Page* page;
 		int pos;
 		friend class Array;
 	};
@@ -159,10 +159,10 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = phy::Page::size / sizeof(T);
+	static const int M = Page::size / sizeof(T);
 	
-	phy::Page* p_front = 0;
-	phy::Page* p_back = 0;
+	Page* p_front = 0;
+	Page* p_back = 0;
 	int pos = 0;
 	
 };

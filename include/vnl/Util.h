@@ -18,7 +18,7 @@
 
 #include <cxxabi.h>
 
-#include "vnl/util/CRC64.h"
+#include "vnl/CRC64.h"
 #include "vnl/String.h"
 
 
@@ -37,19 +37,19 @@ static int64_t nanoTime() {
 }
 
 static uint64_t hash64(const char* str) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(str, strlen(str));
 	return func.getValue();
 }
 
 static uint64_t hash64(const std::string& str) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(str.c_str(), str.size());
 	return func.getValue();
 }
 
 static uint64_t hash64(const vnl::String& str) {
-	util::CRC64 func;
+	CRC64 func;
 	auto* chunk = str.front();
 	while(chunk) {
 		func.update(chunk->str, chunk->len);
@@ -58,26 +58,26 @@ static uint64_t hash64(const vnl::String& str) {
 }
 
 static uint64_t hash64(const char* data, size_t size) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(data, size);
 	return func.getValue();
 }
 
 static uint64_t hash64(uint64_t a) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(a);
 	return func.getValue();
 }
 
 static uint64_t hash64(uint64_t a, uint64_t b) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(a*31);
 	func.update(b*37);
 	return func.getValue();
 }
 
 static uint64_t hash64(uint64_t a, uint64_t b, uint64_t c) {
-	util::CRC64 func;
+	CRC64 func;
 	func.update(a*31);
 	func.update(b*37);
 	func.update(c*41);

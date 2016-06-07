@@ -11,9 +11,9 @@
 #include <assert.h>
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-class Object;
+class Module;
 
 /*
  * A timer class that does some magic.
@@ -53,14 +53,14 @@ private:
 	bool free = false;
 	Timer* next = 0;
 	
-	friend class Object;
+	friend class Module;
 	
 };
 
 
 
 
-}}
+}
 
 
 

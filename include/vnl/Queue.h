@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_QUEUE_H_
 #define INCLUDE_PHY_QUEUE_H_
 
-#include "phy/Memory.h"
+#include "vnl/Memory.h"
 
 namespace vnl {
 
@@ -20,7 +20,7 @@ namespace vnl {
 template<typename T, int N = 8>
 class Queue {
 public:
-	Queue(phy::Region& mem) : mem(mem) {
+	Queue(Region& mem) : mem(mem) {
 		p_front = mem.create<block_t>();
 		p_back = p_front;
 	}
@@ -117,7 +117,7 @@ public:
 		return count == 0;
 	}
 	
-	phy::Region& mem;
+	Region& mem;
 	
 protected:
 	struct block_t {

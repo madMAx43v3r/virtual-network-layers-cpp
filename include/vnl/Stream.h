@@ -8,17 +8,17 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include "vnl/phy/Node.h"
-#include "vnl/phy/Engine.h"
-#include "vnl/phy/Memory.h"
+#include "vnl/Base.h"
+#include "vnl/Engine.h"
+#include "vnl/Memory.h"
 #include "vnl/Queue.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Engine;
 
-class Stream final : public Node {
+class Stream final : public Base {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
@@ -47,11 +47,11 @@ public:
 		}
 	}
 	
-	void send(Message* msg, Node* dst) {
+	void send(Message* msg, Base* dst) {
 		engine->send(this, msg, dst);
 	}
 	
-	void send_async(Message* msg, Node* dst) {
+	void send_async(Message* msg, Base* dst) {
 		engine->send_async(this, msg, dst);
 	}
 	
@@ -59,7 +59,7 @@ public:
 		engine->flush();
 	}
 	
-	void listen(Node* dst) {
+	void listen(Base* dst) {
 		listener = dst;
 	}
 	
@@ -88,7 +88,7 @@ public:
 private:
 	Engine* engine;
 	Queue<Message*> queue;
-	Node* listener = 0;
+	Base* listener = 0;
 	
 	friend class Engine;
 	
@@ -96,6 +96,6 @@ private:
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_STREAM_H_ */

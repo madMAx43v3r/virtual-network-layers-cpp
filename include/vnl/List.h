@@ -20,7 +20,7 @@ namespace vnl {
 template<typename T, int N = 8>
 class List : public Queue<T,N> {
 public:
-	List(phy::Region& mem) : Queue<T,N>(mem) {}
+	List(Region& mem) : Queue<T,N>(mem) {}
 	
 	T& push_back(const T& obj) {
 		return Queue<T,N>::push(obj);

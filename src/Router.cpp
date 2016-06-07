@@ -18,8 +18,8 @@ Router::Router()
 {
 }
 
-bool Router::handle(phy::Message* msg) {
-	phy::Node* src = msg->src;
+bool Router::handle(Message* msg) {
+	Base* src = msg->src;
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
 		if(pkt->src_addr.A == 0) {
@@ -48,13 +48,13 @@ bool Router::handle(phy::Message* msg) {
 	return false;
 }
 
-void Router::open(const Address& addr, phy::Node* src) {
+void Router::open(const Address& addr, Base* src) {
 	Row*& row = table[addr];
 	if(!row) {
 		row = new(mem.alloc<Row>()) Row(mem);
 	}
-	phy::Node** pcol = 0;
-	for(phy::Node*& col : *row) {
+	Base** pcol = 0;
+	for(Base*& col : *row) {
 		if(col == 0) {
 			pcol = &col;
 		} else if(col == src) {
@@ -69,10 +69,10 @@ void Router::open(const Address& addr, phy::Node* src) {
 	}
 }
 
-void Router::close(const Address& addr, phy::Node* src) {
+void Router::close(const Address& addr, Base* src) {
 	Row* row = table[addr];
 	if(row) {
-		for(phy::Node*& col : *row) {
+		for(Base*& col : *row) {
 			if(col == src) {
 				col = 0;
 			}
@@ -80,9 +80,9 @@ void Router::close(const Address& addr, phy::Node* src) {
 	}
 }
 
-void Router::route(Packet* pkt, phy::Node* src, Row** prow) {
+void Router::route(Packet* pkt, Base* src, Row** prow) {
 	if(prow) {
-		for(phy::Node* dst : **prow) {
+		for(Base* dst : **prow) {
 			if(dst && dst != src) {
 				forward(pkt, dst);
 			}
@@ -90,7 +90,7 @@ void Router::route(Packet* pkt, phy::Node* src, Row** prow) {
 	}
 }
 
-void Router::forward(Packet* org, phy::Node* dst) {
+void Router::forward(Packet* org, Base* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>(org->pkt_id);
 	msg->parent = org;
@@ -101,7 +101,7 @@ void Router::forward(Packet* org, phy::Node* dst) {
 	Reactor::send_async(msg, dst);
 }
 
-void Router::callback(phy::Message* msg_) {
+void Router::callback(Message* msg_) {
 	Packet* msg = (Packet*)msg_;
 	if(++(msg->parent->acks) == msg->parent->count) {
 		msg->parent->ack();

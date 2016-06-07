@@ -5,41 +5,41 @@
  *      Author: mad
  */
 
-#include "vnl/phy/Object.h"
-#include "vnl/phy/Registry.h"
+#include "vnl/Module.h"
+#include "vnl/Registry.h"
 #include "vnl/Util.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-int Object::global_log_level = Object::INFO;
+int Module::global_log_level = Module::INFO;
 
-Object::Object() : Object((uint64_t)0) {}
+Module::Module() : Module((uint64_t)0) {}
 
-Object::Object(uint64_t mac)
+Module::Module(uint64_t mac)
 	:	buffer(memory), my_name(memory)
 {
 	this->mac = mac;
 }
 
-Object::Object(const char* name)
-	:	Object::Object(vnl::hash64(name))
+Module::Module(const char* name)
+	:	Module::Module(vnl::hash64(name))
 {
 	this->my_name = name;
 }
 
-Object::Object(const vnl::String& name)
-	:	Object::Object(vnl::hash64(name))
+Module::Module(const vnl::String& name)
+	:	Module::Module(vnl::hash64(name))
 {
 	this->my_name = name;
 }
 
-void Object::die() {
+void Module::die() {
 	Registry::delete_t msg(this);
 	stream->send(&msg, Registry::instance);
 }
 
-vnl::StringWriter Object::log(int level) {
+vnl::StringWriter Module::log(int level) {
 	vnl::StringOutput* out = 0;
 	if(level <= log_level) {
 		out = &vnl::cout;
@@ -54,7 +54,7 @@ vnl::StringWriter Object::log(int level) {
 	return writer;
 }
 
-Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
+Timer* Module::timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
 	Timer* timer = timer_begin;
 	while(timer) {
 		if(timer->free) {
@@ -75,7 +75,7 @@ Timer* Object::timeout(int64_t micros, const std::function<void(Timer*)>& func, 
 	return timer;
 }
 
-void Object::run() {
+void Module::run() {
 	while(true) {
 		int64_t to = -1;
 		int64_t now = vnl::System::currentTimeMicros();
@@ -113,7 +113,7 @@ void Object::run() {
 	}
 }
 
-void Object::exec(Engine* engine_) {
+void Module::exec(Engine* engine_) {
 	engine = engine_;
 	Stream tmp(engine, memory);
 	stream = &tmp;
@@ -142,4 +142,4 @@ void Object::exec(Engine* engine_) {
 
 
 
-}}
+}

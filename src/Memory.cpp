@@ -5,10 +5,10 @@
  *      Author: mad
  */
 
-#include "vnl/phy/Memory.h"
+#include "vnl/Memory.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 vnl::util::spinlock Page::mutex;
 
@@ -86,5 +86,5 @@ void Region::clear() {
 }
 
 
-}}
+}
 

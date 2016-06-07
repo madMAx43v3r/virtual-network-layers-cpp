@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#include "vnl/phy/Registry.h"
-#include "vnl/phy/Object.h"
+#include "vnl/Registry.h"
+#include "vnl/Module.h"
 
 
 namespace vnl { namespace phy {
@@ -28,7 +28,7 @@ bool Registry::handle(Message* msg) {
 	}
 	case connect_t::MID: {
 		connect_t* req = (connect_t*)msg;
-		Object* obj = connect(req->args);
+		Module* obj = connect(req->args);
 		if(obj) {
 			req->ack(obj);
 		} else {
@@ -66,9 +66,9 @@ bool Registry::handle(Message* msg) {
 	return false;
 }
 
-bool Registry::bind(Object* obj) {
+bool Registry::bind(Module* obj) {
 	uint64_t mac = obj->getMAC();
-	Object*& value = map[mac];
+	Module*& value = map[mac];
 	if(value == 0) {
 		value = obj;
 		obj->ref++;
@@ -84,21 +84,21 @@ bool Registry::bind(Object* obj) {
 	return false;
 }
 
-Object* Registry::connect(uint64_t mac) {
-	Object** pobj = map.find(mac);
+Module* Registry::connect(uint64_t mac) {
+	Module** pobj = map.find(mac);
 	if(pobj) {
-		Object* obj = *pobj;
+		Module* obj = *pobj;
 		open(obj);
 		return obj;
 	}
 	return 0;
 }
 
-void Registry::open(Object* obj) {
+void Registry::open(Module* obj) {
 	obj->ref++;
 }
 
-void Registry::close(Object* obj) {
+void Registry::close(Module* obj) {
 	obj->ref--;
 	if(obj->dying) {
 		if(obj->ref == 1) {
@@ -113,7 +113,7 @@ void Registry::close(Object* obj) {
 	}
 }
 
-void Registry::kill(Object* obj) {
+void Registry::kill(Module* obj) {
 	if(!obj->dying) {
 		obj->dying = true;
 		if(obj->ref == 1) {
@@ -122,7 +122,7 @@ void Registry::kill(Object* obj) {
 	}
 }
 
-void Registry::send_exit(Object* obj) {
+void Registry::send_exit(Module* obj) {
 	exit_t* msg = exit_buf.create();
 	msg->callback = &cb_func;
 	send_async(msg, obj);

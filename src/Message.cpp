@@ -5,10 +5,10 @@
  *      Author: mad
  */
 
-#include "vnl/phy/Message.h"
-#include "vnl/phy/Object.h"
+#include "vnl/Message.h"
+#include "vnl/Base.h"
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 void Message::ack() {
 	if(!isack) {
@@ -28,4 +28,4 @@ std::string Message::to_string() {
 	return ss.str();
 }
 
-}}
+}

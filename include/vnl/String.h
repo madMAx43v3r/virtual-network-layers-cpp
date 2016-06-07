@@ -14,7 +14,7 @@
 #include <sstream>
 #include <mutex>
 
-#include "vnl/phy/Memory.h"
+#include "vnl/Memory.h"
 
 
 namespace vnl {
@@ -37,7 +37,7 @@ public:
 		int16_t len = 0;
 	};
 	
-	String(phy::Region& memory) : memory(memory) {
+	String(Region& memory) : memory(memory) {
 		p_front = memory.create<chunk_t>();
 		p_back = p_front;
 	}
@@ -177,7 +177,7 @@ public:
 	}
 	
 private:
-	phy::Region& memory;
+	Region& memory;
 	chunk_t* p_front;
 	chunk_t* p_back;
 	int32_t count = 0;
@@ -269,7 +269,7 @@ public:
 		}
 	}
 private:
-	phy::Region memory;
+	Region memory;
 	StringOutput* func;
 public:
 	String out;

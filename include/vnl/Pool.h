@@ -11,7 +11,7 @@
 #include "vnl/Queue.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 template<typename T>
 class Pool {
@@ -42,6 +42,6 @@ protected:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_UTIL_POOL_H_ */

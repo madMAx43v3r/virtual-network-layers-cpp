@@ -8,22 +8,22 @@
 #ifndef INCLUDE_PHY_THREADENGINE_H_
 #define INCLUDE_PHY_THREADENGINE_H_
 
-#include "vnl/phy/Engine.h"
-#include "vnl/phy/Stream.h"
+#include "vnl/Engine.h"
+#include "vnl/Stream.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
-	virtual void fork(Object* object) override {
+	virtual void fork(Module* object) override {
 		std::thread thread(std::bind(&ThreadEngine::entry, object));
 		thread.detach();
 	}
 	
 protected:
 	
-	virtual void send_impl(Node* src, Message* msg, Node* dst, bool async) override {
+	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) override {
 		assert(msg->isack == false);
 		assert(dst);
 		
@@ -117,7 +117,7 @@ private:
 		}
 	}
 	
-	static void entry(Object* object) {
+	static void entry(Module* object) {
 		ThreadEngine engine;
 		engine.exec(object);
 	}
@@ -130,6 +130,6 @@ private:
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_THREADENGINE_H_ */

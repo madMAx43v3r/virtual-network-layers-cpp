@@ -8,8 +8,8 @@
 #ifndef INCLUDE_PHY_PACKET_H_
 #define INCLUDE_PHY_PACKET_H_
 
-#include "Address.h"
-#include "phy/Message.h"
+#include "vnl/Address.h"
+#include "vnl/Message.h"
 
 #define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::SAMPLE> sample_t;
 
@@ -20,7 +20,7 @@ static const uint32_t SAMPLE = 0x12ed1215;
 
 class Router;
 
-class Packet : public phy::Message {
+class Packet : public Message {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	

@@ -16,7 +16,7 @@
 #include "vnl/Util.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Layer;
 
@@ -50,6 +50,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_RANDOM_H_ */

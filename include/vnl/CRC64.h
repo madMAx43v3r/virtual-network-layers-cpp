@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <limits.h>
 
-namespace vnl { namespace util {
+namespace vnl {
 
 class CRC64 {
 public:
@@ -57,6 +57,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_CRC64_H_ */

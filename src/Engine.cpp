@@ -8,14 +8,13 @@
 #include <assert.h>
 #include <string.h>
 
-#include "vnl/phy/Engine.h"
-#include "vnl/phy/Stream.h"
-#include "vnl/phy/Object.h"
-#include "vnl/phy/Registry.h"
-#include "vnl/phy/Random.h"
+#include "vnl/Engine.h"
+#include "vnl/Module.h"
+#include "vnl/Registry.h"
+#include "vnl/Random.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 Engine::Engine()
 	:	queue(memory), buffer(memory)
@@ -23,7 +22,7 @@ Engine::Engine()
 	mac = Random64::global_rand();
 }
 
-void Engine::exec(Object* object) {
+void Engine::exec(Module* object) {
 	object->exec(this);
 	Registry::finished_t msg(object);
 	send(this, &msg, Registry::instance);
@@ -33,4 +32,4 @@ void Engine::exec(Object* object) {
 
 
 
-}}
+}

@@ -11,7 +11,7 @@
 #include "vnl/Queue.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class RingBuffer {
 public:
@@ -135,7 +135,7 @@ public:
 
 
 
-}}
+}
 
 
 

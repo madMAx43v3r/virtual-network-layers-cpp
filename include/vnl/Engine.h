@@ -12,23 +12,23 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "vnl/phy/Message.h"
-#include "vnl/phy/Node.h"
-#include "vnl/phy/Memory.h"
-#include "vnl/phy/RingBuffer.h"
-#include "vnl/phy/Random.h"
+#include "vnl/Message.h"
+#include "vnl/Node.h"
+#include "vnl/Memory.h"
+#include "vnl/RingBuffer.h"
+#include "vnl/Random.h"
 #include "vnl/Queue.h"
 #include "vnl/Util.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Stream;
 class Object;
 template<typename T> class Reference;
 
 
-class Engine : public Node {
+class Engine : public Base {
 public:
 	Engine();
 	Engine(const std::string& name);
@@ -47,7 +47,7 @@ public:
 		}
 	}
 	
-	virtual void exec(Object* object);
+	virtual void exec(Module* object);
 	
 protected:
 	bool dorun = true;
@@ -56,11 +56,11 @@ protected:
 		return generator.rand();
 	}
 	
-	void send(Node* src, Message* msg, Node* dst) {
+	void send(Base* src, Message* msg, Base* dst) {
 		send_impl(src, msg, dst, false);
 	}
 	
-	void send_async(Node* src, Message* msg, Node* dst) {
+	void send_async(Base* src, Message* msg, Base* dst) {
 		send_impl(src, msg, dst, true);
 	}
 	
@@ -81,13 +81,13 @@ protected:
 		return msg;
 	}
 	
-	virtual void send_impl(Node* src, Message* msg, Node* dst, bool async) = 0;
+	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
 	
-	virtual void fork(Object* object) = 0;
+	virtual void fork(Module* object) = 0;
 	
 protected:
 	Region memory;
@@ -102,7 +102,7 @@ private:
 	Random64 generator;
 	
 	friend class Stream;
-	friend class Object;
+	friend class Module;
 	template<typename T> friend class Reference;
 	
 };
@@ -110,6 +110,6 @@ private:
 
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_ENGINE_H_ */

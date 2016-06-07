@@ -11,20 +11,20 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "vnl/phy/Random.h"
-#include "vnl/phy/Message.h"
+#include "vnl/Random.h"
+#include "vnl/Message.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
-class Node {
+class Base {
 public:
-	Node() {}
+	Base() {}
 	
-	Node(const Node&) = delete;
-	Node& operator=(const Node&) = delete;
+	Base(const Base&) = delete;
+	Base& operator=(const Base&) = delete;
 	
-	virtual ~Node() {}
+	virtual ~Base() {}
 	
 	uint64_t getMAC() const { return mac; }
 	
@@ -39,7 +39,7 @@ protected:
 };
 
 
-class Reactor : public Node {
+class Reactor : public Base {
 public:
 	Reactor() {
 		mac = Random64::global_rand();
@@ -67,7 +67,7 @@ public:
 protected:
 	virtual bool handle(Message* msg) = 0;
 	
-	void send_async(Message* msg, Node* dst) {
+	void send_async(Message* msg, Base* dst) {
 		msg->src = this;
 		dst->receive(msg);
 	}
@@ -78,9 +78,9 @@ private:
 };
 
 
-class SyncNode : public Node {
+class SyncBase : public Base {
 public:
-	SyncNode() : ulock(mutex) {}
+	SyncBase() : ulock(mutex) {}
 	
 	virtual void receive(Message* msg) override {
 		if(msg->isack) {
@@ -90,7 +90,7 @@ public:
 		}
 	}
 	
-	void send(Message* msg, Node* dst) {
+	void send(Message* msg, Base* dst) {
 		msg->src = this;
 		acked = false;
 		ulock.unlock();
@@ -111,6 +111,6 @@ private:
 };
 
 
-}}
+}
 
 #endif /* INCLUDE_PHY_NODE_H_ */

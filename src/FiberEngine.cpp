@@ -14,11 +14,11 @@
 #include <boost/coroutine/symmetric_coroutine.hpp>
 #include <boost/coroutine/protected_stack_allocator.hpp>
 
-#include "vnl/phy/FiberEngine.h"
-#include "vnl/phy/Stream.h"
+#include "vnl/FiberEngine.h"
+#include "vnl/Stream.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 class Fiber {
 public:
@@ -33,7 +33,7 @@ public:
 		call();
 	}
 	
-	void exec(Object* obj_) {
+	void exec(Module* obj_) {
 		obj = obj_;
 		call();
 	}
@@ -128,7 +128,7 @@ protected:
 	FiberEngine* engine;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
-	Object* obj;
+	Module* obj;
 	int pending = 0;
 	bool result = false;
 	bool waiting = false;
@@ -148,7 +148,7 @@ FiberEngine::~FiberEngine() {
 	}
 }
 
-void FiberEngine::exec(Object* object) {
+void FiberEngine::exec(Module* object) {
 	fork(object);
 	while(dorun) {
 		int64_t micros = timeout();
@@ -172,7 +172,7 @@ void FiberEngine::exec(Object* object) {
 	}
 }
 
-void FiberEngine::send_impl(Node* src, Message* msg, Node* dst, bool async) {
+void FiberEngine::send_impl(Base* src, Message* msg, Base* dst, bool async) {
 	assert(msg->isack == false);
 	assert(dst);
 	assert(current);
@@ -198,7 +198,7 @@ void FiberEngine::flush() {
 	current->flush();
 }
 
-void FiberEngine::fork(Object* object) {
+void FiberEngine::fork(Module* object) {
 	Fiber* fiber;
 	if(!avail.pop(fiber)) {
 		fiber = new Fiber(this, stack_size);
@@ -237,6 +237,6 @@ int FiberEngine::timeout() {
 
 
 
-}}
+}
 
 #endif // VNL_HAVE_BOOST_COROUTINE
