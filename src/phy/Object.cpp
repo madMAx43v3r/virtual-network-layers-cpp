@@ -39,10 +39,6 @@ void Object::die() {
 	stream->send(&msg, Registry::instance);
 }
 
-void Object::exit(Message* msg) {
-	exit_msg = msg;
-}
-
 vnl::StringWriter Object::log(int level) {
 	vnl::StringOutput* out = 0;
 	if(level <= log_level) {
@@ -107,7 +103,7 @@ void Object::run() {
 			continue;
 		}
 		if(msg->msg_id == Registry::exit_t::MID) {
-			exit(msg);
+			msg->ack();
 			break;
 		} else {
 			if(!handle(msg)) {
@@ -136,17 +132,10 @@ void Object::exec(Engine* engine_) {
 	while(true) {
 		Message* msg = stream->poll(0);
 		if(msg) {
-			if(msg->msg_id == Registry::exit_t::MID) {
-				exit_msg = msg;
-			} else {
-				msg->ack();
-			}
+			msg->ack();
 		} else {
 			break;
 		}
-	}
-	if(exit_msg) {
-		exit_msg->ack();
 	}
 }
 

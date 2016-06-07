@@ -79,8 +79,6 @@ protected:
 	
 	void die();
 	
-	void exit(Message* msg);
-	
 	virtual bool handle(Message* msg) { return false; }
 	
 	virtual void main(Engine* engine) = 0;
@@ -103,7 +101,6 @@ private:
 	
 	int64_t ref = 0;
 	bool dying = false;
-	Message* exit_msg = 0;
 	
 	friend class Engine;
 	friend class Registry;
