@@ -9,7 +9,7 @@
 #include "vnl/Module.h"
 
 
-namespace vnl { namespace phy {
+namespace vnl {
 
 Registry* Registry::instance = 0;
 
@@ -134,4 +134,4 @@ void Registry::callback(Message* msg) {
 
 
 
-}}
+}

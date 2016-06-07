@@ -13,7 +13,7 @@
 #include <condition_variable>
 
 #include "vnl/Message.h"
-#include "vnl/Node.h"
+#include "vnl/Base.h"
 #include "vnl/Memory.h"
 #include "vnl/RingBuffer.h"
 #include "vnl/Random.h"
@@ -24,7 +24,7 @@
 namespace vnl {
 
 class Stream;
-class Object;
+class Module;
 template<typename T> class Reference;
 
 

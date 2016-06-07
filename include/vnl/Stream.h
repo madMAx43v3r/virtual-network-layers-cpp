@@ -16,8 +16,6 @@
 
 namespace vnl {
 
-class Engine;
-
 class Stream final : public Base {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
