@@ -25,6 +25,8 @@ public:
 	
 	Reference(Engine* engine, uint64_t mac);
 	
+	Reference(Engine* engine, const char* name);
+	
 	Reference(Engine* engine, const vnl::String& name);
 	
 	T* get() {

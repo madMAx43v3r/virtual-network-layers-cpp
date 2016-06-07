@@ -27,6 +27,7 @@ class Object : public Node {
 public:
 	Object();
 	Object(uint64_t mac);
+	Object(const char* name);
 	Object(const vnl::String& name);
 	
 	const vnl::String& getName() const { return my_name; }
@@ -84,9 +85,10 @@ protected:
 	
 	virtual void main(Engine* engine) = 0;
 	
-protected:
+private:
 	vnl::String my_name;
 	
+protected:
 	Region memory;
 	MessageBuffer buffer;
 	
@@ -120,6 +122,12 @@ Reference<T>::Reference(Engine* engine, T* obj)
 template<typename T>
 Reference<T>::Reference(Engine* engine, uint64_t mac)
 	:	mac(mac), engine(engine)
+{
+}
+
+template<typename T>
+Reference<T>::Reference(Engine* engine, const char* name) 
+	:	Reference(engine, vnl::hash64(name))
 {
 }
 

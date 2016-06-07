@@ -14,12 +14,18 @@ namespace vnl { namespace phy {
 
 int Object::global_log_level = Object::INFO;
 
-Object::Object() : Object(0) {}
+Object::Object() : Object((uint64_t)0) {}
 
 Object::Object(uint64_t mac)
 	:	buffer(memory), my_name(memory)
 {
 	this->mac = mac;
+}
+
+Object::Object(const char* name)
+	:	Object::Object(vnl::hash64(name))
+{
+	this->my_name = name;
 }
 
 Object::Object(const vnl::String& name)
@@ -122,6 +128,7 @@ void Object::exec(Engine* engine_) {
 	Registry::bind_t bind(this);
 	stream->send(&bind, Registry::instance);
 	if(!bind.res) {
+		log(ERROR).out << "Duplicate name: '" << my_name << "' is already in use!" << vnl::endl;
 		return;
 	}
 	main(engine_);
@@ -129,7 +136,11 @@ void Object::exec(Engine* engine_) {
 	while(true) {
 		Message* msg = stream->poll(0);
 		if(msg) {
-			msg->ack();
+			if(msg->msg_id == Registry::exit_t::MID) {
+				exit_msg = msg;
+			} else {
+				msg->ack();
+			}
 		} else {
 			break;
 		}

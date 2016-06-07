@@ -23,6 +23,8 @@ public:
 	
 	Node(uint64_t mac) : Object(mac) {}
 	
+	Node(const char* name) : Object(name) {}
+	
 	Node(const vnl::String& name) : Object(name) {}
 	
 protected:

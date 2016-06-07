@@ -260,6 +260,7 @@ extern StringStream cerr;
 
 class StringWriter {
 public:
+	StringWriter() : out(memory), func(nullptr) {}
 	StringWriter(StringOutput* func) : out(memory), func(func) {}
 	StringWriter(const StringWriter& other) : out(memory), func(other.func) {}
 	~StringWriter() {
