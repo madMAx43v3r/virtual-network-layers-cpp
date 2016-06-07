@@ -32,9 +32,7 @@ class Engine : public Node {
 public:
 	Engine();
 	Engine(const std::string& name);
-	virtual ~Engine();
-	
-	static thread_local Engine* local;
+	virtual ~Engine() {}
 	
 	// thread safe
 	virtual void receive(Message* msg) override {

@@ -149,7 +149,6 @@ FiberEngine::~FiberEngine() {
 }
 
 void FiberEngine::exec(Object* object) {
-	assert(Engine::local == this);
 	fork(object);
 	while(dorun) {
 		int64_t micros = timeout();
@@ -194,14 +193,12 @@ bool FiberEngine::poll(Stream* stream, int64_t micros) {
 }
 
 void FiberEngine::flush() {
-	assert(Engine::local == this);
 	assert(current);
 	
 	current->flush();
 }
 
 void FiberEngine::fork(Object* object) {
-	assert(Engine::local == this);
 	Fiber* fiber;
 	if(!avail.pop(fiber)) {
 		fiber = new Fiber(this, stack_size);
