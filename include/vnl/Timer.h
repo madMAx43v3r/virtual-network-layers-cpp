@@ -25,7 +25,7 @@ public:
 	void reset() {
 		assert(!free);
 		active = true;
-		deadline = vnl::System::currentTimeMicros() + interval;
+		deadline = currentTimeMicros() + interval;
 	}
 	
 	void stop() {

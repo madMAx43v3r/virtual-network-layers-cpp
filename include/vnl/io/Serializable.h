@@ -19,9 +19,9 @@ class Serializable {
 public:
 	virtual ~Serializable() {}
 	
-	virtual void serialize(vnl::io::TypeOutput<vnl::io::PageBuffer>& stream) = 0;
+	virtual void serialize(TypeOutput<PageBuffer>& stream) = 0;
 	
-	virtual void deserialize(vnl::io::TypeInput<vnl::io::PageBuffer>& stream, int num_entries) = 0;
+	virtual void deserialize(TypeInput<PageBuffer>& stream, int num_entries) = 0;
 	
 };
 

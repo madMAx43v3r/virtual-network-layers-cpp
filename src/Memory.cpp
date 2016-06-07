@@ -10,7 +10,7 @@
 
 namespace vnl {
 
-vnl::util::spinlock Page::mutex;
+util::spinlock Page::mutex;
 
 Page* Page::begin = 0;
 

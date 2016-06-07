@@ -67,7 +67,7 @@ public:
 	bool poll(Stream* stream, int64_t micro) {
 		stream->_impl = this;
 		if(micro >= 0) {
-			deadline = System::currentTimeMicros() + micro;
+			deadline = currentTimeMicros() + micro;
 		} else {
 			deadline = 0;
 		}
@@ -209,7 +209,7 @@ void FiberEngine::fork(Module* object) {
 
 int FiberEngine::timeout() {
 	Region mem;
-	int64_t now = System::currentTimeMicros();
+	int64_t now = currentTimeMicros();
 	int64_t micros = 1000*1000;
 	Queue<Fiber*> list(mem);
 	while(true) {

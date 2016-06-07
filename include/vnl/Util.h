@@ -48,7 +48,7 @@ static uint64_t hash64(const std::string& str) {
 	return func.getValue();
 }
 
-static uint64_t hash64(const vnl::String& str) {
+static uint64_t hash64(const String& str) {
 	CRC64 func;
 	auto* chunk = str.front();
 	while(chunk) {

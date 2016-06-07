@@ -61,7 +61,7 @@ private:
 	
 private:
 	static const int OUT_OF_MEMORY = 0;
-	static vnl::util::spinlock mutex;
+	static util::spinlock mutex;
 	static Page* begin;
 	static size_t num_alloc;
 	

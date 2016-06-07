@@ -12,7 +12,6 @@
 #include <thread>
 
 #include "vnl/util/spinlock.h"
-#include "vnl/System.h"
 #include "vnl/Util.h"
 
 
@@ -24,7 +23,7 @@ class Layer;
 class Random64 {
 public:
 	Random64() {
-		generator.seed(vnl::hash64((uint64_t)counter++, (uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)vnl::nanoTime()));
+		generator.seed(hash64((uint64_t)counter++, (uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)nanoTime()));
 	}
 	
 	uint64_t rand() {
@@ -41,7 +40,7 @@ public:
 private:
 	std::mt19937_64 generator;
 	
-	static vnl::util::spinlock sync;
+	static util::spinlock sync;
 	static Random64* instance;
 	static std::atomic<int> counter;
 	

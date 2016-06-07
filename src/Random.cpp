@@ -10,7 +10,7 @@
 
 namespace vnl {
 
-vnl::util::spinlock Random64::sync;
+util::spinlock Random64::sync;
 
 Random64* Random64::instance = 0;
 

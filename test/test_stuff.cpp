@@ -15,17 +15,16 @@
 #include <atomic>
 
 #include "vnl/Util.h"
-#include "vnl/System.h"
 
-#include "vnl/phy/Pool.h"
+#include "vnl/Pool.h"
 #include "vnl/Queue.h"
 #include "vnl/List.h"
 #include "vnl/Array.h"
 #include "vnl/Map.h"
 #include "vnl/String.h"
 
-#include "../src/phy/Memory.cpp"
-#include "../src/util/CRC64.cpp"
+#include "../src/Memory.cpp"
+#include "../src/CRC64.cpp"
 #include "../src/String.cpp"
 
 int main() {
@@ -34,7 +33,7 @@ int main() {
 	int M = 1000;
 	
 	{
-		vnl::phy::Region mem;
+		vnl::Region mem;
 		vnl::Queue<int> test(mem);
 		for(int iter = 0; iter < N; ++iter) {
 			for(int i = 0; i < M; ++i) {
@@ -120,7 +119,7 @@ int main() {
 	}
 	
 	{
-		vnl::phy::Region mem;
+		vnl::Region mem;
 		vnl::String str(mem);
 		for(int iter = 0; iter < N; ++iter) {
 			std::string std_str;
@@ -139,7 +138,7 @@ int main() {
 	}
 	
 	{
-		vnl::phy::Region mem;
+		vnl::Region mem;
 		vnl::String str(mem);
 		str << "BLUBB";
 		std::cout << str << std::endl;
@@ -148,8 +147,8 @@ int main() {
 		assert(str.to_string() == std::string("BLUBB"));
 	}
 	
-	vnl::phy::Page::cleanup();
-	assert(vnl::phy::Page::get_num_alloc() == 0);
+	vnl::Page::cleanup();
+	assert(vnl::Page::get_num_alloc() == 0);
 	
 }
 

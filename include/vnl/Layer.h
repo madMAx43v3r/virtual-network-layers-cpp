@@ -40,7 +40,7 @@ public:
 		delete Random64::instance;
 		delete Router::instance;
 		
-		vnl::Page::cleanup();
+		Page::cleanup();
 	}
 	
 };

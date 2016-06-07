@@ -23,13 +23,13 @@ Module::Module(uint64_t mac)
 }
 
 Module::Module(const char* name)
-	:	Module::Module(vnl::hash64(name))
+	:	Module::Module(hash64(name))
 {
 	this->my_name = name;
 }
 
-Module::Module(const vnl::String& name)
-	:	Module::Module(vnl::hash64(name))
+Module::Module(const String& name)
+	:	Module::Module(hash64(name))
 {
 	this->my_name = name;
 }
@@ -39,12 +39,12 @@ void Module::die() {
 	stream->send(&msg, Registry::instance);
 }
 
-vnl::StringWriter Module::log(int level) {
-	vnl::StringOutput* out = 0;
+StringWriter Module::log(int level) {
+	StringOutput* out = 0;
 	if(level <= log_level) {
 		out = &vnl::cout;
 	}
-	vnl::StringWriter writer(out);
+	StringWriter writer(out);
 	writer.out << "[" << my_name << "] ";
 	switch(level) {
 		case ERROR: writer.out << "ERROR: "; break;
@@ -78,7 +78,7 @@ Timer* Module::timeout(int64_t micros, const std::function<void(Timer*)>& func, 
 void Module::run() {
 	while(true) {
 		int64_t to = -1;
-		int64_t now = vnl::System::currentTimeMicros();
+		int64_t now = currentTimeMicros();
 		Timer* timer = timer_begin;
 		while(timer) {
 			if(timer->active) {

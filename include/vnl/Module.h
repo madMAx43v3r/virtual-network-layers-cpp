@@ -18,7 +18,6 @@
 #include "vnl/Pool.h"
 #include "vnl/Timer.h"
 #include "vnl/String.h"
-#include "vnl/System.h"
 
 
 namespace vnl {
@@ -28,9 +27,9 @@ public:
 	Module();
 	Module(uint64_t mac);
 	Module(const char* name);
-	Module(const vnl::String& name);
+	Module(const String& name);
 	
-	const vnl::String& getName() const { return my_name; }
+	const String& getName() const { return my_name; }
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
@@ -71,7 +70,7 @@ protected:
 		stream->send_async(msg, dst.get());
 	}
 	
-	vnl::StringWriter log(int level);
+	StringWriter log(int level);
 	
 	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	
@@ -84,7 +83,7 @@ protected:
 	virtual void main(Engine* engine) = 0;
 	
 private:
-	vnl::String my_name;
+	String my_name;
 	
 protected:
 	Region memory;
@@ -124,13 +123,13 @@ Reference<T>::Reference(Engine* engine, uint64_t mac)
 
 template<typename T>
 Reference<T>::Reference(Engine* engine, const char* name) 
-	:	Reference(engine, vnl::hash64(name))
+	:	Reference(engine, hash64(name))
 {
 }
 
 template<typename T>
-Reference<T>::Reference(Engine* engine, const vnl::String& name) 
-	:	Reference(engine, vnl::hash64(name))
+Reference<T>::Reference(Engine* engine, const String& name) 
+	:	Reference(engine, hash64(name))
 {
 }
 

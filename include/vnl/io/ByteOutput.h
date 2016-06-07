@@ -9,7 +9,7 @@
 #define INCLUDE_IO_BYTEOUTPUT_H_
 
 #include "vnl/util/types.h"
-#include "vnl/phy/Memory.h"
+#include "vnl/Memory.h"
 #include "vnl/String.h"
 
 
@@ -24,9 +24,9 @@ public:
 		stream.write(buf, len);
 	}
 	
-	void writeBinary(phy::Page* buf, int32_t len) {
+	void writeBinary(Page* buf, int32_t len) {
 		while(len > 0) {
-			int32_t n = std::min(len, phy::Page::size);
+			int32_t n = std::min(len, Page::size);
 			write(buf->mem, n);
 			len -= n;
 			buf = buf->next;

@@ -17,7 +17,7 @@ namespace vnl {
 class Receiver;
 
 
-class Node : public vnl::Module {
+class Node : public Module {
 public:
 	Node() : Module() {}
 	
@@ -25,7 +25,7 @@ public:
 	
 	Node(const char* name) : Module(name) {}
 	
-	Node(const vnl::String& name) : Module(name) {}
+	Node(const String& name) : Module(name) {}
 	
 protected:
 	void open(Address address) {
@@ -62,7 +62,7 @@ protected:
 	
 	virtual bool handle(Message* msg) override {
 		if(msg->msg_id == Packet::MID) {
-			vnl::Packet* pkt = (vnl::Packet*)msg;
+			Packet* pkt = (Packet*)msg;
 			return handle(pkt);
 		}
 		return false;
