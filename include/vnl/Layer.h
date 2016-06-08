@@ -36,6 +36,8 @@ public:
 	}
 	
 	~Layer() {
+		shutdown();
+		
 		delete Registry::instance;
 		delete Random64::instance;
 		delete Router::instance;
