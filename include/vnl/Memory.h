@@ -51,12 +51,10 @@ private:
 	Page() : next(0) {
 		mem = (char*)malloc(size);
 		assert(mem != OUT_OF_MEMORY);
-		num_alloc++;
 	}
 	
 	~Page() {
 		::free(mem);
-		num_alloc--;
 	}
 	
 private:

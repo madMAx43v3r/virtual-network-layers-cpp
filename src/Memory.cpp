@@ -23,6 +23,7 @@ Page* Page::alloc() {
 		begin = page->next;
 	} else {
 		page = new Page();
+		num_alloc++;
 	}
 	mutex.unlock();
 	assert(page != OUT_OF_MEMORY);
@@ -53,6 +54,7 @@ void Page::cleanup() {
 		Page* tmp = page;
 		page = page->next;
 		delete tmp;
+		num_alloc--;
 	}
 	if(num_alloc) {
 		std::cout << "WARNING: " << num_alloc << " pages still being used at exit." << std::endl;

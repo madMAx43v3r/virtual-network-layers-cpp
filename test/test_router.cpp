@@ -5,24 +5,24 @@
  *      Author: mad
  */
 
-#include "vnl/phy/ThreadEngine.h"
+#include "vnl/ThreadEngine.h"
 #include "vnl/Layer.h"
 #include "vnl/Router.h"
 #include "vnl/Node.h"
 
-#include "../src/util/CRC64.cpp"
-#include "../src/phy/Engine.cpp"
-#include "../src/phy/Memory.cpp"
-#include "../src/phy/Message.cpp"
-#include "../src/phy/Random.cpp"
-#include "../src/phy/Object.cpp"
-#include "../src/phy/Registry.cpp"
+#include "../src/CRC64.cpp"
+#include "../src/Engine.cpp"
+#include "../src/Memory.cpp"
+#include "../src/Message.cpp"
+#include "../src/Random.cpp"
+#include "../src/Module.cpp"
+#include "../src/Registry.cpp"
 #include "../src/Router.cpp"
 #include "../src/String.cpp"
 
 
 struct test_msg_t {
-	test_msg_t(vnl::phy::Region& mem) : text(mem) {}
+	test_msg_t(vnl::Region& mem) : text(mem) {}
 	vnl::String text;
 	VNL_SAMPLE(test_msg_t);
 };
@@ -31,10 +31,10 @@ vnl::Address address("domain", "topic");
 
 class Consumer : public vnl::Node {
 protected:
-	virtual void main(vnl::phy::Engine* engine) override {
+	virtual void main(vnl::Engine* engine) override {
 		//vnl::Util::stick_to_core(mac % 3 + 1);
 		
-		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::phy::Timer::REPEAT);
+		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::Timer::REPEAT);
 		
 		vnl::Receiver test(this, address);
 		
@@ -53,7 +53,7 @@ protected:
 		return false;
 	}
 	
-	void print_stats(vnl::phy::Timer* timer) {
+	void print_stats(vnl::Timer* timer) {
 		log(INFO).out << vnl::dec(counter) << vnl::endl;
 		counter = 0;
 	}
@@ -68,10 +68,10 @@ int main() {
 	//vnl::Util::stick_to_core(0);
 	
 	vnl::Layer layer;
-	vnl::phy::ThreadEngine engine;
+	vnl::ThreadEngine engine;
 	
-	vnl::phy::Region mem;
-	vnl::phy::Stream pub(&engine, mem);
+	vnl::Region mem;
+	vnl::Stream pub(&engine, mem);
 	
 	Consumer* consumer;
 	for(int i = 0; i < 10; ++i) {
@@ -79,7 +79,7 @@ int main() {
 		engine.fork(consumer);
 	}
 	
-	vnl::phy::MessageBuffer buffer(mem);
+	vnl::MessageBuffer buffer(mem);
 	
 	test_msg_t test(mem);
 	test.text << "Hello World";
@@ -100,7 +100,7 @@ int main() {
 		
 	}
 	
-	std::cout << "Number of pages allocated: " << vnl::phy::Page::get_num_alloc() << std::endl;
+	std::cout << "Number of pages allocated: " << vnl::Page::get_num_alloc() << std::endl;
 	
 	layer.shutdown();
 	

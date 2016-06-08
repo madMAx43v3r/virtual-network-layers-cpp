@@ -194,7 +194,6 @@ bool FiberEngine::poll(Stream* stream, int64_t micros) {
 
 void FiberEngine::flush() {
 	assert(current);
-	
 	current->flush();
 }
 
