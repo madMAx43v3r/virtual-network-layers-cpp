@@ -97,8 +97,14 @@ public:
 	T& front() {
 		return p_front->elem[p_front->read];
 	}
-	
 	T& back() {
+		return p_back->elem[p_back->write - 1];
+	}
+	
+	const T& front() const {
+		return p_front->elem[p_front->read];
+	}
+	const T& back() const {
 		return p_back->elem[p_back->write - 1];
 	}
 	

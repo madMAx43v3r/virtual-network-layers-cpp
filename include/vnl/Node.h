@@ -53,10 +53,12 @@ protected:
 		Module::send_async(msg, dst.get());
 	}
 	
-	void send(Packet* packet) {
+	void send(Packet* packet, Address dst) {
+		packet->dst_addr = dst;
 		Module::send(packet, Router::instance);
 	}
-	void send_async(Packet* packet) {
+	void send_async(Packet* packet, Address dst) {
+		packet->dst_addr = dst;
 		Module::send_async(packet, Router::instance);
 	}
 	

@@ -95,6 +95,20 @@ public:
 		return count;
 	}
 	
+	T& front() {
+		return (*this)[0];
+	}
+	T& back() {
+		return (*this)[size()-1];
+	}
+	
+	const T& front() const {
+		return (*this)[0];
+	}
+	const T& back() const {
+		return (*this)[size()-1];
+	}
+	
 	bool empty() const {
 		return p_front == 0;
 	}

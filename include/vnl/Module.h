@@ -37,7 +37,7 @@ public:
 	}
 	
 	enum {
-		ERROR = 1, WARN = 2, INFO = 3
+		ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4
 	};
 	
 	static int global_log_level;
