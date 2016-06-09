@@ -15,6 +15,8 @@
 
 #include "vnl/RingBuffer.h"
 
+#define VNL_MSG(type, hash) typedef vnl::MessageType<type, hash> msg_t;
+
 
 namespace vnl {
 

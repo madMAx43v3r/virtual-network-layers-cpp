@@ -22,6 +22,7 @@
 #include "vnl/Array.h"
 #include "vnl/Map.h"
 #include "vnl/String.h"
+#include "vnl/Algorithm.h"
 
 #include "../src/Memory.cpp"
 #include "../src/CRC64.cpp"
@@ -145,6 +146,19 @@ int main() {
 		assert(str == str);
 		assert(str == (vnl::String(mem) << "BLUBB"));
 		assert(str.to_string() == std::string("BLUBB"));
+	}
+	
+	{
+		vnl::Array<int> test;
+		test.push_back(3);
+		test.push_back(2);
+		test.push_back(1);
+		test.push_back(2);
+		vnl::sort(test.begin(), test.end());
+		assert(test[0] == 1);
+		assert(test[1] == 2);
+		assert(test[2] == 2);
+		assert(test[3] == 3);
 	}
 	
 	vnl::Page::cleanup();

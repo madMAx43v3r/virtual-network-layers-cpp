@@ -29,11 +29,16 @@ public:
 	
 	Reference(Engine* engine, const vnl::String& name);
 	
+	~Reference() {
+		close();
+	}
+	
 	T* get() {
 		if(!obj) {
 			Registry::connect_t req(mac);
 			engine->send(engine, &req, Registry::instance);
-			obj = req.res;
+			obj = (T*)req.res;
+			//std::cout << "Reference: resolved " << std::hex << mac << " to " << obj->getName() << std::dec << std::endl;
 		}
 		return obj;
 	}

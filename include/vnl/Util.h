@@ -53,6 +53,7 @@ static uint64_t hash64(const String& str) {
 	auto* chunk = str.front();
 	while(chunk) {
 		func.update(chunk->str, chunk->len);
+		chunk = chunk->next;
 	}
 	return func.getValue();
 }

@@ -2,14 +2,14 @@
 ROOT := ..
 
 all:
-	make vnl.a
+	make libvnl.a
 
 include $(ROOT)/Makefile.rules
 
-vnl.a: $(OBJ)
+libvnl.a: $(OBJ)
 	$(AR) $(ARFLAGS) $@ $^
-	install *.a $(ROOT)/lib/
+	install libvnl.a $(ROOT)/lib/
 
 clean:
 	$(RM) bin/*
-	$(RM) vnl.a
+	$(RM) libvnl.a

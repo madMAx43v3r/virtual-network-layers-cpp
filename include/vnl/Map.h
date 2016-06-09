@@ -33,7 +33,7 @@ public:
 	}
 	
 	~Map() {
-		mem.clear();
+		destroy();
 		if(table) {
 			table->free_all();
 		}
@@ -81,7 +81,7 @@ public:
 				*p_row = p_front;
 				p_front = p_front->next;
 			} else {
-				*p_row = (entry_t*)mem.alloc<entry_t>();
+				*p_row = (entry_t*)mem.create<entry_t>();
 			}
 			entry_t* row = *p_row;
 			row->pair = std::make_pair(key, val);
@@ -143,8 +143,30 @@ protected:
 	
 	static const int M = Page::size / sizeof(void*);
 	
-	void resize(size_t rows) {
+	void destroy() {
+		Page* page = table;
+		while(page) {
+			for(int i = 0; i < M; ++i) {
+				entry_t* row = page->get<entry_t*>(i);
+				while(row) {
+					entry_t* next = row->next;
+					row->~entry_t();
+					row = row->next;
+				}
+			}
+			page = page->next;
+		}
+		entry_t* entry = p_front;
+		while(entry) {
+			entry_t* next = entry->next;
+			entry->~entry_t();
+			entry = next;
+		}
 		mem.clear();
+	}
+	
+	void resize(size_t rows) {
+		destroy();
 		p_front = 0;
 		N = rows;
 		count = 0;

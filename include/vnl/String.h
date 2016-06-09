@@ -33,8 +33,9 @@ public:
 	
 	struct chunk_t {
 		char str[CHUNK_SIZE];
-		chunk_t* next = 0;
-		int16_t len = 0;
+		chunk_t* next;
+		int16_t len;
+		chunk_t() : next(0), len(0) {}
 	};
 	
 	String(Region& memory) : memory(memory) {
@@ -178,11 +179,9 @@ public:
 	
 private:
 	Region& memory;
-	chunk_t* p_front;
-	chunk_t* p_back;
+	chunk_t* p_front = 0;
+	chunk_t* p_back = 0;
 	int32_t count = 0;
-	
-	static std::atomic<chunk_t*> begin;
 	
 };
 

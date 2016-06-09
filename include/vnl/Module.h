@@ -82,9 +82,6 @@ protected:
 	
 	virtual void main(Engine* engine) = 0;
 	
-private:
-	String my_name;
-	
 protected:
 	Region memory;
 	MessageBuffer buffer;
@@ -93,6 +90,7 @@ private:
 	void exec(Engine* engine);
 	
 private:
+	String my_name;
 	Stream* stream = 0;
 	Engine* engine = 0;
 	

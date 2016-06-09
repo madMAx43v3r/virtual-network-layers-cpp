@@ -23,6 +23,7 @@ bool Registry::handle(Message* msg) {
 	switch(msg->msg_id) {
 	case bind_t::MID: {
 		bind_t* req = (bind_t*)msg;
+		
 		req->ack(bind(req->args));
 		return true;
 	}
@@ -67,6 +68,7 @@ bool Registry::handle(Message* msg) {
 }
 
 bool Registry::bind(Module* obj) {
+	//std::cout << "Registry::bind(" << std::hex << obj->mac << std::ios::dec << ")" << std::endl;
 	uint64_t mac = obj->getMAC();
 	Module*& value = map[mac];
 	if(value == 0) {
@@ -74,6 +76,7 @@ bool Registry::bind(Module* obj) {
 		obj->ref++;
 		if(waiting.find(mac)) {
 			for(connect_t* msg : waiting[mac]) {
+				//std::cout << "Registry::bind(" << std::hex << obj->mac << "): ack for " << msg->src->getMAC() << std::ios::dec << std::endl;
 				obj->ref++;
 				msg->ack(obj);
 			}
@@ -85,6 +88,7 @@ bool Registry::bind(Module* obj) {
 }
 
 Module* Registry::connect(uint64_t mac) {
+	//std::cout << "Registry::connect(" << std::hex << mac << std::ios::dec << ")" << std::endl;
 	Module** pobj = map.find(mac);
 	if(pobj) {
 		Module* obj = *pobj;
@@ -95,10 +99,12 @@ Module* Registry::connect(uint64_t mac) {
 }
 
 void Registry::open(Module* obj) {
+	//std::cout << "Registry::open(" << std::hex << obj->mac << std::ios::dec << ")" << std::endl;
 	obj->ref++;
 }
 
 void Registry::close(Module* obj) {
+	//std::cout << "Registry::close(" << std::hex << obj->mac << std::ios::dec << ")" << std::endl;
 	obj->ref--;
 	if(obj->dying) {
 		if(obj->ref == 1) {

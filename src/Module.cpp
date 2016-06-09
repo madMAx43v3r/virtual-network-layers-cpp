@@ -50,6 +50,7 @@ StringWriter Module::log(int level) {
 		case ERROR: writer.out << "ERROR: "; break;
 		case WARN: writer.out << "WARNING: "; break;
 		case INFO: writer.out << "INFO: "; break;
+		case DEBUG: writer.out << "DEBUG: "; break;
 	}
 	return writer;
 }
@@ -127,6 +128,7 @@ void Module::exec(Engine* engine_) {
 		log(ERROR).out << "Duplicate name: '" << my_name << "' is already in use!" << vnl::endl;
 		return;
 	}
+	log(DEBUG).out << "Starting, mac=" << vnl::hex(mac) << vnl::endl;
 	main(engine_);
 	stream->flush();
 	while(true) {
@@ -137,6 +139,7 @@ void Module::exec(Engine* engine_) {
 			break;
 		}
 	}
+	log(DEBUG).out << "Exiting, mac=" << vnl::hex(mac) << vnl::endl;
 }
 
 
