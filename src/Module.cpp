@@ -76,42 +76,50 @@ Timer* Module::timeout(int64_t micros, const std::function<void(Timer*)>& func, 
 	return timer;
 }
 
-void Module::run() {
-	while(true) {
-		int64_t to = -1;
-		int64_t now = currentTimeMicros();
-		Timer* timer = timer_begin;
-		while(timer) {
-			if(timer->active) {
-				int64_t diff = timer->deadline - now;
-				if(diff <= 0) {
-					timer->active = false;
-					timer->func(timer);
-					switch(timer->type) {
-						case Timer::REPEAT: timer->active = true;
-									 timer->deadline += timer->interval;	break;
-						case Timer::MANUAL: 								break;
-						case Timer::ONCE: timer->destroy(); 				break;
-					}
-				} else if(diff < to || to == -1) {
-					to = diff;
+bool Module::poll(int64_t micros) {
+	int64_t to = micros;
+	int64_t now = currentTimeMicros();
+	Timer* timer = timer_begin;
+	while(timer) {
+		if(timer->active) {
+			int64_t diff = timer->deadline - now;
+			if(diff <= 0) {
+				timer->active = false;
+				timer->func(timer);
+				switch(timer->type) {
+					case Timer::REPEAT: timer->active = true;
+								 timer->deadline += timer->interval;	break;
+					case Timer::MANUAL: 								break;
+					case Timer::ONCE: timer->destroy(); 				break;
 				}
+				diff = timer->deadline - now;
 			}
-			timer = timer->next;
+			if(diff < to || to == -1) {
+				to = diff;
+			}
 		}
+		timer = timer->next;
+	}
+	while(true) {
 		Message* msg = stream->poll(to);
 		if(!msg) {
-			continue;
+			break;
 		}
 		if(msg->msg_id == Registry::exit_t::MID) {
 			msg->ack();
-			break;
+			return false;
 		} else {
 			if(!handle(msg)) {
 				msg->ack();
 			}
 		}
+		to = 0;
 	}
+	return true;
+}
+
+void Module::run() {
+	while(poll(-1));
 }
 
 void Module::exec(Engine* engine_) {

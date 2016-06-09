@@ -18,6 +18,10 @@ public:
 	
 	CRC64() {
 		crc = -1;
+		if(!have_init) {
+			init();
+			have_init = true;
+		}
 	}
 	
 	void update(char b) {
@@ -48,11 +52,11 @@ public:
 private:
 	uint64_t crc;
 	
+	static bool have_init;
+	static void init();
+	
 	static uint64_t poly;
 	static uint64_t crcTable[256];
-	
-	struct init;
-	static init initializer;
 	
 };
 

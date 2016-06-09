@@ -32,12 +32,6 @@ public:
 		B = B_;
 	}
 	
-	template<typename T_a, typename T_b>
-	Address(T_a&& A_, T_b&& B_) {
-		A = hash64(A_);
-		B = hash64(B_);
-	}
-	
 	uint64_t domain() const {
 		return A;
 	}

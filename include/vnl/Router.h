@@ -24,8 +24,8 @@ public:
 	
 	Router();
 	
-	typedef MessageType<Address, 0xbe3fa14f> open_t;
-	typedef MessageType<Address, 0xfbe7dd5a> close_t;
+	typedef MessageType<std::pair<Base*, Address>, 0xbe3fa14f> open_t;
+	typedef MessageType<std::pair<Base*, Address>, 0xfbe7dd5a> close_t;
 	
 protected:
 	typedef List<Base*> Row;

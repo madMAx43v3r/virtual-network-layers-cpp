@@ -29,7 +29,7 @@ public:
 
 class String {
 public:
-	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - sizeof(short);
+	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - 2;
 	
 	struct chunk_t {
 		char str[CHUNK_SIZE];

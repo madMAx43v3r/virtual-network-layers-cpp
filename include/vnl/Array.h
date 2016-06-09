@@ -66,7 +66,7 @@ public:
 		for(int i = 0; i < pi; ++i) {
 			page = page->next;
 		}
-		return p_back->get<T>(ei);
+		return page->get<T>(ei);
 	}
 	
 	void clear() {

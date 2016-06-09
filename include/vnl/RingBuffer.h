@@ -62,6 +62,9 @@ public:
 		entry.page = p_back;
 		entry.ptr = p_back->mem + pos;
 		pos += size;
+#ifdef VNL_MEMORY_ALIGN
+		pos += VNL_MEMORY_ALIGN - (size % VNL_MEMORY_ALIGN);
+#endif
 		return &queue.push(entry);
 	}
 	

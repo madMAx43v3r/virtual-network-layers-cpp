@@ -74,6 +74,8 @@ protected:
 	
 	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	
+	bool poll(int64_t micros);
+	
 	void run();
 	
 	void die();

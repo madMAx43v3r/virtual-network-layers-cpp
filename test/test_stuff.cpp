@@ -30,8 +30,8 @@
 
 int main() {
 	
-	int N = 1000;
-	int M = 1000;
+	int N = 100;
+	int M = 10000;
 	
 	{
 		vnl::Region mem;
@@ -78,6 +78,9 @@ int main() {
 				c++;
 			}
 			assert(c == M);
+			for(int i = 0; i < M; ++i) {
+				assert(test[i] == i);
+			}
 			test.clear();
 			for(int k : test) {
 				assert(false);
@@ -150,6 +153,7 @@ int main() {
 	
 	{
 		vnl::Array<int> test;
+		test.push_back(4);
 		test.push_back(3);
 		test.push_back(2);
 		test.push_back(1);
@@ -159,6 +163,7 @@ int main() {
 		assert(test[1] == 2);
 		assert(test[2] == 2);
 		assert(test[3] == 3);
+		assert(test[4] == 4);
 	}
 	
 	vnl::Page::cleanup();

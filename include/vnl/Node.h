@@ -29,11 +29,11 @@ public:
 	
 protected:
 	void open(Address address) {
-		Router::open_t msg(address);
+		Router::open_t msg(std::make_pair(this, address));
 		Module::send(&msg, Router::instance);
 	}
 	void close(Address address) {
-		Router::close_t msg(address);
+		Router::close_t msg(std::make_pair(this, address));
 		Module::send(&msg, Router::instance);
 	}
 	

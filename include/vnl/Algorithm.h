@@ -34,6 +34,29 @@ void sort(Iter first, Iter last) {
 	}
 }
 
+template<class Iter>
+void sort_ptr(Iter first, Iter last) {
+	if(first != last) {
+		while(true) {
+			Iter prev = first;
+			Iter curr = first;
+			curr++;
+			bool pass = true;
+			while(curr != last) {
+				if(**curr < **prev) {
+					std::swap(*prev, *curr);
+					pass = false;
+				}
+				prev = curr;
+				curr++;
+			}
+			if(pass) {
+				break;
+			}
+		}
+	}
+}
+
 
 
 }

@@ -27,7 +27,7 @@ struct test_msg_t {
 	VNL_SAMPLE(test_msg_t);
 };
 
-vnl::Address address("domain", "topic");
+vnl::Address address(vnl::hash64("domain"), vnl::hash64("topic"));
 
 class Consumer : public vnl::Node {
 protected:

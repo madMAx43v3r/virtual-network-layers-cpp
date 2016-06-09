@@ -48,8 +48,13 @@ public:
 	Page* next;
 	
 private:
-	Page() : next(0) {
+	Page() : mem(0), next(0) {
+#ifdef VNL_MEMORY_ALIGN
+		int err = posix_memalign((void**)&mem, VNL_MEMORY_ALIGN, size);
+		assert(err == 0);
+#else
 		mem = (char*)malloc(size);
+#endif
 		assert(mem != OUT_OF_MEMORY);
 	}
 	

@@ -19,12 +19,12 @@ Router::Router()
 }
 
 bool Router::handle(Message* msg) {
-	Base* src = msg->src;
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
 		if(pkt->src_addr.A == 0) {
 			pkt->src_addr.A = mac;
 		}
+		Base* src = msg->src;
 		if(src) {
 			if(pkt->src_addr.B == 0) {
 				pkt->src_addr.B = src->getMAC();
@@ -37,11 +37,11 @@ bool Router::handle(Message* msg) {
 		}
 		return true;
 	} else if(msg->msg_id == open_t::MID) {
-		open(((open_t*)msg)->data, src);
+		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
 		msg->ack();
 		return true;
 	} else if(msg->msg_id == close_t::MID) {
-		close(((close_t*)msg)->data, src);
+		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
 		msg->ack();
 		return true;
 	}

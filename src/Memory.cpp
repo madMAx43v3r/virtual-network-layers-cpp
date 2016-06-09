@@ -79,6 +79,9 @@ void* Region::alloc(int size) {
 	}
 	void* ptr = p_back->mem + pos;
 	pos += size;
+#ifdef VNL_MEMORY_ALIGN
+	pos += VNL_MEMORY_ALIGN - (size % VNL_MEMORY_ALIGN);
+#endif
 	return ptr;
 }
 
