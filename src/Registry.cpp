@@ -75,11 +75,13 @@ bool Registry::bind(Module* obj) {
 		value = obj;
 		obj->ref++;
 		if(waiting.find(mac)) {
-			for(connect_t* msg : waiting[mac]) {
+			auto& list = waiting[mac];
+			for(connect_t* msg : list) {
 				//std::cout << "Registry::bind(" << std::hex << obj->mac << "): ack for " << msg->src->getMAC() << std::ios::dec << std::endl;
 				obj->ref++;
 				msg->ack(obj);
 			}
+			list.clear();
 			waiting.erase(mac);
 		}
 		return true;

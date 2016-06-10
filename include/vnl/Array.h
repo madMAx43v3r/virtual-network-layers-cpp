@@ -8,6 +8,8 @@
 #ifndef INCLUDE_PHY_ARRAY_H_
 #define INCLUDE_PHY_ARRAY_H_
 
+#include <vector>
+
 #include "vnl/Memory.h"
 
 
@@ -59,6 +61,14 @@ public:
 		return ref;
 	}
 	
+	Array& operator=(const std::vector<T>& vec) {
+		clear();
+		for(const T& elem : vec) {
+			push_back(elem);
+		}
+		return *this;
+	}
+	
 	T& operator[](size_t index) {
 		int pi = index / M;
 		int ei = index % M;
@@ -67,6 +77,17 @@ public:
 			page = page->next;
 		}
 		return page->get<T>(ei);
+	}
+	
+	std::vector<T> to_vector() const {
+		size_t n = size();
+		std::vector<T> vec(n);
+		int i = 0;
+		for(auto iter = begin(); iter != end(); ++iter) {
+			vec[i] = *iter;
+			i++;
+		}
+		return vec;
 	}
 	
 	void clear() {
