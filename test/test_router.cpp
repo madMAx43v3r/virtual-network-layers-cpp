@@ -36,7 +36,7 @@ protected:
 	virtual void main(vnl::Engine* engine) override {
 		//vnl::Util::stick_to_core(mac % 3 + 1);
 		
-		timeout(1000*1000, std::bind(&Consumer::print_stats, this, std::placeholders::_1), vnl::Timer::REPEAT);
+		set_timeout(1000*1000, std::bind(&Consumer::print_stats, this), vnl::Timer::REPEAT);
 		
 		vnl::Receiver test(this, address);
 		
@@ -56,7 +56,7 @@ protected:
 		return false;
 	}
 	
-	void print_stats(vnl::Timer* timer) {
+	void print_stats() {
 		log(INFO).out << vnl::dec(counter) << vnl::endl;
 		counter = 0;
 	}
@@ -115,8 +115,6 @@ int main() {
 	}
 	
 	std::cout << "Number of pages allocated: " << vnl::Page::get_num_alloc() << std::endl;
-	
-	layer.shutdown();
 	
 }
 

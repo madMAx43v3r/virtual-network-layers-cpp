@@ -72,7 +72,7 @@ protected:
 	
 	StringWriter log(int level);
 	
-	Timer* timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
+	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	
 	bool poll(int64_t micros);
 	

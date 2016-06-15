@@ -55,7 +55,7 @@ StringWriter Module::log(int level) {
 	return writer;
 }
 
-Timer* Module::timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
+Timer* Module::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
 	Timer* timer = timer_begin;
 	while(timer) {
 		if(timer->free) {
