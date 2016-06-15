@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include "vnl/Base.h"
+#include <vnl/Basic.h>
 #include "vnl/Engine.h"
 #include "vnl/Memory.h"
 #include "vnl/Queue.h"
@@ -16,7 +16,7 @@
 
 namespace vnl {
 
-class Stream final : public Base {
+class Stream final : public Basic {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
@@ -45,11 +45,11 @@ public:
 		}
 	}
 	
-	void send(Message* msg, Base* dst) {
+	void send(Message* msg, Basic* dst) {
 		engine->send(this, msg, dst);
 	}
 	
-	void send_async(Message* msg, Base* dst) {
+	void send_async(Message* msg, Basic* dst) {
 		engine->send_async(this, msg, dst);
 	}
 	
@@ -57,7 +57,7 @@ public:
 		engine->flush();
 	}
 	
-	void listen(Base* dst) {
+	void listen(Basic* dst) {
 		listener = dst;
 	}
 	
@@ -86,7 +86,7 @@ public:
 private:
 	Engine* engine;
 	Queue<Message*> queue;
-	Base* listener = 0;
+	Basic* listener = 0;
 	
 	friend class Engine;
 	

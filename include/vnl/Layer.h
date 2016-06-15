@@ -9,8 +9,8 @@
 #define INCLUDE_LAYER_H_
 
 #include <assert.h>
+#include <vnl/Basic.h>
 
-#include "vnl/Base.h"
 #include "vnl/Random.h"
 #include "vnl/Registry.h"
 #include "vnl/Router.h"
@@ -18,7 +18,7 @@
 
 namespace vnl {
 
-class Layer : public SyncBase {
+class Layer : public Actor {
 public:
 	Layer() {
 		assert(Random64::instance == 0);

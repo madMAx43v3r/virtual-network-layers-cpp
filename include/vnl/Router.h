@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_ROUTER_H_
 #define INCLUDE_PHY_ROUTER_H_
 
-#include "vnl/Base.h"
+#include <vnl/Basic.h>
 #include "vnl/RingBuffer.h"
 #include "vnl/Packet.h"
 #include "vnl/Map.h"
@@ -24,19 +24,19 @@ public:
 	
 	Router();
 	
-	typedef MessageType<std::pair<Base*, Address>, 0xbe3fa14f> open_t;
-	typedef MessageType<std::pair<Base*, Address>, 0xfbe7dd5a> close_t;
+	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
+	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;
 	
 protected:
-	typedef List<Base*> Row;
+	typedef List<Basic*> Row;
 	
 	virtual bool handle(Message* msg) override;
 	
-	void open(const Address& addr, Base* src);
-	void close(const Address& addr, Base* src);
+	void open(const Address& addr, Basic* src);
+	void close(const Address& addr, Basic* src);
 	
-	void route(Packet* packet, Base* src, Row** prow);
-	void forward(Packet* org, Base* dst);
+	void route(Packet* packet, Basic* src, Row** prow);
+	void forward(Packet* org, Basic* dst);
 	
 	void callback(Message* msg);
 	

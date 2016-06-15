@@ -22,7 +22,7 @@
 
 namespace vnl {
 
-class Module : public Base {
+class Module : public Basic {
 public:
 	Module();
 	Module(uint64_t mac);
@@ -54,10 +54,10 @@ protected:
 		engine->fork(object);
 	}
 	
-	void send(Message* msg, Base* dst) {
+	void send(Message* msg, Basic* dst) {
 		stream->send(msg, dst);
 	}
-	void send_async(Message* msg, Base* dst) {
+	void send_async(Message* msg, Basic* dst) {
 		stream->send_async(msg, dst);
 	}
 	

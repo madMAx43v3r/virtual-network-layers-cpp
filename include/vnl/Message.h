@@ -20,7 +20,7 @@
 
 namespace vnl {
 
-class Base;
+class Basic;
 class Engine;
 
 
@@ -46,8 +46,8 @@ public:
 	}
 	
 	uint32_t msg_id;
-	Base* src = 0;
-	Base* dst = 0;
+	Basic* src = 0;
+	Basic* dst = 0;
 	bool isack = false;
 	
 	RingBuffer* buffer = 0;
@@ -56,7 +56,7 @@ public:
 	void* user = 0;
 	std::function<void(Message*)>* callback = 0;
 	
-	Base* gate = 0;
+	Basic* gate = 0;
 	void* _impl = 0;
 	
 };

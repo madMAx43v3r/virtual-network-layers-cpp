@@ -8,12 +8,12 @@
 #ifndef INCLUDE_PHY_ENGINE_H_
 #define INCLUDE_PHY_ENGINE_H_
 
+#include <vnl/Basic.h>
 #include <unordered_set>
 #include <mutex>
 #include <condition_variable>
 
 #include "vnl/Message.h"
-#include "vnl/Base.h"
 #include "vnl/Memory.h"
 #include "vnl/RingBuffer.h"
 #include "vnl/Random.h"
@@ -30,7 +30,7 @@ class FiberEngine;
 template<typename T> class Reference;
 
 
-class Engine : public Base {
+class Engine : public Basic {
 public:
 	Engine();
 	Engine(const std::string& name);
@@ -56,11 +56,11 @@ protected:
 		return generator.rand();
 	}
 	
-	void send(Base* src, Message* msg, Base* dst) {
+	void send(Basic* src, Message* msg, Basic* dst) {
 		send_impl(src, msg, dst, false);
 	}
 	
-	void send_async(Base* src, Message* msg, Base* dst) {
+	void send_async(Basic* src, Message* msg, Basic* dst) {
 		send_impl(src, msg, dst, true);
 	}
 	
@@ -103,7 +103,7 @@ protected:
 		return count;
 	}
 	
-	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) = 0;
+	virtual void send_impl(Basic* src, Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	

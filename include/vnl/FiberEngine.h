@@ -29,7 +29,7 @@ public:
 	void run();
 	
 protected:
-	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) override;
+	virtual void send_impl(Basic* src, Message* msg, Basic* dst, bool async) override;
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;
 	

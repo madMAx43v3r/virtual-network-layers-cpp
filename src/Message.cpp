@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
+#include <vnl/Basic.h>
 #include "vnl/Message.h"
-#include "vnl/Base.h"
 
 namespace vnl {
 

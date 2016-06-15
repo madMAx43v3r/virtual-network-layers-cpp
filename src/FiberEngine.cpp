@@ -169,7 +169,7 @@ void FiberEngine::run() {
 	}
 }
 
-void FiberEngine::send_impl(Base* src, Message* msg, Base* dst, bool async) {
+void FiberEngine::send_impl(Basic* src, Message* msg, Basic* dst, bool async) {
 	assert(msg->isack == false);
 	assert(dst);
 	assert(current);

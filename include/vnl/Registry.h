@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
-#include "vnl/Base.h"
+#include <vnl/Basic.h>
 #include "vnl/Pool.h"
 #include "vnl/Array.h"
 #include "vnl/Map.h"

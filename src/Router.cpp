@@ -24,7 +24,7 @@ bool Router::handle(Message* msg) {
 		if(pkt->src_addr.A == 0) {
 			pkt->src_addr.A = mac;
 		}
-		Base* src = msg->src;
+		Basic* src = msg->src;
 		if(src) {
 			if(pkt->src_addr.B == 0) {
 				pkt->src_addr.B = src->getMAC();
@@ -48,13 +48,13 @@ bool Router::handle(Message* msg) {
 	return false;
 }
 
-void Router::open(const Address& addr, Base* src) {
+void Router::open(const Address& addr, Basic* src) {
 	Row*& row = table[addr];
 	if(!row) {
 		row = new(mem.alloc<Row>()) Row(mem);
 	}
-	Base** pcol = 0;
-	for(Base*& col : *row) {
+	Basic** pcol = 0;
+	for(Basic*& col : *row) {
 		if(col == 0) {
 			pcol = &col;
 		} else if(col == src) {
@@ -69,10 +69,10 @@ void Router::open(const Address& addr, Base* src) {
 	}
 }
 
-void Router::close(const Address& addr, Base* src) {
+void Router::close(const Address& addr, Basic* src) {
 	Row* row = table[addr];
 	if(row) {
-		for(Base*& col : *row) {
+		for(Basic*& col : *row) {
 			if(col == src) {
 				col = 0;
 			}
@@ -80,9 +80,9 @@ void Router::close(const Address& addr, Base* src) {
 	}
 }
 
-void Router::route(Packet* pkt, Base* src, Row** prow) {
+void Router::route(Packet* pkt, Basic* src, Row** prow) {
 	if(prow) {
-		for(Base* dst : **prow) {
+		for(Basic* dst : **prow) {
 			if(dst && dst != src) {
 				forward(pkt, dst);
 			}
@@ -90,7 +90,7 @@ void Router::route(Packet* pkt, Base* src, Row** prow) {
 	}
 }
 
-void Router::forward(Packet* org, Base* dst) {
+void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>(org->pkt_id);
 	msg->parent = org;

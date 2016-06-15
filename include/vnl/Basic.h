@@ -17,14 +17,14 @@
 
 namespace vnl {
 
-class Base {
+class Basic {
 public:
-	Base() {}
+	Basic() {}
 	
-	Base(const Base&) = delete;
-	Base& operator=(const Base&) = delete;
+	Basic(const Basic&) = delete;
+	Basic& operator=(const Basic&) = delete;
 	
-	virtual ~Base() {}
+	virtual ~Basic() {}
 	
 	uint64_t getMAC() const { return mac; }
 	
@@ -39,7 +39,7 @@ protected:
 };
 
 
-class Reactor : public Base {
+class Reactor : public Basic {
 public:
 	Reactor() {
 		mac = Random64::global_rand();
@@ -67,7 +67,7 @@ public:
 protected:
 	virtual bool handle(Message* msg) = 0;
 	
-	void send_async(Message* msg, Base* dst) {
+	void send_async(Message* msg, Basic* dst) {
 		msg->src = this;
 		dst->receive(msg);
 	}
@@ -78,9 +78,9 @@ private:
 };
 
 
-class SyncBase : public Base {
+class Actor : public Basic {
 public:
-	SyncBase() : ulock(mutex) {}
+	Actor() : ulock(mutex) {}
 	
 	virtual void receive(Message* msg) override {
 		if(msg->isack) {
@@ -90,7 +90,7 @@ public:
 		}
 	}
 	
-	void send(Message* msg, Base* dst) {
+	void send(Message* msg, Basic* dst) {
 		msg->src = this;
 		acked = false;
 		ulock.unlock();
