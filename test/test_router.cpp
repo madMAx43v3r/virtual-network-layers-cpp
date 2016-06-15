@@ -6,6 +6,7 @@
  */
 
 #include "vnl/ThreadEngine.h"
+#include "vnl/FiberEngine.h"
 #include "vnl/Layer.h"
 #include "vnl/Router.h"
 #include "vnl/Node.h"
@@ -19,6 +20,7 @@
 #include "../src/Registry.cpp"
 #include "../src/Router.cpp"
 #include "../src/String.cpp"
+#include "../src/FiberEngine.cpp"
 
 
 struct test_msg_t {
@@ -38,6 +40,7 @@ protected:
 		
 		vnl::Receiver test(this, address);
 		
+		log(INFO).out << "Started Consumer" << vnl::endl;
 		run();
 	}
 	
@@ -64,6 +67,18 @@ private:
 };
 
 
+class Core : public vnl::Node {
+protected:
+	virtual void main(vnl::Engine* engine) override {
+		vnl::FiberEngine local;
+		for(int i = 0; i < 5; ++i) {
+			local.fork(new Consumer());
+		}
+		local.run();
+	}
+};
+
+
 int main() {
 	//vnl::Util::stick_to_core(0);
 	
@@ -73,10 +88,9 @@ int main() {
 	vnl::Region mem;
 	vnl::Stream pub(&engine, mem);
 	
-	Consumer* consumer;
-	for(int i = 0; i < 10; ++i) {
-		consumer = new Consumer();
-		engine.fork(consumer);
+	engine.fork(new Core());
+	for(int i = 0; i < 5; ++i) {
+		engine.fork(new Consumer());
 	}
 	
 	vnl::MessageBuffer buffer(mem);

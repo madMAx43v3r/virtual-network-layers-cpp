@@ -149,23 +149,21 @@ FiberEngine::~FiberEngine() {
 }
 
 void FiberEngine::run() {
-	while(dorun) {
+	vnl::Queue<Message*> inbox(memory);
+	while(fibers.size() > avail.size()) {
 		int64_t micros = timeout();
-		while(true) {
-			Message* msg = collect(micros);
-			if(msg) {
-				if(msg->isack) {
-					assert(msg->_impl);
-					((Fiber*)msg->_impl)->acked(msg);
-				} else {
-					msg->dst->receive(msg);
-					Fiber* fiber = (Fiber*)msg->dst->_impl;
-					if(fiber) {
-						fiber->notify(true);
-					}
-				}
+		collect(micros, inbox);
+		Message* msg = 0;
+		while(inbox.pop(msg)) {
+			if(msg->isack) {
+				assert(msg->_impl);
+				((Fiber*)msg->_impl)->acked(msg);
 			} else {
-				break;
+				msg->dst->receive(msg);
+				Fiber* fiber = (Fiber*)msg->dst->_impl;
+				if(fiber) {
+					fiber->notify(true);
+				}
 			}
 		}
 	}

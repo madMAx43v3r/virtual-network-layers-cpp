@@ -50,8 +50,6 @@ public:
 	}
 	
 protected:
-	bool dorun = true;
-	
 	void exec(Module* object);
 	
 	uint64_t rand() {
@@ -81,6 +79,28 @@ protected:
 			queue.pop(msg);
 		}
 		return msg;
+	}
+	
+	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
+		std::unique_lock<std::mutex> ulock(mutex);
+		size_t count = 0;
+		Message* msg = 0;
+		while(queue.pop(msg)) {
+			inbox.push(msg);
+			count++;
+		}
+		if(!count && timeout != 0) {
+			if(timeout > 0) {
+				cond.wait_for(ulock, std::chrono::microseconds(timeout));
+			} else {
+				cond.wait(ulock);
+			}
+			while(queue.pop(msg)) {
+				inbox.push(msg);
+				count++;
+			}
+		}
+		return count;
 	}
 	
 	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) = 0;

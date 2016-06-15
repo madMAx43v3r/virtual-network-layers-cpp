@@ -21,6 +21,10 @@ public:
 		thread.detach();
 	}
 	
+	void run(Module* object) {
+		exec(object);
+	}
+	
 protected:
 	
 	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) override {
