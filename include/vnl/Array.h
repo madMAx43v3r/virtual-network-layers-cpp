@@ -57,6 +57,7 @@ public:
 			pos = 0;
 		}
 		T& ref = p_back->get<T>(pos++);
+		new(&ref) T();
 		ref = obj;
 		return ref;
 	}

@@ -25,6 +25,8 @@ namespace vnl {
 
 class Stream;
 class Module;
+class ThreadEngine;
+class FiberEngine;
 template<typename T> class Reference;
 
 
@@ -47,10 +49,10 @@ public:
 		}
 	}
 	
-	virtual void exec(Module* object);
-	
 protected:
 	bool dorun = true;
+	
+	void exec(Module* object);
 	
 	uint64_t rand() {
 		return generator.rand();
@@ -103,6 +105,8 @@ private:
 	
 	friend class Stream;
 	friend class Module;
+	friend class ThreadEngine;
+	friend class FiberEngine;
 	template<typename T> friend class Reference;
 	
 };

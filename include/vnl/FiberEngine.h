@@ -26,14 +26,7 @@ public:
 	
 	virtual void fork(Module* object) override;
 	
-	virtual void exec(Module* object) override;
-	
-	void detach(Module* object) {
-		assert(is_detached == false);
-		std::thread thread(std::bind(&FiberEngine::entry, this, object));
-		thread.detach();
-		is_detached = true;
-	}
+	void run();
 	
 protected:
 	virtual void send_impl(Base* src, Message* msg, Base* dst, bool async) override;
@@ -51,7 +44,6 @@ private:
 	
 private:
 	int stack_size;
-	bool is_detached = false;
 	
 	Fiber* current = 0;
 	

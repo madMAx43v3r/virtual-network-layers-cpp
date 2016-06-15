@@ -148,8 +148,7 @@ FiberEngine::~FiberEngine() {
 	}
 }
 
-void FiberEngine::exec(Module* object) {
-	fork(object);
+void FiberEngine::run() {
 	while(dorun) {
 		int64_t micros = timeout();
 		while(true) {
