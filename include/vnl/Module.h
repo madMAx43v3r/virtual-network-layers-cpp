@@ -71,6 +71,8 @@ protected:
 	}
 	
 	StringWriter log(int level);
+	StringWriter log(int level, double time);
+	StringWriter log(int level, int64_t time);
 	
 	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	

@@ -55,6 +55,18 @@ StringWriter Module::log(int level) {
 	return writer;
 }
 
+StringWriter Module::log(int level, double time) {
+	StringWriter writer = log(level);
+	writer.out << "(" << vnl::def(time, 3) << ") ";
+	return writer;
+}
+
+StringWriter Module::log(int level, int64_t time) {
+	StringWriter writer = log(level);
+	writer.out << "(" << vnl::dec(time) << ") ";
+	return writer;
+}
+
 Timer* Module::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
 	Timer* timer = timer_begin;
 	while(timer) {
