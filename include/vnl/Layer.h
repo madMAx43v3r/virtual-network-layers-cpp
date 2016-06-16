@@ -43,6 +43,7 @@ public:
 		delete Router::instance;
 		
 		Page::cleanup();
+		Block::cleanup();
 	}
 	
 };

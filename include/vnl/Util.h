@@ -52,8 +52,8 @@ static uint64_t hash64(const String& str) {
 	CRC64 func;
 	auto* chunk = str.front();
 	while(chunk) {
-		func.update(chunk->str, chunk->len);
-		chunk = chunk->next;
+		func.update(chunk->str(), chunk->len());
+		chunk = chunk->next_chunk();
 	}
 	return func.getValue();
 }

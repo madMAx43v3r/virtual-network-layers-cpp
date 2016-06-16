@@ -14,13 +14,15 @@ namespace vnl {
 
 /*
  * This is a queue for use on small data types.
- * sizeof(T) <= 40 bytes at default N = 6
  */
-template<typename T, int N = 6>
+template<typename T>
 class Queue {
 public:
+	static const int N = (VNL_BLOCK_SIZE - 4) / VNL_SIZEOF(T);
+	
 	Queue() {
-		p_front = memory.create<block_t>();
+		assert(N > 0);
+		p_front = Block::alloc_ex<block_t>()->create();
 		p_back = p_front;
 	}
 	
@@ -28,6 +30,7 @@ public:
 		for(auto iter = begin(); iter != end(); ++iter) {
 			iter->~T();
 		}
+		p_front->free_all();
 	}
 	
 	Queue(const Queue&) = delete;
@@ -45,14 +48,14 @@ public:
 	}
 	
 	T& push(const T& obj) {
-		if(p_back->write >= N) {
-			if(!p_back->next) {
-				p_back->next = memory.create<block_t>();
+		if(p_back->write() >= N) {
+			if(!p_back->next_block()) {
+				p_back->next_block() = Block::alloc_ex<block_t>()->create();
 			}
-			p_back = p_back->next;
-			p_back->write = 0;
+			p_back = p_back->next_block();
+			p_back->write() = 0;
 		}
-		T& ref = p_back->elem[p_back->write++];
+		T& ref = p_back->elem(p_back->write()++);
 		ref = obj;
 		count++;
 		return ref;
@@ -62,17 +65,17 @@ public:
 		if(empty()) {
 			return false;
 		}
-		T& tmp = p_front->elem[p_front->read++];
-		if(p_front->read >= N) {
+		T& tmp = p_front->elem(p_front->read()++);
+		if(p_front->read() >= N) {
 			if(p_front != p_back) {
 				block_t* tmp = p_front;
-				p_front = p_front->next;
-				tmp->next = p_back->next;
-				p_back->next = tmp;
+				p_front = p_front->next_block();
+				tmp->next_block() = p_back->next_block();
+				p_back->next_block() = tmp;
 			} else {
-				p_front->write = 0;
+				p_front->write() = 0;
 			}
-			p_front->read = 0;
+			p_front->read() = 0;
 		}
 		obj = tmp;
 		count--;
@@ -94,17 +97,17 @@ public:
 	}
 	
 	T& front() {
-		return p_front->elem[p_front->read];
+		return p_front->elem(p_front->read());
 	}
 	T& back() {
-		return p_back->elem[p_back->write - 1];
+		return p_back->elem(p_back->write() - 1);
 	}
 	
 	const T& front() const {
-		return p_front->elem[p_front->read];
+		return p_front->elem(p_front->read());
 	}
 	const T& back() const {
-		return p_back->elem[p_back->write - 1];
+		return p_back->elem(p_back->write() - 1);
 	}
 	
 	size_t size() {
@@ -112,8 +115,8 @@ public:
 	}
 	
 	void clear() {
-		p_front->read = 0;
-		p_front->write = 0;
+		p_front->read() = 0;
+		p_front->write() = 0;
 		p_back = p_front;
 		count = 0;
 	}
@@ -123,13 +126,18 @@ public:
 	}
 	
 protected:
-	BlockAlloc memory;
-	
-	struct block_t {
-		T elem[N];
-		block_t* next = 0;
-		uint8_t read = 0;
-		uint8_t write = 0;
+	class block_t : public Block {
+	public:
+		block_t* create() {
+			read() = 0;
+			write() = 0;
+			for(int i = 0; i < N; i++) { new (&elem(i)) T(); }
+			return this;
+		}
+		block_t*& next_block() { return *((block_t**)(&next)); }
+		int16_t& read() { return type_at<int16_t>(0); }
+		int16_t& write() { return type_at<int16_t>(2); }
+		T& elem(int i) { return type_at<T>(4 + i*VNL_SIZEOF(T)); }
 	};
 	
 public:
@@ -149,10 +157,10 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return block->elem[pos];
+			return block->elem(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &block->elem[pos];
+			return &block->elem(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
 			std::swap(lhs.block, rhs.block);
@@ -169,13 +177,13 @@ public:
 			:	block(block), pos(pos)
 		{
 			if(pos >= N) {
-				this->block = block->next;
+				this->block = block->next_block();
 				this->pos = 0;
 			}
 		}
 		void advance() {
 			if(pos >= N-1) {
-				block = block->next;
+				block = block->next_block();
 				pos = 0;
 			} else {
 				pos++;
@@ -189,13 +197,13 @@ public:
 	typedef iterator_t<T> iterator;
 	typedef iterator_t<const T> const_iterator;
 	
-	iterator begin() { return iterator(p_front, p_front->read); }
-	const_iterator begin() const { return const_iterator(p_front, p_front->read); }
-	const_iterator cbegin() const { return const_iterator(p_front, p_front->read); }
+	iterator begin() { return iterator(p_front, p_front->read()); }
+	const_iterator begin() const { return const_iterator(p_front, p_front->read()); }
+	const_iterator cbegin() const { return const_iterator(p_front, p_front->read()); }
 	
-	iterator end() { return iterator(p_back, p_back->write); }
-	const_iterator end() const { return const_iterator(p_back, p_back->write); }
-	const_iterator cend() const { return const_iterator(p_back, p_back->write); }
+	iterator end() { return iterator(p_back, p_back->write()); }
+	const_iterator end() const { return const_iterator(p_back, p_back->write()); }
+	const_iterator cend() const { return const_iterator(p_back, p_back->write()); }
 	
 private:
 	block_t* p_front;

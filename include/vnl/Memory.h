@@ -67,8 +67,24 @@ public:
 	}
 	
 	template<typename T>
+	static T* alloc_ex() {
+		assert(sizeof(T) == sizeof(Memory));
+		return (T*)alloc();
+	}
+	
+	template<typename T>
 	T& get(int index) {
 		return *(T*)(mem + index * VNL_SIZEOF(T));
+	}
+	
+	template<typename T>
+	T* type_addr(int offset) {
+		return (T*)(mem + offset);
+	}
+	
+	template<typename T>
+	T& type_at(int offset) {
+		return *type_addr<T>(offset);
 	}
 	
 	static size_t get_num_alloc() {

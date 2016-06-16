@@ -29,34 +29,39 @@ public:
 
 class String {
 public:
-	static const int CHUNK_SIZE = VNL_BLOCK_SIZE - sizeof(void*) - 2;
+	static const int CHUNK_SIZE = VNL_BLOCK_SIZE - 2;
 	
-	struct chunk_t {
-		chunk_t* next = 0;
-		int16_t len = 0;
-		char str[CHUNK_SIZE];
+	class chunk_t : public Block {
+	public:
+		chunk_t*& next_chunk() { return *((chunk_t**)(&next)); }
+		int16_t& len() { return type_at<int16_t>(0); }
+		char* str() { return mem + 2; }
+		chunk_t* create() {
+			len() = 0;
+			return this;
+		}
 	};
 	
 	String() {
-		p_front = memory.create<chunk_t>();
+		p_front = Block::alloc_ex<chunk_t>()->create();
 		p_back = p_front;
 	}
 	
 	String(const String& other) : String() {
 		chunk_t* chunk = other.p_front;
 		while(chunk) {
-			memcpy(p_back->str, chunk->str, CHUNK_SIZE);
-			p_back->len = chunk->len;
-			chunk = chunk->next;
+			memcpy(p_back->str(), chunk->str(), CHUNK_SIZE);
+			p_back->len() = chunk->len();
+			chunk = chunk->next_chunk();
 			if(chunk) {
-				p_back->next = memory.create<chunk_t>();
-				p_back = p_back->next;
+				p_back->next_chunk() = Block::alloc_ex<chunk_t>()->create();
+				p_back = p_back->next_chunk();
 			}
 		}
 	}
 	
 	~String() {
-		clear();
+		p_front->free_all();
 	}
 	
 	bool operator!=(const String& other) const {
@@ -67,14 +72,14 @@ public:
 		chunk_t* A = p_front;
 		chunk_t* B = other.p_front;
 		while(A && B) {
-			if(A->len != B->len) {
+			if(A->len() != B->len()) {
 				return false;
 			}
-			if(strncmp(A->str, B->str, A->len)) {
+			if(strncmp(A->str(), B->str(), A->len())) {
 				return false;
 			}
-			A = A->next;
-			B = B->next;
+			A = A->next_chunk();
+			B = B->next_chunk();
 		}
 		return A == B;
 	}
@@ -119,8 +124,8 @@ public:
 	String& operator<<(const String& str) {
 		chunk_t* chunk = str.p_front;
 		while(chunk) {
-			write(chunk->str, chunk->len);
-			chunk = chunk->next;
+			write(chunk->str(), chunk->len());
+			chunk = chunk->next_chunk();
 		}
 		return *this;
 	}
@@ -134,8 +139,8 @@ public:
 		std::ostringstream stream;
 		chunk_t* chunk = p_front;
 		while(chunk) {
-			stream.write(chunk->str, chunk->len);
-			chunk = chunk->next;
+			stream.write(chunk->str(), chunk->len());
+			chunk = chunk->next_chunk();
 		}
 		return stream.str();
 	}
@@ -143,8 +148,8 @@ public:
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {
 		chunk_t* chunk = str.p_front;
 		while(chunk) {
-			stream.write(chunk->str, chunk->len);
-			chunk = chunk->next;
+			stream.write(chunk->str(), chunk->len());
+			chunk = chunk->next_chunk();
 		}
 		return stream;
 	}
@@ -152,17 +157,17 @@ public:
 	void write(const char* str, int32_t len) {
 		int32_t pos = 0;
 		while(len > pos) {
-			if(p_back->len == CHUNK_SIZE) {
-				if(!p_back->next) {
-					p_back->next = memory.create<chunk_t>();
+			if(p_back->len() == CHUNK_SIZE) {
+				if(!p_back->next_chunk()) {
+					p_back->next_chunk() = Block::alloc_ex<chunk_t>()->create();
 				}
-				p_back = p_back->next;
+				p_back = p_back->next_chunk();
 			}
 			int32_t num = len - pos;
-			int32_t left = CHUNK_SIZE - p_back->len;
+			int32_t left = CHUNK_SIZE - p_back->len();
 			if(num > left) { num = left; }
-			memcpy(p_back->str + p_back->len, str+pos, num);
-			p_back->len += num;
+			memcpy(p_back->str() + p_back->len(), str+pos, num);
+			p_back->len() += num;
 			pos += num;
 		}
 	}
@@ -170,8 +175,8 @@ public:
 	void clear() {
 		chunk_t* chunk = p_front;
 		while(chunk) {
-			chunk->len = 0;
-			chunk = chunk->next;
+			chunk->len() = 0;
+			chunk = chunk->next_chunk();
 		}
 		p_back = p_front;
 		count = 0;
@@ -190,7 +195,6 @@ public:
 	}
 	
 private:
-	BlockAlloc memory;
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
 	int32_t count = 0;
