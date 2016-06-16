@@ -103,35 +103,56 @@ private:
 	
 	friend class Engine;
 	friend class Registry;
+	template<typename T> friend class Reference;
 	
 };
 
 
 template<typename T>
-Reference<T>::Reference(Engine* engine, T* obj)
-	:	mac(obj->getMAC()), engine(engine), obj(obj)
+Reference<T>::Reference(Module* module, T* obj)
+	:	mac(obj->getMAC()), module(module), obj(obj)
 {
 	Registry::open_t msg(obj);
-	engine->send(engine, &msg, Registry::instance);
+	module->send(&msg, Registry::instance);
 }
 
 template<typename T>
-Reference<T>::Reference(Engine* engine, uint64_t mac)
-	:	mac(mac), engine(engine)
+Reference<T>::Reference(Module* module, uint64_t mac)
+	:	mac(mac), module(module)
 {
 }
 
 template<typename T>
-Reference<T>::Reference(Engine* engine, const char* name) 
-	:	Reference(engine, hash64(name))
+Reference<T>::Reference(Module* module, const char* name) 
+	:	Reference(module, hash64(name))
 {
 }
 
 template<typename T>
-Reference<T>::Reference(Engine* engine, const String& name) 
-	:	Reference(engine, hash64(name))
+Reference<T>::Reference(Module* module, const String& name) 
+	:	Reference(module, hash64(name))
 {
 }
+
+template<typename T>
+T* Reference<T>::get() {
+	if(!obj) {
+		Registry::connect_t req(mac);
+		module->send(&req, Registry::instance);
+		obj = (T*)req.res;
+	}
+	return obj;
+}
+
+template<typename T>
+void Reference<T>::close() {
+	if(obj) {
+		Registry::close_t msg(obj);
+		module->send(&msg, Registry::instance);
+		obj = 0;
+	}
+}
+
 
 
 }

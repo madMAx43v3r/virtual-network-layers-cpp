@@ -15,45 +15,34 @@
 
 namespace vnl {
 
-class Object;
+class Module;
 
 
 template<typename T>
 class Reference {
 public:
-	Reference(Engine* engine, T* obj);
+	Reference(Module* module, T* obj);
 	
-	Reference(Engine* engine, uint64_t mac);
+	Reference(Module* module, uint64_t mac);
 	
-	Reference(Engine* engine, const char* name);
+	Reference(Module* module, const char* name);
 	
-	Reference(Engine* engine, const vnl::String& name);
+	Reference(Module* module, const vnl::String& name);
 	
 	~Reference() {
 		close();
 	}
 	
-	T* get() {
-		if(!obj) {
-			Registry::connect_t req(mac);
-			engine->send(engine, &req, Registry::instance);
-			obj = (T*)req.res;
-			//std::cout << "Reference: resolved " << std::hex << mac << " to " << obj->getName() << std::dec << std::endl;
-		}
-		return obj;
-	}
+	Reference(const Reference& other) = delete;
+	Reference& operator=(const Reference& other) = delete;
 	
-	void close() {
-		if(obj) {
-			Registry::close_t msg(obj);
-			engine->send(engine, &msg, Registry::instance);
-			obj = 0;
-		}
-	}
+	T* get();
+	
+	void close();
 	
 private:
-	uint64_t mac;
-	Engine* engine = 0;
+	uint64_t mac = 0;
+	Module* module = 0;
 	T* obj = 0;
 	
 };

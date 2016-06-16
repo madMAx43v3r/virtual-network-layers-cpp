@@ -1,6 +1,6 @@
 
-CFLAGS = -std=c++11 -pthread -g -O3
-INC := -I$(ROOT)/include
+CFLAGS += -std=c++11 -pthread -g -O3 -I$(ROOT)/include
+LDFLAGS += -L/usr/local/lib
 
 SRC := $(wildcard *.cpp)
 OBJ := $(SRC:%.cpp=bin/%.o)
@@ -10,7 +10,7 @@ DEPS := $(OBJ:.o=.d)
 -include $(DEPS)
 
 bin/%.o: %.cpp
-	$(CC) $(CFLAGS) $(INC) -MMD -MP -MF $(patsubst %.o,%.d,$@) -c -o $@ $<
+	$(CC) $(CFLAGS) -MMD -MP -MF $(patsubst %.o,%.d,$@) -c -o $@ $<
 
 $(OBJ): | $(OBJDIRS)
 

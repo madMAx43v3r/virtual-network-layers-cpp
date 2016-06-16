@@ -9,7 +9,7 @@
 
 #ifdef VNL_HAVE_BOOST_COROUTINE
 
-#define VNL_HAVE_FIBER_ENGINE
+#define VNL_HAVE_FIBER_ENGINE true
 
 #include <chrono>
 #include <boost/bind.hpp>
@@ -173,7 +173,6 @@ void FiberEngine::run() {
 
 void FiberEngine::send_impl(Basic* src, Message* msg, Basic* dst, bool async) {
 	assert(msg->isack == false);
-	assert(dst);
 	assert(current);
 	
 	msg->src = src;
@@ -183,7 +182,6 @@ void FiberEngine::send_impl(Basic* src, Message* msg, Basic* dst, bool async) {
 }
 
 bool FiberEngine::poll(Stream* stream, int64_t micros) {
-	assert(stream);
 	assert(stream->_impl == 0);
 	assert(stream->getEngine() == this);
 	assert(current);
