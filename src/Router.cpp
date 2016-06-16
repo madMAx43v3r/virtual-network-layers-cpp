@@ -13,8 +13,7 @@ namespace vnl {
 Router* Router::instance = 0;
 
 Router::Router()
-	:	buffer(mem),
-		cb_func(std::bind(&Router::callback, this, std::placeholders::_1))
+	:	cb_func(std::bind(&Router::callback, this, std::placeholders::_1))
 {
 }
 
@@ -51,7 +50,7 @@ bool Router::handle(Message* msg) {
 void Router::open(const Address& addr, Basic* src) {
 	Row*& row = table[addr];
 	if(!row) {
-		row = new(mem.alloc<Row>()) Row(mem);
+		row = memory.create<Row>();
 	}
 	Basic** pcol = 0;
 	for(Basic*& col : *row) {

@@ -87,7 +87,7 @@ protected:
 	virtual void main(Engine* engine) = 0;
 	
 protected:
-	Region memory;
+	PageAlloc memory;
 	MessageBuffer buffer;
 	
 private:

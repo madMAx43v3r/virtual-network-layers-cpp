@@ -20,8 +20,8 @@ class Stream final : public Basic {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
-	Stream(Engine* engine, Region& mem)
-		:	engine(engine), queue(mem)
+	Stream(Engine* engine)
+		:	engine(engine)
 	{
 		mac = engine->rand();
 	}
@@ -78,7 +78,7 @@ public:
 	void push(Message* msg) {
 		queue.push(msg);
 		if(listener) {
-			send_async(engine->buffer.create<signal_t>(this), listener);
+			send_async(engine->buffer.create<signal_t>(), listener);
 			listener = 0;
 		}
 	}

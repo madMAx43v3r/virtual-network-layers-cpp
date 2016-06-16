@@ -29,18 +29,30 @@ public:
 
 class String {
 public:
-	static const int CHUNK_SIZE = VNL_STRING_BLOCK_SIZE - sizeof(void*) - 2;
+	static const int CHUNK_SIZE = VNL_BLOCK_SIZE - sizeof(void*) - 2;
 	
 	struct chunk_t {
+		chunk_t* next = 0;
+		int16_t len = 0;
 		char str[CHUNK_SIZE];
-		chunk_t* next;
-		int16_t len;
-		chunk_t() : next(0), len(0) {}
 	};
 	
-	String(Region& memory) : memory(memory) {
+	String() {
 		p_front = memory.create<chunk_t>();
 		p_back = p_front;
+	}
+	
+	String(const String& other) : String() {
+		chunk_t* chunk = other.p_front;
+		while(chunk) {
+			memcpy(p_back->str, chunk->str, CHUNK_SIZE);
+			p_back->len = chunk->len;
+			chunk = chunk->next;
+			if(chunk) {
+				p_back->next = memory.create<chunk_t>();
+				p_back = p_back->next;
+			}
+		}
 	}
 	
 	~String() {
@@ -178,7 +190,7 @@ public:
 	}
 	
 private:
-	Region& memory;
+	BlockAlloc memory;
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
 	int32_t count = 0;
@@ -259,16 +271,15 @@ extern StringStream cerr;
 
 class StringWriter {
 public:
-	StringWriter() : out(memory), func(nullptr) {}
-	StringWriter(StringOutput* func) : out(memory), func(func) {}
-	StringWriter(const StringWriter& other) : out(memory), func(other.func) {}
+	StringWriter() : func(nullptr) {}
+	StringWriter(StringOutput* func) : func(func) {}
+	StringWriter(const StringWriter& other) : func(other.func) {}
 	~StringWriter() {
 		if(func) {
 			func->write(out);
 		}
 	}
 private:
-	Region memory;
 	StringOutput* func;
 public:
 	String out;

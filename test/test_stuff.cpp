@@ -24,7 +24,6 @@
 #include "vnl/String.h"
 #include "vnl/Algorithm.h"
 
-#include "../src/Memory.cpp"
 #include "../src/CRC64.cpp"
 #include "../src/String.cpp"
 
@@ -34,8 +33,7 @@ int main() {
 	int M = 10000;
 	
 	{
-		vnl::Region mem;
-		vnl::Queue<int> test(mem);
+		vnl::Queue<int> test;
 		for(int iter = 0; iter < N; ++iter) {
 			for(int i = 0; i < M; ++i) {
 				test.push(i);
@@ -123,8 +121,7 @@ int main() {
 	}
 	
 	{
-		vnl::Region mem;
-		vnl::String str(mem);
+		vnl::String str;
 		for(int iter = 0; iter < N; ++iter) {
 			std::string std_str;
 			for(int i = 0; i < M; ++i) {
@@ -137,17 +134,18 @@ int main() {
 			//std::cout << str.to_string() << std::endl;
 			assert(str.to_string() == std_str);
 			assert(ss.str() == std_str);
+			assert(str == str);
+			assert(vnl::String(str) == str);
 			str.clear();
 		}
 	}
 	
 	{
-		vnl::Region mem;
-		vnl::String str(mem);
+		vnl::String str;
 		str << "BLUBB";
 		std::cout << str << std::endl;
 		assert(str == str);
-		assert(str == (vnl::String(mem) << "BLUBB"));
+		assert(str == (vnl::String() << "BLUBB"));
 		assert(str.to_string() == std::string("BLUBB"));
 	}
 	

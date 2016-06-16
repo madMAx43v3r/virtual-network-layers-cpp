@@ -17,7 +17,6 @@
 namespace vnl {
 
 Engine::Engine()
-	:	queue(memory), buffer(memory)
 {
 	mac = Random64::global_rand();
 }

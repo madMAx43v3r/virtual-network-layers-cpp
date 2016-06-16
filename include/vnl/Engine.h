@@ -112,7 +112,7 @@ protected:
 	virtual void fork(Module* object) = 0;
 	
 protected:
-	Region memory;
+	PageAlloc memory;
 	MessageBuffer buffer;
 	
 private:

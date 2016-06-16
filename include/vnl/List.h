@@ -15,13 +15,11 @@ namespace vnl {
 
 /*
  * This is a list.
- * Maximum element size at default is 500 bytes.
+ * Maximum element size at default is 30 bytes.
  */
 template<typename T, int N = 8>
 class List : public Queue<T,N> {
 public:
-	List(Region& mem) : Queue<T,N>(mem) {}
-	
 	T& push_back(const T& obj) {
 		return Queue<T,N>::push(obj);
 	}

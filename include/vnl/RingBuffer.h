@@ -15,7 +15,7 @@ namespace vnl {
 
 class RingBuffer {
 public:
-	RingBuffer(Region& mem) : queue(mem) {
+	RingBuffer() {
 		p_front = Page::alloc();
 		p_back = p_front;
 		pos = 0;
@@ -48,7 +48,7 @@ public:
 	
 	template<typename T>
 	entry_t* alloc() {
-		return alloc(sizeof(T));
+		return alloc(VNL_SIZEOF(T));
 	}
 	
 	entry_t* alloc(int size) {
@@ -62,9 +62,6 @@ public:
 		entry.page = p_back;
 		entry.ptr = p_back->mem + pos;
 		pos += size;
-#ifdef VNL_MEMORY_ALIGN
-		pos += VNL_MEMORY_ALIGN - (size % VNL_MEMORY_ALIGN);
-#endif
 		return &queue.push(entry);
 	}
 	
@@ -95,8 +92,6 @@ private:
 
 class MessageBuffer : public RingBuffer {
 public:
-	MessageBuffer(Region& mem) : RingBuffer(mem) {}
-	
 	template<typename T>
 	T* create() {
 		entry_t* entry = RingBuffer::alloc<T>();

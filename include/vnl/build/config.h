@@ -15,14 +15,14 @@
 #define VNL_PAGE_SIZE 4096
 
 /*
+ * The block size in bytes
+ */
+#define VNL_BLOCK_SIZE 256
+
+/*
  * How far memory is aligned
  */
 //#define VNL_MEMORY_ALIGN 16
-
-/*
- * The block size of strings in bytes
- */
-#define VNL_STRING_BLOCK_SIZE 128
 
 /*
  * Defining this will use new() instead of paged memory.
@@ -35,7 +35,7 @@
  * If we have boost coroutine >= version 1.56
  * Needed for FiberEngine.
  */
-#define VNL_HAVE_BOOST_COROUTINE true
+//#define VNL_HAVE_BOOST_COROUTINE true
 
 
 

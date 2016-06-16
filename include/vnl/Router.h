@@ -40,7 +40,7 @@ protected:
 	
 	void callback(Message* msg);
 	
-	Region mem;
+	PageAlloc memory;
 	MessageBuffer buffer;
 	
 private:

@@ -195,7 +195,7 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = Page::size / sizeof(T);
+	static const int M = Page::size / VNL_SIZEOF(T);
 	
 	Page* p_front = 0;
 	Page* p_back = 0;

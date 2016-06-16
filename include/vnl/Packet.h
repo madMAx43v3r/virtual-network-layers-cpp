@@ -11,12 +11,12 @@
 #include "vnl/Address.h"
 #include "vnl/Message.h"
 
-#define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::SAMPLE> sample_t;
+#define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::PID_SAMPLE> sample_t;
 
 
 namespace vnl {
 
-static const uint32_t SAMPLE = 0x12ed1215;
+static const uint32_t PID_SAMPLE = 0x12ed1215;
 
 class Router;
 
@@ -50,11 +50,6 @@ public:
 	
 	PacketType(const T& data_) : Packet(PID_), data(data_) {
 		payload = &data;
-	}
-	
-	PacketType(const T& data_, const Address& dst_) : Packet(PID_), data(data_) {
-		payload = &data;
-		dst_addr = dst_;
 	}
 	
 	static const uint32_t PID = PID_;

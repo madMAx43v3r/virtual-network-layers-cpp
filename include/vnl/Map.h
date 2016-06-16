@@ -221,7 +221,7 @@ protected:
 		return false;
 	}
 	
-	Region mem;
+	PageAlloc mem;
 	
 private:
 	Array<Page*> index;

@@ -14,14 +14,14 @@ namespace vnl {
 
 /*
  * This is a queue.
- * Maximum element size at default is 500 bytes.
- * Maximum block size is 256
+ * Maximum element size at default is 30 bytes.
+ * Maximum block size is 16
  */
 template<typename T, int N = 8>
 class Queue {
 public:
-	Queue(Region& mem) : mem(mem) {
-		p_front = mem.create<block_t>();
+	Queue() {
+		p_front = memory.create<block_t>();
 		p_back = p_front;
 	}
 	
@@ -48,7 +48,7 @@ public:
 	T& push(const T& obj) {
 		if(p_back->write >= N) {
 			if(!p_back->next) {
-				p_back->next = mem.create<block_t>();
+				p_back->next = memory.create<block_t>();
 			}
 			p_back = p_back->next;
 			p_back->write = 0;
@@ -123,9 +123,9 @@ public:
 		return count == 0;
 	}
 	
-	Region& mem;
-	
 protected:
+	BlockAlloc memory;
+	
 	struct block_t {
 		T elem[N];
 		block_t* next = 0;
@@ -202,7 +202,6 @@ private:
 	block_t* p_front;
 	block_t* p_back;
 	size_t count = 0;
-	
 	
 };
 

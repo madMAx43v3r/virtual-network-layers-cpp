@@ -17,7 +17,6 @@ int Module::global_log_level = Module::INFO;
 Module::Module() : Module((uint64_t)0) {}
 
 Module::Module(uint64_t mac)
-	:	buffer(memory), my_name(memory)
 {
 	this->mac = mac;
 }
@@ -136,7 +135,7 @@ void Module::run() {
 
 void Module::exec(Engine* engine_) {
 	engine = engine_;
-	Stream tmp(engine, memory);
+	Stream tmp(engine);
 	stream = &tmp;
 	if(mac == 0) {
 		mac = engine->rand();

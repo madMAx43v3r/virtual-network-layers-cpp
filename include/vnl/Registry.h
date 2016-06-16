@@ -9,7 +9,7 @@
 #define INCLUDE_PHY_REGISTRY_H_
 
 #include <vnl/Basic.h>
-#include "vnl/Pool.h"
+#include "vnl/RingBuffer.h"
 #include "vnl/Array.h"
 #include "vnl/Map.h"
 
@@ -51,11 +51,9 @@ private:
 	
 	void send_exit(Module* obj);
 	
-	void callback(Message* msg);
-	
 private:
-	Region mem;
-	Pool<exit_t> exit_buf;
+	PageAlloc memory;
+	MessageBuffer buffer;
 	
 	Map<uint64_t, Module*> map;
 	Map<uint64_t, Array<connect_t*> > waiting;

@@ -13,7 +13,6 @@
 
 #include "../src/CRC64.cpp"
 #include "../src/Engine.cpp"
-#include "../src/Memory.cpp"
 #include "../src/Message.cpp"
 #include "../src/Random.cpp"
 #include "../src/Module.cpp"
@@ -24,7 +23,6 @@
 
 
 struct test_msg_t {
-	test_msg_t(vnl::Region& mem) : text(mem) {}
 	vnl::String text;
 	VNL_SAMPLE(test_msg_t);
 };
@@ -89,8 +87,7 @@ int main() {
 	vnl::Layer layer;
 	vnl::ThreadEngine engine;
 	
-	vnl::Region mem;
-	vnl::Stream pub(&engine, mem);
+	vnl::Stream pub(&engine);
 	
 #ifdef VNL_HAVE_FIBER_ENGINE
 	engine.fork(new Core());
@@ -99,9 +96,9 @@ int main() {
 		engine.fork(new Consumer());
 	}
 	
-	vnl::MessageBuffer buffer(mem);
+	vnl::MessageBuffer buffer;
 	
-	test_msg_t test(mem);
+	test_msg_t test;
 	test.text << "Hello World";
 	
 	int counter = 0;
@@ -109,7 +106,9 @@ int main() {
 		
 		for(int k = 0; k < 100; ++k) {
 			// publish
-			test_msg_t::sample_t* msg = buffer.create<test_msg_t::sample_t>(test, address);
+			auto* msg = buffer.create<test_msg_t::sample_t>();
+			msg->data = test;
+			msg->dst_addr = address;
 			//pub.send(msg, vnl::phy::Router::instance);
 			pub.send_async(msg, vnl::Router::instance);
 		}
