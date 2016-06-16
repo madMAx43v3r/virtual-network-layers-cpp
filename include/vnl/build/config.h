@@ -29,13 +29,13 @@
  * Useful for valgrind debugging.
  * The memory allocated will not be deleted however.
  */
-//#define VNL_MEMORY_DEBUG
+//#define VNL_MEMORY_DEBUG true
 
 /*
  * If we have boost coroutine >= version 1.56
  * Needed for FiberEngine.
  */
-#define VNL_HAVE_BOOST_COROUTINE
+#define VNL_HAVE_BOOST_COROUTINE true
 
 
 

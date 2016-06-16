@@ -9,6 +9,8 @@
 
 #ifdef VNL_HAVE_BOOST_COROUTINE
 
+#define VNL_HAVE_FIBER_ENGINE
+
 #include <chrono>
 #include <boost/bind.hpp>
 #include <boost/coroutine/symmetric_coroutine.hpp>

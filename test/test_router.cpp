@@ -67,6 +67,8 @@ private:
 };
 
 
+#ifdef VNL_HAVE_FIBER_ENGINE
+
 class Core : public vnl::Node {
 protected:
 	virtual void main(vnl::Engine* engine) override {
@@ -78,6 +80,8 @@ protected:
 	}
 };
 
+#endif
+
 
 int main() {
 	//vnl::Util::stick_to_core(0);
@@ -88,7 +92,9 @@ int main() {
 	vnl::Region mem;
 	vnl::Stream pub(&engine, mem);
 	
+#ifdef VNL_HAVE_FIBER_ENGINE
 	engine.fork(new Core());
+#endif
 	for(int i = 0; i < 5; ++i) {
 		engine.fork(new Consumer());
 	}
