@@ -14,10 +14,10 @@
 namespace vnl {
 
 /*
- * This is a list.
- * Maximum element size at default is 30 bytes.
+ * This is a list for use on small data types.
+ * sizeof(T) <= 40 bytes at default N = 6
  */
-template<typename T, int N = 8>
+template<typename T, int N = 6>
 class List : public Queue<T,N> {
 public:
 	T& push_back(const T& obj) {

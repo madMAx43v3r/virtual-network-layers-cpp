@@ -13,11 +13,10 @@
 namespace vnl {
 
 /*
- * This is a queue.
- * Maximum element size at default is 30 bytes.
- * Maximum block size is 16
+ * This is a queue for use on small data types.
+ * sizeof(T) <= 40 bytes at default N = 6
  */
-template<typename T, int N = 8>
+template<typename T, int N = 6>
 class Queue {
 public:
 	Queue() {
