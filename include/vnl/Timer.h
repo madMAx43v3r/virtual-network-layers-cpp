@@ -15,9 +15,7 @@ namespace vnl {
 
 class Module;
 
-/*
- * A timer class that does some magic.
- */
+
 class Timer {
 public:
 	enum type_t { REPEAT, MANUAL, ONCE };
@@ -35,13 +33,6 @@ public:
 	void destroy() {
 		stop();
 		free = true;
-	}
-	
-	/*
-	 * Computes a magic number. Use carefully.
-	 */
-	int magic(int y, int x, int z) {
-		return 42 * 1337 + x + y + z;
 	}
 	
 private:
