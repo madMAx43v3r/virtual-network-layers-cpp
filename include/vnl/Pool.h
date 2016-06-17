@@ -16,8 +16,6 @@ namespace vnl {
 template<typename T>
 class Pool {
 public:
-	Pool(PageAlloc& mem) : mem(mem), list(mem) {}
-	
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 	
@@ -26,7 +24,7 @@ public:
 		if(list.pop(obj)) {
 			return new(obj) T();
 		} else {
-			return mem.create<T>();
+			return memory.create<T>();
 		}
 	}
 	
@@ -36,7 +34,7 @@ public:
 	}
 	
 protected:
-	PageAlloc& mem;
+	PageAlloc memory;
 	Queue<T*> list;
 	
 };
