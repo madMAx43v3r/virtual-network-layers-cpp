@@ -11,5 +11,5 @@ libvnl.a: $(OBJ)
 	install libvnl.a $(ROOT)/lib/
 
 clean:
-	$(RM) bin/*
-	$(RM) libvnl.a
+	rm -rf bin
+	rm -f libvnl.a

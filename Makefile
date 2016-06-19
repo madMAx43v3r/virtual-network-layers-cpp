@@ -1,8 +1,9 @@
 
 all:
+	mkdir -p lib
 	make -C src
 
 clean:
 	make -C src clean
-	$(RM) lib/*
+	rm -rf lib
 	

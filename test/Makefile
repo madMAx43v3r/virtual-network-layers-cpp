@@ -22,9 +22,9 @@ test_atomics: bin/test_atomics.o
 	$(CXX) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 clean:
-	$(RM) bin/*
-	$(RM) test_phy
-	$(RM) test_router
-	$(RM) test_stuff
-	$(RM) test_atomics
+	rm -rf bin
+	rm -f test_phy
+	rm -f test_router
+	rm -f test_stuff
+	rm -f test_atomics
 
