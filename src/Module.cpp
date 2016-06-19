@@ -17,6 +17,7 @@ int Module::global_log_level = Module::INFO;
 Module::Module() : Module((uint64_t)0) {}
 
 Module::Module(uint64_t mac)
+	:	log_output(&vnl::cout)
 {
 	this->mac = mac;
 }
@@ -41,7 +42,7 @@ void Module::die() {
 StringWriter Module::log(int level) {
 	StringOutput* out = 0;
 	if(level <= log_level) {
-		out = &vnl::cout;
+		out = log_output;
 	}
 	StringWriter writer(out);
 	writer.out << "[" << my_name << "] ";
@@ -116,10 +117,19 @@ bool Module::poll(int64_t micros) {
 		if(!msg) {
 			break;
 		}
-		if(msg->msg_id == Registry::exit_t::MID) {
+		switch(msg->msg_id) {
+		case Registry::exit_t::MID:
 			msg->ack();
 			return false;
-		} else {
+		case get_name_t::MID:
+			((get_name_t*)msg)->data = my_name;
+			msg->ack();
+			break;
+		case set_log_level_t::MID:
+			log_level = ((set_log_level_t*)msg)->data;
+			msg->ack();
+			break;
+		default:
 			if(!handle(msg)) {
 				msg->ack();
 			}

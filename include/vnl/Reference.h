@@ -36,8 +36,13 @@ public:
 	Reference(const Reference& other) = delete;
 	Reference& operator=(const Reference& other) = delete;
 	
+	// will wait for module to be available
 	T* get();
 	
+	// returns null if module is not available
+	T* try_get();
+	
+	// manual release
 	void close();
 	
 private:

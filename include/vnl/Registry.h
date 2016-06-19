@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_REGISTRY_H_
 #define INCLUDE_PHY_REGISTRY_H_
 
-#include <vnl/Basic.h>
+#include "vnl/Basic.h"
 #include "vnl/RingBuffer.h"
 #include "vnl/Array.h"
 #include "vnl/Map.h"
@@ -27,11 +27,14 @@ public:
 	
 	typedef RequestType<bool, Module*, 0x51d42b41> bind_t;
 	typedef RequestType<Module*, uint64_t, 0x3127424a> connect_t;
+	typedef RequestType<Module*, uint64_t, 0x224e2780> try_connect_t;
 	typedef MessageType<Module*, 0x88b4365a> open_t;
 	typedef MessageType<Module*, 0x2120ef0e> close_t;
 	typedef MessageType<Module*, 0x4177d786> delete_t;
 	typedef SignalType<0x9a4ac2ca> exit_t;
 	typedef SignalType<0x2aa87626> shutdown_t;
+	
+	typedef MessageType<vnl::Array<uint64_t>, 0x3f11a452> get_module_list_t;
 	
 protected:
 	bool handle(Message* msg) override;

@@ -9,8 +9,8 @@
 #define INCLUDE_LAYER_H_
 
 #include <assert.h>
-#include <vnl/Basic.h>
 
+#include "vnl/Basic.h"
 #include "vnl/Random.h"
 #include "vnl/Registry.h"
 #include "vnl/Router.h"
@@ -18,12 +18,22 @@
 
 namespace vnl {
 
+extern Layer* layer;
+
 class Layer : public Actor {
 public:
+	uint64_t domain;
+	Address global_logs;
+	
 	Layer() {
+		assert(layer == 0);
 		assert(Random64::instance == 0);
 		assert(Registry::instance == 0);
 		assert(Router::instance == 0);
+		
+		layer = this;
+		domain = vnl::hash64("vnl");
+		global_logs = Address(domain, vnl::hash64("global_logs"));
 		
 		Random64::instance = new Random64();
 		Registry::instance = new Registry();

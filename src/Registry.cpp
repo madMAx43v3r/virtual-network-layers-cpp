@@ -21,7 +21,6 @@ bool Registry::handle(Message* msg) {
 	switch(msg->msg_id) {
 	case bind_t::MID: {
 		bind_t* req = (bind_t*)msg;
-		
 		req->ack(bind(req->args));
 		return true;
 	}
@@ -35,22 +34,23 @@ bool Registry::handle(Message* msg) {
 		}
 		return true;
 	}
+	case try_connect_t::MID: {
+		try_connect_t* req = (try_connect_t*)msg;
+		req->ack(connect(req->args));
+		return true;
+	}
 	case open_t::MID:
 		open(((open_t*)msg)->data);
-		msg->ack();
-		return true;
+		break;
 	case close_t::MID:
 		close(((close_t*)msg)->data);
-		msg->ack();
-		return true;
+		break;
 	case delete_t::MID:
 		kill(((delete_t*)msg)->data);
-		msg->ack();
-		return true;
+		break;
 	case finished_t::MID:
 		close(((finished_t*)msg)->data);
-		msg->ack();
-		return true;
+		break;
 	case shutdown_t::MID:
 		if(exit_msg || map.empty()) {
 			msg->ack();
@@ -61,6 +61,9 @@ bool Registry::handle(Message* msg) {
 			exit_msg = msg;
 		}
 		return true;
+	case get_module_list_t::MID:
+		((get_module_list_t*)msg)->data = map.keys();
+		break;
 	}
 	return false;
 }

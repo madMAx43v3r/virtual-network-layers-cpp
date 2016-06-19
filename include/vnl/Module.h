@@ -29,9 +29,7 @@ public:
 	Module(const char* name);
 	Module(const String& name);
 	
-	const String& getName() const { return my_name; }
-	
-	// thread safe
+ 	// thread safe
 	virtual void receive(Message* msg) override {
 		stream->receive(msg);
 	}
@@ -42,6 +40,9 @@ public:
 	
 	static int global_log_level;
 	int log_level = global_log_level;
+	
+	typedef MessageType<String, 0x4f4ab3ef> get_name_t;
+	typedef MessageType<int, 0x14a5a142> set_log_level_t;
 	
 protected:
 	virtual ~Module() {}
@@ -90,6 +91,8 @@ protected:
 	PageAlloc memory;
 	MessageBuffer buffer;
 	
+	StringOutput* log_output = 0;
+	
 private:
 	void exec(Engine* engine);
 	
@@ -97,7 +100,6 @@ private:
 	String my_name;
 	Stream* stream = 0;
 	Engine* engine = 0;
-	
 	Timer* timer_begin = 0;
 	
 	int64_t ref = 0;
@@ -140,6 +142,16 @@ template<typename T>
 T* Reference<T>::get() {
 	if(!obj) {
 		Registry::connect_t req(mac);
+		module->send(&req, Registry::instance);
+		obj = (T*)req.res;
+	}
+	return obj;
+}
+
+template<typename T>
+T* Reference<T>::try_get() {
+	if(!obj) {
+		Registry::try_connect_t req(mac);
 		module->send(&req, Registry::instance);
 		obj = (T*)req.res;
 	}

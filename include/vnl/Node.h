@@ -10,22 +10,45 @@
 
 #include "vnl/Module.h"
 #include "vnl/Router.h"
+#include "vnl/Layer.h"
 
 
 namespace vnl {
 
+class Node;
 class Receiver;
+
+
+struct log_msg_t {
+	uint64_t node;
+	const String* msg;
+	VNL_SAMPLE(log_msg_t);
+};
+
+
+class GlobalLogWriter : public StringOutput {
+public:
+	GlobalLogWriter(Node* node) : node(node) {}
+	virtual void write(const String& str) {
+		log_msg_t::sample_t msg;
+		msg.data.node = node->mac;
+		msg.data.msg = &str;
+		node->send(&msg, layer->global_logs);
+	}
+private:
+	Node* node;
+};
 
 
 class Node : public Module {
 public:
-	Node() : Module() {}
+	Node() : Module() { init(); }
 	
-	Node(uint64_t mac) : Module(mac) {}
+	Node(uint64_t mac) : Module(mac) { init(); }
 	
-	Node(const char* name) : Module(name) {}
+	Node(const char* name) : Module(name) { init(); }
 	
-	Node(const String& name) : Module(name) {}
+	Node(const String& name) : Module(name) { init(); }
 	
 protected:
 	void open(Address address) {
@@ -37,10 +60,10 @@ protected:
 		Module::send(&msg, Router::instance);
 	}
 	
-	void send(Message* msg, Node* dst) {
+	void send(Message* msg, Basic* dst) {
 		Module::send(msg, dst);
 	}
-	void send_async(Message* msg, Node* dst) {
+	void send_async(Message* msg, Basic* dst) {
 		Module::send_async(msg, dst);
 	}
 	
@@ -72,7 +95,15 @@ protected:
 	
 	virtual bool handle(Packet* pkt) { return false; }
 	
+private:
+	GlobalLogWriter log_writer;
+	
+	void init() {
+		log_output = &log_writer;
+	}
+	
 	friend class Receiver;
+	friend class GlobalLogWriter;
 	
 };
 

@@ -45,12 +45,6 @@ public:
 		return *this;
 	}
 	
-	void insert(const Map& other) {
-		for(auto& pair : other.entries()) {
-			insert(pair.first, pair.second);
-		}
-	}
-	
 	Array<std::pair<K,V> > entries() const {
 		Array<std::pair<K,V> > res;
 		Page* page = table;
@@ -65,6 +59,44 @@ public:
 			page = page->next;
 		}
 		return res;
+	}
+	
+	Array<K> keys() const {
+		Array<K> res;
+		Page* page = table;
+		while(page) {
+			for(int i = 0; i < M; ++i) {
+				entry_t* row = page->get<entry_t*>(i);
+				while(row) {
+					res.push_back(row->pair.first);
+					row = row->next;
+				}
+			}
+			page = page->next;
+		}
+		return res;
+	}
+	
+	Array<V> values() const {
+		Array<V> res;
+		Page* page = table;
+		while(page) {
+			for(int i = 0; i < M; ++i) {
+				entry_t* row = page->get<entry_t*>(i);
+				while(row) {
+					res.push_back(row->pair.second);
+					row = row->next;
+				}
+			}
+			page = page->next;
+		}
+		return res;
+	}
+	
+	void insert(const Map& other) {
+		for(auto& pair : other.entries()) {
+			insert(pair.first, pair.second);
+		}
 	}
 	
 	V& insert(const K& key, const V& val) {
