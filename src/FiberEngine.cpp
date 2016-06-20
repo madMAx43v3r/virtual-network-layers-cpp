@@ -7,9 +7,7 @@
 
 #include "vnl/build/config.h"
 
-#ifdef VNL_HAVE_BOOST_COROUTINE
-
-#define VNL_HAVE_FIBER_ENGINE true
+#ifdef VNL_HAVE_FIBER_ENGINE
 
 #include <chrono>
 #include <boost/bind.hpp>
@@ -140,7 +138,7 @@ protected:
 
 
 FiberEngine::FiberEngine(int stack_size)
-	:	stack_size(stack_size), avail(memory)
+	:	stack_size(stack_size)
 {
 }
 
@@ -151,7 +149,7 @@ FiberEngine::~FiberEngine() {
 }
 
 void FiberEngine::run() {
-	vnl::Queue<Message*> inbox(memory);
+	vnl::Queue<Message*> inbox;
 	while(fibers.size() > avail.size()) {
 		int64_t micros = timeout();
 		collect(micros, inbox);
@@ -171,11 +169,11 @@ void FiberEngine::run() {
 	}
 }
 
-void FiberEngine::send_impl(Basic* src, Message* msg, Basic* dst, bool async) {
+void FiberEngine::send_impl(Message* msg, Basic* dst, bool async) {
 	assert(msg->isack == false);
 	assert(current);
 	
-	msg->src = src;
+	msg->src = this;
 	msg->_impl = current;
 	dst->receive(msg);
 	current->sent(msg, async);
@@ -204,10 +202,9 @@ void FiberEngine::fork(Module* object) {
 }
 
 int FiberEngine::timeout() {
-	Region mem;
 	int64_t now = currentTimeMicros();
 	int64_t micros = 1000*1000;
-	Queue<Fiber*> list(mem);
+	Queue<Fiber*> list;
 	while(true) {
 		for(Fiber* fiber : fibers) {
 			if(fiber->polling && fiber->deadline > 0) {
@@ -232,7 +229,53 @@ int FiberEngine::timeout() {
 }
 
 
+class FiberServer : public Node {
+public:
+	static FiberServer* instance;
+	
+protected:
+	virtual void main(Engine* engine) override {
+		this->engine = engine;
+		run();
+	}
+	
+	virtual bool handle(Message* msg) override {
+		if(msg->msg_id == FiberEngine::fork_t::MID) {
+			engine->fork(((FiberEngine::fork_t*)msg)->data);
+		}
+		return Node::handle(msg);
+	}
+	
+private:
+	Engine* engine;
+	
+};
 
+FiberServer* FiberServer::instance = 0;
+
+
+void fork(Module* object) {
+	if(!FiberServer::instance) {
+		FiberServer::instance = new FiberServer();
+		FiberEngine::spawn(FiberServer::instance);
+	}
+	Actor actor;
+	FiberEngine::fork_t fork(object);
+	actor.send(&fork, FiberServer::instance);
 }
 
-#endif // VNL_HAVE_BOOST_COROUTINE
+
+
+} // vnl
+
+#else // VNL_HAVE_FIBER_ENGINE
+
+namespace vnl {
+
+void fork(Module* object) {
+	vnl::spawn(object);
+}
+
+} // vnl
+
+#endif // VNL_HAVE_FIBER_ENGINE

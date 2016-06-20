@@ -29,6 +29,12 @@ class ThreadEngine;
 class FiberEngine;
 template<typename T> class Reference;
 
+// running module in new thread
+void spawn(Module* object);
+
+// running module in a fiber if possible, otherwise uses spawn
+void fork(Module* object);
+
 
 class Engine : public Basic {
 public:
@@ -49,6 +55,9 @@ public:
 		}
 	}
 	
+	// not thread safe
+	virtual void fork(Module* object) = 0;
+	
 protected:
 	void exec(Module* object);
 	
@@ -56,12 +65,12 @@ protected:
 		return generator.rand();
 	}
 	
-	void send(Basic* src, Message* msg, Basic* dst) {
-		send_impl(src, msg, dst, false);
+	void send(Message* msg, Basic* dst) {
+		send_impl(msg, dst, false);
 	}
 	
-	void send_async(Basic* src, Message* msg, Basic* dst) {
-		send_impl(src, msg, dst, true);
+	void send_async(Message* msg, Basic* dst) {
+		send_impl(msg, dst, true);
 	}
 	
 	Message* collect(int64_t timeout) {
@@ -103,13 +112,11 @@ protected:
 		return count;
 	}
 	
-	virtual void send_impl(Basic* src, Message* msg, Basic* dst, bool async) = 0;
+	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
-	
-	virtual void fork(Module* object) = 0;
 	
 protected:
 	PageAlloc memory;

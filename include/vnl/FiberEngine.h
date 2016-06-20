@@ -10,6 +10,7 @@
 
 #include <thread>
 
+#include "vnl/build/config.h"
 #include "vnl/Engine.h"
 #include "vnl/Array.h"
 
@@ -20,7 +21,9 @@ class Fiber;
 
 class FiberEngine : public Engine {
 public:
-	FiberEngine(int stack_size = 64*1024);
+	static const int default_stack = 64*1024;
+	
+	FiberEngine(int stack_size = default_stack);
 	
 	virtual ~FiberEngine();
 	
@@ -28,8 +31,16 @@ public:
 	
 	void run();
 	
+	static void spawn(Module* object, int stack_size = default_stack) {
+		std::thread thread(std::bind(&FiberEngine::entry, object, stack_size));
+		thread.detach();
+		Registry::ping(object->getMAC());
+	}
+	
+	typedef MessageType<Module*, 0xede39599> fork_t;
+	
 protected:
-	virtual void send_impl(Basic* src, Message* msg, Basic* dst, bool async) override;
+	virtual void send_impl(Message* msg, Basic* dst, bool async) override;
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;
 	
@@ -38,8 +49,10 @@ protected:
 private:
 	int timeout();
 	
-	void entry(Module* object) {
-		exec(object);
+	static void entry(Module* object, int stack_size) {
+		FiberEngine engine(stack_size);
+		engine.fork(object);
+		engine.run();
 	}
 	
 private:
@@ -53,6 +66,7 @@ private:
 	friend class Fiber;
 	
 };
+
 
 
 }

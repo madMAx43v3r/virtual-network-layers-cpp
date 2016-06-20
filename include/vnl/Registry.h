@@ -18,6 +18,11 @@ namespace vnl {
 
 class Module;
 
+struct module_desc_t {
+	uint64_t mac;
+	String name;
+};
+
 
 class Registry : public Reactor {
 public:
@@ -34,14 +39,15 @@ public:
 	typedef SignalType<0x9a4ac2ca> exit_t;
 	typedef SignalType<0x2aa87626> shutdown_t;
 	
-	typedef MessageType<vnl::Array<uint64_t>, 0x3f11a452> get_module_list_t;
+	typedef MessageType<vnl::Array<module_desc_t>, 0x3f11a452> get_module_list_t;
+	
+	// thread safe
+	static void ping(uint64_t dst_mac);
 	
 protected:
 	bool handle(Message* msg) override;
 	
 private:
-	typedef MessageType<Module*, 0x5a8a106d> finished_t;
-	
 	bool bind(Module* obj);
 	
 	Module* connect(uint64_t mac);

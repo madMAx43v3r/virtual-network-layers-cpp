@@ -27,10 +27,13 @@ public:
 	}
 	
 	~Queue() {
-		for(auto iter = begin(); iter != end(); ++iter) {
-			iter->~T();
+		block_t* block = p_front;
+		while(block) {
+			block_t* next = block->next_block();
+			block->destroy();
+			block->free();
+			block = next;
 		}
-		p_front->free_all();
 	}
 	
 	Queue(const Queue&) = delete;
@@ -133,6 +136,9 @@ protected:
 			write() = 0;
 			for(int i = 0; i < N; i++) { new (&elem(i)) T(); }
 			return this;
+		}
+		void destroy() {
+			for(int i = 0; i < N; i++) { elem(i).~T(); }
 		}
 		block_t*& next_block() { return *((block_t**)(&next)); }
 		int16_t& read() { return type_at<int16_t>(0); }

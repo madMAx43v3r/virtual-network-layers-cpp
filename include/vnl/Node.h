@@ -29,12 +29,7 @@ struct log_msg_t {
 class GlobalLogWriter : public StringOutput {
 public:
 	GlobalLogWriter(Node* node) : node(node) {}
-	virtual void write(const String& str) {
-		log_msg_t::sample_t msg;
-		msg.data.node = node->mac;
-		msg.data.msg = &str;
-		node->send(&msg, layer->global_logs);
-	}
+	virtual void write(const String& str) override;
 private:
 	Node* node;
 };
@@ -42,13 +37,13 @@ private:
 
 class Node : public Module {
 public:
-	Node() : Module() { init(); }
+	Node() : Module(), log_writer(this) { init(); }
 	
-	Node(uint64_t mac) : Module(mac) { init(); }
+	Node(uint64_t mac) : Module(mac), log_writer(this) { init(); }
 	
-	Node(const char* name) : Module(name) { init(); }
+	Node(const char* name) : Module(name), log_writer(this) { init(); }
 	
-	Node(const String& name) : Module(name) { init(); }
+	Node(const String& name) : Module(name), log_writer(this) { init(); }
 	
 protected:
 	void open(Address address) {
@@ -126,7 +121,6 @@ private:
 	Address address;
 	
 };
-
 
 
 }

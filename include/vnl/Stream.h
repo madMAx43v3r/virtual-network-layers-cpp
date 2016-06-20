@@ -46,11 +46,11 @@ public:
 	}
 	
 	void send(Message* msg, Basic* dst) {
-		engine->send(this, msg, dst);
+		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
-		engine->send_async(this, msg, dst);
+		engine->send_async(msg, dst);
 	}
 	
 	void flush() {

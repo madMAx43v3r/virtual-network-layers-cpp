@@ -10,6 +10,7 @@
 #include "vnl/Layer.h"
 #include "vnl/Router.h"
 #include "vnl/Node.h"
+#include "vnl/Terminal.h"
 
 #include "../src/CRC64.cpp"
 #include "../src/Engine.cpp"
@@ -19,6 +20,7 @@
 #include "../src/Registry.cpp"
 #include "../src/Router.cpp"
 #include "../src/String.cpp"
+#include "../src/Layer.cpp"
 #include "../src/FiberEngine.cpp"
 
 
@@ -65,59 +67,55 @@ private:
 };
 
 
-#ifdef VNL_HAVE_FIBER_ENGINE
+class Producer : public vnl::Node {
+protected:
+	virtual void main(vnl::Engine* engine) override {
+		test_msg_t test;
+		test.text << "Hello World";
+		int counter = 0;
+		while(poll(0)) {
+			for(int k = 0; k < 100; ++k) {
+				// publish
+				auto* msg = buffer.create<test_msg_t::sample_t>();
+				msg->data = test;
+				msg->dst_addr = address;
+				//send(msg, vnl::Router::instance);
+				send_async(msg, vnl::Router::instance);
+			}
+			flush();
+			//std::this_thread::yield();	// for valgrind to switch threads
+			counter++;
+		}
+	}
+};
+
 
 class Core : public vnl::Node {
 protected:
 	virtual void main(vnl::Engine* engine) override {
-		vnl::FiberEngine local;
 		for(int i = 0; i < 5; ++i) {
-			local.fork(new Consumer());
+			engine->fork(new Consumer());
 		}
-		local.run();
+		run();
 	}
 };
-
-#endif
 
 
 int main() {
 	//vnl::Util::stick_to_core(0);
 	
 	vnl::Layer layer;
-	vnl::ThreadEngine engine;
 	
-	vnl::Stream pub(&engine);
-	
-#ifdef VNL_HAVE_FIBER_ENGINE
-	engine.fork(new Core());
-#endif
+	vnl::spawn(new Producer());
 	for(int i = 0; i < 5; ++i) {
-		engine.fork(new Consumer());
+		vnl::spawn(new Consumer());
+	}
+	for(int i = 0; i < 5; ++i) {
+		vnl::fork(new Consumer());
 	}
 	
-	vnl::MessageBuffer buffer;
-	
-	test_msg_t test;
-	test.text << "Hello World";
-	
-	int counter = 0;
-	while(counter < 1000*1000) {
-		
-		for(int k = 0; k < 100; ++k) {
-			// publish
-			auto* msg = buffer.create<test_msg_t::sample_t>();
-			msg->data = test;
-			msg->dst_addr = address;
-			//pub.send(msg, vnl::phy::Router::instance);
-			pub.send_async(msg, vnl::Router::instance);
-		}
-		
-		pub.flush();
-		std::this_thread::yield();	// for valgrind to switch threads
-		counter++;
-		
-	}
+	vnl::ThreadEngine engine;
+	engine.run(new vnl::Terminal());
 	
 	std::cout << "Number of pages allocated: " << vnl::Page::get_num_alloc() << std::endl;
 	

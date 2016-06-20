@@ -21,13 +21,13 @@ class Module;
 template<typename T>
 class Reference {
 public:
-	Reference(Module* module, T* obj);
+	Reference(Engine* engine, T* obj);
 	
-	Reference(Module* module, uint64_t mac);
+	Reference(Engine* engine, uint64_t mac);
 	
-	Reference(Module* module, const char* name);
+	Reference(Engine* engine, const char* name);
 	
-	Reference(Module* module, const vnl::String& name);
+	Reference(Engine* engine, const vnl::String& name);
 	
 	~Reference() {
 		close();
@@ -47,7 +47,7 @@ public:
 	
 private:
 	uint64_t mac = 0;
-	Module* module = 0;
+	Engine* engine = 0;
 	T* obj = 0;
 	
 };

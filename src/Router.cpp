@@ -17,6 +17,12 @@ Router::Router()
 {
 }
 
+Router::~Router() {
+	for(Row* row : table.values()) {
+		row->~List();
+	}
+}
+
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;

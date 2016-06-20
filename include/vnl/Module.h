@@ -9,7 +9,6 @@
 #define INCLUDE_PHY_OBJECT_H_
 
 #include <functional>
-#include <unordered_map>
 
 #include "vnl/Engine.h"
 #include "vnl/Stream.h"
@@ -30,9 +29,7 @@ public:
 	Module(const String& name);
 	
  	// thread safe
-	virtual void receive(Message* msg) override {
-		stream->receive(msg);
-	}
+	virtual void receive(Message* msg) override;
 	
 	enum {
 		ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4
@@ -56,19 +53,33 @@ protected:
 	}
 	
 	void send(Message* msg, Basic* dst) {
-		stream->send(msg, dst);
+		if(dst != this) {
+			stream->send(msg, dst);
+		} else {
+			msg->src = engine;
+			process(msg);
+		}
 	}
 	void send_async(Message* msg, Basic* dst) {
-		stream->send_async(msg, dst);
+		if(dst != this) {
+			stream->send_async(msg, dst);
+		} else {
+			msg->src = engine;
+			process(msg);
+		}
 	}
 	
 	template<typename T>
 	void send(Message* msg, Reference<T>& dst) {
-		stream->send(msg, dst.get());
+		send(msg, dst.get());
 	}
 	template<typename T>
 	void send_async(Message* msg, Reference<T>& dst) {
-		stream->send_async(msg, dst.get());
+		send_async(msg, dst.get());
+	}
+	
+	void flush() {
+		stream->flush();
 	}
 	
 	StringWriter log(int level);
@@ -96,6 +107,8 @@ protected:
 private:
 	void exec(Engine* engine);
 	
+	void process(Message* msg);
+	
 private:
 	String my_name;
 	Stream* stream = 0;
@@ -113,28 +126,28 @@ private:
 
 
 template<typename T>
-Reference<T>::Reference(Module* module, T* obj)
-	:	mac(obj->getMAC()), module(module), obj(obj)
+Reference<T>::Reference(Engine* engine, T* obj)
+	:	mac(obj->getMAC()), engine(engine), obj(obj)
 {
 	Registry::open_t msg(obj);
-	module->send(&msg, Registry::instance);
+	engine->send(&msg, Registry::instance);
 }
 
 template<typename T>
-Reference<T>::Reference(Module* module, uint64_t mac)
-	:	mac(mac), module(module)
+Reference<T>::Reference(Engine* engine, uint64_t mac)
+	:	mac(mac), engine(engine)
 {
 }
 
 template<typename T>
-Reference<T>::Reference(Module* module, const char* name) 
-	:	Reference(module, hash64(name))
+Reference<T>::Reference(Engine* engine, const char* name) 
+	:	Reference(engine, hash64(name))
 {
 }
 
 template<typename T>
-Reference<T>::Reference(Module* module, const String& name) 
-	:	Reference(module, hash64(name))
+Reference<T>::Reference(Engine* engine, const String& name) 
+	:	Reference(engine, hash64(name))
 {
 }
 
@@ -142,7 +155,7 @@ template<typename T>
 T* Reference<T>::get() {
 	if(!obj) {
 		Registry::connect_t req(mac);
-		module->send(&req, Registry::instance);
+		engine->send(&req, Registry::instance);
 		obj = (T*)req.res;
 	}
 	return obj;
@@ -152,7 +165,7 @@ template<typename T>
 T* Reference<T>::try_get() {
 	if(!obj) {
 		Registry::try_connect_t req(mac);
-		module->send(&req, Registry::instance);
+		engine->send(&req, Registry::instance);
 		obj = (T*)req.res;
 	}
 	return obj;
@@ -162,7 +175,7 @@ template<typename T>
 void Reference<T>::close() {
 	if(obj) {
 		Registry::close_t msg(obj);
-		module->send(&msg, Registry::instance);
+		engine->send(&msg, Registry::instance);
 		obj = 0;
 	}
 }

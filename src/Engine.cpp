@@ -23,8 +23,8 @@ Engine::Engine()
 
 void Engine::exec(Module* object) {
 	object->exec(this);
-	Registry::finished_t msg(object);
-	send(this, &msg, Registry::instance);
+	Registry::close_t msg(object);
+	send(&msg, Registry::instance);
 }
 
 

@@ -10,6 +10,7 @@
 
 #include "vnl/Engine.h"
 #include "vnl/Stream.h"
+#include "vnl/Module.h"
 
 
 namespace vnl {
@@ -17,21 +18,26 @@ namespace vnl {
 class ThreadEngine : public Engine {
 public:
 	virtual void fork(Module* object) override {
-		std::thread thread(std::bind(&ThreadEngine::entry, object));
-		thread.detach();
+		spawn(object);
 	}
 	
 	void run(Module* object) {
 		exec(object);
 	}
 	
+	static void spawn(Module* object) {
+		std::thread thread(std::bind(&ThreadEngine::entry, object));
+		thread.detach();
+		Registry::ping(object->getMAC());
+	}
+	
 protected:
 	
-	virtual void send_impl(Basic* src, Message* msg, Basic* dst, bool async) override {
+	virtual void send_impl(Message* msg, Basic* dst, bool async) override {
 		assert(msg->isack == false);
 		assert(dst);
 		
-		msg->src = src;
+		msg->src = this;
 		dst->receive(msg);
 		pending++;
 		if(!async && pending > 0) {
@@ -131,6 +137,11 @@ private:
 	
 	
 };
+
+
+void spawn(Module* object) {
+	ThreadEngine::spawn(object);
+}
 
 
 

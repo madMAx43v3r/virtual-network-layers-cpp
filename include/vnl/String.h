@@ -186,6 +186,10 @@ public:
 		return count;
 	}
 	
+	bool empty() const {
+		return count == 0;
+	}
+	
 	chunk_t* front() const {
 		return p_front;
 	}

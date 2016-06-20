@@ -17,6 +17,16 @@ Registry::Registry()
 {
 }
 
+void Registry::ping(uint64_t dst_mac) {
+	Actor actor;
+	connect_t connect(dst_mac);
+	actor.send(&connect, instance);
+	SignalType<0x6793ef31> msg;
+	actor.send(&msg, connect.res);
+	close_t close(connect.res);
+	actor.send(&close, instance);
+}
+
 bool Registry::handle(Message* msg) {
 	switch(msg->msg_id) {
 	case bind_t::MID: {
@@ -48,9 +58,6 @@ bool Registry::handle(Message* msg) {
 	case delete_t::MID:
 		kill(((delete_t*)msg)->data);
 		break;
-	case finished_t::MID:
-		close(((finished_t*)msg)->data);
-		break;
 	case shutdown_t::MID:
 		if(exit_msg || map.empty()) {
 			msg->ack();
@@ -62,7 +69,13 @@ bool Registry::handle(Message* msg) {
 		}
 		return true;
 	case get_module_list_t::MID:
-		((get_module_list_t*)msg)->data = map.keys();
+		get_module_list_t* list = (get_module_list_t*)msg;
+		for(Module* module : map.values()) {
+			module_desc_t desc;
+			desc.mac = module->getMAC();
+			desc.name = module->my_name;
+			list->data.push_back(desc);
+		}
 		break;
 	}
 	return false;
@@ -104,12 +117,14 @@ void Registry::open(Module* obj) {
 
 void Registry::close(Module* obj) {
 	obj->ref--;
+	if(obj->ref == 0) {
+		map.erase(obj->getMAC());
+	}
 	if(obj->dying) {
-		if(obj->ref == 1) {
-			send_exit(obj);
-		} else if(obj->ref == 0) {
-			map.erase(obj->getMAC());
+		if(obj->ref == 0) {
 			delete obj;
+		} else if(obj->ref == 1) {
+			send_exit(obj);
 		}
 	}
 	if(exit_msg && map.empty()) {

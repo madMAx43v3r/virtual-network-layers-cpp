@@ -23,6 +23,7 @@ public:
 	static Router* instance;
 	
 	Router();
+	~Router();
 	
 	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;

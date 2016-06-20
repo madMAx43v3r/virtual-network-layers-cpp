@@ -14,12 +14,16 @@ namespace vnl {
 
 int Module::global_log_level = Module::INFO;
 
-Module::Module() : Module((uint64_t)0) {}
+Module::Module()
+	:	Module(Random64::global_rand())
+{
+}
 
 Module::Module(uint64_t mac)
 	:	log_output(&vnl::cout)
 {
 	this->mac = mac;
+	my_name << vnl::hex(mac);
 }
 
 Module::Module(const char* name)
@@ -34,9 +38,16 @@ Module::Module(const String& name)
 	this->my_name = name;
 }
 
+void Module::receive(Message* msg) {
+	if(stream) {
+		stream->receive(msg);
+	} else {
+		msg->ack();
+	}
+}
+
 void Module::die() {
-	Registry::delete_t msg(this);
-	stream->send(&msg, Registry::instance);
+	dying = true;
 }
 
 StringWriter Module::log(int level) {
@@ -117,48 +128,50 @@ bool Module::poll(int64_t micros) {
 		if(!msg) {
 			break;
 		}
-		switch(msg->msg_id) {
-		case Registry::exit_t::MID:
+		if(msg->msg_id == Registry::exit_t::MID) {
 			msg->ack();
 			return false;
-		case get_name_t::MID:
-			((get_name_t*)msg)->data = my_name;
-			msg->ack();
-			break;
-		case set_log_level_t::MID:
-			log_level = ((set_log_level_t*)msg)->data;
-			msg->ack();
-			break;
-		default:
-			if(!handle(msg)) {
-				msg->ack();
-			}
+		} else {
+			process(msg);
 		}
 		to = 0;
 	}
 	return true;
 }
 
+void Module::process(Message* msg) {
+	switch(msg->msg_id) {
+	case get_name_t::MID:
+		((get_name_t*)msg)->data = my_name;
+		msg->ack();
+		break;
+	case set_log_level_t::MID:
+		log_level = ((set_log_level_t*)msg)->data;
+		msg->ack();
+		break;
+	default:
+		if(!handle(msg)) {
+			msg->ack();
+		}
+	}
+}
+
 void Module::run() {
-	while(poll(-1));
+	while(!dying && poll(-1));
 }
 
 void Module::exec(Engine* engine_) {
 	engine = engine_;
 	Stream tmp(engine);
 	stream = &tmp;
-	if(mac == 0) {
-		mac = engine->rand();
-		my_name << vnl::hex(mac);
-	}
 	Registry::bind_t bind(this);
 	stream->send(&bind, Registry::instance);
 	if(!bind.res) {
 		log(ERROR).out << "Duplicate name: '" << my_name << "' is already in use!" << vnl::endl;
 		return;
 	}
-	log(DEBUG).out << "Starting, mac=" << vnl::hex(mac) << vnl::endl;
 	main(engine_);
+	dying = true;
 	stream->flush();
 	while(true) {
 		Message* msg = stream->poll(0);
@@ -168,7 +181,12 @@ void Module::exec(Engine* engine_) {
 			break;
 		}
 	}
-	log(DEBUG).out << "Exiting, mac=" << vnl::hex(mac) << vnl::endl;
+	Timer* timer = timer_begin;
+	while(timer) {
+		Timer* next = timer->next;
+		timer->~Timer();
+		timer = next;
+	}
 }
 
 
