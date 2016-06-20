@@ -37,8 +37,6 @@ public:
 		Registry::ping(object->getMAC());
 	}
 	
-	typedef MessageType<Module*, 0xede39599> fork_t;
-	
 protected:
 	virtual void send_impl(Message* msg, Basic* dst, bool async) override;
 	

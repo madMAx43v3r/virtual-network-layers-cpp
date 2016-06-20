@@ -233,6 +233,8 @@ class FiberServer : public Node {
 public:
 	static FiberServer* instance;
 	
+	typedef MessageType<Module*, 0xede39599> fork_t;
+	
 protected:
 	virtual void main(Engine* engine) override {
 		this->engine = engine;
@@ -240,8 +242,8 @@ protected:
 	}
 	
 	virtual bool handle(Message* msg) override {
-		if(msg->msg_id == FiberEngine::fork_t::MID) {
-			engine->fork(((FiberEngine::fork_t*)msg)->data);
+		if(msg->msg_id == fork_t::MID) {
+			engine->fork(((fork_t*)msg)->data);
 		}
 		return Node::handle(msg);
 	}
@@ -260,7 +262,7 @@ void fork(Module* object) {
 		FiberEngine::spawn(FiberServer::instance);
 	}
 	Actor actor;
-	FiberEngine::fork_t fork(object);
+	FiberServer::fork_t fork(object);
 	actor.send(&fork, FiberServer::instance);
 }
 

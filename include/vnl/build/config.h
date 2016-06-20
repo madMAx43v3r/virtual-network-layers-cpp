@@ -35,7 +35,7 @@
  * If we have boost coroutine >= version 1.56
  * Needed for FiberEngine.
  */
-#define VNL_HAVE_BOOST_COROUTINE true
+//#define VNL_HAVE_BOOST_COROUTINE true
 
 #ifdef VNL_HAVE_BOOST_COROUTINE
 #define VNL_HAVE_FIBER_ENGINE true
