@@ -272,6 +272,8 @@ void fork(Module* object) {
 
 #else // VNL_HAVE_FIBER_ENGINE
 
+#include "vnl/Engine.h"
+
 namespace vnl {
 
 void fork(Module* object) {
