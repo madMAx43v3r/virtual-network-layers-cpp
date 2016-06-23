@@ -113,7 +113,7 @@ public:
 				*p_row = p_front;
 				p_front = p_front->next;
 			} else {
-				*p_row = (entry_t*)mem.create<entry_t>();
+				*p_row = mem.create<entry_t>();
 			}
 			entry_t* row = *p_row;
 			row->pair = std::make_pair(key, val);
