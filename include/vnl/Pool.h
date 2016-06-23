@@ -17,6 +17,8 @@ namespace vnl {
 template<typename T>
 class Pool {
 public:
+	Pool() {}
+	
 	Pool(const Pool&) = delete;
 	Pool& operator=(const Pool&) = delete;
 	

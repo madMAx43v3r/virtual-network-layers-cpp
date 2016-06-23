@@ -46,12 +46,23 @@ public:
 		}
 		mutex.unlock();
 		assert(page != OUT_OF_MEMORY);
+#ifdef VNL_MEMORY_DEBUG
+		if(!page->mem) {
+			page->mem = (char*)::malloc(size);
+			memset(page->mem, 0, size);
+		}
+#endif
 		page->next = 0;
 		return page;
 	}
 	
 	void free() {
 		mutex.lock();
+		memset(mem, 0, size);
+#ifdef VNL_MEMORY_DEBUG
+		::free(mem);
+		mem = 0;
+#endif
 		next = begin;
 		begin = this;
 		mutex.unlock();
@@ -120,6 +131,7 @@ private:
 		mem = (char*)::malloc(size);
 #endif
 		assert(mem != OUT_OF_MEMORY);
+		memset(mem, 0, size);
 	}
 	
 	~Memory() {
@@ -161,11 +173,7 @@ public:
 	
 	template<typename T>
 	void* alloc() {
-#ifndef VNL_MEMORY_DEBUG
-		return alloc(VNL_SIZEOF(T));
-#else
 		return malloc(sizeof(T));
-#endif
 	}
 	
 	void* alloc(int size) {

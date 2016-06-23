@@ -60,11 +60,7 @@ public:
 		}
 		entry_t entry;
 		entry.page = p_back;
-#ifndef VNL_MEMORY_DEBUG
 		entry.ptr = p_back->mem + pos;
-#else
-		entry.ptr = malloc(size);
-#endif
 		pos += size;
 		return &queue.push(entry);
 	}
