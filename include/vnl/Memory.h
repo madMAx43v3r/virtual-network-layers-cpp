@@ -36,20 +36,20 @@ public:
 	Memory& operator=(const Memory&) = delete;
 	
 	static Memory* alloc() {
-		mutex.lock();
+		sync.lock();
 		Memory* page = begin;
 		if(page) {
 			begin = page->next;
-		} else {
+		}
+		sync.unlock();
+		if(!page) {
 			page = new Memory();
 			num_alloc++;
 		}
-		mutex.unlock();
 		assert(page != OUT_OF_MEMORY);
 #ifdef VNL_MEMORY_DEBUG
 		if(!page->mem) {
 			page->mem = (char*)::malloc(size);
-			memset(page->mem, 0, size);
 		}
 #endif
 		page->next = 0;
@@ -57,15 +57,14 @@ public:
 	}
 	
 	void free() {
-		mutex.lock();
-		memset(mem, 0, size);
 #ifdef VNL_MEMORY_DEBUG
 		::free(mem);
 		mem = 0;
 #endif
+		sync.lock();
 		next = begin;
 		begin = this;
-		mutex.unlock();
+		sync.unlock();
 	}
 	
 	void free_all() {
@@ -103,7 +102,7 @@ public:
 	}
 	
 	static void cleanup() {
-		mutex.lock();
+		sync.lock();
 		Memory* page = begin;
 		while(page) {
 			Memory* tmp = page;
@@ -115,7 +114,7 @@ public:
 			std::cout << "WARNING: " << num_alloc << " pages of size " << size << " still being used at exit." << std::endl;
 		}
 		begin = 0;
-		mutex.unlock();
+		sync.unlock();
 	}
 	
 	char* mem;
@@ -131,7 +130,6 @@ private:
 		mem = (char*)::malloc(size);
 #endif
 		assert(mem != OUT_OF_MEMORY);
-		memset(mem, 0, size);
 	}
 	
 	~Memory() {
@@ -140,13 +138,13 @@ private:
 	
 private:
 	static const int OUT_OF_MEMORY = 0;
-	static util::spinlock mutex;
+	static util::spinlock sync;
 	static Memory* begin;
 	static size_t num_alloc;
 	
 };
 
-template<int size_> util::spinlock Memory<size_>::mutex;
+template<int size_> util::spinlock Memory<size_>::sync;
 template<int size_> Memory<size_>* Memory<size_>::begin = 0;
 template<int size_> size_t Memory<size_>::num_alloc = 0;
 

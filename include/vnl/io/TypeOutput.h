@@ -67,7 +67,7 @@ public:
 		ByteOutput<TStream>::writeDouble(value);
 	}
 	
-	void putBinary(phy::Page* buf, int32_t len) {
+	void putBinary(Page* buf, int32_t len) {
 		int32_t size = std::min(len, MAX_SIZE);
 		putSize(size);
 		ByteOutput<TStream>::writeBinary(buf, size);
