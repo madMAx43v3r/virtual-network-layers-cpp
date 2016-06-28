@@ -22,15 +22,12 @@ public:
 	
 	Queue() {
 		assert(N > 0);
-		p_front = Block::alloc_ex<block_t>()->create();
-		p_back = p_front;
 	}
 	
 	~Queue() {
-		block_t* block = p_front;
+		Block* block = p_front;
 		while(block) {
-			block_t* next = block->next_block();
-			block->destroy();
+			Block* next = block->next();
 			block->free();
 			block = next;
 		}
@@ -51,6 +48,10 @@ public:
 	}
 	
 	T& push(const T& obj) {
+		if(!p_front) {
+			p_front = Block::alloc_ex<block_t>()->create();
+			p_back = p_front;
+		}
 		if(p_back->write() >= N) {
 			if(!p_back->next_block()) {
 				p_back->next_block() = Block::alloc_ex<block_t>()->create();
@@ -59,6 +60,7 @@ public:
 			p_back->write() = 0;
 		}
 		T& ref = p_back->elem(p_back->write()++);
+		new (&ref) T();
 		ref = obj;
 		count++;
 		return ref;
@@ -81,6 +83,7 @@ public:
 			p_front->read() = 0;
 		}
 		obj = tmp;
+		tmp.~T();
 		count--;
 		return true;
 	}
@@ -118,8 +121,10 @@ public:
 	}
 	
 	void clear() {
-		p_front->read() = 0;
-		p_front->write() = 0;
+		if(p_front) {
+			p_front->read() = 0;
+			p_front->write() = 0;
+		}
 		p_back = p_front;
 		count = 0;
 	}
@@ -134,11 +139,7 @@ protected:
 		block_t* create() {
 			read() = 0;
 			write() = 0;
-			for(int i = 0; i < N; i++) { new (&elem(i)) T(); }
 			return this;
-		}
-		void destroy() {
-			for(int i = 0; i < N; i++) { elem(i).~T(); }
 		}
 		block_t*& next_block() { return *((block_t**)(&next)); }
 		int16_t& read() { return type_at<int16_t>(0); }
@@ -203,17 +204,17 @@ public:
 	typedef iterator_t<T> iterator;
 	typedef iterator_t<const T> const_iterator;
 	
-	iterator begin() { return iterator(p_front, p_front->read()); }
-	const_iterator begin() const { return const_iterator(p_front, p_front->read()); }
-	const_iterator cbegin() const { return const_iterator(p_front, p_front->read()); }
+	iterator begin() { return iterator(p_front, p_front ? p_front->read() : 0); }
+	const_iterator begin() const { return const_iterator(p_front, p_front ? p_front->read() : 0); }
+	const_iterator cbegin() const { return const_iterator(p_front, p_front ? p_front->read() : 0); }
 	
-	iterator end() { return iterator(p_back, p_back->write()); }
-	const_iterator end() const { return const_iterator(p_back, p_back->write()); }
-	const_iterator cend() const { return const_iterator(p_back, p_back->write()); }
+	iterator end() { return iterator(p_back, p_back ? p_back->write() : 0); }
+	const_iterator end() const { return const_iterator(p_back, p_back ? p_back->write() : 0); }
+	const_iterator cend() const { return const_iterator(p_back, p_back ? p_back->write() : 0); }
 	
 private:
-	block_t* p_front;
-	block_t* p_back;
+	block_t* p_front = 0;
+	block_t* p_back = 0;
 	size_t count = 0;
 	
 };

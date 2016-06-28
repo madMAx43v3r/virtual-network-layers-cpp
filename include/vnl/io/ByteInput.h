@@ -8,8 +8,8 @@
 #ifndef INCLUDE_IO_BYTEINPUT_H_
 #define INCLUDE_IO_BYTEINPUT_H_
 
-#include "vnl/util/types.h"
-#include "vnl/phy/Memory.h"
+#include <vnl/util/types.h>
+#include <vnl/Memory.h>
 
 
 namespace vnl { namespace io {
@@ -23,14 +23,14 @@ public:
 		err |= stream.read(buf, len);
 	}
 	
-	void get(phy::Page* buf, int32_t len) {
+	void getBinary(Page* buf, int32_t len) {
 		while(len > 0) {
-			int32_t n = std::min(len, phy::Page::size);
+			int32_t n = std::min(len, Page::size);
 			get(buf->mem, n);
 			len -= n;
 			if(len) {
 				if(!buf->next) {
-					buf->next = phy::Page::alloc();
+					buf->next = Page::alloc();
 				}
 				buf = buf->next;
 			}

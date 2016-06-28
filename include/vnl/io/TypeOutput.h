@@ -8,7 +8,7 @@
 #ifndef INCLUDE_IO_TYPEOUTPUT_H_
 #define INCLUDE_IO_TYPEOUTPUT_H_
 
-#include "vnl/io/ByteOutput.h"
+#include <vnl/io/ByteOutput.h>
 
 
 namespace vnl { namespace io {
@@ -18,18 +18,20 @@ class TypeOutput : public ByteOutput<TStream> {
 public:
 	static const int MAX_SIZE = 2147483647;
 	
+	typedef ByteOutput<TStream> Base;
+	
 	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream) {}
 	
 	void putHash(uint32_t hash) {
-		ByteOutput<TStream>::writeInt(hash);
+		Base::writeInt(hash);
 	}
 	
 	void putSize(int32_t size) {
 		if(size > -128 && size < 128) {
-			ByteOutput<TStream>::writeChar(size);
+			Base::writeChar(size);
 		} else {
-			ByteOutput<TStream>::writeChar(-128);
-			ByteOutput<TStream>::writeInt(size);
+			Base::writeChar(-128);
+			Base::writeInt(size);
 		}
 	}
 	
@@ -39,44 +41,44 @@ public:
 	
 	void putChar(int8_t value) {
 		putSize(1);
-		ByteOutput<TStream>::writeChar(value);
+		Base::writeChar(value);
 	}
 	
 	void putShort(int16_t value) {
 		putSize(2);
-		ByteOutput<TStream>::writeShort(value);
+		Base::writeShort(value);
 	}
 	
 	void putInt(int32_t value) {
 		putSize(4);
-		ByteOutput<TStream>::writeInt(value);
+		Base::writeInt(value);
 	}
 	
 	void putLong(int64_t value) {
 		putSize(8);
-		ByteOutput<TStream>::writeLong(value);
+		Base::writeLong(value);
 	}
 	
 	void putFloat(float value) {
 		putSize(4);
-		ByteOutput<TStream>::writeFloat(value);
+		Base::writeFloat(value);
 	}
 	
 	void putDouble(double value) {
 		putSize(8);
-		ByteOutput<TStream>::writeDouble(value);
+		Base::writeDouble(value);
 	}
 	
 	void putBinary(Page* buf, int32_t len) {
 		int32_t size = std::min(len, MAX_SIZE);
 		putSize(size);
-		ByteOutput<TStream>::writeBinary(buf, size);
+		Base::writeBinary(buf, size);
 	}
 	
 	void putString(const vnl::String& str) {
 		int32_t size = std::min(str.size(), MAX_SIZE);
 		putSize(size);
-		ByteOutput<TStream>::writeString(str, size);
+		Base::writeString(str, size);
 	}
 	
 };
