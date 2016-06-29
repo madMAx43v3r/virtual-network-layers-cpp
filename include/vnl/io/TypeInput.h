@@ -20,21 +20,25 @@ public:
 	
 	TypeInput(TStream& stream) : ByteInput<TStream>(stream) {}
 	
-	void getHash(uint32_t& hash) {
-		Base::getInt(hash);
-	}
-	
-	void getSize(int32_t& size) {
-		int8_t tmp;
+	int getEntry(uint32_t& size) {
+		int8_t c;
 		Base::getChar(tmp);
-		if(tmp == -128) {
-			Base::getInt(size);
-		} else {
+		size = c >> 4;
+		if(size == 0xF) {
+			int32_t tmp = 0;
+			Base::getInt(tmp);
 			size = tmp;
 		}
+		return c & 0xF;
 	}
 	
-	void getChar(int8_t& value, int32_t size) {
+	void getHash(uint32_t& hash) {
+		int32_t tmp = 0;
+		Base::getInt(tmp);
+		hash = tmp;
+	}
+	
+	void getChar(int8_t& value, uint32_t size) {
 		switch(size) {
 			case 1: { Base::getChar(value); break; }
 			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
@@ -44,7 +48,7 @@ public:
 		}
 	}
 	
-	void getShort(int16_t& value, int32_t size) {
+	void getShort(int16_t& value, uint32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
 			case 2: { Base::getShort(value); break; }
@@ -54,7 +58,7 @@ public:
 		}
 	}
 	
-	void getInt(int32_t& value, int32_t size) {
+	void getInt(int32_t& value, uint32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
 			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
@@ -64,7 +68,7 @@ public:
 		}
 	}
 	
-	void getLong(int64_t& value, int32_t size) {
+	void getLong(int64_t& value, uint32_t size) {
 		switch(size) {
 			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
 			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
@@ -74,7 +78,7 @@ public:
 		}
 	}
 	
-	void getFloat(float& value, int32_t size) {
+	void getFloat(float& value, uint32_t size) {
 		switch(size) {
 			case 4: { Base::getFloat(value); break; }
 			case 8: { double tmp; Base::getDouble(tmp); value = tmp; break; }
@@ -82,7 +86,7 @@ public:
 		}
 	}
 	
-	void getDouble(double& value, int32_t size) {
+	void getDouble(double& value, uint32_t size) {
 		switch(size) {
 			case 4: { float tmp; Base::getFloat(tmp); value = tmp; break; }
 			case 8: { Base::getDouble(value); break; }
@@ -90,15 +94,33 @@ public:
 		}
 	}
 	
-	void getBinary(Page* buf, int32_t len) {
-		Base::getBinary(buf, len);
+	void getBinary(Page* buf, uint32_t size) {
+		Base::getBinary(buf, size);
 	}
 	
-	void getString(vnl::String& str, int32_t len) {
-		Base::getString(str, len);
+	void getString(vnl::String& str, uint32_t size) {
+		Base::getString(str, size);
 	}
 	
-	void skip(int32_t size) {
+	void skip() {
+		uint32_t size = 0;
+		int id = getEntry(size);
+		skip(id, size);
+	}
+	
+	void skip(int id, uint32_t size) {
+		uint32_t hash;
+		switch(id) {
+			case VNL_IO_NULL: break;
+			case VNL_IO_TYPE:
+			case VNL_IO_CALL:
+			case VNL_IO_CONST_CALL:
+				getHash(hash);
+				skip(id, size);
+				break;
+			default:
+				skip(id, size);
+		}
 		if(size < 0) {
 			int n = -size;
 			for(int i = 0; i < n && !Base::err; ++i) {
@@ -110,7 +132,7 @@ public:
 		} else {
 			char buf[1024];
 			while(size > 0 && !Base::err) {
-				int32_t n = std::min(size, 1024);
+				int32_t n = std::min(size, 1024U);
 				Base::get(buf, n);
 				size -= n;
 			}

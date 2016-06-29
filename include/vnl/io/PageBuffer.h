@@ -9,15 +9,15 @@
 #define INCLUDE_IO_PAGEBUFFER_H_
 
 #include <string.h>
-#include "vnl/phy/Memory.h"
-#include "vnl/io/Error.h"
+#include <vnl/Memory.h>
+#include <vnl/io/Error.h>
 
 
 namespace vnl { namespace io {
 
 class PageBuffer {
 public:
-	PageBuffer(phy::Page* data) : first(data) {
+	PageBuffer(Page* data) : first(data) {
 		buf = first;
 	}
 	
@@ -41,7 +41,7 @@ public:
 	
 	bool read(void* dst, int len) {
 		while(len) {
-			int left = phy::Page::size - off;
+			int left = Page::size - off;
 			if(!left) {
 				if(!buf->next) {
 					err = UNDERFLOW;
@@ -49,7 +49,7 @@ public:
 				}
 				buf = buf->next;
 				off = 0;
-				left = phy::Page::size;
+				left = Page::size;
 			}
 			int n = std::min(len, left);
 			memcpy(dst, buf->mem + off, n);
@@ -68,14 +68,14 @@ public:
 	
 	bool write(const void* src, int len) {
 		while(len) {
-			int left = phy::Page::size - off;
+			int left = Page::size - off;
 			if(!left) {
 				if(!buf->next) {
-					buf->next = phy::Page::alloc();
+					buf->next = Page::alloc();
 				}
 				buf = buf->next;
 				off = 0;
-				left = phy::Page::size;
+				left = Page::size;
 			}
 			int n = std::min(len, left);
 			memcpy(buf->mem + off, src, n);
@@ -92,8 +92,8 @@ public:
 	}
 	
 protected:
-	phy::Page* buf;
-	phy::Page* first;
+	Page* buf;
+	Page* first;
 	int limit = 0;
 	int pos = 0;
 	int off = 0;

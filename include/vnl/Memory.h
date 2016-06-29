@@ -30,7 +30,7 @@ namespace vnl {
 template<int size_>
 class Memory {
 public:
-	static const int size = size_;
+	static const uint32_t size = size_;
 	
 	Memory(const Memory&) = delete;
 	Memory& operator=(const Memory&) = delete;

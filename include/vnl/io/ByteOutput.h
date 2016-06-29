@@ -20,11 +20,11 @@ class ByteOutput {
 public:
 	ByteOutput(TStream& stream) : stream(stream) {}
 	
-	void write(const void* buf, int32_t len) {
+	void write(const void* buf, uint32_t len) {
 		stream.write(buf, len);
 	}
 	
-	void writeBinary(Page* buf, int32_t len) {
+	void writeBinary(Page* buf, uint32_t len) {
 		while(len > 0) {
 			int32_t n = std::min(len, Page::size);
 			write(buf->mem, n);
@@ -80,6 +80,5 @@ protected:
 
 
 }}
-
 
 #endif /* INCLUDE_IO_BYTEOUTPUT_H_ */

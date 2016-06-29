@@ -34,7 +34,7 @@ public:
 	class chunk_t : public Block {
 	public:
 		chunk_t*& next_chunk() { return *((chunk_t**)(&next)); }
-		int16_t& len() { return type_at<int16_t>(0); }
+		uint16_t& len() { return type_at<uint16_t>(0); }
 		char* str() { return mem + 2; }
 		chunk_t* create() {
 			len() = 0;
@@ -154,8 +154,8 @@ public:
 		return stream;
 	}
 	
-	void write(const char* str, int32_t len) {
-		int32_t pos = 0;
+	void write(const char* str, size_t len) {
+		size_t pos = 0;
 		while(len > pos) {
 			if(p_back->len() == CHUNK_SIZE) {
 				if(!p_back->next_chunk()) {
@@ -163,8 +163,8 @@ public:
 				}
 				p_back = p_back->next_chunk();
 			}
-			int32_t num = len - pos;
-			int32_t left = CHUNK_SIZE - p_back->len();
+			size_t num = len - pos;
+			size_t left = CHUNK_SIZE - p_back->len();
 			if(num > left) { num = left; }
 			memcpy(p_back->str() + p_back->len(), str+pos, num);
 			p_back->len() += num;
@@ -182,7 +182,7 @@ public:
 		count = 0;
 	}
 	
-	int32_t size() const {
+	size_t size() const {
 		return count;
 	}
 	
@@ -201,7 +201,7 @@ public:
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
-	int32_t count = 0;
+	size_t count = 0;
 	
 };
 

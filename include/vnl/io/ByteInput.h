@@ -23,7 +23,7 @@ public:
 		err |= stream.read(buf, len);
 	}
 	
-	void getBinary(Page* buf, int32_t len) {
+	void getBinary(Page* buf, uint32_t len) {
 		while(len > 0) {
 			int32_t n = std::min(len, Page::size);
 			get(buf->mem, n);
@@ -37,10 +37,10 @@ public:
 		}
 	}
 	
-	void getString(vnl::String& str, int32_t len) {
+	void getString(vnl::String& str, uint32_t len) {
 		while(len > 0) {
 			char buf[1024];
-			int32_t n = std::min(len, 1024);
+			int32_t n = std::min(len, 1024U);
 			get(buf, n);
 			str.write(buf, n);
 			len -= n;

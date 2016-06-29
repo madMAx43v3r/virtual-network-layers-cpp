@@ -13,6 +13,7 @@
 #include "vnl/io/ByteOutput.h"
 #include "vnl/io/ByteInput.h"
 #include "vnl/io/TypeInput.h"
+#include "vnl/io/TypeOutput.h"
 #include "vnl/io/Serializable.h"
 
 

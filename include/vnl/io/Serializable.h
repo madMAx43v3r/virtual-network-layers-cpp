@@ -17,11 +17,14 @@ namespace vnl { namespace io {
 
 class Serializable {
 public:
+	typedef vnl::io::TypeOutput<vnl::io::PageBuffer> TypeOutput;
+	typedef vnl::io::TypeInput<vnl::io::PageBuffer> TypeInput;
+	
 	virtual ~Serializable() {}
 	
-	virtual void serialize(TypeOutput<PageBuffer>& stream) = 0;
+	virtual void serialize(TypeOutput& stream) = 0;
 	
-	virtual void deserialize(TypeInput<PageBuffer>& stream, int num_entries) = 0;
+	virtual void deserialize(TypeInput& stream, uint32_t num_entries) = 0;
 	
 };
 
