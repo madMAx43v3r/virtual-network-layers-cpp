@@ -17,8 +17,13 @@ namespace vnl { namespace io {
 
 class PageBuffer {
 public:
-	PageBuffer(Page* data) : first(data) {
+	PageBuffer() {
+		first = Page::alloc();
 		buf = first;
+	}
+	
+	~PageBuffer() {
+		first->free_all();
 	}
 	
 	void reset() {
