@@ -27,7 +27,7 @@ public:
 	~Queue() {
 		Block* block = p_front;
 		while(block) {
-			Block* next = block->next();
+			Block* next = block->next;
 			block->free();
 			block = next;
 		}
