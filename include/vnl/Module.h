@@ -54,7 +54,7 @@ protected:
 	
 	void send(Message* msg, Basic* dst) {
 		if(dst != this) {
-			stream->send(msg, dst);
+			stream.send(msg, dst);
 		} else {
 			msg->src = engine;
 			process(msg);
@@ -62,7 +62,7 @@ protected:
 	}
 	void send_async(Message* msg, Basic* dst) {
 		if(dst != this) {
-			stream->send_async(msg, dst);
+			stream.send_async(msg, dst);
 		} else {
 			msg->src = engine;
 			process(msg);
@@ -79,7 +79,7 @@ protected:
 	}
 	
 	void flush() {
-		stream->flush();
+		stream.flush();
 	}
 	
 	StringWriter log(int level);
@@ -111,7 +111,7 @@ private:
 	
 private:
 	String my_name;
-	Stream* stream = 0;
+	Stream stream;
 	Engine* engine = 0;
 	Timer* timer_begin = 0;
 	

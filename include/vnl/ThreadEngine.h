@@ -47,7 +47,7 @@ protected:
 	
 	virtual bool poll(Stream* stream, int64_t micros) override {
 		assert(stream);
-		assert(stream->getEngine() == this);
+		assert(stream->get_engine() == this);
 		
 		if(micros > 0) {
 			return timed_poll(stream, micros);

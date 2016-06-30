@@ -15,18 +15,19 @@
 
 namespace vnl { namespace io {
 
+typedef vnl::io::TypeOutput<vnl::io::PageBuffer> TypeOutputStream;
+typedef vnl::io::TypeInput<vnl::io::PageBuffer> TypeInputStream;
+
 class Serializable {
 public:
-	typedef vnl::io::TypeOutput<vnl::io::PageBuffer> TypeOutput;
-	typedef vnl::io::TypeInput<vnl::io::PageBuffer> TypeInput;
-	
 	virtual ~Serializable() {}
 	
-	virtual void serialize(TypeOutput& stream) = 0;
+	virtual void serialize(TypeOutputStream& stream) const = 0;
 	
-	virtual void deserialize(TypeInput& stream, uint32_t num_entries) = 0;
+	virtual void deserialize(TypeInputStream& stream, uint32_t num_entries) = 0;
 	
 };
+
 
 
 }}

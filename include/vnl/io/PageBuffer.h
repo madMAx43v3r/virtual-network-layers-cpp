@@ -17,31 +17,32 @@ namespace vnl { namespace io {
 
 class PageBuffer {
 public:
-	PageBuffer() {
-		first = Page::alloc();
+	PageBuffer(Page* begin) : first(begin) {
 		buf = first;
 	}
 	
-	~PageBuffer() {
-		first->free_all();
-	}
+	PageBuffer(Page* begin, uint32_t limit) : PageBuffer(begin), lim(limit) {}
 	
 	void reset() {
 		buf = first;
-		limit = 0;
+		lim = 0;
 		pos = 0;
 		off = 0;
 	}
 	
 	void flip() {
 		buf = first;
-		limit = pos;
+		lim = pos;
 		pos = 0;
 		off = 0;
 	}
 	
 	int position() const {
 		return pos;
+	}
+	
+	int limit() const {
+		return lim;
 	}
 	
 	bool read(void* dst, int len) {
@@ -63,7 +64,7 @@ public:
 			dst = (char*)dst + n;
 		}
 		pos += len;
-		if(pos <= limit) {
+		if(pos <= lim) {
 			return true;
 		} else {
 			err = UNDERFLOW;
@@ -99,7 +100,7 @@ public:
 protected:
 	Page* buf;
 	Page* first;
-	int limit = 0;
+	int lim = 0;
 	int pos = 0;
 	int off = 0;
 	int err = 0;

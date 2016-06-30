@@ -9,12 +9,13 @@
 #define INCLUDE_IO_TYPEINPUT_H_
 
 #include <vnl/io/ByteInput.h>
+#include <vnl/io/TypeStream.h>
 
 
 namespace vnl { namespace io {
 
 template<typename TStream>
-class TypeInput : public ByteInput<TStream> {
+class TypeInput : protected ByteInput<TStream> {
 public:
 	typedef ByteInput<TStream> Base;
 	
@@ -38,61 +39,40 @@ public:
 		hash = tmp;
 	}
 	
-	void getChar(int8_t& value, uint32_t size) {
-		switch(size) {
-			case 1: { Base::getChar(value); break; }
-			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
-			case 4: { int32_t tmp; Base::getInt(tmp); value = tmp; break; }
-			case 8: { int64_t tmp; Base::getLong(tmp); value = tmp; break; }
-			default: Base::err = true;
+	template<typename T>
+	void getInteger(T& value) {
+		uint32_t size = 0;
+		int id = getEntry(size);
+		if(id == VNL_IO_INTEGER) {
+			switch(size) {
+				case VNL_IO_BYTE:  { int8_t tmp = 0; Base::getChar(tmp); value = tmp; break; }
+				case VNL_IO_WORD:  { int16_t tmp = 0; Base::getShort(tmp); value = tmp; break; }
+				case VNL_IO_DWORD: { int32_t tmp = 0; Base::getInt(tmp); value = tmp; break; }
+				case VNL_IO_QWORD: { int64_t tmp = 0; Base::getLong(tmp); value = tmp; break; }
+				default: skip_bytes(size);
+			}
+		} else {
+			skip(id, size);
 		}
 	}
 	
-	void getShort(int16_t& value, uint32_t size) {
-		switch(size) {
-			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
-			case 2: { Base::getShort(value); break; }
-			case 4: { int32_t tmp; Base::getInt(tmp); value = tmp; break; }
-			case 8: { int64_t tmp; Base::getLong(tmp); value = tmp; break; }
-			default: Base::err = true;
+	template<typename T>
+	void getReal(T& value) {
+		uint32_t size = 0;
+		int id = getEntry(size);
+		if(id == VNL_IO_REAL) {
+			switch(size) {
+				case VNL_IO_DWORD: { float tmp = 0; Base::getFloat(tmp); value = tmp; break; }
+				case VNL_IO_QWORD: { double tmp = 0; Base::getDouble(tmp); value = tmp; break; }
+				default: skip_bytes(size);
+			}
+		} else {
+			skip(id, size);
 		}
 	}
 	
-	void getInt(int32_t& value, uint32_t size) {
-		switch(size) {
-			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
-			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
-			case 4: { Base::getInt(value); break; }
-			case 8: { int64_t tmp; Base::getLong(tmp); value = tmp; break; }
-			default: Base::err = true;
-		}
-	}
-	
-	void getLong(int64_t& value, uint32_t size) {
-		switch(size) {
-			case 1: { int8_t tmp; Base::getChar(tmp); value = tmp; break; }
-			case 2: { int16_t tmp; Base::getShort(tmp); value = tmp; break; }
-			case 4: { int32_t tmp; Base::getInt(tmp); value = tmp; break; }
-			case 8: { Base::getLong(value); break; }
-			default: Base::err = true;
-		}
-	}
-	
-	void getFloat(float& value, uint32_t size) {
-		switch(size) {
-			case 4: { Base::getFloat(value); break; }
-			case 8: { double tmp; Base::getDouble(tmp); value = tmp; break; }
-			default: Base::err = true;
-		}
-	}
-	
-	void getDouble(double& value, uint32_t size) {
-		switch(size) {
-			case 4: { float tmp; Base::getFloat(tmp); value = tmp; break; }
-			case 8: { Base::getDouble(value); break; }
-			default: Base::err = true;
-		}
-	}
+	template<typename T>
+	void getArray(uint32_t dim, T* data, uint32_t size);
 	
 	void getBinary(Page* buf, uint32_t size) {
 		Base::getBinary(buf, size);
@@ -109,37 +89,159 @@ public:
 	}
 	
 	void skip(int id, uint32_t size) {
-		uint32_t hash;
+		uint32_t hash = 0;
 		switch(id) {
 			case VNL_IO_NULL: break;
-			case VNL_IO_TYPE:
+			case VNL_IO_INTEGER:
+			case VNL_IO_REAL:
+			case VNL_IO_BINARY:
+			case VNL_IO_STRING:
+				skip_bytes(size);
+				break;
 			case VNL_IO_CALL:
 			case VNL_IO_CONST_CALL:
 				getHash(hash);
-				skip(id, size);
+				skip_call(size);
+				break;
+			case VNL_IO_ARRAY:
+				getArray<void>(0, 0, size);
+				break;
+			case VNL_IO_STRUCT:
+				skip_struct(size);
+				break;
+			case VNL_IO_CLASS:
+				getHash(hash);
+				skip_struct(size);
+				break;
+			case VNL_IO_INTERFACE:
+				getHash(hash);
+				skip_interface();
 				break;
 			default:
-				skip(id, size);
+				Base::err = true;
 		}
-		if(size < 0) {
-			int n = -size;
-			for(int i = 0; i < n && !Base::err; ++i) {
-				uint32_t hash;
-				getHash(hash);
-				getSize(size);
-				skip(size);
+	}
+	
+protected:
+	void skip_bytes(uint32_t size) {
+		char buf[1024];
+		while(size > 0 && !Base::error()) {
+			uint32_t num = std::min(size, (uint32_t)sizeof(buf));
+			in.read(buf, num);
+			size -= num;
+		}
+	}
+	
+	void skip_struct(uint32_t size) {
+		for(uint32_t i = 0; i < size && !Base::error(); ++i) {
+			getHash(hash);
+			skip();
+		}
+	}
+	
+	void skip_interface() {
+		while(!Base::error()) {
+			uint32_t size = 0;
+			int id = getEntry(size);
+			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
+				break;
 			}
-		} else {
-			char buf[1024];
-			while(size > 0 && !Base::err) {
-				int32_t n = std::min(size, 1024U);
-				Base::get(buf, n);
-				size -= n;
-			}
+			skip(id, size);
+		}
+	}
+	
+	void skip_call(uint32_t size) {
+		for(uint32_t i = 0; i < size && !Base::error(); ++i) {
+			skip();
 		}
 	}
 	
 };
+
+
+template<typename TStream>
+template<typename T>
+void TypeInput<TStream>::getArray(uint32_t dim, T* data, uint32_t size) {
+	uint32_t org = size;
+	uint32_t num = std::min(size, dim);
+	int id = getEntry(size);
+	if(id == VNL_IO_INTEGER) {
+		switch(size) {
+			case VNL_IO_BYTE: { int8_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getChar(tmp); data[i] = tmp; } break; }
+			case VNL_IO_WORD: { int16_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getShort(tmp); data[i] = tmp; } break; }
+			case VNL_IO_DWORD: { int32_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getInt(tmp); data[i] = tmp; } break; }
+			case VNL_IO_QWORD: { int64_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getLong(tmp); data[i] = tmp; } break; }
+			default: Base::err = true;
+		}
+	} else {
+		num = 0;
+	}
+	for(uint32_t i = num; i < org; ++i) {
+		skip(id, size);
+	}
+}
+
+template<typename TStream>
+template<>
+void TypeInput<TStream>::getArray<int8_t>(uint32_t dim, int8_t* data, uint32_t size) {
+	uint32_t org = size;
+	uint32_t num = std::min(size, dim);
+	int id = getEntry(size);
+	if(id == VNL_IO_INTEGER) {
+		switch(size) {
+			case VNL_IO_BYTE: { Base::read(data, num); break; }
+			case VNL_IO_WORD: { int16_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getShort(tmp); data[i] = tmp; } break; }
+			case VNL_IO_DWORD: { int32_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getInt(tmp); data[i] = tmp; } break; }
+			case VNL_IO_QWORD: { int64_t tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getLong(tmp); data[i] = tmp; } break; }
+			default: Base::err = true;
+		}
+	} else {
+		num = 0;
+	}
+	for(uint32_t i = num; i < org; ++i) {
+		skip(id, size);
+	}
+}
+
+template<typename TStream>
+template<>
+void TypeInput<TStream>::getArray<float>(uint32_t dim, float* data, uint32_t size) {
+	uint32_t org = size;
+	uint32_t num = std::min(size, dim);
+	int id = getEntry(size);
+	if(id == VNL_IO_REAL) {
+		switch(size) {
+			case VNL_IO_DWORD: { float tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getFloat(tmp); data[i] = tmp; } break; }
+			case VNL_IO_QWORD: { double tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getDouble(tmp); data[i] = tmp; } break; }
+			default: Base::err = true;
+		}
+	} else {
+		num = 0;
+	}
+	for(uint32_t i = num; i < org; ++i) {
+		skip(id, size);
+	}
+}
+
+template<typename TStream>
+template<>
+void TypeInput<TStream>::getArray<double>(uint32_t dim, double* data, uint32_t size) {
+	uint32_t org = size;
+	uint32_t num = std::min(size, dim);
+	int id = getEntry(size);
+	if(id == VNL_IO_REAL) {
+		switch(size) {
+			case VNL_IO_DWORD: { float tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getFloat(tmp); data[i] = tmp; } break; }
+			case VNL_IO_QWORD: { double tmp; for(uint32_t i = 0; i < num && !Base::error(); ++i) { Base::getDouble(tmp); data[i] = tmp; } break; }
+			default: Base::err = true;
+		}
+	} else {
+		num = 0;
+	}
+	for(uint32_t i = num; i < org; ++i) {
+		skip(id, size);
+	}
+}
 
 
 

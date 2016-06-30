@@ -16,10 +16,12 @@ enum {
 	VNL_IO_REAL 		= 0x2,
 	VNL_IO_BINARY 		= 0x3,
 	VNL_IO_STRING 		= 0x4,
+	VNL_IO_CALL 		= 0x8,
+	VNL_IO_CONST_CALL 	= 0x9,
 	VNL_IO_ARRAY 		= 0xA,
-	VNL_IO_TYPE 		= 0xB,
-	VNL_IO_CALL 		= 0xC,
-	VNL_IO_CONST_CALL 	= 0xD
+	VNL_IO_STRUCT 		= 0xB,
+	VNL_IO_CLASS 		= 0xC,
+	VNL_IO_INTERFACE	= 0xD
 };
 
 enum {
@@ -28,6 +30,11 @@ enum {
 	VNL_IO_DWORD		= 0x4,
 	VNL_IO_QWORD		= 0x8,
 	VNL_IO_EXTENDED 	= 0xF
+};
+
+enum {
+	VNL_IO_BEGIN		= 0x0,
+	VNL_IO_END			= 0x1
 };
 
 

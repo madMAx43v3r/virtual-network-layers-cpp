@@ -9,15 +9,15 @@
 #define INCLUDE_IO_BUFFER_H_
 
 #include <string.h>
-#include "vnl/phy/Memory.h"
-#include "vnl/io/Error.h"
+#include <vnl/Memory.h>
+#include <vnl/io/Error.h>
 
 
 namespace vnl { namespace io {
 
 class Buffer {
 public:
-	Buffer(phy::Page* data) : buf(data) {}
+	Buffer(Page* data) : buf(data) {}
 	
 	void reset() {
 		limit = 0;
@@ -34,7 +34,7 @@ public:
 	}
 	
 	bool read(void* dst, int len) {
-		if(phy::Page::size - pos < len) {
+		if(Page::size - pos < len) {
 			err = UNDERFLOW;
 			return false;
 		}
@@ -44,7 +44,7 @@ public:
 	}
 	
 	bool write(const void* src, int len) {
-		if(phy::Page::size - pos < len) {
+		if(Page::size - pos < len) {
 			err = OVERFLOW;
 			return false;
 		}
@@ -58,7 +58,7 @@ public:
 	}
 	
 protected:
-	phy::Page* buf;
+	Page* buf;
 	int limit = 0;
 	int pos = 0;
 	int err = 0;

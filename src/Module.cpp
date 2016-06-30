@@ -39,11 +39,7 @@ Module::Module(const String& name)
 }
 
 void Module::receive(Message* msg) {
-	if(stream) {
-		stream->receive(msg);
-	} else {
-		msg->ack();
-	}
+	stream.receive(msg);
 }
 
 void Module::die() {
@@ -124,7 +120,7 @@ bool Module::poll(int64_t micros) {
 		timer = timer->next;
 	}
 	while(true) {
-		Message* msg = stream->poll(to);
+		Message* msg = stream.poll(to);
 		if(!msg) {
 			break;
 		}
@@ -162,19 +158,18 @@ void Module::run() {
 
 void Module::exec(Engine* engine_) {
 	engine = engine_;
-	Stream tmp(engine);
-	stream = &tmp;
+	stream.open(engine_);
 	Registry::bind_t bind(this);
-	stream->send(&bind, Registry::instance);
+	stream.send(&bind, Registry::instance);
 	if(!bind.res) {
 		log(ERROR).out << "Duplicate name: '" << my_name << "' is already in use!" << vnl::endl;
 		return;
 	}
 	main(engine_);
 	dying = true;
-	stream->flush();
+	stream.flush();
 	while(true) {
-		Message* msg = stream->poll(0);
+		Message* msg = stream.poll(0);
 		if(msg) {
 			msg->ack();
 		} else {

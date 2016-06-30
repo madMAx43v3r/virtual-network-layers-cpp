@@ -16,26 +16,25 @@
 
 namespace vnl {
 
-class Stream final : public Basic {
+class Stream : public Basic {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
-	Stream(Engine* engine)
-		:	engine(engine)
-	{
-		mac = engine->rand();
-	}
+	Stream() : engine(0), mac(0) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
-	Engine* getEngine() const {
-		return engine;
+	void open(Engine* engine_) {
+		engine = engine_;
+		mac = engine->rand();
 	}
 	
 	// thread safe
 	virtual void receive(Message* msg) override {
-		if(msg->gate == engine) {
+		if(!engine) {
+			msg->ack();
+		} else if(msg->gate == engine) {
 			push(msg);
 		} else {
 			if(!msg->dst) {
