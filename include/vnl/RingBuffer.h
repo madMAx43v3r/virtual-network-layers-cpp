@@ -48,7 +48,7 @@ public:
 	
 	template<typename T>
 	entry_t* alloc() {
-		return alloc(VNL_SIZEOF(T));
+		return alloc(sizeof(T));
 	}
 	
 	entry_t* alloc(int size) {

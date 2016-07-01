@@ -17,11 +17,23 @@ namespace vnl { namespace io {
 
 class ByteBuffer : public InputStream, public OutputStream {
 public:
-	ByteBuffer(Page* begin) : first(begin) {
-		buf = first;
+	ByteBuffer() : ByteBuffer(0) {}
+	
+	ByteBuffer(Page* begin) {
+		wrap(begin);
 	}
 	
-	ByteBuffer(Page* begin, int limit) : ByteBuffer(begin) {
+	ByteBuffer(Page* begin, int limit) {
+		wrap(begin, limit);
+	}
+	
+	void wrap(Page* begin) {
+		first = begin;
+		reset();
+	}
+	
+	void wrap(Page* begin, int limit) {
+		wrap(begin);
 		lim = limit;
 	}
 	

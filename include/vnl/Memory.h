@@ -16,14 +16,6 @@
 #include "vnl/build/config.h"
 #include "vnl/util/spinlock.h"
 
-#ifdef VNL_MEMORY_ALIGN
-#define VNL_SIZE(size) (size + ((VNL_MEMORY_ALIGN - (size % VNL_MEMORY_ALIGN)) % VNL_MEMORY_ALIGN))
-#define VNL_SIZEOF(type) VNL_SIZE(sizeof(type))
-#else
-#define VNL_SIZE(size) size
-#define VNL_SIZEOF(type) sizeof(type)
-#endif
-
 
 namespace vnl {
 
@@ -35,6 +27,15 @@ public:
 	Memory(const Memory&) = delete;
 	Memory& operator=(const Memory&) = delete;
 	
+#ifdef VNL_MEMORY_DEBUG
+	static Memory* alloc() {
+		return new Memory();
+	}
+	
+	void free() {
+		delete this;
+	}
+#else
 	static Memory* alloc() {
 		sync.lock();
 		Memory* page = begin;
@@ -47,25 +48,17 @@ public:
 			num_alloc++;
 		}
 		assert(page != OUT_OF_MEMORY);
-#ifdef VNL_MEMORY_DEBUG
-		if(!page->mem) {
-			page->mem = (char*)::malloc(size);
-		}
-#endif
 		page->next = 0;
 		return page;
 	}
 	
 	void free() {
-#ifdef VNL_MEMORY_DEBUG
-		::free(mem);
-		mem = 0;
-#endif
 		sync.lock();
 		next = begin;
 		begin = this;
 		sync.unlock();
 	}
+#endif
 	
 	void free_all() {
 		Memory* page = this;
@@ -84,7 +77,7 @@ public:
 	
 	template<typename T>
 	T& get(int index) {
-		return *(T*)(mem + index * VNL_SIZEOF(T));
+		return *(T*)(mem + index * sizeof(T));
 	}
 	
 	template<typename T>
@@ -123,12 +116,7 @@ public:
 	
 private:
 	Memory() : mem(0), next(0) {
-#ifdef VNL_MEMORY_ALIGN
-		int err = ::posix_memalign((void**)&mem, VNL_MEMORY_ALIGN, size);
-		assert(err == 0);
-#else
 		mem = (char*)::malloc(size);
-#endif
 		assert(mem != OUT_OF_MEMORY);
 	}
 	
