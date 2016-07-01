@@ -11,55 +11,95 @@
 #include <string.h>
 #include <vnl/Memory.h>
 #include <vnl/io/Error.h>
+#include <vnl/io/Stream.h>
 
 
 namespace vnl { namespace io {
 
-class Buffer {
+class InputBuffer {
 public:
-	Buffer(Page* data) : buf(data) {}
-	
-	void reset() {
-		limit = 0;
-		pos = 0;
+	InputBuffer(InputStream* in) : in(in) {
+		buf = vnl::Page::alloc();
 	}
 	
-	void flip() {
-		limit = pos;
-		pos = 0;
+	~InputBuffer() {
+		buf->free();
 	}
 	
-	int position() const {
-		return pos;
-	}
-	
-	bool read(void* dst, int len) {
-		if(Page::size - pos < len) {
-			err = UNDERFLOW;
-			return false;
+	void read(void* dst, int len) {
+		while(len) {
+			int left = Page::size - pos;
+			if(!left) {
+				left = in->read(buf->mem, Page::size);
+				if(left <= 0) {
+					err = VNL_IO_ERROR;
+					return;
+				}
+				pos = 0;
+			}
+			int n = std::min(len, left);
+			memcpy(dst, buf->mem + pos, n);
+			dst = (char*)dst + n;
+			len -= n;
+			pos += n;
 		}
-		memcpy(dst, buf->mem + pos, len);
-		pos += len;
-		return true;
+		return;
 	}
 	
-	bool write(const void* src, int len) {
-		if(Page::size - pos < len) {
-			err = OVERFLOW;
-			return false;
-		}
-		memcpy(buf->mem + pos, src, len);
-		pos += len;
-		return true;
-	}
-	
-	int error() {
+	bool error() {
 		return err;
 	}
 	
 protected:
+	InputStream* in = 0;
 	Page* buf;
-	int limit = 0;
+	int pos = 0;
+	int err = 0;
+	
+};
+
+
+class OutputBuffer {
+public:
+	OutputBuffer(OutputStream* out) : out(out) {
+		buf = vnl::Page::alloc();
+	}
+	
+	~OutputBuffer() {
+		buf->free();
+	}
+	
+	void write(const void* src, int len) {
+		while(len) {
+			int left = Page::size - pos;
+			if(!left) {
+				if(!flush()) {
+					err = VNL_IO_ERROR;
+					return;
+				}
+			}
+			int n = std::min(len, left);
+			memcpy(buf->mem + pos, src, n);
+			src = (const char*)src + n;
+			len -= n;
+			pos += n;
+		}
+		return;
+	}
+	
+	bool flush() {
+		bool res = out->write(buf->mem, pos);
+		pos = 0;
+		return res;
+	}
+	
+	bool error() {
+		return err;
+	}
+	
+protected:
+	OutputStream* out = 0;
+	Page* buf;
 	int pos = 0;
 	int err = 0;
 	

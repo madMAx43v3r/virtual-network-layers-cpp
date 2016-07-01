@@ -10,21 +10,18 @@
 
 #include "vnl/io/TypeInput.h"
 #include "vnl/io/TypeOutput.h"
-#include "vnl/io/PageBuffer.h"
+#include "vnl/io/Buffer.h"
 
 
 namespace vnl { namespace io {
-
-typedef vnl::io::TypeOutput<vnl::io::PageBuffer> TypeOutputStream;
-typedef vnl::io::TypeInput<vnl::io::PageBuffer> TypeInputStream;
 
 class Serializable {
 public:
 	virtual ~Serializable() {}
 	
-	virtual void serialize(TypeOutputStream& stream) const = 0;
+	virtual void serialize(vnl::io::TypeOutput& out) const = 0;
 	
-	virtual void deserialize(TypeInputStream& stream, uint32_t num_entries) = 0;
+	virtual void deserialize(vnl::io::TypeInput& in, int size) = 0;
 	
 };
 

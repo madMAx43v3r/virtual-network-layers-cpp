@@ -8,8 +8,9 @@
 #ifndef INCLUDE_PHY_PACKET_H_
 #define INCLUDE_PHY_PACKET_H_
 
-#include "vnl/Address.h"
-#include "vnl/Message.h"
+#include <vnl/Address.h>
+#include <vnl/Message.h>
+#include <vnl/io.h>
 
 #define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::PID_SAMPLE> sample_t;
 
@@ -20,16 +21,51 @@ static const uint32_t PID_SAMPLE = 0x12ed1215;
 
 class Router;
 
-class Packet : public Message {
+class Packet : public Message, public io::Serializable {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
-	
-	Packet(uint32_t pid) : Message(MID), pkt_id(pid) {}
 	
 	uint32_t pkt_id;
 	Address src_addr;
 	Address dst_addr;
 	void* payload = 0;
+	
+	Packet(uint32_t pid) : Message(MID), pkt_id(pid) {}
+	
+	virtual void serialize(vnl::io::TypeOutput& out) const {
+		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
+		out.putHash(pkt_id);
+		out.putEntry(VNL_IO_ARRAY, 4);
+		out.putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
+		src_addr.serialize(out);
+		dst_addr.serialize(out);
+		write(out);
+		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
+	}
+	
+	virtual void deserialize(vnl::io::TypeInput& in, int size) {
+		int32_t addr[4];
+		in.getArray(4, addr);
+		src_addr = Address(addr[0], addr[1]);
+		dst_addr = Address(addr[2], addr[3]);
+		read(in);
+		while(!in.error()) {
+			int id = in.getEntry(size);
+			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
+				break;
+			}
+			in.skip(id, size);
+		}
+	}
+	
+protected:
+	virtual void write(vnl::io::TypeOutput& out) const {
+		out.putNull();
+	}
+	
+	virtual void read(vnl::io::TypeInput& in) {
+		in.skip();
+	}
 	
 private:
 	Packet* parent = 0;

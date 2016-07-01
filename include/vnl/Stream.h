@@ -9,9 +9,10 @@
 #define INCLUDE_PHY_STREAM_H_
 
 #include <vnl/Basic.h>
-#include "vnl/Engine.h"
-#include "vnl/Memory.h"
-#include "vnl/Queue.h"
+#include <vnl/Engine.h>
+#include <vnl/Memory.h>
+#include <vnl/Queue.h>
+#include <vnl/Router.h>
 
 
 namespace vnl {
@@ -20,18 +21,22 @@ class Stream : public Basic {
 public:
 	typedef MessageType<Stream*, 0xe39e616f> signal_t;
 	
-	Stream() : engine(0), mac(0) {}
+	Stream() : engine(0) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
-	void open(Engine* engine_) {
+	void connect(Engine* engine_) {
 		engine = engine_;
 		mac = engine->rand();
 	}
 	
+	Engine* get_engine() const {
+		return engine;
+	}
+	
 	// thread safe
-	virtual void receive(Message* msg) override {
+	virtual void receive(Message* msg) {
 		if(!engine) {
 			msg->ack();
 		} else if(msg->gate == engine) {
@@ -44,12 +49,30 @@ public:
 		}
 	}
 	
+	void open(Address address) {
+		Router::open_t msg(std::make_pair(this, address));
+		send(&msg, Router::instance);
+	}
+	void close(Address address) {
+		Router::close_t msg(std::make_pair(this, address));
+		send(&msg, Router::instance);
+	}
+	
 	void send(Message* msg, Basic* dst) {
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		engine->send_async(msg, dst);
+	}
+	
+	void send(Packet* packet, Address dst) {
+		packet->dst_addr = dst;
+		send(packet, Router::instance);
+	}
+	void send_async(Packet* packet, Address dst) {
+		packet->dst_addr = dst;
+		send_async(packet, Router::instance);
 	}
 	
 	void flush() {

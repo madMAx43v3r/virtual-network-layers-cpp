@@ -14,7 +14,7 @@
 #include "vnl/Random.h"
 #include "vnl/Registry.h"
 #include "vnl/Router.h"
-#include "vnl/Node.h"
+#include "vnl/Module.h"
 
 
 namespace vnl {
@@ -35,6 +35,13 @@ public:
 	
 	void shutdown();
 	
+};
+
+
+struct log_msg_t {
+	uint64_t node;
+	const String* msg;
+	VNL_SAMPLE(log_msg_t);
 };
 
 

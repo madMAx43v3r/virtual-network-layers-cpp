@@ -20,7 +20,7 @@ Module::Module()
 }
 
 Module::Module(uint64_t mac)
-	:	log_output(&vnl::cout)
+	:	log_writer(this)
 {
 	this->mac = mac;
 	my_name << vnl::hex(mac);
@@ -49,7 +49,7 @@ void Module::die() {
 StringWriter Module::log(int level) {
 	StringOutput* out = 0;
 	if(level <= log_level) {
-		out = log_output;
+		out = &log_writer;
 	}
 	StringWriter writer(out);
 	writer.out << "[" << my_name << "] ";
@@ -158,7 +158,7 @@ void Module::run() {
 
 void Module::exec(Engine* engine_) {
 	engine = engine_;
-	stream.open(engine_);
+	stream.connect(engine_);
 	Registry::bind_t bind(this);
 	stream.send(&bind, Registry::instance);
 	if(!bind.res) {

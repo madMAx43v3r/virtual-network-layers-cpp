@@ -52,6 +52,13 @@ protected:
 		engine->fork(object);
 	}
 	
+	void open(Address address) {
+		stream.open(address);
+	}
+	void close(Address address) {
+		stream.close(address);
+	}
+	
 	void send(Message* msg, Basic* dst) {
 		if(dst != this) {
 			stream.send(msg, dst);
@@ -78,6 +85,13 @@ protected:
 		send_async(msg, dst.get());
 	}
 	
+	void send(Packet* packet, Address dst) {
+		stream.send(packet, dst);
+	}
+	void send_async(Packet* packet, Address dst) {
+		stream.send_async(packet, dst);
+	}
+	
 	void flush() {
 		stream.flush();
 	}
@@ -94,15 +108,21 @@ protected:
 	
 	void die();
 	
-	virtual bool handle(Message* msg) { return false; }
+	virtual bool handle(Message* msg) {
+		if(msg->msg_id == Packet::MID) {
+			Packet* pkt = (Packet*)msg;
+			return handle(pkt);
+		}
+		return false;
+	}
+	
+	virtual bool handle(Packet* pkt) { return false; }
 	
 	virtual void main(Engine* engine) = 0;
 	
 protected:
 	PageAlloc memory;
 	MessageBuffer buffer;
-	
-	StringOutput* log_output = 0;
 	
 private:
 	void exec(Engine* engine);
@@ -114,13 +134,38 @@ private:
 	Stream stream;
 	Engine* engine = 0;
 	Timer* timer_begin = 0;
+	GlobalLogWriter log_writer;
 	
 	int64_t ref = 0;
 	bool dying = false;
 	
 	friend class Engine;
 	friend class Registry;
+	friend class Receiver;
+	friend class GlobalLogWriter;
 	template<typename T> friend class Reference;
+	
+};
+
+
+class Receiver {
+public:
+	Receiver(Stream* node, Address addr) : node(node), address(addr) {
+		node->open(address);
+	}
+	
+	Receiver(Module* node, Address addr) : Receiver(&node->stream, addr) {}
+	
+	Receiver(const Receiver&) = delete;
+	Receiver& operator=(const Receiver&) = delete;
+	
+	~Receiver() {
+		node->close(address);
+	}
+	
+private:
+	Stream* node;
+	Address address;
 	
 };
 

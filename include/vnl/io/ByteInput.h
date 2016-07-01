@@ -9,24 +9,20 @@
 #define INCLUDE_IO_BYTEINPUT_H_
 
 #include <vnl/util/types.h>
-#include <vnl/Memory.h>
+#include <vnl/io/Buffer.h>
+#include <vnl/String.h>
 
 
 namespace vnl { namespace io {
 
-template<typename TStream>
-class ByteInput {
+class ByteInput : public InputBuffer {
 public:
-	ByteInput(TStream& stream) : stream(stream) {}
+	ByteInput(InputStream* stream) : InputBuffer(stream) {}
 	
-	void get(void* buf, int32_t len) {
-		err |= stream.read(buf, len);
-	}
-	
-	void getBinary(Page* buf, uint32_t len) {
+	void readBinary(Page* buf, int len) {
 		while(len > 0) {
 			int32_t n = std::min(len, Page::size);
-			get(buf->mem, n);
+			read(buf->mem, n);
 			len -= n;
 			if(len) {
 				if(!buf->next) {
@@ -37,62 +33,55 @@ public:
 		}
 	}
 	
-	void getString(vnl::String& str, uint32_t len) {
+	void readString(vnl::String& str, int len) {
 		while(len > 0) {
 			char buf[1024];
-			int32_t n = std::min(len, 1024U);
-			get(buf, n);
+			int n = std::min(len, 1024);
+			read(buf, n);
 			str.write(buf, n);
 			len -= n;
 		}
 	}
 	
-	void getChar(int8_t& value) {
-		read(value);
+	void readChar(int8_t& value) {
+		read_type(value);
 	}
 	
-	void getShort(int16_t& value) {
+	void readShort(int16_t& value) {
 		uint16_t tmp;
-		read(tmp);
+		read_type(tmp);
 		value = vnl_ntohs(tmp);
 	}
 	
-	void getInt(int32_t& value) {
+	void readInt(int32_t& value) {
 		uint32_t tmp;
-		read(tmp);
+		read_type(tmp);
 		value = vnl_ntohl(tmp);
 	}
 	
-	void getLong(int64_t& value) {
+	void readLong(int64_t& value) {
 		uint64_t tmp;
-		read(tmp);
+		read_type(tmp);
 		value = vnl_ntohll(tmp);
 	}
 	
-	void getFloat(float& value) {
+	void readFloat(float& value) {
 		uint32_t tmp;
-		read(tmp);
+		read_type(tmp);
 		value = vnl_ntohf(tmp);
 	}
 	
-	void getDouble(double& value) {
+	void readDouble(double& value) {
 		uint64_t tmp;
-		read(tmp);
+		read_type(tmp);
 		value = vnl_ntohd(tmp);
 	}
 	
-	bool error() {
-		return err;
-	}
-	
-protected:
+private:
 	template<typename T>
-	void read(T& data) {
-		err |= stream->read(&data, sizeof(T));
+	void read_type(T& data) {
+		read(&data, sizeof(T));
 	}
-	
-	TStream& stream;
-	bool err = false;
 	
 };
 

@@ -12,9 +12,10 @@
 namespace vnl { namespace io {
 
 enum {
-	SUCCESS = 0,
-	OVERFLOW = 1,
-	UNDERFLOW = 2
+	VNL_IO_SUCCESS = 0,
+	VNL_IO_OVERFLOW = 1,
+	VNL_IO_UNDERFLOW = 2,
+	VNL_IO_ERROR = 3
 };
 
 }}

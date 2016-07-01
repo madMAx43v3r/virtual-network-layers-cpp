@@ -14,25 +14,22 @@
 
 namespace vnl { namespace io {
 
-template<typename TStream>
-class TypeOutput : protected ByteOutput<TStream> {
+class TypeOutput : public ByteOutput {
 public:
-	typedef ByteOutput<TStream> Base;
+	TypeOutput(OutputStream* stream) : ByteOutput(stream) {}
 	
-	TypeOutput(TStream& stream) : ByteOutput<TStream>(stream) {}
-	
-	void putEntry(int id, uint32_t size) {
+	void putEntry(int id, int size) {
 		int8_t c = size >= 0xF ? 0xF : size;
 		c <<= 4;
 		c |= id & 0xF;
-		Base::writeChar(c);
+		writeChar(c);
 		if(size >= 0xF) {
-			Base::writeInt(size);
+			writeInt(size);
 		}
 	}
 	
 	void putHash(uint32_t hash) {
-		Base::writeInt(hash);
+		writeInt(hash);
 	}
 	
 	void putNull() {
@@ -41,7 +38,7 @@ public:
 	
 	void putChar(int8_t value) {
 		putEntry(VNL_IO_INTEGER, VNL_IO_BYTE);
-		Base::writeChar(value);
+		writeChar(value);
 	}
 	
 	void putShort(int16_t value) {
@@ -49,7 +46,7 @@ public:
 			putChar(value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_WORD);
-			Base::writeShort(value);
+			writeShort(value);
 		}
 	}
 	
@@ -58,7 +55,7 @@ public:
 			putShort(value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
-			Base::writeInt(value);
+			writeInt(value);
 		}
 	}
 	
@@ -67,95 +64,88 @@ public:
 			putInt(value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
-			Base::writeLong(value);
+			writeLong(value);
 		}
 	}
 	
 	void putFloat(float value) {
 		putEntry(VNL_IO_REAL, VNL_IO_DWORD);
-		Base::writeFloat(value);
+		writeFloat(value);
 	}
 	
 	void putDouble(double value) {
 		putEntry(VNL_IO_REAL, VNL_IO_QWORD);
-		Base::writeDouble(value);
+		writeDouble(value);
 	}
 	
 	template<typename T>
-	void putArray(uint32_t dim, const T* data) {
+	void putArray(int dim, const T* data) {
 		putEntry(VNL_IO_ARRAY, 0);
 		putEntry(VNL_IO_NULL, 0);
 	}
 	
-	void putBinary(vnl::Page* buf, uint32_t size) {
+	void putBinary(vnl::Page* buf, int size) {
 		putEntry(VNL_IO_BINARY, size);
-		Base::writeBinary(buf, size);
+		writeBinary(buf, size);
 	}
 	
 	void putString(const vnl::String& str) {
-		uint32_t size = str.size();
-		putEntry(VNL_IO_STRING, size);
-		Base::writeString(str, size);
+		putEntry(VNL_IO_STRING, str.size());
+		writeString(str);
 	}
 	
 };
 
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<int8_t>(uint32_t dim, const int8_t* data) {
+void TypeOutput::putArray<int8_t>(int dim, const int8_t* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_BYTE);
-	Base::write(data, dim);
+	write(data, dim);
 }
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<int16_t>(uint32_t dim, const int16_t* data) {
+void TypeOutput::putArray<int16_t>(int dim, const int16_t* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_WORD);
-	for(uint32_t i = 0; i < dim; ++i) {
-		Base::writeShort(data[i]);
+	for(int i = 0; i < dim; ++i) {
+		writeShort(data[i]);
 	}
 }
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<int32_t>(uint32_t dim, const int32_t* data) {
+void TypeOutput::putArray<int32_t>(int dim, const int32_t* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
-	for(uint32_t i = 0; i < dim; ++i) {
-		Base::writeInt(data[i]);
+	for(int i = 0; i < dim; ++i) {
+		writeInt(data[i]);
 	}
 }
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<int64_t>(uint32_t dim, const int64_t* data) {
+void TypeOutput::putArray<int64_t>(int dim, const int64_t* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
-	for(uint32_t i = 0; i < dim; ++i) {
-		Base::writeLong(data[i]);
+	for(int i = 0; i < dim; ++i) {
+		writeLong(data[i]);
 	}
 }
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<float>(uint32_t dim, const float* data) {
+void TypeOutput::putArray<float>(int dim, const float* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_REAL, VNL_IO_DWORD);
-	for(uint32_t i = 0; i < dim; ++i) {
-		Base::writeFloat(data[i]);
+	for(int i = 0; i < dim; ++i) {
+		writeFloat(data[i]);
 	}
 }
 
-template<typename TStream>
 template<>
-void TypeOutput<TStream>::putArray<double>(uint32_t dim, const double* data) {
+void TypeOutput::putArray<double>(int dim, const double* data) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_REAL, VNL_IO_QWORD);
-	for(uint32_t i = 0; i < dim; ++i) {
-		Base::writeDouble(data[i]);
+	for(int i = 0; i < dim; ++i) {
+		writeDouble(data[i]);
 	}
 }
 

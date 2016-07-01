@@ -154,8 +154,8 @@ public:
 		return stream;
 	}
 	
-	void write(const char* str, size_t len) {
-		size_t pos = 0;
+	void write(const char* str, int len) {
+		int pos = 0;
 		while(len > pos) {
 			if(p_back->len() == CHUNK_SIZE) {
 				if(!p_back->next_chunk()) {
@@ -163,8 +163,8 @@ public:
 				}
 				p_back = p_back->next_chunk();
 			}
-			size_t num = len - pos;
-			size_t left = CHUNK_SIZE - p_back->len();
+			int num = len - pos;
+			int left = CHUNK_SIZE - p_back->len();
 			if(num > left) { num = left; }
 			memcpy(p_back->str() + p_back->len(), str+pos, num);
 			p_back->len() += num;
@@ -182,7 +182,7 @@ public:
 		count = 0;
 	}
 	
-	size_t size() const {
+	int size() const {
 		return count;
 	}
 	
@@ -201,7 +201,7 @@ public:
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
-	size_t count = 0;
+	int count = 0;
 	
 };
 
@@ -294,6 +294,15 @@ public:
 };
 
 
+class Module;
+
+class GlobalLogWriter : public StringOutput {
+public:
+	GlobalLogWriter(Module* node) : node(node) {}
+	virtual void write(const String& str);
+private:
+	Module* node;
+};
 
 
 

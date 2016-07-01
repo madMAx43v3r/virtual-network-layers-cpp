@@ -12,9 +12,9 @@ namespace vnl {
 Layer* layer = 0;
 
 
-class Thread : public Node {
+class Thread : public Module {
 public:
-	Thread() : Node("vnl/thread") {}
+	Thread() : Module("vnl/thread") {}
 	
 protected:
 	virtual void main(Engine* engine) override {
@@ -54,7 +54,7 @@ protected:
 			filtering = !filter->data.empty();
 			grep = filter->data;
 		}
-		return Node::handle(msg);
+		return Module::handle(msg);
 	}
 	
 	virtual bool handle(Packet* pkt) override {
@@ -124,7 +124,7 @@ Layer::~Layer() {
 
 void GlobalLogWriter::write(const String& str) {
 	log_msg_t::sample_t msg;
-	msg.data.node = node->mac;
+	msg.data.node = node->getMAC();
 	msg.data.msg = &str;
 	node->send(&msg, layer->global_logs);
 }

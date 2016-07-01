@@ -10,18 +10,20 @@
 
 #include <string.h>
 #include <vnl/Memory.h>
-#include <vnl/io/Error.h>
+#include <vnl/io/Stream.h>
 
 
 namespace vnl { namespace io {
 
-class PageBuffer {
+class ByteBuffer : public InputStream, public OutputStream {
 public:
-	PageBuffer(Page* begin) : first(begin) {
+	ByteBuffer(Page* begin) : first(begin) {
 		buf = first;
 	}
 	
-	PageBuffer(Page* begin, uint32_t limit) : PageBuffer(begin), lim(limit) {}
+	ByteBuffer(Page* begin, int limit) : ByteBuffer(begin) {
+		lim = limit;
+	}
 	
 	void reset() {
 		buf = first;
@@ -45,35 +47,28 @@ public:
 		return lim;
 	}
 	
-	bool read(void* dst, int len) {
-		while(len) {
-			int left = Page::size - off;
-			if(!left) {
-				if(!buf->next) {
-					err = UNDERFLOW;
-					return false;
-				}
-				buf = buf->next;
-				off = 0;
-				left = Page::size;
+	virtual int read(void* dst, int len) {
+		int left = Page::size - off;
+		if(!left) {
+			if(!buf->next) {
+				err = VNL_IO_UNDERFLOW;
+				return 0;
 			}
-			int n = std::min(len, left);
-			memcpy(dst, buf->mem + off, n);
-			off += n;
-			len -= n;
-			dst = (char*)dst + n;
+			buf = buf->next;
+			off = 0;
+			left = Page::size;
 		}
-		pos += len;
-		if(pos <= lim) {
-			return true;
-		} else {
-			err = UNDERFLOW;
-			return false;
-		}
+		left = std::min(left, lim - pos);
+		int n = std::min(len, left);
+		memcpy(dst, buf->mem + off, n);
+		pos += n;
+		off += n;
+		return n;
 	}
 	
-	bool write(const void* src, int len) {
+	virtual bool write(const void* src, int len) {
 		while(len) {
+			int off = pos % Page::size;
 			int left = Page::size - off;
 			if(!left) {
 				if(!buf->next) {
@@ -85,11 +80,10 @@ public:
 			}
 			int n = std::min(len, left);
 			memcpy(buf->mem + off, src, n);
-			off += n;
-			len -= n;
 			src = (const char*)src + n;
+			len -= n;
+			pos += n;
 		}
-		pos += len;
 		return true;
 	}
 	

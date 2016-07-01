@@ -11,12 +11,13 @@
 #include <stdint.h>
 #include <ostream>
 
-#include "vnl/Util.h"
+#include <vnl/Util.h>
+#include <vnl/io.h>
 
 
 namespace vnl {
 
-class Address {
+class Address : public vnl::io::Serializable {
 public:
 	
 	uint64_t A;
@@ -38,6 +39,20 @@ public:
 	
 	uint64_t topic() const {
 		return B;
+	}
+	
+	virtual void serialize(vnl::io::TypeOutput& out) const {
+		out.writeLong(A);
+		out.writeLong(B);
+	}
+	
+	virtual void deserialize(vnl::io::TypeInput& in, int size) {
+		int64_t a = 0;
+		int64_t b = 0;
+		in.readLong(a);
+		in.readLong(b);
+		A = a;
+		B = b;
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {
