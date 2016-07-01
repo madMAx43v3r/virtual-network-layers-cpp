@@ -19,30 +19,6 @@ class ByteInput : public InputBuffer {
 public:
 	ByteInput(InputStream* stream) : InputBuffer(stream) {}
 	
-	void readBinary(Page* buf, int len) {
-		while(len > 0) {
-			int32_t n = std::min(len, Page::size);
-			read(buf->mem, n);
-			len -= n;
-			if(len) {
-				if(!buf->next) {
-					buf->next = Page::alloc();
-				}
-				buf = buf->next;
-			}
-		}
-	}
-	
-	void readString(vnl::String& str, int len) {
-		while(len > 0) {
-			char buf[1024];
-			int n = std::min(len, 1024);
-			read(buf, n);
-			str.write(buf, n);
-			len -= n;
-		}
-	}
-	
 	void readChar(int8_t& value) {
 		read_type(value);
 	}
@@ -75,6 +51,30 @@ public:
 		uint64_t tmp;
 		read_type(tmp);
 		value = vnl_ntohd(tmp);
+	}
+	
+	void readBinary(Page* buf, int len) {
+		while(len > 0) {
+			int32_t n = std::min(len, Page::size);
+			read(buf->mem, n);
+			len -= n;
+			if(len) {
+				if(!buf->next) {
+					buf->next = Page::alloc();
+				}
+				buf = buf->next;
+			}
+		}
+	}
+	
+	void readString(vnl::String& str, int len) {
+		while(len > 0) {
+			char buf[1024];
+			int n = std::min(len, 1024);
+			read(buf, n);
+			str.write(buf, n);
+			len -= n;
+		}
 	}
 	
 private:

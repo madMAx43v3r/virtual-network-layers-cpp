@@ -12,10 +12,11 @@
 
 enum {
 	VNL_IO_NULL 		= 0x0,
-	VNL_IO_INTEGER 		= 0x1,
-	VNL_IO_REAL 		= 0x2,
-	VNL_IO_BINARY 		= 0x3,
-	VNL_IO_STRING 		= 0x4,
+	VNL_IO_BOOL			= 0x1,
+	VNL_IO_INTEGER 		= 0x2,
+	VNL_IO_REAL 		= 0x3,
+	VNL_IO_BINARY 		= 0x4,
+	VNL_IO_STRING 		= 0x5,
 	VNL_IO_CALL 		= 0x8,
 	VNL_IO_CONST_CALL 	= 0x9,
 	VNL_IO_ARRAY 		= 0xA,
@@ -35,6 +36,11 @@ enum {
 enum {
 	VNL_IO_BEGIN		= 0x0,
 	VNL_IO_END			= 0x1
+};
+
+enum {
+	VNL_IO_FALSE		= 0x0,
+	VNL_IO_TRUE			= 0x1
 };
 
 

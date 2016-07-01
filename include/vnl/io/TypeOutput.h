@@ -36,6 +36,10 @@ public:
 		putEntry(VNL_IO_NULL, VNL_IO_NULL);
 	}
 	
+	void putBool(bool value) {
+		putEntry(VNL_IO_BOOL, value ? VNL_IO_TRUE : VNL_IO_FALSE);
+	}
+	
 	void putChar(int8_t value) {
 		putEntry(VNL_IO_INTEGER, VNL_IO_BYTE);
 		writeChar(value);
@@ -79,7 +83,7 @@ public:
 	}
 	
 	template<typename T>
-	void putArray(int dim, const T* data) {
+	void putArray(const T* data, int dim) {
 		putEntry(VNL_IO_ARRAY, 0);
 		putEntry(VNL_IO_NULL, 0);
 	}
@@ -98,14 +102,14 @@ public:
 
 
 template<>
-void TypeOutput::putArray<int8_t>(int dim, const int8_t* data) {
+void TypeOutput::putArray<int8_t>(const int8_t* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_BYTE);
 	write(data, dim);
 }
 
 template<>
-void TypeOutput::putArray<int16_t>(int dim, const int16_t* data) {
+void TypeOutput::putArray<int16_t>(const int16_t* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_WORD);
 	for(int i = 0; i < dim; ++i) {
@@ -114,7 +118,7 @@ void TypeOutput::putArray<int16_t>(int dim, const int16_t* data) {
 }
 
 template<>
-void TypeOutput::putArray<int32_t>(int dim, const int32_t* data) {
+void TypeOutput::putArray<int32_t>(const int32_t* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
 	for(int i = 0; i < dim; ++i) {
@@ -123,7 +127,7 @@ void TypeOutput::putArray<int32_t>(int dim, const int32_t* data) {
 }
 
 template<>
-void TypeOutput::putArray<int64_t>(int dim, const int64_t* data) {
+void TypeOutput::putArray<int64_t>(const int64_t* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
 	for(int i = 0; i < dim; ++i) {
@@ -132,7 +136,7 @@ void TypeOutput::putArray<int64_t>(int dim, const int64_t* data) {
 }
 
 template<>
-void TypeOutput::putArray<float>(int dim, const float* data) {
+void TypeOutput::putArray<float>(const float* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_REAL, VNL_IO_DWORD);
 	for(int i = 0; i < dim; ++i) {
@@ -141,7 +145,7 @@ void TypeOutput::putArray<float>(int dim, const float* data) {
 }
 
 template<>
-void TypeOutput::putArray<double>(int dim, const double* data) {
+void TypeOutput::putArray<double>(const double* data, int dim) {
 	putEntry(VNL_IO_ARRAY, dim);
 	putEntry(VNL_IO_REAL, VNL_IO_QWORD);
 	for(int i = 0; i < dim; ++i) {

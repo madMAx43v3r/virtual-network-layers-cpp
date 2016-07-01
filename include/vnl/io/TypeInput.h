@@ -20,7 +20,7 @@ public:
 	TypeInput(InputStream* stream) : ByteInput(stream) {}
 	
 	int getEntry(int& size) {
-		int8_t c;
+		int8_t c = 0;
 		readChar(c);
 		size = c >> 4;
 		if(size == 0xF) {
@@ -35,6 +35,16 @@ public:
 		int32_t tmp = 0;
 		readInt(tmp);
 		hash = tmp;
+	}
+	
+	void getBool(bool& value) {
+		int size = 0;
+		int id = getEntry(size);
+		if(id == VNL_IO_BOOL) {
+			value = size == VNL_IO_TRUE;
+		} else {
+			skip(id, size);
+		}
 	}
 	
 	template<typename T>
@@ -70,11 +80,11 @@ public:
 	}
 	
 	template<typename T>
-	void getArray(int dim, T* data) {
+	void getArray(T* data, int dim) {
 		int size = 0;
 		int id = getEntry(size);
 		if(id == VNL_IO_ARRAY) {
-			getArray(dim, data, size);
+			getArray(data, dim, size);
 		} else {
 			skip(id, size);
 		}
@@ -98,17 +108,27 @@ public:
 	
 	void copy(TypeOutput* dst) {
 		int size = 0;
-		int id = getEntry(size);
+		int id = copy_entry(size, dst);
+		switch(id) {
+			case VNL_IO_CALL:
+			case VNL_IO_CONST_CALL:
+			case VNL_IO_CLASS:
+			case VNL_IO_INTERFACE: {
+				uint32_t hash = 0;
+				getHash(hash);
+				if(dst) {
+					dst->putHash(hash);
+				}
+				break;
+			}
+		}
 		copy(id, size, dst);
 	}
 	
 	void copy(int id, int size, TypeOutput* dst) {
-		if(dst) {
-			dst->putEntry(id, size);
-		}
-		uint32_t hash = 0;
 		switch(id) {
 			case VNL_IO_NULL: break;
+			case VNL_IO_BOOL: break;
 			case VNL_IO_INTEGER:
 			case VNL_IO_REAL:
 			case VNL_IO_BINARY:
@@ -117,10 +137,6 @@ public:
 				break;
 			case VNL_IO_CALL:
 			case VNL_IO_CONST_CALL:
-				getHash(hash);
-				if(dst) {
-					dst->putHash(hash);
-				}
 				copy_call(size, dst);
 				break;
 			case VNL_IO_ARRAY:
@@ -130,17 +146,9 @@ public:
 				copy_struct(size, dst);
 				break;
 			case VNL_IO_CLASS:
-				getHash(hash);
-				if(dst) {
-					dst->putHash(hash);
-				}
 				copy_struct(size, dst);
 				break;
 			case VNL_IO_INTERFACE:
-				getHash(hash);
-				if(dst) {
-					dst->putHash(hash);
-				}
 				copy_interface(dst);
 				break;
 			default:
@@ -150,7 +158,15 @@ public:
 	
 protected:
 	template<typename T>
-	void getArray(int dim, T* data, int size);
+	void getArray(T* data, int dim, int size);
+	
+	int copy_entry(int& size, TypeOutput* dst) {
+		int id = getEntry(size);
+		if(dst) {
+			dst->putEntry(id, size);
+		}
+		return id;
+	}
 	
 	void copy_bytes(int size, TypeOutput* dst) {
 		char buf[1024];
@@ -166,7 +182,7 @@ protected:
 	
 	void copy_array(int size, TypeOutput* dst) {
 		int w = 0;
-		int id = getEntry(w);
+		int id = copy_entry(w, dst);
 		if(id == VNL_IO_INTEGER || id == VNL_IO_REAL) {
 			copy_bytes(size*w, dst);
 		} else {
@@ -190,10 +206,7 @@ protected:
 	void copy_interface(TypeOutput* dst) {
 		while(!error()) {
 			int size = 0;
-			int id = getEntry(size);
-			if(dst) {
-				dst->putEntry(id, size);
-			}
+			int id = copy_entry(size, dst);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 				break;
 			}
@@ -211,7 +224,7 @@ protected:
 
 
 template<typename T>
-void TypeInput::getArray(int dim, T* data, int size) {
+void TypeInput::getArray(T* data, int dim, int size) {
 	int org = size;
 	int num = std::min(size, dim);
 	int id = getEntry(size);

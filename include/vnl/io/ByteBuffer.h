@@ -62,9 +62,10 @@ public:
 	virtual int read(void* dst, int len) {
 		int left = Page::size - off;
 		if(!left) {
+			assert(buf->next);
 			if(!buf->next) {
 				err = VNL_IO_UNDERFLOW;
-				return 0;
+				return -1;
 			}
 			buf = buf->next;
 			off = 0;

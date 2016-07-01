@@ -18,7 +18,7 @@ namespace vnl {
 template<typename T>
 class Queue {
 public:
-	static const int N = (VNL_BLOCK_SIZE - 4) / VNL_SIZEOF(T);
+	static const int N = (VNL_BLOCK_SIZE - 4) / sizeof(T);
 	
 	Queue() {
 		assert(N > 0);
@@ -116,7 +116,7 @@ public:
 		return p_back->elem(p_back->write() - 1);
 	}
 	
-	size_t size() {
+	size_t size() const {
 		return count;
 	}
 	
@@ -144,7 +144,7 @@ protected:
 		block_t*& next_block() { return *((block_t**)(&next)); }
 		int16_t& read() { return type_at<int16_t>(0); }
 		int16_t& write() { return type_at<int16_t>(2); }
-		T& elem(int i) { return type_at<T>(4 + i*VNL_SIZEOF(T)); }
+		T& elem(int i) { return type_at<T>(4 + i*sizeof(T)); }
 	};
 	
 public:

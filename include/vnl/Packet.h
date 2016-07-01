@@ -35,8 +35,6 @@ public:
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
-		out.putEntry(VNL_IO_ARRAY, 4);
-		out.putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
 		src_addr.serialize(out);
 		dst_addr.serialize(out);
 		write(out);
@@ -44,17 +42,14 @@ public:
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
-		int32_t addr[4];
-		in.getArray(4, addr);
-		src_addr = Address(addr[0], addr[1]);
-		dst_addr = Address(addr[2], addr[3]);
-		read(in);
+		src_addr.deserialize(in, 0);
+		dst_addr.deserialize(in, 0);
 		while(!in.error()) {
 			int id = in.getEntry(size);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 				break;
 			}
-			in.skip(id, size);
+			read(in, id, size);
 		}
 	}
 	
@@ -63,7 +58,7 @@ protected:
 		out.putNull();
 	}
 	
-	virtual void read(vnl::io::TypeInput& in) {
+	virtual void read(vnl::io::TypeInput& in, int id, int size) {
 		in.skip();
 	}
 	

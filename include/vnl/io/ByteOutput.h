@@ -19,26 +19,6 @@ class ByteOutput : public OutputBuffer {
 public:
 	ByteOutput(OutputStream* stream) : OutputBuffer(stream) {}
 	
-	void writeBinary(Page* buf, int len) {
-		while(len > 0) {
-			int n = std::min(len, Page::size);
-			write(buf->mem, n);
-			len -= n;
-			buf = buf->next;
-		}
-	}
-	
-	void writeString(const vnl::String& str) {
-		int len = str.size();
-		vnl::String::chunk_t* chunk = str.front();
-		while(len > 0) {
-			int n = std::min((int)chunk->len(), len);
-			write(chunk->str(), n);
-			len -= n;
-			chunk = chunk->next_chunk();
-		}
-	}
-	
 	void writeChar(int8_t value) {
 		write_type<int8_t>(value);
 	}
@@ -61,6 +41,26 @@ public:
 	
 	void writeDouble(double value) {
 		write_type<double>(vnl_htond(value));
+	}
+	
+	void writeBinary(Page* buf, int len) {
+		while(len > 0) {
+			int n = std::min(len, Page::size);
+			write(buf->mem, n);
+			len -= n;
+			buf = buf->next;
+		}
+	}
+	
+	void writeString(const vnl::String& str) {
+		int len = str.size();
+		vnl::String::chunk_t* chunk = str.front();
+		while(len > 0) {
+			int n = std::min((int)chunk->len(), len);
+			write(chunk->str(), n);
+			len -= n;
+			chunk = chunk->next_chunk();
+		}
 	}
 	
 private:
