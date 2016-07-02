@@ -47,6 +47,14 @@ public:
 		p_back = p_front;
 	}
 	
+	String(const char* str) : String() {
+		(*this) << str;
+	}
+	
+	String(const std::string& str) : String() {
+		(*this) << str;
+	}
+	
 	String(const String& other) : String() {
 		chunk_t* chunk = other.p_front;
 		while(chunk) {

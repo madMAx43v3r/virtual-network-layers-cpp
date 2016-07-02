@@ -64,12 +64,36 @@ public:
 	
 };
 
+
+class Endpoint : public Address {
+public:
+	Endpoint(const String& domain, const String& mac)
+		:	domain(domain), mac(mac)
+	{
+		A = hash64(domain);
+		B = hash64(mac);
+	}
+	
+	String domain;
+	String mac;
+	
+};
+
+
 inline bool operator<(const Address& A, const Address& B) {
 	return (A.A xor A.B) < (B.A xor B.B);
 }
 
 inline bool operator==(const Address& A, const Address& B) {
 	return A.A == B.A && A.B == B.B;
+}
+
+inline static const char* get_local_domain_name() {
+	return "vnl/local/domain";
+}
+
+inline static uint64_t get_local_domain() {
+	return hash64(get_local_domain_name());
 }
 
 

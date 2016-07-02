@@ -29,7 +29,7 @@ public:
 	Module(const String& name);
 	
  	// thread safe
-	virtual void receive(Message* msg) override;
+	virtual void receive(Message* msg);
 	
 	enum {
 		ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4

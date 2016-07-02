@@ -24,6 +24,10 @@
 
 namespace vnl {
 
+static int64_t currentTime() {
+	return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 static int64_t currentTimeMillis() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
@@ -70,18 +74,20 @@ static uint64_t hash64(uint64_t a) {
 	return func.getValue();
 }
 
-static uint64_t hash64(uint64_t a, uint64_t b) {
+template<typename T, typename R>
+static uint64_t hash64(T a, R b) {
 	CRC64 func;
-	func.update(a*31);
-	func.update(b*37);
+	func.update(hash64(a)*31);
+	func.update(hash64(b)*37);
 	return func.getValue();
 }
 
-static uint64_t hash64(uint64_t a, uint64_t b, uint64_t c) {
+template<typename T, typename R, typename S>
+static uint64_t hash64(T a, R b, S c) {
 	CRC64 func;
-	func.update(a*31);
-	func.update(b*37);
-	func.update(c*41);
+	func.update(hash64(a)*31);
+	func.update(hash64(b)*37);
+	func.update(hash64(c)*41);
 	return func.getValue();
 }
 
