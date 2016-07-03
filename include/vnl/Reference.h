@@ -18,6 +18,9 @@ namespace vnl {
 class Module;
 
 
+/*
+ * References should be on the Module::main() stack to allow for circular dependencies.
+ */
 template<typename T>
 class Reference {
 public:
@@ -46,8 +49,8 @@ public:
 	void close();
 	
 private:
-	uint64_t mac = 0;
 	Engine* engine = 0;
+	uint64_t mac = 0;
 	T* obj = 0;
 	
 };

@@ -32,7 +32,7 @@ bool Router::handle(Message* msg) {
 		Basic* src = msg->src;
 		if(src) {
 			if(pkt->src_addr.B == 0) {
-				pkt->src_addr.B = src->getMAC();
+				pkt->src_addr.B = src->get_mac();
 			}
 		}
 		route(pkt, src, table.find(pkt->dst_addr));

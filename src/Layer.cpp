@@ -124,7 +124,7 @@ Layer::~Layer() {
 
 void GlobalLogWriter::write(const String& str) {
 	log_msg_t::sample_t msg;
-	msg.data.node = node->getMAC();
+	msg.data.node = node->get_mac();
 	msg.data.msg = &str;
 	node->send(&msg, layer->global_logs);
 }

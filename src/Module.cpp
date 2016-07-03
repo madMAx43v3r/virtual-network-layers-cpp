@@ -135,6 +135,23 @@ bool Module::poll(int64_t micros) {
 	return true;
 }
 
+bool Module::sleep(int64_t secs) {
+	return usleep(secs*1000*1000);
+}
+
+bool Module::usleep(int64_t micros) {
+	int64_t now = currentTimeMicros();
+	int64_t deadline = now + micros;
+	while(now < deadline) {
+		int64_t to = deadline - now;
+		if(!poll(to)) {
+			return false;
+		}
+		now = currentTimeMicros();
+	}
+	return true;
+}
+
 void Module::process(Message* msg) {
 	switch(msg->msg_id) {
 	case get_name_t::MID:

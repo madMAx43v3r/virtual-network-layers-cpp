@@ -48,8 +48,9 @@ protected:
 		return engine->rand();
 	}
 	
-	void fork(Module* object) {
+	Module* fork(Module* object) {
 		engine->fork(object);
+		return object;
 	}
 	
 	void open(Address address) {
@@ -103,6 +104,9 @@ protected:
 	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
 	
 	bool poll(int64_t micros);
+	
+	bool sleep(int64_t secs);
+	bool usleep(int64_t micros);
 	
 	void run();
 	

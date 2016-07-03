@@ -72,7 +72,7 @@ bool Registry::handle(Message* msg) {
 		get_module_list_t* list = (get_module_list_t*)msg;
 		for(Module* module : map.values()) {
 			module_desc_t desc;
-			desc.mac = module->getMAC();
+			desc.mac = module->get_mac();
 			desc.name = module->my_name;
 			list->data.push_back(desc);
 		}
@@ -82,7 +82,7 @@ bool Registry::handle(Message* msg) {
 }
 
 bool Registry::bind(Module* obj) {
-	uint64_t mac = obj->getMAC();
+	uint64_t mac = obj->get_mac();
 	Module*& value = map[mac];
 	if(value == 0) {
 		value = obj;
@@ -118,7 +118,7 @@ void Registry::open(Module* obj) {
 void Registry::close(Module* obj) {
 	obj->ref--;
 	if(obj->ref == 0) {
-		map.erase(obj->getMAC());
+		map.erase(obj->get_mac());
 	}
 	if(obj->dying) {
 		if(obj->ref == 0) {

@@ -26,7 +26,7 @@ public:
 	
 	virtual ~Basic() {}
 	
-	uint64_t getMAC() const { return mac; }
+	uint64_t get_mac() const { return mac; }
 	
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;

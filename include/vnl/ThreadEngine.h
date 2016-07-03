@@ -28,7 +28,7 @@ public:
 	static void spawn(Module* object) {
 		std::thread thread(std::bind(&ThreadEngine::entry, object));
 		thread.detach();
-		Registry::ping(object->getMAC());
+		Registry::ping(object->get_mac());
 	}
 	
 protected:

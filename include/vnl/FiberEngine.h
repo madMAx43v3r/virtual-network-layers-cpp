@@ -34,7 +34,7 @@ public:
 	static void spawn(Module* object, int stack_size = default_stack) {
 		std::thread thread(std::bind(&FiberEngine::entry, object, stack_size));
 		thread.detach();
-		Registry::ping(object->getMAC());
+		Registry::ping(object->get_mac());
 	}
 	
 protected:
