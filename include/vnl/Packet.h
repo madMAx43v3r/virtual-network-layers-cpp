@@ -59,7 +59,7 @@ protected:
 	}
 	
 	virtual void read(vnl::io::TypeInput& in, int id, int size) {
-		in.skip();
+		in.skip(id, size);
 	}
 	
 private:

@@ -38,7 +38,7 @@ public:
 	}
 	
 	void getBool(bool& value) {
-		int size = 0;
+		int size;
 		int id = getEntry(size);
 		if(id == VNL_IO_BOOL) {
 			value = size == VNL_IO_TRUE;
@@ -49,7 +49,7 @@ public:
 	
 	template<typename T>
 	void getInteger(T& value) {
-		int size = 0;
+		int size;
 		int id = getEntry(size);
 		if(id == VNL_IO_INTEGER) {
 			switch(size) {
@@ -66,7 +66,7 @@ public:
 	
 	template<typename T>
 	void getReal(T& value) {
-		int size = 0;
+		int size;
 		int id = getEntry(size);
 		if(id == VNL_IO_REAL) {
 			switch(size) {
@@ -81,7 +81,7 @@ public:
 	
 	template<typename T>
 	void getArray(T* data, int dim) {
-		int size = 0;
+		int size;
 		int id = getEntry(size);
 		if(id == VNL_IO_ARRAY) {
 			getArray(data, dim, size);
@@ -90,12 +90,24 @@ public:
 		}
 	}
 	
-	void getBinary(vnl::Page* buf, int size) {
-		getBinary(buf, size);
+	void getBinary(vnl::Page* buf) {
+		int size;
+		int id = getEntry(size);
+		if(id == VNL_IO_BINARY) {
+			readBinary(buf, size);
+		} else {
+			skip(id, size);
+		}
 	}
 	
-	void getString(vnl::String& str, int size) {
-		getString(str, size);
+	void getString(vnl::String& str) {
+		int size;
+		int id = getEntry(size);
+		if(id == VNL_IO_STRING) {
+			readString(str, size);
+		} else {
+			skip(id, size);
+		}
 	}
 	
 	void skip() {
