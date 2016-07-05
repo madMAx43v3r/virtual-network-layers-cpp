@@ -70,7 +70,7 @@ public:
 		return *this;
 	}
 	
-	T& operator[](size_t index) {
+	T& operator[](int index) {
 		int pi = index / M;
 		int ei = index % M;
 		Page* page = p_front;
@@ -81,7 +81,7 @@ public:
 	}
 	
 	std::vector<T> to_vector() const {
-		size_t n = size();
+		int n = size();
 		std::vector<T> vec(n);
 		int i = 0;
 		for(auto iter = begin(); iter != end(); ++iter) {
@@ -103,8 +103,8 @@ public:
 		}
 	}
 	
-	size_t size() const {
-		size_t count = 0;
+	int size() const {
+		int count = 0;
 		Page* page = p_front;
 		while(page) {
 			if(page != p_back) {
@@ -195,7 +195,7 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = Page::size / VNL_SIZEOF(T);
+	static const int M = Page::size / sizeof(T);
 	
 	Page* p_front = 0;
 	Page* p_back = 0;

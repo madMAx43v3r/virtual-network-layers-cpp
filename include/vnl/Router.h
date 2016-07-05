@@ -28,6 +28,8 @@ public:
 	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;
 	
+	typedef MessageType<Array<uint64_t>, 0x65ec22d9> get_domain_list_t;
+	
 protected:
 	typedef List<Basic*> Row;
 	
@@ -46,6 +48,7 @@ protected:
 	
 private:
 	Map<Address, Row*> table;
+	Array<uint64_t> domains;
 	std::function<void(Message*)> cb_func;
 	
 };

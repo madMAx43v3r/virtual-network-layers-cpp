@@ -37,7 +37,7 @@ public:
 		return A;
 	}
 	
-	uint64_t topic() const {
+	uint64_t mac() const {
 		return B;
 	}
 	

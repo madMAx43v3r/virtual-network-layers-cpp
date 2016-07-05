@@ -35,20 +35,26 @@ bool Router::handle(Message* msg) {
 				pkt->src_addr.B = src->get_mac();
 			}
 		}
+		// direct match
 		route(pkt, src, table.find(pkt->dst_addr));
-		route(pkt, src, table.find(Address(pkt->dst_addr.A, 0)));
+		// domain match
+		uint64_t domain = pkt->dst_addr.A;
+		Row** prow = table.find(Address(domain, 0));
+		if(prow == 0) {
+			domains.push_back(domain);
+			table[Address(domain, 0)] = 0;
+		}
+		route(pkt, src, prow);
 		if(!pkt->count) {
 			msg->ack();
 		}
 		return true;
 	} else if(msg->msg_id == open_t::MID) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
-		msg->ack();
-		return true;
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
-		msg->ack();
-		return true;
+	} else if(msg->msg_id == get_domain_list_t::MID) {
+		((get_domain_list_t*)msg)->data = domains;
 	}
 	return false;
 }
@@ -86,7 +92,7 @@ void Router::close(const Address& addr, Basic* src) {
 }
 
 void Router::route(Packet* pkt, Basic* src, Row** prow) {
-	if(prow) {
+	if(prow && *prow) {
 		for(Basic* dst : **prow) {
 			if(dst && dst != src) {
 				forward(pkt, dst);
