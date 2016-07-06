@@ -10,19 +10,19 @@
 
 #include <iostream>
 
-#include "vnl/Node.h"
+#include "vnl/Module.h"
 #include "vnl/Layer.h"
 
 
 namespace vnl {
 
-class Terminal : public Node {
+class Terminal : public Module {
 public:
-	Terminal() : Node("vnl/terminal") {}
+	Terminal() : Module("vnl/terminal") {}
 	
 protected:
 	virtual void main(Engine* engine) override {
-		Reference<Node> writer_ref(engine, "vnl/thread");
+		Reference<Module> writer_ref(engine, "vnl/thread");
 		writer = writer_ref.get();
 		std::string input;
 		while(poll(0)) {
@@ -108,7 +108,7 @@ protected:
 	}
 	
 private:
-	Node* writer = 0;
+	Module* writer = 0;
 	
 };
 

@@ -9,7 +9,6 @@
 #define INCLUDE_VNL_IO_TYPESTREAM_H_
 
 
-
 enum {
 	VNL_IO_NULL 		= 0x0,
 	VNL_IO_BOOL			= 0x1,
@@ -42,6 +41,7 @@ enum {
 	VNL_IO_FALSE		= 0x0,
 	VNL_IO_TRUE			= 0x1
 };
+
 
 
 

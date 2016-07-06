@@ -19,7 +19,7 @@ namespace vnl {
 /*
  * This is a hash map.
  * Maximum pair size is 4080 bytes.
- * Memory overhead is 3 pages + 16 bytes per element.
+ * Memory overhead is minimum 2 pages + 16 bytes per element.
  */
 template<typename K, typename V>
 class Map {
@@ -34,9 +34,6 @@ public:
 	
 	~Map() {
 		destroy();
-		if(table) {
-			table->free_all();
-		}
 	}
 	
 	Map& operator=(const Map& other) {
@@ -47,48 +44,33 @@ public:
 	
 	Array<std::pair<K,V> > entries() const {
 		Array<std::pair<K,V> > res;
-		Page* page = table;
-		while(page) {
-			for(int i = 0; i < M; ++i) {
-				entry_t* row = page->get<entry_t*>(i);
-				while(row) {
-					res.push_back(row->pair);
-					row = row->next;
-				}
+		for(entry_t* row : table) {
+			while(row) {
+				res.push_back(row->pair);
+				row = row->next;
 			}
-			page = page->next;
 		}
 		return res;
 	}
 	
 	Array<K> keys() const {
 		Array<K> res;
-		Page* page = table;
-		while(page) {
-			for(int i = 0; i < M; ++i) {
-				entry_t* row = page->get<entry_t*>(i);
-				while(row) {
-					res.push_back(row->pair.first);
-					row = row->next;
-				}
+		for(entry_t* row : table) {
+			while(row) {
+				res.push_back(row->pair.first);
+				row = row->next;
 			}
-			page = page->next;
 		}
 		return res;
 	}
 	
 	Array<V> values() const {
 		Array<V> res;
-		Page* page = table;
-		while(page) {
-			for(int i = 0; i < M; ++i) {
-				entry_t* row = page->get<entry_t*>(i);
-				while(row) {
-					res.push_back(row->pair.second);
-					row = row->next;
-				}
+		for(entry_t* row : table) {
+			while(row) {
+				res.push_back(row->pair.second);
+				row = row->next;
 			}
-			page = page->next;
 		}
 		return res;
 	}
@@ -159,7 +141,7 @@ public:
 		resize(N);
 	}
 	
-	size_t size() const {
+	int size() const {
 		return count;
 	}
 	
@@ -173,20 +155,13 @@ protected:
 		entry_t* next;
 	};
 	
-	static const int M = Page::size / sizeof(void*);
-	
 	void destroy() {
-		Page* page = table;
-		while(page) {
-			for(int i = 0; i < M; ++i) {
-				entry_t* row = page->get<entry_t*>(i);
-				while(row) {
-					entry_t* next = row->next;
-					row->~entry_t();
-					row = row->next;
-				}
+		for(entry_t* row : table) {
+			while(row) {
+				entry_t* next = row->next;
+				row->~entry_t();
+				row = row->next;
 			}
-			page = page->next;
 		}
 		entry_t* entry = p_front;
 		while(entry) {
@@ -197,48 +172,28 @@ protected:
 		mem.clear();
 	}
 	
-	void resize(size_t rows) {
+	void resize(int rows) {
 		destroy();
-		p_front = 0;
 		N = rows;
 		count = 0;
-		index.clear();
-		if(!table) {
-			table = Page::alloc();
-		}
-		int num_pages = N / M;
-		int i = 0;
-		Page* page = table;
-		while(true) {
-			memset(page->mem, 0, Page::size);
-			index.push_back(page);
-			i++;
-			if(i >= num_pages) {
-				break;
-			}
-			if(!page->next) {
-				page->next = Page::alloc();
-			}
-			page = page->next;
+		p_front = 0;
+		table.clear();
+		for(int i = 0; i < N; ++i) {
+			table.push_back(0);
 		}
 	}
 	
 	void expand(int rows) {
 		auto tmp = entries();
 		resize(rows);
-		int c = 0;
 		for(auto& pair : tmp) {
 			insert(pair.first, pair.second);
-			c++;
 		}
 	}
 	
 	bool find(const K& key, entry_t**& p_row, std::pair<K,V>*& val) {
-		size_t ri = std::hash<K>{}(key) % N;
-		size_t pi = ri / M;
-		size_t qi = ri % M;
-		Page* page = index[pi];
-		p_row = &page->get<entry_t*>(qi);
+		int ind = std::hash<K>{}(key) % N;
+		p_row = &table[ind];
 		while(true) {
 			entry_t* row = *p_row;
 			if(!row) {
@@ -256,11 +211,10 @@ protected:
 	PageAlloc mem;
 	
 private:
-	Array<Page*> index;
-	Page* table = 0;
+	Array<entry_t*> table;
 	entry_t* p_front = 0;
-	size_t N = 0;
-	size_t count = 0;
+	int N = 0;
+	int count = 0;
 	
 };
 

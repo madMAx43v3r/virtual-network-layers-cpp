@@ -9,7 +9,6 @@
 #include "vnl/FiberEngine.h"
 #include "vnl/Layer.h"
 #include "vnl/Router.h"
-#include "vnl/Node.h"
 #include "vnl/Terminal.h"
 
 #include "../src/CRC64.cpp"
@@ -31,7 +30,7 @@ struct test_msg_t {
 
 vnl::Address address(vnl::hash64("domain"), vnl::hash64("topic"));
 
-class Consumer : public vnl::Node {
+class Consumer : public vnl::Module {
 protected:
 	virtual void main(vnl::Engine* engine) override {
 		//vnl::Util::stick_to_core(mac % 3 + 1);
@@ -67,7 +66,7 @@ private:
 };
 
 
-class Producer : public vnl::Node {
+class Producer : public vnl::Module {
 protected:
 	virtual void main(vnl::Engine* engine) override {
 		test_msg_t test;
@@ -90,7 +89,7 @@ protected:
 };
 
 
-class Core : public vnl::Node {
+class Core : public vnl::Module {
 protected:
 	virtual void main(vnl::Engine* engine) override {
 		for(int i = 0; i < 5; ++i) {

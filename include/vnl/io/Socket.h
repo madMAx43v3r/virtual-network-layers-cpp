@@ -17,9 +17,16 @@
 
 namespace vnl { namespace io {
 
+/*
+ * This class must be thread-safe !!!
+ */
 class Socket : public InputStream, public OutputStream {
 public:
 	Socket(int sock) : sock(sock) {}
+	
+	int get_fd() const {
+		return sock;
+	}
 	
 	virtual int read(void* dst, int len) {
 		return ::read(sock, dst, len);
@@ -36,6 +43,10 @@ public:
 			}
 		}
 		return true;
+	}
+	
+	void close() {
+		::close(fd);
 	}
 	
 private:

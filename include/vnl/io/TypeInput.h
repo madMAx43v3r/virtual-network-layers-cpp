@@ -48,10 +48,11 @@ public:
 	}
 	
 	template<typename T>
-	void getInteger(T& value) {
+	void get(T& value) {
 		int size;
 		int id = getEntry(size);
-		if(id == VNL_IO_INTEGER) {
+		switch(id) {
+		case VNL_IO_INTEGER:
 			switch(size) {
 				case VNL_IO_BYTE:  { int8_t tmp = 0; readChar(tmp); value = tmp; break; }
 				case VNL_IO_WORD:  { int16_t tmp = 0; readShort(tmp); value = tmp; break; }
@@ -59,22 +60,15 @@ public:
 				case VNL_IO_QWORD: { int64_t tmp = 0; readLong(tmp); value = tmp; break; }
 				default: copy_bytes(size, 0);
 			}
-		} else {
-			skip(id, size);
-		}
-	}
-	
-	template<typename T>
-	void getReal(T& value) {
-		int size;
-		int id = getEntry(size);
-		if(id == VNL_IO_REAL) {
+			break;
+		case VNL_IO_REAL:
 			switch(size) {
 				case VNL_IO_DWORD: { float tmp = 0; readFloat(tmp); value = tmp; break; }
 				case VNL_IO_QWORD: { double tmp = 0; readDouble(tmp); value = tmp; break; }
 				default: copy_bytes(size, 0);
 			}
-		} else {
+			break;
+		default:
 			skip(id, size);
 		}
 	}
@@ -154,8 +148,6 @@ public:
 				copy_array(size, dst);
 				break;
 			case VNL_IO_STRUCT:
-				copy_struct(size, dst);
-				break;
 			case VNL_IO_CLASS:
 				copy_struct(size, dst);
 				break;
@@ -165,6 +157,24 @@ public:
 			default:
 				err = true;
 		}
+	}
+	
+	bool inc_stack() {
+		if(stack < VNL_IO_MAX_RECURSION) {
+			stack++;
+			return true;
+		} else {
+			err = VNL_IO_STACK_OVERFLOW;
+			return false;
+		}
+	}
+	
+	void dec_stack() {
+		stack--;
+	}
+	
+	int get_stack() const {
+		return stack;
 	}
 	
 protected:
@@ -210,6 +220,8 @@ protected:
 			if(dst) {
 				dst->putHash(hash);
 			}
+		}
+		for(int i = 0; i < size && !error(); ++i) {
 			copy(dst);
 		}
 	}
@@ -230,6 +242,9 @@ protected:
 			copy(dst);
 		}
 	}
+	
+private:
+	int stack = 0;
 	
 };
 
@@ -280,7 +295,7 @@ void TypeInput::getArray(T* data, int dim, int size) {
 				}
 				break;
 			}
-			default: err = true;
+			default: err = VNL_IO_INVALID_SIZE;
 		}
 	} else if(id == VNL_IO_REAL) {
 		switch(size) {
@@ -300,7 +315,7 @@ void TypeInput::getArray(T* data, int dim, int size) {
 				}
 				break;
 			}
-			default: err = true;
+			default: err = VNL_IO_INVALID_SIZE;
 		}
 	} else {
 		num = 0;

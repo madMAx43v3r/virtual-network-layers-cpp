@@ -146,7 +146,7 @@ public:
 	Allocator() {}
 	
 	~Allocator() {
-		free_all();
+		clear();
 	}
 	
 	Allocator(const Allocator&) = delete;
@@ -159,7 +159,7 @@ public:
 	
 	template<typename T>
 	void* alloc() {
-		return malloc(sizeof(T));
+		return alloc(sizeof(T));
 	}
 	
 	void* alloc(int size) {
@@ -185,11 +185,6 @@ public:
 	}
 	
 	void clear() {
-		p_back = p_front;
-		pos = 0;
-	}
-	
-	void free_all() {
 		if(p_front) {
 			p_front->free_all();
 			p_front = 0;

@@ -20,16 +20,26 @@
 #define VNL_BLOCK_SIZE 256
 
 /*
- * How far memory is aligned
- */
-//#define VNL_MEMORY_ALIGN 16
-
-/*
- * Defining this will use new() instead of paged memory.
+ * Defining this will alloc/free paged memory every time.
  * Useful for valgrind debugging.
- * The memory allocated will not be deleted however.
  */
 //#define VNL_MEMORY_DEBUG true
+
+/*
+ * The maximum size of an element.
+ */
+#define VNL_IO_MAX_SIZE 2147483648
+
+/*
+ * The maximum number of fields in a struct or class.
+ */
+#define VNL_IO_MAX_NUM_FIELDS 128
+
+/*
+ * The maximum degree of struct and class nesting.
+ * Minimum stack size = VNL_IO_MAX_NUM_FIELDS * VNL_IO_MAX_RECURSION * 4
+ */
+#define VNL_IO_MAX_RECURSION 32
 
 /*
  * If we have boost coroutine >= version 1.56
