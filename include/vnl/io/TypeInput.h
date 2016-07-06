@@ -48,9 +48,7 @@ public:
 	}
 	
 	template<typename T>
-	void get(T& value) {
-		int size;
-		int id = getEntry(size);
+	void readValue(T& value, int id, int size) {
 		switch(id) {
 		case VNL_IO_INTEGER:
 			switch(size) {
@@ -71,6 +69,13 @@ public:
 		default:
 			skip(id, size);
 		}
+	}
+	
+	template<typename T>
+	void getValue(T& value) {
+		int size;
+		int id = getEntry(size);
+		readValue(value, id, size);
 	}
 	
 	template<typename T>
@@ -108,29 +113,36 @@ public:
 	}
 	
 	void skip(int id, int size) {
-		copy(id, size, 0);
+		copy(0, id, size);
+	}
+	
+	void skip(int id, int size, uint32_t hash) {
+		copy(0, id, size, hash);
 	}
 	
 	void copy(TypeOutput* dst) {
 		int size = 0;
 		int id = copy_entry(size, dst);
+		copy(dst, id, size);
+	}
+	
+	void copy(TypeOutput* dst, int id, int size) {
+		uint32_t hash = 0;
 		switch(id) {
 			case VNL_IO_CALL:
 			case VNL_IO_CONST_CALL:
 			case VNL_IO_CLASS:
-			case VNL_IO_INTERFACE: {
-				uint32_t hash = 0;
+			case VNL_IO_INTERFACE:
 				getHash(hash);
 				if(dst) {
 					dst->putHash(hash);
 				}
 				break;
-			}
 		}
-		copy(id, size, dst);
+		copy(dst, id, size, hash);
 	}
 	
-	void copy(int id, int size, TypeOutput* dst) {
+	void copy(TypeOutput* dst, int id, int size, uint32_t hash) {
 		switch(id) {
 			case VNL_IO_NULL: break;
 			case VNL_IO_BOOL: break;
@@ -155,7 +167,7 @@ public:
 				copy_interface(dst);
 				break;
 			default:
-				err = true;
+				err = VNL_IO_INVALID_ID;
 		}
 	}
 	
@@ -204,11 +216,11 @@ protected:
 	void copy_array(int size, TypeOutput* dst) {
 		int w = 0;
 		int id = copy_entry(w, dst);
-		if(id == VNL_IO_INTEGER || id == VNL_IO_REAL) {
+		if(id == VNL_IO_INTEGER || id == VNL_IO_REAL || id == VNL_IO_BOOL) {
 			copy_bytes(size*w, dst);
 		} else {
 			for(int i = 0; i < size; ++i) {
-				copy(id, w, dst);
+				copy(dst, id, w);
 			}
 		}
 	}
@@ -233,7 +245,7 @@ protected:
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 				break;
 			}
-			copy(id, size, dst);
+			copy(dst, id, size);
 		}
 	}
 	
@@ -316,6 +328,16 @@ void TypeInput::getArray(T* data, int dim, int size) {
 				break;
 			}
 			default: err = VNL_IO_INVALID_SIZE;
+		}
+	} else if(id == VNL_IO_BOOL) {
+		if(size == 1) {
+			int tmp = 0;
+			for(int i = 0; i < num && !error(); ++i) {
+				int check = getEntry(tmp);
+				data[i] = check == VNL_IO_BOOL && tmp == VNL_IO_TRUE;
+			}
+		} else {
+			err = VNL_IO_INVALID_SIZE;
 		}
 	} else {
 		num = 0;

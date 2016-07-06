@@ -20,6 +20,7 @@ namespace vnl {
  * This is a hash map.
  * Maximum pair size is 4080 bytes.
  * Memory overhead is minimum 2 pages + 16 bytes per element.
+ * Not recommended for more than 10000 elements.
  */
 template<typename K, typename V>
 class Map {

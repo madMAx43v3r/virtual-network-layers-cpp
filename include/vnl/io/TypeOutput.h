@@ -40,44 +40,44 @@ public:
 		putEntry(VNL_IO_BOOL, value ? VNL_IO_TRUE : VNL_IO_FALSE);
 	}
 	
-	void put(int8_t value) {
+	void putValue(int8_t value) {
 		putEntry(VNL_IO_INTEGER, VNL_IO_BYTE);
 		writeChar(value);
 	}
 	
-	void put(int16_t value) {
+	void putValue(int16_t value) {
 		if(value > -128 && value < 128) {
-			put((int8_t)value);
+			putValue((int8_t)value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_WORD);
 			writeShort(value);
 		}
 	}
 	
-	void put(int32_t value) {
+	void putValue(int32_t value) {
 		if(value > -32768 && value < 32768) {
-			put((int16_t)value);
+			putValue((int16_t)value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
 			writeInt(value);
 		}
 	}
 	
-	void put(int64_t value) {
+	void putValue(int64_t value) {
 		if(value > -2147483648 && value < 2147483648) {
-			put((int32_t)value);
+			putValue((int32_t)value);
 		} else {
 			putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
 			writeLong(value);
 		}
 	}
 	
-	void put(float value) {
+	void putValue(float value) {
 		putEntry(VNL_IO_REAL, VNL_IO_DWORD);
 		writeFloat(value);
 	}
 	
-	void put(double value) {
+	void putValue(double value) {
 		putEntry(VNL_IO_REAL, VNL_IO_QWORD);
 		writeDouble(value);
 	}
