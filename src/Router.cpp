@@ -17,12 +17,6 @@ Router::Router()
 {
 }
 
-Router::~Router() {
-	for(Row* row : table.values()) {
-		row->~List();
-	}
-}
-
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
@@ -35,14 +29,29 @@ bool Router::handle(Message* msg) {
 				pkt->src_addr.B = src->get_mac();
 			}
 		}
+		for(int i = 0; i < pkt->num_hops; ++i) {
+			if(pkt->route[i] == (uint32_t)mac) {
+				num_drop++;
+				num_cycle++;
+				msg->ack();
+				return true;
+			}
+		}
+		if(pkt->num_hops < VNL_MAX_ROUTE_LENGTH) {
+			pkt->route[pkt->num_hops++] = mac;
+		} else {
+			num_drop++;
+			msg->ack();
+			return true;
+		}
 		// direct match
 		route(pkt, src, table.find(pkt->dst_addr));
 		// domain match
 		uint64_t domain = pkt->dst_addr.A;
-		Row** prow = table.find(Address(domain, 0));
+		Row* prow = table.find(Address(domain, 0));
 		if(prow == 0) {
 			domains.push_back(domain);
-			table[Address(domain, 0)] = 0;
+			table[Address(domain, 0)] = Row();
 		}
 		route(pkt, src, prow);
 		if(!pkt->count) {
@@ -60,12 +69,9 @@ bool Router::handle(Message* msg) {
 }
 
 void Router::open(const Address& addr, Basic* src) {
-	Row*& row = table[addr];
-	if(!row) {
-		row = memory.create<Row>();
-	}
+	Row& row = table[addr];
 	Basic** pcol = 0;
-	for(Basic*& col : *row) {
+	for(Basic*& col : row) {
 		if(col == 0) {
 			pcol = &col;
 		} else if(col == src) {
@@ -76,12 +82,12 @@ void Router::open(const Address& addr, Basic* src) {
 	if(pcol) {
 		*pcol = src;
 	} else {
-		row->push_back(src);
+		row.push_back(src);
 	}
 }
 
 void Router::close(const Address& addr, Basic* src) {
-	Row* row = table[addr];
+	Row* row = table.find(addr);
 	if(row) {
 		for(Basic*& col : *row) {
 			if(col == src) {
@@ -91,9 +97,9 @@ void Router::close(const Address& addr, Basic* src) {
 	}
 }
 
-void Router::route(Packet* pkt, Basic* src, Row** prow) {
-	if(prow && *prow) {
-		for(Basic* dst : **prow) {
+void Router::route(Packet* pkt, Basic* src, Row* prow) {
+	if(prow) {
+		for(Basic* dst : *prow) {
 			if(dst && dst != src) {
 				forward(pkt, dst);
 			}

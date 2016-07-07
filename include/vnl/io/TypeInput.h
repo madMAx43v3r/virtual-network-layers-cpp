@@ -56,14 +56,14 @@ public:
 				case VNL_IO_WORD:  { int16_t tmp = 0; readShort(tmp); value = tmp; break; }
 				case VNL_IO_DWORD: { int32_t tmp = 0; readInt(tmp); value = tmp; break; }
 				case VNL_IO_QWORD: { int64_t tmp = 0; readLong(tmp); value = tmp; break; }
-				default: copy_bytes(size, 0);
+				default: set_error(VNL_IO_INVALID_SIZE);
 			}
 			break;
 		case VNL_IO_REAL:
 			switch(size) {
 				case VNL_IO_DWORD: { float tmp = 0; readFloat(tmp); value = tmp; break; }
 				case VNL_IO_QWORD: { double tmp = 0; readDouble(tmp); value = tmp; break; }
-				default: copy_bytes(size, 0);
+				default: set_error(VNL_IO_INVALID_SIZE);
 			}
 			break;
 		default:
@@ -76,6 +76,11 @@ public:
 		int size;
 		int id = getEntry(size);
 		readValue(value, id, size);
+	}
+	
+	template<typename T, int N>
+	void getArray(vnl::Vector<T, N>& vec) {
+		getArray(&vec[0], N);
 	}
 	
 	template<typename T>
@@ -167,26 +172,8 @@ public:
 				copy_interface(dst);
 				break;
 			default:
-				err = VNL_IO_INVALID_ID;
+				set_error(VNL_IO_INVALID_ID);
 		}
-	}
-	
-	bool inc_stack() {
-		if(stack < VNL_IO_MAX_RECURSION) {
-			stack++;
-			return true;
-		} else {
-			err = VNL_IO_STACK_OVERFLOW;
-			return false;
-		}
-	}
-	
-	void dec_stack() {
-		stack--;
-	}
-	
-	int get_stack() const {
-		return stack;
 	}
 	
 protected:
@@ -203,7 +190,7 @@ protected:
 	
 	void copy_bytes(int size, TypeOutput* dst) {
 		char buf[1024];
-		while(size > 0 && !error()) {
+		while(size > 0 && !err) {
 			int num = std::min(size, (int)sizeof(buf));
 			read(buf, num);
 			if(dst) {
@@ -219,27 +206,27 @@ protected:
 		if(id == VNL_IO_INTEGER || id == VNL_IO_REAL || id == VNL_IO_BOOL) {
 			copy_bytes(size*w, dst);
 		} else {
-			for(int i = 0; i < size; ++i) {
+			for(int i = 0; i < size && !err; ++i) {
 				copy(dst, id, w);
 			}
 		}
 	}
 	
 	void copy_struct(int size, TypeOutput* dst) {
-		for(int i = 0; i < size && !error(); ++i) {
+		for(int i = 0; i < size && !err; ++i) {
 			uint32_t hash = 0;
 			getHash(hash);
 			if(dst) {
 				dst->putHash(hash);
 			}
 		}
-		for(int i = 0; i < size && !error(); ++i) {
+		for(int i = 0; i < size && !err; ++i) {
 			copy(dst);
 		}
 	}
 	
 	void copy_interface(TypeOutput* dst) {
-		while(!error()) {
+		while(!err) {
 			int size = 0;
 			int id = copy_entry(size, dst);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
@@ -250,13 +237,10 @@ protected:
 	}
 	
 	void copy_call(int size, TypeOutput* dst) {
-		for(int i = 0; i < size && !error(); ++i) {
+		for(int i = 0; i < size && !err; ++i) {
 			copy(dst);
 		}
 	}
-	
-private:
-	int stack = 0;
 	
 };
 
@@ -266,14 +250,15 @@ void TypeInput::getArray(T* data, int dim, int size) {
 	int org = size;
 	int num = std::min(size, dim);
 	int id = getEntry(size);
-	if(id == VNL_IO_INTEGER) {
+	switch(id) {
+	case VNL_IO_INTEGER:
 		switch(size) {
 			case VNL_IO_BYTE:
 				if(sizeof(T) == 1) {
 					read(data, num);
 				} else {
 					int8_t tmp = 0;
-					for(int i = 0; i < num && !error(); ++i) {
+					for(int i = 0; i < num && !err; ++i) {
 						readChar(tmp);
 						data[i] = tmp;
 					}
@@ -285,7 +270,7 @@ void TypeInput::getArray(T* data, int dim, int size) {
 				break;
 			case VNL_IO_WORD: {
 				int16_t tmp = 0;
-				for(int i = 0; i < num && !error(); ++i) {
+				for(int i = 0; i < num && !err; ++i) {
 					readShort(tmp);
 					data[i] = tmp;
 				}
@@ -293,7 +278,7 @@ void TypeInput::getArray(T* data, int dim, int size) {
 			}
 			case VNL_IO_DWORD: {
 				int32_t tmp = 0;
-				for(int i = 0; i < num && !error(); ++i) {
+				for(int i = 0; i < num && !err; ++i) {
 					readInt(tmp);
 					data[i] = tmp;
 				}
@@ -301,19 +286,20 @@ void TypeInput::getArray(T* data, int dim, int size) {
 			}
 			case VNL_IO_QWORD: {
 				int64_t tmp = 0;
-				for(int i = 0; i < num && !error(); ++i) {
+				for(int i = 0; i < num && !err; ++i) {
 					readLong(tmp);
 					data[i] = tmp;
 				}
 				break;
 			}
-			default: err = VNL_IO_INVALID_SIZE;
+			default: set_error(VNL_IO_INVALID_SIZE);
 		}
-	} else if(id == VNL_IO_REAL) {
+		break;
+	case VNL_IO_REAL:
 		switch(size) {
 			case VNL_IO_DWORD: {
 				float tmp = 0;
-				for(int i = 0; i < num && !error(); ++i) {
+				for(int i = 0; i < num && !err; ++i) {
 					readFloat(tmp);
 					data[i] = tmp;
 				}
@@ -321,29 +307,33 @@ void TypeInput::getArray(T* data, int dim, int size) {
 			}
 			case VNL_IO_QWORD: {
 				double tmp = 0;
-				for(int i = 0; i < num && !error(); ++i) {
+				for(int i = 0; i < num && !err; ++i) {
 					readDouble(tmp);
 					data[i] = tmp;
 				}
 				break;
 			}
-			default: err = VNL_IO_INVALID_SIZE;
+			default: set_error(VNL_IO_INVALID_SIZE);
 		}
-	} else if(id == VNL_IO_BOOL) {
+		break;
+	case VNL_IO_BOOL:
 		if(size == 1) {
 			int tmp = 0;
-			for(int i = 0; i < num && !error(); ++i) {
+			for(int i = 0; i < num && !err; ++i) {
 				int check = getEntry(tmp);
 				data[i] = check == VNL_IO_BOOL && tmp == VNL_IO_TRUE;
 			}
 		} else {
-			err = VNL_IO_INVALID_SIZE;
+			set_error(VNL_IO_INVALID_SIZE);
 		}
-	} else {
-		num = 0;
+		break;
+	default:
+		set_error(VNL_IO_INVALID_ID);
 	}
-	for(int i = num; i < org; ++i) {
-		skip(id, size);
+	if(!err) {
+		for(int i = num; i < org; ++i) {
+			skip(id, size);
+		}
 	}
 }
 

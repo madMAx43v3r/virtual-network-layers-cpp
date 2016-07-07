@@ -32,7 +32,7 @@ public:
 			if(!left) {
 				left = in->read(buf->mem, Page::size);
 				if(left <= 0) {
-					err = VNL_IO_ERROR;
+					set_error(VNL_IO_ERROR);
 					return;
 				}
 				pos = 0;
@@ -46,14 +46,23 @@ public:
 		return;
 	}
 	
-	bool error() {
+	int error() const {
 		return err;
+	}
+	
+	void set_error(int err_) {
+		err = err_;
+#ifdef VNL_IO_DEBUG
+		assert(err == VNL_IO_SUCCESS);
+#endif
 	}
 	
 protected:
 	InputStream* in = 0;
 	Page* buf;
 	int pos = 0;
+	
+private:
 	int err = 0;
 	
 };
@@ -74,7 +83,7 @@ public:
 			int left = Page::size - pos;
 			if(!left) {
 				if(!flush()) {
-					err = VNL_IO_ERROR;
+					set_error(VNL_IO_ERROR);
 					return;
 				}
 			}
@@ -93,14 +102,20 @@ public:
 		return res;
 	}
 	
-	bool error() {
+	int error() const {
 		return err;
+	}
+	
+	void set_error(int err_) {
+		err = err_;
 	}
 	
 protected:
 	OutputStream* out = 0;
 	Page* buf;
 	int pos = 0;
+	
+private:
 	int err = 0;
 	
 };

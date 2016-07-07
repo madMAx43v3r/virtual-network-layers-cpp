@@ -23,12 +23,14 @@ public:
 	static Router* instance;
 	
 	Router();
-	~Router();
 	
 	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;
 	
 	typedef MessageType<Array<uint64_t>, 0x65ec22d9> get_domain_list_t;
+	
+	uint64_t num_drop = 0;
+	uint64_t num_cycle = 0;
 	
 protected:
 	typedef List<Basic*> Row;
@@ -38,7 +40,7 @@ protected:
 	void open(const Address& addr, Basic* src);
 	void close(const Address& addr, Basic* src);
 	
-	void route(Packet* packet, Basic* src, Row** prow);
+	void route(Packet* packet, Basic* src, Row* prow);
 	void forward(Packet* org, Basic* dst);
 	
 	void callback(Message* msg);
@@ -47,7 +49,7 @@ protected:
 	MessageBuffer buffer;
 	
 private:
-	Map<Address, Row*> table;
+	Map<Address, Row> table;
 	Array<uint64_t> domains;
 	std::function<void(Message*)> cb_func;
 	

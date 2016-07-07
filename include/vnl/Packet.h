@@ -28,22 +28,44 @@ public:
 	uint32_t pkt_id;
 	Address src_addr;
 	Address dst_addr;
-	void* payload = 0;
+	void* payload;
 	
-	Packet(uint32_t pid) : Message(MID), pkt_id(pid) {}
+	int16_t num_hops;
+	uint32_t route[VNL_MAX_ROUTE_LENGTH];
+	
+	Packet(uint32_t pid)
+		:	Message(MID), pkt_id(pid), num_hops(0), payload(0) {}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
+		out.writeShort(16+16+2 + num_hops*4);
 		src_addr.serialize(out);
 		dst_addr.serialize(out);
+		out.writeShort(num_hops);
+		for(Address& addr : route) {
+			addr.serialize(out);
+		}
 		write(out);
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
+		int16_t header = 0;
+		in.readShort(header);
 		src_addr.deserialize(in, 0);
 		dst_addr.deserialize(in, 0);
+		in.readShort(num_hops);
+		num_hops = std::min(num_hops, (int16_t)VNL_MAX_ROUTE_LENGTH);
+		for(int i = 0; i < num_hops && !in.error(); ++i) {
+			int32_t hash = 0;
+			in.readInt(hash);
+			route[i] = hash;
+		}
+		int left = header - (16+16+2 + num_hops*4);
+		if(left > 0) {
+			in.skip(VNL_IO_BINARY, left);
+		}
 		while(!in.error()) {
 			int id = in.getEntry(size);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {

@@ -23,7 +23,17 @@
  * Defining this will alloc/free paged memory every time.
  * Useful for valgrind debugging.
  */
-//#define VNL_MEMORY_DEBUG true
+//#define VNL_MEMORY_DEBUG
+
+/*
+ * Defining this will assert on IO errors.
+ */
+#define VNL_IO_DEBUG
+
+/*
+ * The maximum number of hops a packet can travel.
+ */
+#define VNL_MAX_ROUTE_LENGTH 16
 
 /*
  * The maximum size of an element.
@@ -31,15 +41,9 @@
 #define VNL_IO_MAX_SIZE 2147483648
 
 /*
- * The maximum number of fields in a struct or class.
- */
-#define VNL_IO_MAX_NUM_FIELDS 128
-
-/*
  * The maximum degree of struct and class nesting.
- * Minimum stack size = VNL_IO_MAX_NUM_FIELDS * VNL_IO_MAX_RECURSION * 4
  */
-#define VNL_IO_MAX_RECURSION 32
+#define VNL_IO_MAX_RECURSION 256
 
 /*
  * If we have boost coroutine >= version 1.56

@@ -10,6 +10,7 @@
 
 #include <vnl/io/ByteOutput.h>
 #include <vnl/io/TypeStream.h>
+#include <vnl/Vector.h>
 
 
 namespace vnl { namespace io {
@@ -80,6 +81,11 @@ public:
 	void putValue(double value) {
 		putEntry(VNL_IO_REAL, VNL_IO_QWORD);
 		writeDouble(value);
+	}
+	
+	template<typename T, int N>
+	void putArray(const vnl::Vector<T, N>& vec) {
+		putArray(&vec[0], N);
 	}
 	
 	template<typename T>

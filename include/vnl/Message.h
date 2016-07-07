@@ -13,7 +13,7 @@
 #include <sstream>
 #include <functional>
 
-#include "vnl/RingBuffer.h"
+#include <vnl/RingBuffer.h>
 
 #define VNL_MSG(type, hash) typedef vnl::MessageType<type, hash> msg_t;
 

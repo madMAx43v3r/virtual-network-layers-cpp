@@ -8,15 +8,14 @@
 #ifndef INCLUDE_PHY_OBJECT_H_
 #define INCLUDE_PHY_OBJECT_H_
 
-#include <functional>
-
-#include "vnl/Engine.h"
-#include "vnl/Stream.h"
-#include "vnl/Reference.h"
-#include "vnl/RingBuffer.h"
-#include "vnl/Pool.h"
-#include "vnl/Timer.h"
-#include "vnl/String.h"
+#include <vnl/Engine.h>
+#include <vnl/Stream.h>
+#include <vnl/Reference.h>
+#include <vnl/RingBuffer.h>
+#include <vnl/Pool.h>
+#include <vnl/Timer.h>
+#include <vnl/String.h>
+#include <vnl/Packet.h>
 
 
 namespace vnl {
@@ -108,9 +107,9 @@ protected:
 	bool sleep(int64_t secs);
 	bool usleep(int64_t micros);
 	
-	void run();
-	
 	void die();
+	
+	virtual void run();
 	
 	virtual bool handle(Message* msg) {
 		if(msg->msg_id == Packet::MID) {

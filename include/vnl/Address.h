@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <ostream>
 
-#include <vnl/Util.h>
+#include <vnl/Hash.h>
 #include <vnl/io.h>
 
 
@@ -28,7 +28,7 @@ public:
 		B = 0;
 	}
 	
-	Address(uint64_t A_, uint64_t B_) {
+	Address(Hash64 A_, Hash64 B_) {
 		A = A_;
 		B = B_;
 	}
