@@ -75,6 +75,21 @@ private:
 };
 
 
+inline void send(Message* msg, Hash64 mac) {
+	Actor actor;
+	Registry::connect_t connect(mac);
+	actor.send(&connect, Registry::instance);
+	actor.send(msg, connect.res);
+	Registry::close_t close(connect.res);
+	actor.send(&close, Registry::instance);
+}
+
+inline void ping(Hash64 mac) {
+	Message msg;
+	send(&msg, mac);
+}
+
+
 }
 
 #endif /* INCLUDE_PHY_REGISTRY_H_ */
