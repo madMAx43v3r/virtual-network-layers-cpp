@@ -37,19 +37,12 @@ public:
 		hash = tmp;
 	}
 	
-	void getBool(bool& value) {
-		int size;
-		int id = getEntry(size);
-		if(id == VNL_IO_BOOL) {
-			value = size == VNL_IO_TRUE;
-		} else {
-			skip(id, size);
-		}
-	}
-	
 	template<typename T>
 	void readValue(T& value, int id, int size) {
 		switch(id) {
+		case VNL_IO_BOOL:
+			value = size == VNL_IO_TRUE;
+			break;
 		case VNL_IO_INTEGER:
 			switch(size) {
 				case VNL_IO_BYTE:  { int8_t tmp = 0; readChar(tmp); value = tmp; break; }
@@ -178,7 +171,16 @@ public:
 	
 protected:
 	template<typename T>
-	void getArray(T* data, int dim, int size);
+	void getArray(T* data, int dim, int size) {
+		int org = size;
+		int num = std::min(size, dim);
+		for(int i = 0; i < num && !error(); ++i) {
+			getValue(data[i]);
+		}
+		for(int i = num; i < org && !error(); ++i) {
+			skip();
+		}
+	}
 	
 	int copy_entry(int& size, TypeOutput* dst) {
 		int id = getEntry(size);
@@ -190,7 +192,7 @@ protected:
 	
 	void copy_bytes(int size, TypeOutput* dst) {
 		char buf[1024];
-		while(size > 0 && !err) {
+		while(size > 0 && !error()) {
 			int num = std::min(size, (int)sizeof(buf));
 			read(buf, num);
 			if(dst) {
@@ -201,32 +203,24 @@ protected:
 	}
 	
 	void copy_array(int size, TypeOutput* dst) {
-		int w = 0;
-		int id = copy_entry(w, dst);
-		if(id == VNL_IO_INTEGER || id == VNL_IO_REAL || id == VNL_IO_BOOL) {
-			copy_bytes(size*w, dst);
-		} else {
-			for(int i = 0; i < size && !err; ++i) {
-				copy(dst, id, w);
-			}
+		for(int i = 0; i < size && !error(); ++i) {
+			copy(dst);
 		}
 	}
 	
 	void copy_struct(int size, TypeOutput* dst) {
-		for(int i = 0; i < size && !err; ++i) {
+		for(int i = 0; i < size && !error(); ++i) {
 			uint32_t hash = 0;
 			getHash(hash);
 			if(dst) {
 				dst->putHash(hash);
 			}
-		}
-		for(int i = 0; i < size && !err; ++i) {
 			copy(dst);
 		}
 	}
 	
 	void copy_interface(TypeOutput* dst) {
-		while(!err) {
+		while(!error()) {
 			int size = 0;
 			int id = copy_entry(size, dst);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
@@ -237,105 +231,12 @@ protected:
 	}
 	
 	void copy_call(int size, TypeOutput* dst) {
-		for(int i = 0; i < size && !err; ++i) {
+		for(int i = 0; i < size && !error(); ++i) {
 			copy(dst);
 		}
 	}
 	
 };
-
-
-template<typename T>
-void TypeInput::getArray(T* data, int dim, int size) {
-	int org = size;
-	int num = std::min(size, dim);
-	int id = getEntry(size);
-	switch(id) {
-	case VNL_IO_INTEGER:
-		switch(size) {
-			case VNL_IO_BYTE:
-				if(sizeof(T) == 1) {
-					read(data, num);
-				} else {
-					int8_t tmp = 0;
-					for(int i = 0; i < num && !err; ++i) {
-						readChar(tmp);
-						data[i] = tmp;
-					}
-				}
-				if(num < org) {
-					copy_bytes(org-num, 0);
-					num = org;
-				}
-				break;
-			case VNL_IO_WORD: {
-				int16_t tmp = 0;
-				for(int i = 0; i < num && !err; ++i) {
-					readShort(tmp);
-					data[i] = tmp;
-				}
-				break;
-			}
-			case VNL_IO_DWORD: {
-				int32_t tmp = 0;
-				for(int i = 0; i < num && !err; ++i) {
-					readInt(tmp);
-					data[i] = tmp;
-				}
-				break;
-			}
-			case VNL_IO_QWORD: {
-				int64_t tmp = 0;
-				for(int i = 0; i < num && !err; ++i) {
-					readLong(tmp);
-					data[i] = tmp;
-				}
-				break;
-			}
-			default: set_error(VNL_IO_INVALID_SIZE);
-		}
-		break;
-	case VNL_IO_REAL:
-		switch(size) {
-			case VNL_IO_DWORD: {
-				float tmp = 0;
-				for(int i = 0; i < num && !err; ++i) {
-					readFloat(tmp);
-					data[i] = tmp;
-				}
-				break;
-			}
-			case VNL_IO_QWORD: {
-				double tmp = 0;
-				for(int i = 0; i < num && !err; ++i) {
-					readDouble(tmp);
-					data[i] = tmp;
-				}
-				break;
-			}
-			default: set_error(VNL_IO_INVALID_SIZE);
-		}
-		break;
-	case VNL_IO_BOOL:
-		if(size == 1) {
-			int tmp = 0;
-			for(int i = 0; i < num && !err; ++i) {
-				int check = getEntry(tmp);
-				data[i] = check == VNL_IO_BOOL && tmp == VNL_IO_TRUE;
-			}
-		} else {
-			set_error(VNL_IO_INVALID_SIZE);
-		}
-		break;
-	default:
-		set_error(VNL_IO_INVALID_ID);
-	}
-	if(!err) {
-		for(int i = num; i < org; ++i) {
-			skip(id, size);
-		}
-	}
-}
 
 
 

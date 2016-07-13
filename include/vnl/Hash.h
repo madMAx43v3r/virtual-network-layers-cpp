@@ -8,6 +8,8 @@
 #ifndef INCLUDE_VNL_HASH_H_
 #define INCLUDE_VNL_HASH_H_
 
+#include <string>
+#include <functional>
 #include <vnl/Util.h>
 
 
@@ -48,6 +50,22 @@ public:
 	uint64_t value;
 	
 };
+
+
+namespace std {
+	template<>
+	struct hash<vnl::Hash32> {
+		size_t operator()(const vnl::Hash32& x) const {
+			return x;
+		}
+	};
+	template<>
+	struct hash<vnl::Hash64> {
+		size_t operator()(const vnl::Hash64& x) const {
+			return x;
+		}
+	};
+}
 
 
 }

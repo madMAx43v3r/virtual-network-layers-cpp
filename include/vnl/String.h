@@ -313,7 +313,16 @@ private:
 };
 
 
-
 } // vnl
+
+namespace std {
+	template<>
+	struct hash<vnl::String> {
+		size_t operator()(const vnl::String& str) const {
+			return vnl::hash64(str);
+		}
+	};
+}
+
 
 #endif /* INCLUDE_PHY_STRING_H_ */
