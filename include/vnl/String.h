@@ -14,7 +14,7 @@
 #include <sstream>
 #include <mutex>
 
-#include "vnl/Memory.h"
+#include <vnl/Memory.h>
 
 
 namespace vnl {
@@ -187,15 +187,20 @@ public:
 			chunk = chunk->next_chunk();
 		}
 		p_back = p_front;
-		count = 0;
 	}
 	
 	int size() const {
+		int count = 0;
+		chunk_t* chunk = p_front;
+		while(chunk) {
+			count += chunk->len();
+			chunk = chunk->next_chunk();
+		}
 		return count;
 	}
 	
 	bool empty() const {
-		return count == 0;
+		return p_back == p_front && p_front->len() == 0;
 	}
 	
 	chunk_t* front() const {
@@ -209,7 +214,6 @@ public:
 private:
 	chunk_t* p_front = 0;
 	chunk_t* p_back = 0;
-	int count = 0;
 	
 };
 
@@ -268,23 +272,6 @@ public:
 	virtual void write(const String& str) = 0;
 };
 
-class StringStream : public StringOutput {
-public:
-	StringStream(std::ostream& stream) : stream(stream) {}
-	virtual void write(const String& str) {
-		mutex.lock();
-		stream << str;
-		mutex.unlock();
-	}
-private:
-	std::ostream& stream;
-	std::mutex mutex;
-};
-
-extern StringStream cout;
-extern StringStream cerr;
-
-
 class StringWriter {
 public:
 	StringWriter() : func(nullptr) {}
@@ -301,16 +288,6 @@ public:
 	String out;
 };
 
-
-class Module;
-
-class GlobalLogWriter : public StringOutput {
-public:
-	GlobalLogWriter(Module* node) : node(node) {}
-	virtual void write(const String& str);
-private:
-	Module* node;
-};
 
 
 } // vnl

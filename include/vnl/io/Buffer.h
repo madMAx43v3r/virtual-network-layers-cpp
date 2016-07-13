@@ -9,6 +9,7 @@
 #define INCLUDE_IO_BUFFER_H_
 
 #include <string.h>
+#include <algorithm>
 #include <vnl/Memory.h>
 #include <vnl/io/Error.h>
 #include <vnl/io/Stream.h>
@@ -26,16 +27,25 @@ public:
 		buf->free();
 	}
 	
+	char read() {
+		int left = Page::size - pos;
+		if(!left) {
+			left = fetch();
+			if(left <= 0) {
+				return 0;
+			}
+		}
+		return buf->mem[pos++];
+	}
+	
 	void read(void* dst, int len) {
 		while(len) {
 			int left = Page::size - pos;
 			if(!left) {
-				left = in->read(buf->mem, Page::size);
+				left = fetch();
 				if(left <= 0) {
-					set_error(VNL_IO_ERROR);
 					return;
 				}
-				pos = 0;
 			}
 			int n = std::min(len, left);
 			memcpy(dst, buf->mem + pos, n);
@@ -58,6 +68,17 @@ public:
 	}
 	
 protected:
+	int fetch() {
+		int n = in->read(buf->mem, Page::size);
+		if(n <= 0) {
+			set_error(VNL_IO_ERROR);
+			return err;
+		}
+		pos = 0;
+		return n;
+	}
+	
+protected:
 	InputStream* in = 0;
 	Page* buf;
 	int pos = 0;
@@ -76,6 +97,10 @@ public:
 	
 	~OutputBuffer() {
 		buf->free();
+	}
+	
+	void write(char c) {
+		// TODO
 	}
 	
 	void write(const void* src, int len) {
@@ -108,6 +133,9 @@ public:
 	
 	void set_error(int err_) {
 		err = err_;
+#ifdef VNL_IO_DEBUG
+		assert(err == VNL_IO_SUCCESS);
+#endif
 	}
 	
 protected:

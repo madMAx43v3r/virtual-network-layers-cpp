@@ -139,6 +139,14 @@ private:
 };
 
 
+class GlobalLogWriter : public StringOutput {
+public:
+	GlobalLogWriter(Module* node) : node(node) {}
+	virtual void write(const String& str);
+private:
+	Module* node;
+};
+
 
 
 }
