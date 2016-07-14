@@ -11,7 +11,7 @@
 #include <utility>
 #include <string.h>
 
-#include "Array.h"
+#include <vnl/Array.h>
 
 
 namespace vnl {
@@ -26,7 +26,7 @@ template<typename K, typename V>
 class Map {
 public:
 	Map() {
-		resize(512);
+		Map::resize((int)Page::size/sizeof(void*));
 	}
 	
 	Map(const Map& other) {
@@ -209,7 +209,7 @@ protected:
 		return false;
 	}
 	
-	PageAlloc mem;
+	PageAllocator mem;
 	
 private:
 	Array<entry_t*> table;

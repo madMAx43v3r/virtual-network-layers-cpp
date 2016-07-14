@@ -26,6 +26,7 @@ public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	
 	uint32_t pkt_id;
+	uint32_t seq_num;
 	Address src_addr;
 	Address dst_addr;
 	void* payload;
@@ -33,18 +34,19 @@ public:
 	int16_t num_hops;
 	uint32_t route[VNL_MAX_ROUTE_LENGTH];
 	
-	Packet(uint32_t pid)
-		:	Message(MID), pkt_id(pid), num_hops(0), payload(0) {}
+	Packet()
+		:	Message(MID), pkt_id(0), seq_num(0), num_hops(0), payload(0) {}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
-		out.writeShort(16+16+2 + num_hops*4);
+		out.writeShort(4+16+16+2 + num_hops*4);
+		out.writeInt(seq_num);
 		src_addr.serialize(out);
 		dst_addr.serialize(out);
 		out.writeShort(num_hops);
-		for(Address& addr : route) {
-			addr.serialize(out);
+		for(int i = 0; i < num_hops && !out.error(); ++i) {
+			out.writeInt(route[i]);
 		}
 		write(out);
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
@@ -53,6 +55,7 @@ public:
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
 		int16_t header = 0;
 		in.readShort(header);
+		in.readInt(seq_num);
 		src_addr.deserialize(in, 0);
 		dst_addr.deserialize(in, 0);
 		in.readShort(num_hops);
@@ -62,7 +65,7 @@ public:
 			in.readInt(hash);
 			route[i] = hash;
 		}
-		int left = header - (16+16+2 + num_hops*4);
+		int left = header - (4+16+16+2 + num_hops*4);
 		if(left > 0) {
 			in.skip(VNL_IO_BINARY, left);
 		}
@@ -97,11 +100,13 @@ private:
 template<typename T, uint32_t PID_>
 class PacketType : public Packet {
 public:
-	PacketType() : Packet(PID_) {
+	PacketType() : Packet() {
+		pkt_id = PID_;
 		payload = &data;
 	}
 	
-	PacketType(const T& data_) : Packet(PID_), data(data_) {
+	PacketType(const T& data_) : Packet(), data(data_) {
+		pkt_id = PID_;
 		payload = &data;
 	}
 	

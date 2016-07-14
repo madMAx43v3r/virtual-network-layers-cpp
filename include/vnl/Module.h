@@ -11,7 +11,6 @@
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Reference.h>
-#include <vnl/RingBuffer.h>
 #include <vnl/Pool.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
@@ -124,8 +123,8 @@ protected:
 	virtual void main(Engine* engine) = 0;
 	
 protected:
-	PageAlloc memory;
-	MessageBuffer buffer;
+	PageAllocator memory;
+	MessagePool buffer;
 	
 private:
 	void exec(Engine* engine);
@@ -149,6 +148,21 @@ private:
 	template<typename T> friend class Reference;
 	
 };
+
+
+inline void send(Message* msg, Hash64 mac) {
+	Actor actor;
+	Registry::connect_t connect(mac);
+	actor.send(&connect, Registry::instance);
+	actor.send(msg, connect.res);
+	Registry::close_t close(connect.res);
+	actor.send(&close, Registry::instance);
+}
+
+inline void ping(Hash64 mac) {
+	Message msg;
+	send(&msg, mac);
+}
 
 
 class Receiver {

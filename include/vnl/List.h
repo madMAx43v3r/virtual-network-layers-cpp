@@ -19,6 +19,11 @@ namespace vnl {
 template<typename T>
 class List : public Queue<T> {
 public:
+	
+	T& push_back() {
+		return push_back(T());
+	}
+	
 	T& push_back(const T& obj) {
 		return Queue<T>::push(obj);
 	}

@@ -200,8 +200,8 @@ private:
 	
 };
 
-typedef Allocator<Page> PageAlloc;
-typedef Allocator<Block> BlockAlloc;
+typedef Allocator<Page> PageAllocator;
+typedef Allocator<Block> BlockAllocator;
 
 
 }

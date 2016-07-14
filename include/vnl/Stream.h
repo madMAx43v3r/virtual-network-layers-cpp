@@ -26,6 +26,10 @@ public:
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
+	~Stream() {
+		
+	}
+	
 	void connect(Engine* engine_) {
 		engine = engine_;
 		mac = engine->rand();
@@ -79,10 +83,6 @@ public:
 		engine->flush();
 	}
 	
-	void listen(Basic* dst) {
-		listener = dst;
-	}
-	
 	Message* poll() {
 		return poll(-1);
 	}
@@ -99,16 +99,11 @@ public:
 	
 	void push(Message* msg) {
 		queue.push(msg);
-		if(listener) {
-			send_async(engine->buffer.create<signal_t>(), listener);
-			listener = 0;
-		}
 	}
 	
 private:
 	Engine* engine;
 	Queue<Message*> queue;
-	Basic* listener = 0;
 	
 	friend class Engine;
 	

@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "vnl/Memory.h"
+#include <vnl/Memory.h>
 
 
 namespace vnl {
@@ -44,6 +44,10 @@ public:
 		for(auto iter = other.begin(); iter != other.end(); ++iter) {
 			push_back(*iter);
 		}
+	}
+	
+	T& push_back() {
+		return push_back(T());
 	}
 	
 	T& push_back(const T& obj) {

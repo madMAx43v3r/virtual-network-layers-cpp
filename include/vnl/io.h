@@ -8,11 +8,11 @@
 #ifndef INCLUDE_VNL_IO_H_
 #define INCLUDE_VNL_IO_H_
 
-#include "vnl/io/Buffer.h"
-#include "vnl/io/ByteBuffer.h"
-#include "vnl/io/TypeInput.h"
-#include "vnl/io/TypeOutput.h"
-#include "vnl/io/Serializable.h"
+#include <vnl/io/StreamBuffer.h>
+#include <vnl/io/ByteBuffer.h>
+#include <vnl/io/TypeInput.h>
+#include <vnl/io/TypeOutput.h>
+#include <vnl/io/Serializable.h>
 
 
 namespace vnl { namespace io {

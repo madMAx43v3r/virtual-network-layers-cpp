@@ -9,11 +9,11 @@
 #define INCLUDE_PHY_ROUTER_H_
 
 #include <vnl/Basic.h>
-#include <vnl/RingBuffer.h>
 #include <vnl/Packet.h>
 #include <vnl/Map.h>
 #include <vnl/List.h>
 #include <vnl/Address.h>
+#include <vnl/Pool.h>
 
 
 namespace vnl {
@@ -45,8 +45,8 @@ protected:
 	
 	void callback(Message* msg);
 	
-	PageAlloc memory;
-	MessageBuffer buffer;
+	PageAllocator memory;
+	MessagePool buffer;
 	
 private:
 	Map<Address, Row> table;

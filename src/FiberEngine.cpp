@@ -229,19 +229,19 @@ int FiberEngine::timeout() {
 }
 
 
-class FiberServer : public Node {
+class FiberServer : public Module {
 public:
 	static FiberServer* instance;
 	
 	typedef MessageType<Module*, 0xede39599> fork_t;
 	
 protected:
-	virtual void main(Engine* engine) override {
-		this->engine = engine;
+	virtual void main(Engine* engine_) {
+		engine = engine_;
 		run();
 	}
 	
-	virtual bool handle(Message* msg) override {
+	virtual bool handle(Message* msg) {
 		if(msg->msg_id == fork_t::MID) {
 			engine->fork(((fork_t*)msg)->data);
 		}
@@ -259,7 +259,7 @@ FiberServer* FiberServer::instance = 0;
 void fork(Module* object) {
 	if(!FiberServer::instance) {
 		FiberServer::instance = new FiberServer();
-		FiberEngine::spawn(FiberServer::instance);
+		vnl::spawn(FiberServer::instance);
 	}
 	Actor actor;
 	FiberServer::fork_t fork(object);

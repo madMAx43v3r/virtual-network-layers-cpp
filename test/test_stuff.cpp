@@ -25,7 +25,6 @@
 #include "vnl/Algorithm.h"
 
 #include "../src/CRC64.cpp"
-#include "../src/String.cpp"
 
 int main() {
 	

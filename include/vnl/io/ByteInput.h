@@ -9,7 +9,7 @@
 #define INCLUDE_IO_BYTEINPUT_H_
 
 #include <vnl/util/types.h>
-#include <vnl/io/Buffer.h>
+#include <vnl/io/Stream.h>
 #include <vnl/String.h>
 
 
@@ -22,8 +22,16 @@ public:
 	void readChar(int8_t& value) {
 		read_type(value);
 	}
+	void readChar(uint8_t& value) {
+		read_type(value);
+	}
 	
 	void readShort(int16_t& value) {
+		uint16_t tmp;
+		read_type(tmp);
+		value = vnl_ntohs(tmp);
+	}
+	void readShort(uint16_t& value) {
 		uint16_t tmp;
 		read_type(tmp);
 		value = vnl_ntohs(tmp);
@@ -34,8 +42,18 @@ public:
 		read_type(tmp);
 		value = vnl_ntohl(tmp);
 	}
+	void readInt(uint32_t& value) {
+		uint32_t tmp;
+		read_type(tmp);
+		value = vnl_ntohl(tmp);
+	}
 	
 	void readLong(int64_t& value) {
+		uint64_t tmp;
+		read_type(tmp);
+		value = vnl_ntohll(tmp);
+	}
+	void readLong(uint64_t& value) {
 		uint64_t tmp;
 		read_type(tmp);
 		value = vnl_ntohll(tmp);

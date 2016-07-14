@@ -48,10 +48,10 @@ bool Router::handle(Message* msg) {
 		route(pkt, src, table.find(pkt->dst_addr));
 		// domain match
 		uint64_t domain = pkt->dst_addr.A;
-		Row* prow = table.find(Address(domain, 0));
+		Row* prow = table.find(Address(domain, (uint64_t)0));
 		if(prow == 0) {
 			domains.push_back(domain);
-			table[Address(domain, 0)] = Row();
+			table[Address(domain, (uint64_t)0)] = Row();
 		}
 		route(pkt, src, prow);
 		if(!pkt->count) {
@@ -109,7 +109,8 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 
 void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
-	Packet* msg = buffer.create<Packet>(org->pkt_id);
+	Packet* msg = buffer.create<Packet>();
+	msg->pkt_id = org->pkt_id;
 	msg->parent = org;
 	msg->src_addr = org->src_addr;
 	msg->dst_addr = org->dst_addr;

@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_IO_BUFFER_H_
-#define INCLUDE_IO_BUFFER_H_
+#ifndef INCLUDE_IO_STREAMBUFFER_H_
+#define INCLUDE_IO_STREAMBUFFER_H_
 
 #include <string.h>
 #include <algorithm>
@@ -47,7 +47,7 @@ public:
 					return;
 				}
 			}
-			int n = std::min(len, left);
+			int n = ::std::min(len, left);
 			memcpy(dst, buf->mem + pos, n);
 			dst = (char*)dst + n;
 			len -= n;
@@ -108,7 +108,6 @@ public:
 			int left = Page::size - pos;
 			if(!left) {
 				if(!flush()) {
-					set_error(VNL_IO_ERROR);
 					return;
 				}
 			}
@@ -122,9 +121,14 @@ public:
 	}
 	
 	bool flush() {
-		bool res = out->write(buf->mem, pos);
-		pos = 0;
-		return res;
+		if(pos) {
+			if(!out->write(buf->mem, pos)) {
+				set_error(VNL_IO_ERROR);
+				return false;
+			}
+			pos = 0;
+		}
+		return true;
 	}
 	
 	int error() const {
@@ -151,4 +155,4 @@ private:
 
 }}
 
-#endif /* INCLUDE_IO_BUFFER_H_ */
+#endif /* INCLUDE_IO_STREAMBUFFER_H_ */

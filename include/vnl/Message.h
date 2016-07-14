@@ -13,7 +13,7 @@
 #include <sstream>
 #include <functional>
 
-#include <vnl/RingBuffer.h>
+#include <vnl/Pool.h>
 
 #define VNL_MSG(type, hash) typedef vnl::MessageType<type, hash> msg_t;
 
@@ -41,7 +41,8 @@ public:
 	
 	void release() {
 		if(buffer) {
-			buffer->destroy<Message>(entry);
+			buffer->destroy(this, msg_size);
+			//buffer->destroy<Message>(entry);
 		}
 	}
 	
@@ -50,8 +51,11 @@ public:
 	Basic* dst = 0;
 	bool isack = false;
 	
-	RingBuffer* buffer = 0;
-	RingBuffer::entry_t* entry = 0;
+	GenericPool* buffer = 0;
+	int msg_size = 0;
+	
+	//RingBuffer* buffer = 0;
+	//RingBuffer::entry_t* entry = 0;
 	
 	void* user = 0;
 	std::function<void(Message*)>* callback = 0;

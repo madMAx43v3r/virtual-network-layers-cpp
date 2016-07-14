@@ -32,9 +32,7 @@ public:
 	}
 	
 	void getHash(uint32_t& hash) {
-		int32_t tmp = 0;
-		readInt(tmp);
-		hash = tmp;
+		readInt(hash);
 	}
 	
 	template<typename T>

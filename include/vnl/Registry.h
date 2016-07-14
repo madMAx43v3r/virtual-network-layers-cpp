@@ -9,7 +9,7 @@
 #define INCLUDE_PHY_REGISTRY_H_
 
 #include "vnl/Basic.h"
-#include "vnl/RingBuffer.h"
+#include "vnl/Pool.h"
 #include "vnl/Array.h"
 #include "vnl/Map.h"
 
@@ -61,8 +61,7 @@ private:
 	void send_exit(Module* obj);
 	
 private:
-	PageAlloc memory;
-	MessageBuffer buffer;
+	MessagePool buffer;
 	
 	Map<uint64_t, Module*> map;
 	Map<uint64_t, Array<connect_t*> > waiting;
@@ -74,20 +73,6 @@ private:
 	
 };
 
-
-inline void send(Message* msg, Hash64 mac) {
-	Actor actor;
-	Registry::connect_t connect(mac);
-	actor.send(&connect, Registry::instance);
-	actor.send(msg, connect.res);
-	Registry::close_t close(connect.res);
-	actor.send(&close, Registry::instance);
-}
-
-inline void ping(Hash64 mac) {
-	Message msg;
-	send(&msg, mac);
-}
 
 
 }

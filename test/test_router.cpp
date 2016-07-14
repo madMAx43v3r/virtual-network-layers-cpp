@@ -18,7 +18,6 @@
 #include "../src/Module.cpp"
 #include "../src/Registry.cpp"
 #include "../src/Router.cpp"
-#include "../src/String.cpp"
 #include "../src/Layer.cpp"
 #include "../src/FiberEngine.cpp"
 
@@ -32,7 +31,7 @@ vnl::Address address(vnl::hash64("domain"), vnl::hash64("topic"));
 
 class Consumer : public vnl::Module {
 protected:
-	virtual void main(vnl::Engine* engine) override {
+	virtual void main(vnl::Engine* engine) {
 		//vnl::Util::stick_to_core(mac % 3 + 1);
 		
 		set_timeout(1000*1000, std::bind(&Consumer::print_stats, this), vnl::Timer::REPEAT);
@@ -68,7 +67,7 @@ private:
 
 class Producer : public vnl::Module {
 protected:
-	virtual void main(vnl::Engine* engine) override {
+	virtual void main(vnl::Engine* engine) {
 		test_msg_t test;
 		test.text << "Hello World";
 		int counter = 0;
@@ -85,17 +84,6 @@ protected:
 			//std::this_thread::yield();	// for valgrind to switch threads
 			counter++;
 		}
-	}
-};
-
-
-class Core : public vnl::Module {
-protected:
-	virtual void main(vnl::Engine* engine) override {
-		for(int i = 0; i < 5; ++i) {
-			engine->fork(new Consumer());
-		}
-		run();
 	}
 };
 

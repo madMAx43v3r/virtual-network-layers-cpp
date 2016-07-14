@@ -37,6 +37,13 @@ public:
 		lim = limit;
 	}
 	
+	Page* release() {
+		Page* tmp = first;
+		first = 0;
+		reset();
+		return tmp;
+	}
+	
 	void reset() {
 		buf = first;
 		lim = 0;
@@ -62,10 +69,9 @@ public:
 	virtual int read(void* dst, int len) {
 		int left = Page::size - off;
 		if(!left) {
-			assert(buf->next);
-			if(!buf->next) {
-				err = VNL_IO_UNDERFLOW;
-				return -1;
+			if(!buf || !buf->next) {
+				set_error(VNL_IO_UNDERFLOW);
+				return err;
 			}
 			buf = buf->next;
 			off = 0;
@@ -80,6 +86,9 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) {
+		if(!buf) {
+			wrap(Page::alloc());
+		}
 		while(len) {
 			int off = pos % Page::size;
 			int left = Page::size - off;
@@ -104,12 +113,21 @@ public:
 		return err;
 	}
 	
+	void set_error(int err_) {
+		err = err_;
+#ifdef VNL_IO_DEBUG
+		assert(err == VNL_IO_SUCCESS);
+#endif
+	}
+	
 protected:
 	Page* buf;
 	Page* first;
 	int lim = 0;
 	int pos = 0;
 	int off = 0;
+	
+private:
 	int err = 0;
 	
 };

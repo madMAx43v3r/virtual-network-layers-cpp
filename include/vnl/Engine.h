@@ -15,7 +15,6 @@
 
 #include "vnl/Message.h"
 #include "vnl/Memory.h"
-#include "vnl/RingBuffer.h"
 #include "vnl/Random.h"
 #include "vnl/Queue.h"
 #include "vnl/Util.h"
@@ -117,10 +116,6 @@ protected:
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
-	
-protected:
-	PageAlloc memory;
-	MessageBuffer buffer;
 	
 private:
 	std::mutex mutex;

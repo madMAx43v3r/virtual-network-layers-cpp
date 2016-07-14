@@ -10,7 +10,10 @@
 
 #include <string>
 #include <functional>
+#include <algorithm>
+
 #include <vnl/Util.h>
+#include <vnl/String.h>
 
 
 namespace vnl {
@@ -52,22 +55,31 @@ public:
 };
 
 
+} // vnl
+
 namespace std {
+
 	template<>
 	struct hash<vnl::Hash32> {
 		size_t operator()(const vnl::Hash32& x) const {
 			return x;
 		}
 	};
+	
 	template<>
 	struct hash<vnl::Hash64> {
 		size_t operator()(const vnl::Hash64& x) const {
 			return x;
 		}
 	};
-}
-
-
+	
+	template<>
+	struct hash<vnl::String> {
+		size_t operator()(const vnl::String& str) const {
+			return vnl::hash64(str);
+		}
+	};
+	
 }
 
 #endif /* INCLUDE_VNL_HASH_H_ */

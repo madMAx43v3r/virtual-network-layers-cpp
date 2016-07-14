@@ -5,10 +5,11 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_UTIL_POOL_H_
-#define INCLUDE_UTIL_POOL_H_
+#ifndef INCLUDE_VNL_POOL_H_
+#define INCLUDE_VNL_POOL_H_
 
-#include "vnl/Queue.h"
+#include <vnl/Queue.h>
+#include <vnl/Map.h>
 
 
 namespace vnl {
@@ -36,8 +37,53 @@ public:
 	}
 	
 protected:
-	PageAlloc memory;
+	PageAllocator memory;
 	Queue<T*> list;
+	
+};
+
+
+class GenericPool {
+public:
+	GenericPool() {}
+	
+	GenericPool(const GenericPool&) = delete;
+	GenericPool& operator=(const GenericPool&) = delete;
+	
+	template<typename T>
+	T* create() {
+		Queue<void*>& list = table[sizeof(T)];
+		void* obj;
+		if(list.pop(obj)) {
+			return new(obj) T();
+		} else {
+			return memory.create<T>();
+		}
+	}
+	
+	template<typename T>
+	void destroy(T* obj, int size) {
+		Queue<void*>& list = table[size];
+		obj->~T();
+		list.push(obj);
+	}
+	
+protected:
+	PageAllocator memory;
+	Map<int, Queue<void*> > table;
+	
+};
+
+
+class MessagePool : public GenericPool {
+public:
+	template<typename T>
+	T* create() {
+		T* msg = GenericPool::create<T>();
+		msg->buffer = this;
+		msg->msg_size = sizeof(T);
+		return msg;
+	}
 	
 };
 
@@ -45,4 +91,4 @@ protected:
 
 } // vnl
 
-#endif /* INCLUDE_UTIL_POOL_H_ */
+#endif /* INCLUDE_VNL_POOL_H_ */

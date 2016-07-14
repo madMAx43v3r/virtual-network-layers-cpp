@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_QUEUE_H_
 #define INCLUDE_PHY_QUEUE_H_
 
-#include "vnl/Memory.h"
+#include <vnl/Memory.h>
 
 namespace vnl {
 
@@ -33,7 +33,9 @@ public:
 		}
 	}
 	
-	Queue(const Queue&) = delete;
+	Queue(const Queue& other) {
+		append(other);
+	}
 	
 	Queue& operator=(const Queue& other) {
 		clear();
