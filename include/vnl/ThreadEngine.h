@@ -120,7 +120,7 @@ private:
 			if(msg->callback) {
 				(*msg->callback)(msg);
 			}
-			msg->release();
+			msg->destroy();
 			pending--;
 		} else {
 			msg->dst->receive(msg);

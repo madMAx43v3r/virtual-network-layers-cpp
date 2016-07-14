@@ -39,10 +39,9 @@ public:
 	
 	void ack();
 	
-	void release() {
+	void destroy() {
 		if(buffer) {
 			buffer->destroy(this, msg_size);
-			//buffer->destroy<Message>(entry);
 		}
 	}
 	
@@ -53,9 +52,6 @@ public:
 	
 	GenericPool* buffer = 0;
 	int msg_size = 0;
-	
-	//RingBuffer* buffer = 0;
-	//RingBuffer::entry_t* entry = 0;
 	
 	void* user = 0;
 	std::function<void(Message*)>* callback = 0;
