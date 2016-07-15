@@ -96,9 +96,9 @@ public:
 		return obj;
 	}
 	
-	T& operator[](size_t index) {
+	T& operator[](int index) {
 		auto iter = begin();
-		for(size_t i = 0; i < index; ++i) {
+		for(int i = 0; i < index; ++i) {
 			++iter;
 		}
 		return *iter;
@@ -118,7 +118,7 @@ public:
 		return p_back->elem(p_back->write() - 1);
 	}
 	
-	size_t size() const {
+	int size() const {
 		return count;
 	}
 	
@@ -217,7 +217,7 @@ public:
 private:
 	block_t* p_front = 0;
 	block_t* p_back = 0;
-	size_t count = 0;
+	int count = 0;
 	
 };
 

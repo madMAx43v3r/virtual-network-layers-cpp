@@ -10,7 +10,7 @@
 
 #include <assert.h>
 
-#include <vnl/Basic.h>
+#include <vnl/ThreadEngine.h>
 #include <vnl/Random.h>
 #include <vnl/Registry.h>
 #include <vnl/Router.h>

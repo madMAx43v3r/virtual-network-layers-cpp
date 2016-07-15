@@ -26,6 +26,53 @@ public:
 	int len = 0;
 };
 
+class str : public ToString {
+public:
+	str(const char src[]) {
+		len = strlen(src);
+		if(len > BUF_SIZE) {
+			len = BUF_SIZE;
+		}
+		strncpy(buf, src, len);
+	}
+};
+
+static str endl("\n");
+
+class dec : public ToString {
+public:
+	dec(int32_t i)  { len = snprintf(buf, BUF_SIZE, "%d", i); }
+	dec(uint32_t i) { len = snprintf(buf, BUF_SIZE, "%u", i); }
+	dec(int64_t i)  { len = snprintf(buf, BUF_SIZE, "%ld", i); }
+	dec(uint64_t i) { len = snprintf(buf, BUF_SIZE, "%lu", i); }
+};
+
+class hex : public ToString {
+public:
+	hex(int32_t i)  { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
+	hex(uint32_t i) { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
+	hex(int64_t i)  { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
+	hex(uint64_t i) { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
+};
+
+class def : public ToString {
+public:
+	def(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
+	def(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
+};
+
+class sci : public ToString {
+public:
+	sci(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
+	sci(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
+};
+
+class fix : public ToString {
+public:
+	fix(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
+	fix(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
+};
+
 
 class String {
 public:
@@ -117,6 +164,34 @@ public:
 	String& operator=(const String& str) {
 		clear();
 		return *this << str;
+	}
+	
+	String& operator<<(const void* p) {
+		return *this << vnl::hex((uint64_t)p);
+	}
+	
+	String& operator<<(const int32_t& i) {
+		return *this << vnl::dec(i);
+	}
+	
+	String& operator<<(const int64_t& i) {
+		return *this << vnl::dec(i);
+	}
+	
+	String& operator<<(const uint32_t& i) {
+		return *this << vnl::dec(i);
+	}
+	
+	String& operator<<(const uint64_t& i) {
+		return *this << vnl::dec(i);
+	}
+	
+	String& operator<<(const float& f) {
+		return *this << vnl::def(f);
+	}
+	
+	String& operator<<(const double& d) {
+		return *this << vnl::def(d);
 	}
 	
 	String& operator<<(const char* str) {
@@ -218,54 +293,6 @@ private:
 };
 
 
-class str : public ToString {
-public:
-	str(const char src[]) {
-		len = strlen(src);
-		if(len > BUF_SIZE) {
-			len = BUF_SIZE;
-		}
-		strncpy(buf, src, len);
-	}
-};
-
-static str endl("\n");
-
-class dec : public ToString {
-public:
-	dec(int32_t i)  { len = snprintf(buf, BUF_SIZE, "%d", i); }
-	dec(uint32_t i) { len = snprintf(buf, BUF_SIZE, "%u", i); }
-	dec(int64_t i)  { len = snprintf(buf, BUF_SIZE, "%ld", i); }
-	dec(uint64_t i) { len = snprintf(buf, BUF_SIZE, "%lu", i); }
-};
-
-class hex : public ToString {
-public:
-	hex(int32_t i)  { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
-	hex(uint32_t i) { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
-	hex(int64_t i)  { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
-	hex(uint64_t i) { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
-};
-
-class def : public ToString {
-public:
-	def(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
-	def(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
-};
-
-class sci : public ToString {
-public:
-	sci(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
-	sci(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
-};
-
-class fix : public ToString {
-public:
-	fix(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
-	fix(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
-};
-
-
 class StringOutput {
 public:
 	virtual ~StringOutput() {}
@@ -274,7 +301,6 @@ public:
 
 class StringWriter {
 public:
-	StringWriter() : func(nullptr) {}
 	StringWriter(StringOutput* func) : func(func) {}
 	StringWriter(const StringWriter& other) : func(other.func) {}
 	~StringWriter() {

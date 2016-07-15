@@ -33,7 +33,7 @@ public:
 	
 protected:
 	
-	virtual void send_impl(Message* msg, Basic* dst, bool async) override {
+	virtual void send_impl(Message* msg, Basic* dst, bool async) {
 		assert(msg->isack == false);
 		assert(dst);
 		
@@ -45,7 +45,7 @@ protected:
 		}
 	}
 	
-	virtual bool poll(Stream* stream, int64_t micros) override {
+	virtual bool poll(Stream* stream, int64_t micros) {
 		assert(stream);
 		assert(stream->get_engine() == this);
 		
@@ -56,7 +56,7 @@ protected:
 		}
 	}
 	
-	virtual void flush() override {
+	virtual void flush() {
 		while(pending > 0) {
 			Message* msg = collect(-1);
 			if(msg) {
@@ -139,8 +139,13 @@ private:
 };
 
 
-void spawn(Module* object) {
+inline void spawn(Module* object) {
 	ThreadEngine::spawn(object);
+}
+
+inline void run(Module* object) {
+	ThreadEngine engine;
+	engine.run(object);
 }
 
 

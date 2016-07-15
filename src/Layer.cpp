@@ -11,13 +11,17 @@ namespace vnl {
 
 Layer* layer = 0;
 
+GlobalPool* global_pool = 0;
+
 Layer::Layer() {
 	assert(vnl::layer == 0);
+	assert(global_pool == 0);
 	assert(Random64::instance == 0);
 	assert(Registry::instance == 0);
 	assert(Router::instance == 0);
 	
 	vnl::layer = this;
+	global_pool = new GlobalPool();
 	domain = vnl::hash64("vnl/");
 	global_logs = Address(domain, vnl::hash64("global_logs"));
 	
@@ -40,6 +44,7 @@ Layer::~Layer() {
 	delete Router::instance;
 	delete Registry::instance;
 	delete Random64::instance;
+	delete global_pool;
 	
 	Page::cleanup();
 	Block::cleanup();

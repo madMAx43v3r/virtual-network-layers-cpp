@@ -37,6 +37,17 @@ public:
 	Packet()
 		:	Message(MID), pkt_id(0), seq_num(0), num_hops(0), payload(0) {}
 	
+	void copy_from(Packet* org) {
+		parent = org;
+		pkt_id = org->pkt_id;
+		seq_num = org->seq_num;
+		src_addr = org->src_addr;
+		dst_addr = org->dst_addr;
+		payload = org->payload;
+		num_hops = org->num_hops;
+		memcpy(route, org->route, sizeof(uint32_t)*VNL_MAX_ROUTE_LENGTH);
+	}
+	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);

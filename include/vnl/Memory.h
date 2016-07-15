@@ -90,7 +90,7 @@ public:
 		return *type_addr<T>(offset);
 	}
 	
-	static size_t get_num_alloc() {
+	static int get_num_alloc() {
 		return num_alloc;
 	}
 	
@@ -128,13 +128,14 @@ private:
 	static const int OUT_OF_MEMORY = 0;
 	static util::spinlock sync;
 	static Memory* begin;
-	static size_t num_alloc;
+	static std::atomic<int> num_alloc;
 	
 };
 
+template<int size_> const int Memory<size_>::size;
 template<int size_> util::spinlock Memory<size_>::sync;
 template<int size_> Memory<size_>* Memory<size_>::begin = 0;
-template<int size_> size_t Memory<size_>::num_alloc = 0;
+template<int size_> std::atomic<int> Memory<size_>::num_alloc;
 
 typedef Memory<VNL_PAGE_SIZE> Page;
 typedef Memory<VNL_BLOCK_SIZE> Block;
@@ -154,12 +155,7 @@ public:
 	
 	template<typename T>
 	T* create() {
-		return new(alloc<T>()) T();
-	}
-	
-	template<typename T>
-	void* alloc() {
-		return alloc(sizeof(T));
+		return new(alloc(sizeof(T))) T();
 	}
 	
 	void* alloc(int size) {

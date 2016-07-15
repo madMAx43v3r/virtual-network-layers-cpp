@@ -23,7 +23,7 @@
  * Defining this will alloc/free paged memory every time.
  * Useful for valgrind debugging.
  */
-//#define VNL_MEMORY_DEBUG
+#define VNL_MEMORY_DEBUG
 
 /*
  * Defining this will assert on IO errors.

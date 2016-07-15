@@ -17,7 +17,7 @@
 
 namespace vnl {
 
-class Address : public vnl::io::Serializable {
+class Address {
 public:
 	
 	uint64_t A;
@@ -41,12 +41,12 @@ public:
 		return B;
 	}
 	
-	virtual void serialize(vnl::io::TypeOutput& out) const {
+	void serialize(vnl::io::TypeOutput& out) const {
 		out.writeLong(A);
 		out.writeLong(B);
 	}
 	
-	virtual void deserialize(vnl::io::TypeInput& in, int size) {
+	void deserialize(vnl::io::TypeInput& in, int size) {
 		int64_t a = 0;
 		int64_t b = 0;
 		in.readLong(a);

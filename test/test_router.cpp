@@ -27,7 +27,7 @@ struct test_msg_t {
 	VNL_SAMPLE(test_msg_t);
 };
 
-vnl::Address address(vnl::hash64("domain"), vnl::hash64("topic"));
+vnl::Address address("domain", "topic");
 
 class Consumer : public vnl::Module {
 protected:
@@ -68,6 +68,7 @@ private:
 class Producer : public vnl::Module {
 protected:
 	virtual void main(vnl::Engine* engine) {
+		set_timeout(1000*1000, std::bind(&Producer::print_stats, this), VNL_TIMER_REPEAT);
 		test_msg_t test;
 		test.text << "Hello World";
 		int counter = 0;
@@ -85,6 +86,11 @@ protected:
 			counter++;
 		}
 	}
+	
+	void print_stats() {
+		log(INFO).out << "System: " << vnl::Page::get_num_alloc() << " Pages, " << vnl::Block::get_num_alloc() << " Blocks" << vnl::endl;
+	}
+	
 };
 
 
@@ -101,8 +107,7 @@ int main() {
 		vnl::fork(new Consumer());
 	}
 	
-	vnl::ThreadEngine engine;
-	engine.run(new vnl::Terminal());
+	vnl::run(new vnl::Terminal());
 	
 	std::cout << "Number of pages allocated: " << vnl::Page::get_num_alloc() << std::endl;
 	

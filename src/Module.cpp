@@ -103,6 +103,9 @@ bool Module::poll(int64_t micros) {
 						break;
 				}
 				diff = timer->deadline - now;
+				if(diff < 0) {
+					diff = 0;
+				}
 			}
 			if(diff < to || to == -1) {
 				to = diff;

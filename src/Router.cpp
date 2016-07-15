@@ -110,11 +110,7 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>();
-	msg->pkt_id = org->pkt_id;
-	msg->parent = org;
-	msg->src_addr = org->src_addr;
-	msg->dst_addr = org->dst_addr;
-	msg->payload = org->payload;
+	msg->copy_from(org);
 	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);
 }

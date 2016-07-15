@@ -10,8 +10,8 @@
 
 #include <iostream>
 
-#include "vnl/Module.h"
-#include "vnl/Layer.h"
+#include <vnl/Module.h>
+#include <vnl/Layer.h>
 
 
 namespace vnl {
