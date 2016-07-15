@@ -99,7 +99,7 @@ protected:
 	StringWriter log(int level, double time);
 	StringWriter log(int level, int64_t time);
 	
-	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type);
+	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type);
 	
 	bool poll(int64_t micros);
 	
@@ -123,7 +123,6 @@ protected:
 	virtual void main(Engine* engine) = 0;
 	
 protected:
-	PageAllocator memory;
 	MessagePool buffer;
 	
 private:
@@ -135,7 +134,9 @@ private:
 	String my_name;
 	Stream stream;
 	Engine* engine = 0;
-	Timer* timer_begin = 0;
+	
+	BlockAllocator memory;
+	List<Timer*> timers;
 	GlobalLogWriter log_writer;
 	
 	int64_t ref = 0;

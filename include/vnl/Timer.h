@@ -11,17 +11,20 @@
 #include <assert.h>
 
 
+enum { VNL_TIMER_REPEAT, VNL_TIMER_MANUAL, VNL_TIMER_ONCE };
+
 namespace vnl {
 
 class Module;
 
-
 class Timer {
 public:
-	enum type_t { REPEAT, MANUAL, ONCE };
+	Timer() : type(VNL_TIMER_MANUAL), active(true) {
+		deadline = 0;
+		interval = 0;
+	}
 	
 	void reset() {
-		assert(!free);
 		active = true;
 		deadline = currentTimeMicros() + interval;
 	}
@@ -30,19 +33,12 @@ public:
 		active = false;
 	}
 	
-	void destroy() {
-		stop();
-		free = true;
-	}
-	
 private:
 	int64_t deadline;
 	int64_t interval;
 	std::function<void(Timer*)> func;
-	type_t type;
-	bool active = true;
-	bool free = false;
-	Timer* next = 0;
+	int type;
+	bool active;
 	
 	friend class Module;
 	

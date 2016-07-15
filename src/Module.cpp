@@ -74,42 +74,33 @@ StringWriter Module::log(int level, int64_t time) {
 	return writer;
 }
 
-Timer* Module::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, Timer::type_t type) {
-	Timer* timer = timer_begin;
-	while(timer) {
-		if(timer->free) {
-			timer->free = false;
-			break;
-		}
-		timer = timer->next;
-	}
-	if(!timer) {
-		timer = memory.create<Timer>();
-		timer->next = timer_begin;
-		timer_begin = timer;
-	}
+Timer* Module::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type) {
+	Timer* timer = memory.create<Timer>();
 	timer->interval = micros;
 	timer->func = func;
 	timer->type = type;
 	timer->reset();
+	timers.push(timer);
 	return timer;
 }
 
 bool Module::poll(int64_t micros) {
 	int64_t to = micros;
 	int64_t now = currentTimeMicros();
-	Timer* timer = timer_begin;
-	while(timer) {
+	for(Timer* timer : timers) {
 		if(timer->active) {
 			int64_t diff = timer->deadline - now;
 			if(diff <= 0) {
-				timer->active = false;
 				timer->func(timer);
 				switch(timer->type) {
-					case Timer::REPEAT: timer->active = true;
-								 timer->deadline += timer->interval;	break;
-					case Timer::MANUAL: 								break;
-					case Timer::ONCE: timer->destroy(); 				break;
+					case VNL_TIMER_REPEAT:
+						timer->active = true;
+						timer->deadline += timer->interval;
+						break;
+					case VNL_TIMER_MANUAL:
+					case VNL_TIMER_ONCE:
+						timer->active = false;
+						break;
 				}
 				diff = timer->deadline - now;
 			}
@@ -117,7 +108,6 @@ bool Module::poll(int64_t micros) {
 				to = diff;
 			}
 		}
-		timer = timer->next;
 	}
 	while(true) {
 		Message* msg = stream.poll(to);
@@ -193,11 +183,8 @@ void Module::exec(Engine* engine_) {
 			break;
 		}
 	}
-	Timer* timer = timer_begin;
-	while(timer) {
-		Timer* next = timer->next;
+	for(Timer* timer : timers) {
 		timer->~Timer();
-		timer = next;
 	}
 }
 

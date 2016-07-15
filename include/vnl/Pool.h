@@ -14,7 +14,7 @@
 
 namespace vnl {
 
-template<typename T>
+template<typename T, class TPage = Page>
 class Pool {
 public:
 	Pool() {}
@@ -27,7 +27,7 @@ public:
 		if(list.pop(obj)) {
 			return new(obj) T();
 		} else {
-			return memory.create<T>();
+			return memory.template create<T>();
 		}
 	}
 	
@@ -37,7 +37,7 @@ public:
 	}
 	
 protected:
-	PageAllocator memory;
+	Allocator<TPage> memory;
 	Queue<T*> list;
 	
 };

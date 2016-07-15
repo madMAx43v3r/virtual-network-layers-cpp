@@ -1,20 +1,20 @@
 /*
- * Page.h
+ * Memory.h
  *
  *  Created on: Mar 5, 2016
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_MEMORY_H_
-#define INCLUDE_PHY_MEMORY_H_
+#ifndef INCLUDE_VNL_MEMORY_H_
+#define INCLUDE_VNL_MEMORY_H_
 
 #include <stdlib.h>
 #include <assert.h>
 #include <atomic>
 #include <iostream>
 
-#include "vnl/build/config.h"
-#include "vnl/util/spinlock.h"
+#include <vnl/build/config.h>
+#include <vnl/util/spinlock.h>
 
 
 namespace vnl {
@@ -206,4 +206,4 @@ typedef Allocator<Block> BlockAllocator;
 
 }
 
-#endif /* INCLUDE_PHY_MEMORY_H_ */
+#endif /* INCLUDE_VNL_MEMORY_H_ */

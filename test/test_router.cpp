@@ -34,7 +34,7 @@ protected:
 	virtual void main(vnl::Engine* engine) {
 		//vnl::Util::stick_to_core(mac % 3 + 1);
 		
-		set_timeout(1000*1000, std::bind(&Consumer::print_stats, this), vnl::Timer::REPEAT);
+		set_timeout(1000*1000, std::bind(&Consumer::print_stats, this), VNL_TIMER_REPEAT);
 		
 		vnl::Receiver test(this, address);
 		
