@@ -76,6 +76,7 @@ public:
 
 class String {
 public:
+	static const uint32_t VNI_HASH = 0x3ea151ae;
 	static const int CHUNK_SIZE = VNL_BLOCK_SIZE - 2;
 	
 	class chunk_t : public Block {

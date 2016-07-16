@@ -12,12 +12,8 @@
 #include <vnl/Message.h>
 #include <vnl/io.h>
 
-#define VNL_SAMPLE(type) typedef vnl::PacketType<type, vnl::PID_SAMPLE> sample_t;
-
 
 namespace vnl {
-
-static const uint32_t PID_SAMPLE = 0x12ed1215;
 
 class Router;
 

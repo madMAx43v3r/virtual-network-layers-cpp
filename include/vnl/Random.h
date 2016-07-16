@@ -9,42 +9,37 @@
 #define INCLUDE_PHY_RANDOM_H_
 
 #include <random>
+#include <mutex>
 #include <thread>
 
-#include "vnl/util/spinlock.h"
-#include "vnl/Util.h"
+#include <vnl/Util.h>
 
 
 namespace vnl {
 
-class Layer;
-
-
 class Random64 {
 public:
+	static Random64* instance;
+	
 	Random64() {
-		generator.seed(hash64((uint64_t)counter++, (uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)nanoTime()));
+		generator.seed(hash64((uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)nanoTime()));
 	}
 	
 	uint64_t rand() {
-		return generator();
+		sync.lock();
+		uint64_t val = generator();
+		sync.unlock();
+		return val;
 	}
 	
 	static uint64_t global_rand() {
-		sync.lock();
-		uint64_t val = instance->rand();
-		sync.unlock();
-		return val;
+		return instance->rand();
 	}
 	
 private:
 	std::mt19937_64 generator;
 	
-	static util::spinlock sync;
-	static Random64* instance;
-	static std::atomic<int> counter;
-	
-	friend class Layer;
+	std::mutex sync;
 	
 };
 

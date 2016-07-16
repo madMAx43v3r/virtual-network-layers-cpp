@@ -111,14 +111,15 @@ void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>();
 	msg->copy_from(org);
-	msg->callback = &cb_func;
 	Reactor::send_async(msg, dst);
 }
 
-void Router::callback(Message* msg_) {
-	Packet* msg = (Packet*)msg_;
-	if(++(msg->parent->acks) == msg->parent->count) {
-		msg->parent->ack();
+void Router::callback(Message* msg) {
+	if(msg->msg_id == Packet::MID) {
+		Packet* pkt = (Packet*)msg;
+		if(++(pkt->parent->acks) == pkt->parent->count) {
+			pkt->parent->ack();
+		}
 	}
 }
 

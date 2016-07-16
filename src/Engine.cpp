@@ -10,7 +10,6 @@
 
 #include "vnl/Engine.h"
 #include "vnl/Module.h"
-#include "vnl/Registry.h"
 #include "vnl/Random.h"
 
 
@@ -21,13 +20,49 @@ Engine::Engine()
 	mac = Random64::global_rand();
 }
 
-void Engine::exec(Module* object) {
-	object->exec(this);
-	Registry::close_t msg(object);
-	send(&msg, Registry::instance);
+void Engine::exec(Object* object, Message* init) {
+	object->exec(this, init);
+	delete object;
 }
 
+Message* Engine::collect(int64_t timeout) {
+	std::unique_lock<std::mutex> ulock(mutex);
+	Message* msg = 0;
+	if(queue.pop(msg)) {
+		return msg;
+	}
+	if(timeout != 0) {
+		if(timeout > 0) {
+			cond.wait_for(ulock, std::chrono::microseconds(timeout));
+		} else {
+			cond.wait(ulock);
+		}
+		queue.pop(msg);
+	}
+	return msg;
+}
 
+size_t Engine::collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
+	std::unique_lock<std::mutex> ulock(mutex);
+	size_t count = 0;
+	Message* msg = 0;
+	while(queue.pop(msg)) {
+		inbox.push(msg);
+		count++;
+	}
+	if(!count && timeout != 0) {
+		if(timeout > 0) {
+			cond.wait_for(ulock, std::chrono::microseconds(timeout));
+		} else {
+			cond.wait(ulock);
+		}
+		while(queue.pop(msg)) {
+			inbox.push(msg);
+			count++;
+		}
+	}
+	return count;
+}
 
 
 

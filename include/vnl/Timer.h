@@ -15,7 +15,7 @@ enum { VNL_TIMER_REPEAT, VNL_TIMER_MANUAL, VNL_TIMER_ONCE };
 
 namespace vnl {
 
-class Module;
+class Object;
 
 class Timer {
 public:
@@ -40,7 +40,7 @@ private:
 	int type;
 	bool active;
 	
-	friend class Module;
+	friend class Object;
 	
 };
 

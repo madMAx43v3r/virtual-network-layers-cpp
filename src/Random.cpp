@@ -5,17 +5,12 @@
  *      Author: mad
  */
 
-#include "vnl/Random.h"
+#include <vnl/Random.h>
 
 
 namespace vnl {
 
-util::spinlock Random64::sync;
-
 Random64* Random64::instance = 0;
-
-std::atomic<int> Random64::counter;
-
 
 
 }

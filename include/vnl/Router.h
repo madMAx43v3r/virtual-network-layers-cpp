@@ -43,7 +43,7 @@ protected:
 	void route(Packet* packet, Basic* src, Row* prow);
 	void forward(Packet* org, Basic* dst);
 	
-	void callback(Message* msg);
+	virtual void callback(Message* msg);
 	
 	PageAllocator memory;
 	MessagePool buffer;

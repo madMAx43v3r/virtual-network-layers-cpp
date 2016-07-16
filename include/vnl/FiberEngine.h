@@ -27,18 +27,21 @@ public:
 	
 	virtual ~FiberEngine();
 	
-	virtual void fork(Module* object) override;
+	virtual void fork(Object* object);
 	
 	void run();
 	
-	static void spawn(Module* object, int stack_size = default_stack) {
-		std::thread thread(std::bind(&FiberEngine::entry, object, stack_size));
+	static void spawn(Object* object, int stack_size = default_stack) {
+		Actor sync;
+		Message msg;
+		msg.src = &sync;
+		std::thread thread(&FiberEngine::entry, object, &msg, stack_size);
 		thread.detach();
-		Registry::ping(object->get_mac());
+		sync.wait();
 	}
 	
 protected:
-	virtual void send_impl(Message* msg, Basic* dst, bool async) override;
+	virtual void send_impl(Message* msg, Basic* dst, bool async);
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;
 	
@@ -47,9 +50,10 @@ protected:
 private:
 	int timeout();
 	
-	static void entry(Module* object, int stack_size) {
+	static void entry(Object* object, Message* msg, int stack_size) {
 		FiberEngine engine(stack_size);
 		engine.fork(object);
+		msg->ack();
 		engine.run();
 	}
 	

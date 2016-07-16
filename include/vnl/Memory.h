@@ -10,11 +10,10 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <atomic>
+#include <mutex>
 #include <iostream>
 
 #include <vnl/build/config.h>
-#include <vnl/util/spinlock.h>
 
 
 namespace vnl {
@@ -41,13 +40,14 @@ public:
 		Memory* page = begin;
 		if(page) {
 			begin = page->next;
+		} else {
+			num_alloc++;
 		}
 		sync.unlock();
 		if(!page) {
 			page = new Memory();
-			num_alloc++;
+			assert(page != OUT_OF_MEMORY);
 		}
-		assert(page != OUT_OF_MEMORY);
 		page->next = 0;
 		return page;
 	}
@@ -76,7 +76,7 @@ public:
 	}
 	
 	template<typename T>
-	T& get(int index) {
+	T& type_at_index(int index) {
 		return *(T*)(mem + index * sizeof(T));
 	}
 	
@@ -126,16 +126,16 @@ private:
 	
 private:
 	static const int OUT_OF_MEMORY = 0;
-	static util::spinlock sync;
+	static std::mutex sync;
 	static Memory* begin;
-	static std::atomic<int> num_alloc;
+	static int num_alloc;
 	
 };
 
 template<int size_> const int Memory<size_>::size;
-template<int size_> util::spinlock Memory<size_>::sync;
+template<int size_> std::mutex Memory<size_>::sync;
 template<int size_> Memory<size_>* Memory<size_>::begin = 0;
-template<int size_> std::atomic<int> Memory<size_>::num_alloc;
+template<int size_> int Memory<size_>::num_alloc;
 
 typedef Memory<VNL_PAGE_SIZE> Page;
 typedef Memory<VNL_BLOCK_SIZE> Block;

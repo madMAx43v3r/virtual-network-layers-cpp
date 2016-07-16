@@ -9,19 +9,13 @@
 #define INCLUDE_PHY_MESSAGE_H_
 
 #include <stdint.h>
-#include <iostream>
-#include <sstream>
-#include <functional>
-
+#include <vnl/String.h>
 #include <vnl/Pool.h>
-
-#define VNL_MSG(type, hash) typedef vnl::MessageType<type, hash> msg_t;
 
 
 namespace vnl {
 
 class Basic;
-class Engine;
 
 
 class Message {
@@ -35,7 +29,7 @@ public:
 	Message(const Message&) = delete;
 	Message& operator=(const Message&) = delete;
 	
-	virtual std::string to_string();
+	virtual vnl::String to_string();
 	
 	void ack();
 	
@@ -52,9 +46,6 @@ public:
 	
 	GenericPool* buffer = 0;
 	int msg_size = 0;
-	
-	void* user = 0;
-	std::function<void(Message*)>* callback = 0;
 	
 	Basic* gate = 0;
 	void* _impl = 0;
@@ -111,7 +102,6 @@ public:
 	P args;
 	
 };
-
 
 
 }

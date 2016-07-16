@@ -19,20 +19,17 @@ namespace vnl {
 
 class Stream : public Basic {
 public:
-	typedef MessageType<Stream*, 0xe39e616f> signal_t;
-	
-	Stream() : engine(0) {}
+	Stream() : engine(0) {
+		mac = Random64::global_rand();
+	}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
-	~Stream() {
-		
-	}
+	~Stream() {}
 	
 	void connect(Engine* engine_) {
 		engine = engine_;
-		mac = engine->rand();
 	}
 	
 	Engine* get_engine() const {

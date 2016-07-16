@@ -60,7 +60,7 @@ public:
 			p_back = p_back->next;
 			pos = 0;
 		}
-		T& ref = p_back->get<T>(pos++);
+		T& ref = p_back->type_at_index<T>(pos++);
 		new(&ref) T();
 		ref = obj;
 		return ref;
@@ -81,7 +81,7 @@ public:
 		for(int i = 0; i < pi; ++i) {
 			page = page->next;
 		}
-		return page->get<T>(ei);
+		return page->type_at_index<T>(ei);
 	}
 	
 	std::vector<T> to_vector() const {
@@ -156,10 +156,10 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return page->get<P>(pos);
+			return page->type_at_index<P>(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &page->get<P>(pos);
+			return &page->type_at_index<P>(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
 			std::swap(lhs.page, rhs.page);

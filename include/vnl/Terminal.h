@@ -10,6 +10,7 @@
 
 #include <iostream>
 
+#include <vnl/ProcessSupport.hxx>
 #include <vnl/Module.h>
 #include <vnl/Layer.h>
 
@@ -18,12 +19,13 @@ namespace vnl {
 
 class Terminal : public Module {
 public:
-	Terminal() : Module("vnl/terminal") {}
+	Terminal() : Module(local_domain_name, "vnl/terminal") {}
 	
 protected:
-	virtual void main(Engine* engine) override {
-		Reference<Module> writer_ref(engine, "vnl/thread");
-		writer = writer_ref.get();
+	void main(Engine* engine, Message* init) {
+		init->ack();
+		process.set_address(local_domain, "vnl/process");
+		process.connect(engine);
 		std::string input;
 		while(poll(0)) {
 			std::getline(std::cin, input);
@@ -34,14 +36,15 @@ protected:
 			std::getline(std::cin, input);
 			if(input == "quit") {
 				resume();
+				publish(vnl::Shutdown::create(), local_domain, "vnl/shutdown");
 				break;
 			} else if(input == "log") {
 				std::cout << "[0] All" << std::endl;
-				Registry::get_module_list_t list;
-				send(&list, Registry::instance);
+				Array<Instance> list;
+				process.get_objects(list);
 				int index = 1;
-				for(auto& desc : list.data) {
-					std::cout << "[" << index++ << "] " << desc.name << std::endl;
+				for(auto& desc : list) {
+					std::cout << "[" << index++ << "] " << desc.domain << ":" << desc.topic << std::endl;
 				}
 				std::cout << "Select module: ";
 				std::cout.flush();
@@ -55,12 +58,12 @@ protected:
 				if(level > 0) {
 					if(sel == 0) {
 						log(INFO).out << "Setting log_level for all to " << vnl::dec(level) << vnl::endl;
-						for(auto& desc : list.data) {
-							set_log_level(engine, desc.mac, level);
+						for(auto& desc : list) {
+							set_log_level(engine, desc, level);
 						}
-					} else if(sel > 0 && sel <= list.data.size()) {
-						log(INFO).out << "Setting log_level to " << vnl::dec(level) << " for " << list.data[sel-1].name << vnl::endl;
-						set_log_level(engine, list.data[sel-1].mac, level);
+					} else if(sel > 0 && sel <= list.size()) {
+						log(INFO).out << "Setting log_level to " << vnl::dec(level) << " for " << list[sel-1].topic << vnl::endl;
+						set_log_level(engine, list[sel-1], level);
 					} else {
 						log(ERROR).out << "invalid input" << vnl::endl;
 					}
@@ -70,12 +73,10 @@ protected:
 			} else if(input.find("grep ") == 0) {
 				std::cout << "Help: press enter to stop grep" << std::endl;
 				std::string filter = input.substr(5, -1);
-				Layer::set_log_filter_t msg(filter);
-				send(&msg, writer);
+				process.set_log_filter(filter);
 				resume();
 				std::getline(std::cin, input);
-				Layer::set_log_filter_t reset("");
-				send(&reset, writer);
+				process.set_log_filter("");
 				log(INFO).out << "grep done" << vnl::endl;
 			} else {
 				print_help();
@@ -85,30 +86,26 @@ protected:
 	}
 	
 	void pause() {
-		Layer::pause_log_t pause;
-		send(&pause, writer);
+		process.pause_log();
 	}
 	
 	void resume() {
-		Layer::resume_log_t resume;
-		send(&resume, writer);
+		process.resume_log();
 	}
 	
 	void print_help() {
 		std::cout << "Help: quit | log | grep <filter>" << std::endl;
 	}
 	
-	void set_log_level(Engine* engine, uint64_t node, int level) {
-		Reference<Module> ref(engine, node);
-		Module* dst = ref.try_get();
-		if(dst) {
-			Module::set_log_level_t msg(level);
-			send(&msg, dst);
-		}
+	void set_log_level(Engine* engine, Instance& node, int level) {
+		ObjectClient client;
+		client.set_address(node.domain, node.topic);
+		client.connect(engine);
+		client.set_log_level(level);
 	}
 	
 private:
-	Module* writer = 0;
+	vnl::ProcessClient process;
 	
 };
 

@@ -8,31 +8,35 @@
 #ifndef INCLUDE_PHY_THREADENGINE_H_
 #define INCLUDE_PHY_THREADENGINE_H_
 
-#include "vnl/Engine.h"
-#include "vnl/Stream.h"
-#include "vnl/Module.h"
+#include <thread>
+#include <vnl/Engine.h>
+#include <vnl/Stream.h>
+#include <vnl/Object.h>
 
 
 namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
-	virtual void fork(Module* object) override {
+	virtual void fork(Object* object) {
 		spawn(object);
 	}
 	
-	void run(Module* object) {
-		exec(object);
+	virtual void run(Object* object) {
+		Message msg;
+		exec(object, &msg);
 	}
 	
-	static void spawn(Module* object) {
-		std::thread thread(std::bind(&ThreadEngine::entry, object));
+	static void spawn(Object* object) {
+		Actor sync;
+		Message msg;
+		msg.src = &sync;
+		std::thread thread(&ThreadEngine::entry, object, &msg);
 		thread.detach();
-		Registry::ping(object->get_mac());
+		sync.wait();
 	}
 	
 protected:
-	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) {
 		assert(msg->isack == false);
 		assert(dst);
@@ -117,9 +121,6 @@ private:
 	
 	void handle(Message* msg) {
 		if(msg->isack) {
-			if(msg->callback) {
-				(*msg->callback)(msg);
-			}
 			msg->destroy();
 			pending--;
 		} else {
@@ -127,23 +128,22 @@ private:
 		}
 	}
 	
-	static void entry(Module* object) {
+	static void entry(Object* object, Message* msg) {
 		ThreadEngine engine;
-		engine.exec(object);
+		engine.exec(object, msg);
 	}
 	
 private:
 	int pending = 0;
 	
-	
 };
 
 
-inline void spawn(Module* object) {
+inline void spawn(Object* object) {
 	ThreadEngine::spawn(object);
 }
 
-inline void run(Module* object) {
+inline void run(Object* object) {
 	ThreadEngine engine;
 	engine.run(object);
 }

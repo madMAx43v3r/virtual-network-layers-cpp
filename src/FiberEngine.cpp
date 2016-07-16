@@ -98,7 +98,8 @@ protected:
 	void run() {
 		while(true) {
 			yield();
-			engine->Engine::exec(obj);
+			Message msg;
+			engine->exec(obj, &msg);
 			engine->avail.push(this);
 		}
 	}
@@ -198,7 +199,8 @@ void FiberEngine::fork(Module* object) {
 		fiber = new Fiber(this, stack_size);
 		fibers.push_back(fiber);
 	}
-	fiber->exec(object);
+	Message msg;
+	fiber->exec(object, &msg);
 }
 
 int FiberEngine::timeout() {
@@ -276,7 +278,7 @@ void fork(Module* object) {
 
 namespace vnl {
 
-void fork(Module* object) {
+void fork(Object* object) {
 	vnl::spawn(object);
 }
 

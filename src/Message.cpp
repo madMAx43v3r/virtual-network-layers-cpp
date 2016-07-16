@@ -6,7 +6,8 @@
  */
 
 #include <vnl/Basic.h>
-#include "vnl/Message.h"
+#include <vnl/Message.h>
+
 
 namespace vnl {
 
@@ -15,17 +16,14 @@ void Message::ack() {
 		isack = true;
 		if(src) {
 			src->receive(this);
-		} else {
-			delete this;
 		}
 	}
 }
 
-std::string Message::to_string() {
-	std::ostringstream ss;
-	ss << "[" << vnl::demangle(this) << "] mid=0x" << std::hex << msg_id << std::dec
+vnl::String Message::to_string() {
+	return vnl::String() << "[" << vnl::demangle(this) << "] mid=0x" << vnl::hex(msg_id)
 			<< " src=" << src << " dst=" << dst << " isack=" << isack;
-	return ss.str();
 }
+
 
 }

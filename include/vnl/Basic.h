@@ -11,8 +11,8 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "vnl/Random.h"
-#include "vnl/Message.h"
+#include <vnl/Random.h>
+#include <vnl/Message.h>
 
 
 namespace vnl {
@@ -52,9 +52,7 @@ public:
 		}
 		mutex.lock();
 		if(msg->isack) {
-			if(msg->callback) {
-				(*msg->callback)(msg);
-			}
+			callback(msg);
 			msg->destroy();
 		} else {
 			if(!handle(msg)) {
@@ -66,6 +64,8 @@ public:
 	
 protected:
 	virtual bool handle(Message* msg) = 0;
+	
+	virtual void callback(Message* msg) {}
 	
 	void send_async(Message* msg, Basic* dst) {
 		msg->src = this;
@@ -101,6 +101,13 @@ public:
 		}
 	}
 	
+	void wait() {
+		acked = false;
+		if(!acked) {
+			cond.wait(ulock);
+		}
+	}
+	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
@@ -109,6 +116,14 @@ private:
 	bool acked = false;
 	
 };
+
+
+inline void send(Message* msg, Basic* dst) {
+	Actor actor;
+	actor.send(msg, dst);
+}
+
+
 
 
 }
