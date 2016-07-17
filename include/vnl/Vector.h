@@ -14,6 +14,10 @@ namespace vnl {
 template<typename T, int N>
 class Vector {
 public:
+	Vector() {
+		memset(&data, 0, sizeof(T)*N);
+	}
+	
 	T& operator[](int i) {
 		return data[i];
 	}

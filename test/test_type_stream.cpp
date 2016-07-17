@@ -6,7 +6,7 @@
  */
 
 #include <vnl/io.h>
-#include <vnl/Instance.hxx>
+#include <test/TestType.hxx>
 
 
 int main() {
@@ -16,14 +16,12 @@ int main() {
 	vnl::io::ByteBuffer buf;
 	vnl::io::TypeOutput out(&buf);
 	
-	vnl::Instance inst;
-	inst.domain = "test_domain";
-	inst.topic = "test_topic";
-	inst.type = "test_type";
-	std::cout << inst.to_string() << std::endl;
+	test::TestType input;
+	input.text = "test_test_test_test_test_test_test_test_test";
+	std::cout << input.to_string() << std::endl;
 	
 	for(int i = 0; i < N; ++i) {
-		vnl::write(out, inst);
+		vnl::write(out, input);
 		assert(!out.error());
 	}
 	out.flush();
@@ -32,16 +30,14 @@ int main() {
 	buf.flip();
 	
 	vnl::io::TypeInput in(&buf);
-	vnl::Instance inst2;
+	test::TestType output;
 	for(int i = 0; i < N; ++i) {
-		vnl::read(in, inst2);
+		vnl::read(in, output);
 		assert(!in.error());
-		assert(inst2.domain == "test_domain");
-		assert(inst2.topic == "test_topic");
-		assert(inst2.type == "test_type");
+		assert(output.text == "test_test_test_test_test_test_test_test_test");
 	}
 	
-	std::cout << inst2.to_string() << std::endl;
+	std::cout << output.to_string() << std::endl;
 	
 }
 
