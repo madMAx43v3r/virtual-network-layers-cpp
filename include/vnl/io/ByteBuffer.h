@@ -23,8 +23,8 @@ public:
 		wrap(begin);
 	}
 	
-	ByteBuffer(Page* begin, int limit) {
-		wrap(begin, limit);
+	ByteBuffer(Page* begin, int size) {
+		wrap(begin, size);
 	}
 	
 	void wrap(Page* begin) {
@@ -32,9 +32,9 @@ public:
 		reset();
 	}
 	
-	void wrap(Page* begin, int limit) {
+	void wrap(Page* begin, int size) {
 		wrap(begin);
-		lim = limit;
+		limit = size;
 	}
 	
 	Page* release() {
@@ -46,14 +46,16 @@ public:
 	
 	void reset() {
 		buf = first;
-		lim = 0;
+		limit = 0;
 		pos = 0;
 		off = 0;
+		InputStream::err = 0;
+		OutputStream::err = 0;
 	}
 	
 	void flip() {
 		buf = first;
-		lim = pos;
+		limit = pos;
 		pos = 0;
 		off = 0;
 	}
@@ -62,22 +64,21 @@ public:
 		return pos;
 	}
 	
-	int limit() const {
-		return lim;
-	}
-	
 	virtual int read(void* dst, int len) {
 		int left = Page::size - off;
-		if(!left) {
-			if(!buf || !buf->next) {
-				set_error(VNL_IO_UNDERFLOW);
-				return err;
+		int max_left = limit - pos;
+		if(max_left < left) {
+			if(max_left <= 0) {
+				InputStream::set_error(VNL_IO_UNDERFLOW);
+				return InputStream::err;
 			}
+			left = max_left;
+		}
+		if(!left) {
 			buf = buf->next;
 			off = 0;
-			left = Page::size;
+			left = std::min(Page::size, max_left);
 		}
-		left = std::min(left, lim - pos);
 		int n = std::min(len, left);
 		memcpy(dst, buf->mem + off, n);
 		pos += n;
@@ -90,7 +91,6 @@ public:
 			wrap(Page::alloc());
 		}
 		while(len) {
-			int off = pos % Page::size;
 			int left = Page::size - off;
 			if(!left) {
 				if(!buf->next) {
@@ -105,30 +105,17 @@ public:
 			src = (const char*)src + n;
 			len -= n;
 			pos += n;
+			off += n;
 		}
 		return true;
-	}
-	
-	int error() {
-		return err;
-	}
-	
-	void set_error(int err_) {
-		err = err_;
-#ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS);
-#endif
 	}
 	
 protected:
 	Page* buf;
 	Page* first;
-	int lim = 0;
+	int limit = 0;
 	int pos = 0;
 	int off = 0;
-	
-private:
-	int err = 0;
 	
 };
 

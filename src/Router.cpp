@@ -5,17 +5,11 @@
  *      Author: mad
  */
 
-#include "vnl/Router.h"
-
+#include <vnl/Router.h>
 
 namespace vnl {
 
 Router* Router::instance = 0;
-
-Router::Router()
-	:	cb_func(std::bind(&Router::callback, this, std::placeholders::_1))
-{
-}
 
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
@@ -100,7 +94,7 @@ void Router::close(const Address& addr, Basic* src) {
 void Router::route(Packet* pkt, Basic* src, Row* prow) {
 	if(prow) {
 		for(Basic* dst : *prow) {
-			if(dst && dst != src) {
+			if(dst) {
 				forward(pkt, dst);
 			}
 		}

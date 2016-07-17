@@ -5,7 +5,9 @@
  *      Author: mad
  */
 
+#include <vnl/ThreadEngine.h>
 #include <vnl/Layer.h>
+#include <vnl/Pool.h>
 #include <vnl/Process.h>
 
 
@@ -14,7 +16,7 @@ namespace vnl {
 uint64_t local_domain = 0;
 const char* local_domain_name = 0;
 
-GlobalPool* global_pool = 0;
+volatile bool Layer::finished = false;
 
 Layer::Layer(const char* domain_name) {
 	assert(local_domain == 0);
@@ -33,6 +35,10 @@ Layer::Layer(const char* domain_name) {
 }
 
 Layer::~Layer() {
+	while(!finished) {
+		usleep(10*1000);
+	}
+	
 	delete Router::instance;
 	delete Random64::instance;
 	delete global_pool;

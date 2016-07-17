@@ -20,7 +20,7 @@ public:
 	TypeOutput(OutputStream* stream) : ByteOutput(stream) {}
 	
 	void putEntry(int id, int size) {
-		int8_t c = size >= 0xF ? 0xF : size;
+		uint8_t c = size >= 0xF ? 0xF : size;
 		c <<= 4;
 		c |= id & 0xF;
 		writeChar(c);

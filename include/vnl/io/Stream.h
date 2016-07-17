@@ -5,37 +5,60 @@
  *      Author: mad
  */
 
-#ifndef STREAM_H_
-#define STREAM_H_
+#ifndef INCLUDE_VNL_IO_STREAM_H_
+#define INCLUDE_VNL_IO_STREAM_H_
 
 
 namespace vnl { namespace io {
 
-class Stream {
+class InputStream {
 public:
-	virtual ~Stream() {}
+	virtual ~InputStream() {}
 	
-};
-
-
-class InputStream : public Stream {
-public:
+	int error() {
+		return err;
+	}
+	
+	void set_error(int err_) {
+		err = err_;
+#ifdef VNL_IO_DEBUG
+		assert(err == VNL_IO_SUCCESS);
+#endif
+	}
 	
 	// read some bytes
 	virtual int read(void* dst, int len) = 0;
 	
+protected:
+	int err = 0;
+	
 };
 
 
-class OutputStream : public Stream {
+class OutputStream {
 public:
+	virtual ~OutputStream() {}
+	
+	int error() {
+		return err;
+	}
+	
+	void set_error(int err_) {
+		err = err_;
+#ifdef VNL_IO_DEBUG
+		assert(err == VNL_IO_SUCCESS);
+#endif
+	}
 	
 	// write all bytes
 	virtual bool write(const void* src, int len) = 0;
+	
+protected:
+	int err = 0;
 	
 };
 
 
 }}
 
-#endif /* STREAM_H_ */
+#endif /* INCLUDE_VNL_IO_STREAM_H_ */

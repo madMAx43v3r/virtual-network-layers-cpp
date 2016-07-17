@@ -22,8 +22,6 @@ class Router : public Reactor {
 public:
 	static Router* instance;
 	
-	Router();
-	
 	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;
 	
@@ -51,7 +49,6 @@ protected:
 private:
 	Map<Address, Row> table;
 	Array<uint64_t> domains;
-	std::function<void(Message*)> cb_func;
 	
 };
 

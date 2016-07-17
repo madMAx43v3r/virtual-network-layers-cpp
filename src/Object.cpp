@@ -76,7 +76,7 @@ bool Object::poll(int64_t micros) {
 			}
 		}
 	}
-	while(dorun) {
+	while(true) {
 		Message* msg = stream.poll(to);
 		if(!msg) {
 			break;
@@ -111,7 +111,6 @@ bool Object::handle(Packet* pkt) {
 	last_seq = pkt->seq_num;
 	if(pkt->pkt_id == Sample::PID) {
 		if(((Sample*)pkt->payload)->data->vni_hash() == vnl::Shutdown::VNI_HASH) {
-			log(INFO).out << "received shutdown ..." << vnl::endl;
 			dorun = false;
 		}
 	} else if(pkt->pkt_id == Frame::PID) {
@@ -121,7 +120,6 @@ bool Object::handle(Packet* pkt) {
 		buf_in.wrap(request->data, request->size);
 		int size = 0;
 		int id = in.getEntry(size);
-		std::cout << "Object got Frame: id=" << id << " size=" << request->size << std::endl;
 		if(id == VNL_IO_INTERFACE) {
 			uint32_t hash = 0;
 			in.getHash(hash);
@@ -130,26 +128,26 @@ bool Object::handle(Packet* pkt) {
 				int size = 0;
 				int id = in.getEntry(size);
 				if(id == VNL_IO_CALL) {
-					std::cout << "Object got VNL_IO_CALL: hash=" << hash << std::endl;
 					in.getHash(hash);
 					bool res = vni_call(in, hash, size);
 					if(!res) {
 						in.skip(id, size, hash);
+						log(WARN).out << "VNL_IO_CALL failed: hash=" << vnl::hex(hash) << " size=" << size << vnl::endl;
 					}
 				} else if(id == VNL_IO_CONST_CALL) {
-					std::cout << "Object got VNL_IO_CONST_CALL: hash=" << hash << std::endl;
 					in.getHash(hash);
 					if(!vni_const_call(in, hash, size, out)) {
 						in.skip(id, size, hash);
 						out.putNull();
+						log(WARN).out << "VNL_IO_CONST_CALL failed: hash=" << vnl::hex(hash) << " size=" << size << vnl::endl;
 					}
+					out.flush();
 				} else if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 					break;
 				} else {
 					in.skip(id, size);
 				}
 			}
-			out.flush();
 			result->size = buf_out.position();
 			result->data = buf_out.release();
 		}
@@ -187,7 +185,7 @@ void Object::exec(Engine* engine_, Message* msg) {
 	announce->instance.type = type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
-	publish(announce, my_domain, "vnl/announce");
+	publish(announce, local_domain, "vnl/announce");
 	main(engine_, msg);
 	for(Address addr : ifconfig) {
 		close(addr);
@@ -203,7 +201,7 @@ void Object::exec(Engine* engine_, Message* msg) {
 	for(Timer* timer : timers) {
 		timer->~Timer();
 	}
-	publish(Exit::create(), my_domain, "vnl/exit");
+	publish(Exit::create(), local_domain, "vnl/exit");
 	stream.flush();
 }
 

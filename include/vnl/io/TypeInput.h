@@ -20,7 +20,7 @@ public:
 	TypeInput(InputStream* stream) : ByteInput(stream) {}
 	
 	int getEntry(int& size) {
-		int8_t c = 0;
+		uint8_t c = 0;
 		readChar(c);
 		size = c >> 4;
 		if(size == 0xF) {

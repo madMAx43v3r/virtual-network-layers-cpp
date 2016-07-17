@@ -5,8 +5,10 @@
  *      Author: mad
  */
 
-#include <test/TestNodeSupport.hxx>
+#include <vnl/ThreadEngine.h>
 #include <vnl/Terminal.h>
+
+#include <test/TestNodeSupport.hxx>
 
 
 namespace test {
@@ -88,6 +90,8 @@ protected:
 int main(int argc, char** argv) {
 	
 	vnl::Layer layer(argv[0]);
+	
+	usleep(1000*100);
 	
 	vnl::spawn(new test::TroubleMaker("default", "test/trouble"));
 	vnl::spawn(new test::TestNode("default", "test/node"));

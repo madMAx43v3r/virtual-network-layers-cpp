@@ -76,7 +76,6 @@ public:
 
 class String {
 public:
-	static const uint32_t VNI_HASH = 0x3ea151ae;
 	static const int CHUNK_SIZE = VNL_BLOCK_SIZE - 2;
 	
 	class chunk_t : public Block {
@@ -137,19 +136,24 @@ public:
 			A = A->next_chunk();
 			B = B->next_chunk();
 		}
-		return A == B;
+		return A == 0 && B == 0;
 	}
 	
 	bool operator==(const std::string& other) const {
-		// TODO
-		assert(false);
-		return false;
+		return *this == other.c_str();
 	}
 	
 	bool operator==(const char* other) const {
-		// TODO
-		assert(false);
-		return false;
+		int off = 0;
+		chunk_t* chunk = p_front;
+		while(chunk) {
+			if(strncmp(chunk->str(), other + off, chunk->len())) {
+				return false;
+			}
+			off += chunk->len();
+			chunk = chunk->next_chunk();
+		}
+		return chunk == 0;
 	}
 	
 	String& operator=(const char* str) {
@@ -257,10 +261,11 @@ public:
 	}
 	
 	void clear() {
-		chunk_t* chunk = p_front;
-		while(chunk) {
-			chunk->len() = 0;
-			chunk = chunk->next_chunk();
+		p_front->len() = 0;
+		chunk_t*& next = p_front->next_chunk();
+		if(next) {
+			next->free_all();
+			next = 0;
 		}
 		p_back = p_front;
 	}

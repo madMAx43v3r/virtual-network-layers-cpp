@@ -98,6 +98,9 @@ protected:
 	}
 	
 	void set_log_level(Engine* engine, Instance& node, int level) {
+		if(node.topic == my_topic) {
+			return;
+		}
 		ObjectClient client;
 		client.set_address(node.domain, node.topic);
 		client.connect(engine);

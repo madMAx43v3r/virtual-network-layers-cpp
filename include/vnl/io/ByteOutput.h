@@ -8,8 +8,8 @@
 #ifndef INCLUDE_IO_BYTEOUTPUT_H_
 #define INCLUDE_IO_BYTEOUTPUT_H_
 
-#include <vnl/util/types.h>
 #include <vnl/io/Stream.h>
+#include <vnl/Util.h>
 #include <vnl/String.h>
 
 

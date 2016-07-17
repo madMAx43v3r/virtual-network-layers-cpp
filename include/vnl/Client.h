@@ -12,6 +12,7 @@
 #include <vnl/Frame.h>
 #include <vnl/Stream.h>
 #include <vnl/Router.h>
+#include <vnl/Layer.h>
 
 
 namespace vnl {
@@ -25,19 +26,19 @@ public:
 	Client()
 		:	_error(0), _in(&_buf), _out(&_buf)
 	{
-		data = vnl::Page::alloc();
-		_buf.wrap(data);
+		src = Address(local_domain, mac);
+		_data = Page::alloc();
 	}
 	
 	~Client() {
 		if(is_connected) {
-			Stream::close(dst);
+			Stream::close(src);
 		}
-		data->free_all();
+		_data->free_all();
 	}
 	
 	virtual void set_address(const vnl::String& domain, const vnl::String& topic) {
-		set_address(domain, topic);
+		set_address(Hash64(domain), Hash64(topic));
 	}
 	
 	void set_address(Hash64 domain, Hash64 topic) {
@@ -49,7 +50,7 @@ public:
 			Stream::close(dst);
 		}
 		Stream::connect(engine);
-		Stream::open(dst);
+		Stream::open(src);
 		is_connected = true;
 	}
 	
@@ -71,19 +72,21 @@ public:
 	}
 	
 protected:
+	Page* _data;
 	vnl::io::ByteBuffer _buf;
 	vnl::io::TypeInput _in;
 	vnl::io::TypeOutput _out;
 	int _error;
 	
-	vnl::Packet* _call() {
+	Packet* _call() {
 		_out.flush();
 		next_seq++;
 		int64_t ts_begin = vnl::currentTimeMillis();
 		Frame* ret = 0;
 		while(true) {
 			Frame frame;
-			frame.data = data;
+			frame.src_addr = src;
+			frame.data = _data;
 			frame.size = _buf.position();
 			frame.seq_num = next_seq;
 			send(&frame, dst);
@@ -92,13 +95,12 @@ protected:
 			if(msg) {
 				if(msg->msg_id == vnl::Packet::MID) {
 					if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
-						ret = (Frame*)msg;
+						ret = (Frame*)((Packet*)msg)->payload;
 						break;
 					}
 				}
 				msg->ack();
 			}
-			std::cout << "vnl::Client TIMEOUT" << std::endl;
 			if(do_fail_if_timeout) {
 				int64_t ts_now = vnl::currentTimeMillis();
 				if(ts_now - ts_begin >= timeout) {
@@ -116,8 +118,8 @@ protected:
 	}
 	
 private:
-	vnl::Address dst;
-	vnl::Page* data;
+	Address src;
+	Address dst;
 	uint32_t next_seq = 0;
 	int64_t timeout = 1000;
 	bool do_fail_if_timeout = false;

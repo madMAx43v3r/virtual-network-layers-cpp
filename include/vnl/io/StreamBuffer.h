@@ -40,14 +40,15 @@ public:
 	
 	void read(void* dst, int len) {
 		while(len) {
-			int left = Page::size - pos;
+			int left = limit - pos;
 			if(!left) {
-				left = fetch();
-				if(left <= 0) {
+				limit = fetch();
+				if(limit <= 0) {
 					return;
 				}
+				left = limit;
 			}
-			int n = ::std::min(len, left);
+			int n = std::min(len, left);
 			memcpy(dst, buf->mem + pos, n);
 			dst = (char*)dst + n;
 			len -= n;
@@ -57,24 +58,20 @@ public:
 	}
 	
 	int error() const {
-		return err;
+		return in->error();
 	}
 	
 	void set_error(int err_) {
-		err = err_;
-#ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS);
-#endif
+		in->set_error(err_);
 	}
 	
 protected:
 	int fetch() {
+		pos = 0;
 		int n = in->read(buf->mem, Page::size);
 		if(n <= 0) {
-			set_error(VNL_IO_ERROR);
-			return err;
+			return n;
 		}
-		pos = 0;
 		return n;
 	}
 	
@@ -82,9 +79,7 @@ protected:
 	InputStream* in = 0;
 	Page* buf;
 	int pos = 0;
-	
-private:
-	int err = 0;
+	int limit = 0;
 	
 };
 
@@ -101,6 +96,7 @@ public:
 	
 	void write(char c) {
 		// TODO
+		assert(false);
 	}
 	
 	void write(const void* src, int len) {
@@ -110,6 +106,7 @@ public:
 				if(!flush()) {
 					return;
 				}
+				left = Page::size;
 			}
 			int n = std::min(len, left);
 			memcpy(buf->mem + pos, src, n);
@@ -123,7 +120,6 @@ public:
 	bool flush() {
 		if(pos) {
 			if(!out->write(buf->mem, pos)) {
-				set_error(VNL_IO_ERROR);
 				return false;
 			}
 			pos = 0;
@@ -132,23 +128,17 @@ public:
 	}
 	
 	int error() const {
-		return err;
+		return out->error();
 	}
 	
 	void set_error(int err_) {
-		err = err_;
-#ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS);
-#endif
+		out->set_error(err_);
 	}
 	
 protected:
 	OutputStream* out = 0;
 	Page* buf;
 	int pos = 0;
-	
-private:
-	int err = 0;
 	
 };
 

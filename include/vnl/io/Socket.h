@@ -29,7 +29,11 @@ public:
 	}
 	
 	virtual int read(void* dst, int len) {
-		return ::read(sock, dst, len);
+		int res = ::read(sock, dst, len);
+		if(res <= 0) {
+			err = VNL_IO_ERROR;
+		}
+		return res;
 	}
 	
 	virtual bool write(const void* src, int len) {
@@ -39,10 +43,15 @@ public:
 				len -= res;
 				src = (char*)src + res;
 			} else {
+				err = VNL_IO_ERROR;
 				return false;
 			}
 		}
 		return true;
+	}
+	
+	virtual int error() {
+		return err;
 	}
 	
 	void close() {
@@ -51,6 +60,7 @@ public:
 	
 private:
 	int sock;
+	int err = 0;
 	
 };
 

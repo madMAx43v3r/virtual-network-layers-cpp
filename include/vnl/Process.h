@@ -22,10 +22,15 @@ public:
 	{
 	}
 	
+	~Process() {
+		Layer::finished = true;
+	}
+	
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
 		open(local_domain, "vnl/announce");
 		open(local_domain, "vnl/log");
+		open(local_domain, "vnl/shutdown");
 		open(local_domain, "vnl/exit");
 		init->ack();
 		run();
@@ -47,6 +52,7 @@ protected:
 	}
 	
 	void handle(const vnl::Shutdown& event, const vnl::Packet& packet) {
+		log(INFO).out << "Got Shutdown from " << objects[packet.src_addr].topic << vnl::endl;
 		for(Address addr : objects.keys()) {
 			publish(vnl::Shutdown::create(), addr);
 		}
