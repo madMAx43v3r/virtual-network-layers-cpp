@@ -31,15 +31,24 @@ public:
 		mac = Random64::global_rand();
 	}
 	
+	vnl::Address my_address;
+	vnl::String my_domain;
+	vnl::String my_topic;
+	
  	// thread safe
 	virtual void receive(Message* msg) {
 		stream.receive(msg);
 	}
 	
+	virtual void serialize(vnl::io::TypeOutput& out) const;
+	
 protected:
 	virtual ~Object() {}
 	
-	virtual void main(Engine* engine, Message* init) = 0;
+	virtual void main(Engine* engine, Message* init) {
+		init->ack();
+		run();
+	}
 	
 	Object* fork(Object* object) {
 		engine->fork(object);
@@ -73,6 +82,14 @@ protected:
 		stream.send_async(packet, dst);
 	}
 	
+	void send(Message* msg, Basic* dst) {
+		stream.send(msg, dst);
+	}
+	
+	void send_async(Message* msg, Basic* dst) {
+		stream.send_async(msg, dst);
+	}
+	
 	void flush() {
 		stream.flush();
 	}
@@ -100,18 +117,14 @@ protected:
 	void vni_deserialize(const vnl::Binary& blob);
 	
 protected:
+	volatile bool dorun;
 	PageAllocator memory;
 	MessagePool buffer;
-	
-	vnl::Address my_address;
-	vnl::String my_domain;
-	vnl::String my_topic;
 	
 private:
 	void exec(Engine* engine, Message* msg);
 	
 private:
-	bool dorun;
 	Stream stream;
 	Engine* engine;
 	

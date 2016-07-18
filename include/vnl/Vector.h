@@ -15,7 +15,9 @@ template<typename T, int N>
 class Vector {
 public:
 	Vector() {
-		memset(&data, 0, sizeof(T)*N);
+		for(int i = 0; i < N; ++i) {
+			data[i] = 0;
+		}
 	}
 	
 	T& operator[](int i) {

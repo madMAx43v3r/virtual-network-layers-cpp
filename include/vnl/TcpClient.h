@@ -8,28 +8,60 @@
 #ifndef CPP_INCLUDE_VNI_TCPCLIENT_H_
 #define CPP_INCLUDE_VNI_TCPCLIENT_H_
 
-
 #include <vnl/Downlink.h>
+#include <vnl/TcpClientSupport.hxx>
 
 
 namespace vnl {
 
-class TcpClient : public Downlink {
+class TcpClient : public TcpClientBase {
 public:
-	TcpClient(vnl::String endpoint, int port = 8916, vnl::String name = "default")
-		:	Downlink(vnl::String() << "vni/tcp/client/" << endpoint << "/" << vnl::dec(port) << "/" << name),
-			endpoint(endpoint), port(port), sock(-1)
+	TcpClient(vnl::String endpoint, int port = 8916)
+		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint),
+			fd(-1)
 	{
+		this->endpoint = endpoint;
+		this->port = port;
 	}
 	
 protected:
-	virtual vnl::io::Socket* connect() {
-		int fd = ::socket(AF_INET, SOCK_STREAM, 0);
-		if(fd < 0) {
-			log(ERROR).out << "Failed to create client socket, error=" << vnl::dec(fd) << vnl::endl;
-			return -1;
+	virtual void main(vnl::Engine* engine, vnl::Message* init) {
+		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
+		downlink->uplink.set_address(my_address);
+		vnl::spawn(downlink);
+		init->ack();
+		run();
+		Downlink::close_t close;
+		send(&close, downlink);
+	}
+	
+	virtual void reset() {
+		fd = connect();
+		if(fd > 0) {
+			Uplink::sock = vnl::io::Socket(fd);
+			Uplink::reset();
 		}
+	}
+	
+	virtual void shutdown() {
+		exit();
+	}
+	
+	virtual int32_t get_fd() const {
+		return fd;
+	}
+	
+	int32_t connect() {
+		fd = -1;
 		while(dorun) {
+			if(fd > 0) {
+				::close(fd);
+			}
+			fd = ::socket(AF_INET, SOCK_STREAM, 0);
+			if(fd < 0) {
+				log(ERROR).out << "Failed to create client socket, error=" << fd << vnl::endl;
+				return -1;
+			}
 			sockaddr_in addr;
 			memset(&addr, 0, sizeof(addr));
 			addr.sin_family = AF_INET;
@@ -42,22 +74,20 @@ protected:
 				usleep(error_interval*1000);
 				continue;
 			}
+			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
 			int err = ::connect(fd, (sockaddr*)&addr, sizeof(addr));
 			if(err < 0) {
-				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << vnl::dec(err) << vnl::endl;
+				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << err << vnl::endl;
 				usleep(error_interval*1000);
 				continue;
 			}
 			break;
 		}
-		sock = vnl::io::Socket(fd);
-		return &sock;
+		return fd;
 	}
 	
 private:
-	vnl::String endpoint;
-	int port;
-	vnl::io::Socket sock;
+	int fd;
 	
 };
 

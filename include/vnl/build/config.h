@@ -28,7 +28,7 @@
 /*
  * Defining this will assert on IO errors.
  */
-#define VNL_IO_DEBUG
+//#define VNL_IO_DEBUG
 
 /*
  * The maximum number of hops a packet can travel.

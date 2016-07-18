@@ -8,20 +8,20 @@
 #ifndef INCLUDE_VNL_SOCKET_H_
 #define INCLUDE_VNL_SOCKET_H_
 
-#include <vnl/io/Stream.h>
-
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include <vnl/io/Stream.h>
+
 
 namespace vnl { namespace io {
 
-/*
- * This class must be thread-safe !!!
- */
 class Socket : public InputStream, public OutputStream {
 public:
+	Socket() : sock(-1) {}
+	
 	Socket(int sock) : sock(sock) {}
 	
 	int get_fd() const {
@@ -31,7 +31,7 @@ public:
 	virtual int read(void* dst, int len) {
 		int res = ::read(sock, dst, len);
 		if(res <= 0) {
-			err = VNL_IO_ERROR;
+			InputStream::set_error(VNL_IO_ERROR);
 		}
 		return res;
 	}
@@ -43,24 +43,19 @@ public:
 				len -= res;
 				src = (char*)src + res;
 			} else {
-				err = VNL_IO_ERROR;
+				OutputStream::set_error(VNL_IO_ERROR);
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	virtual int error() {
-		return err;
-	}
-	
 	void close() {
-		::close(fd);
+		::close(sock);
 	}
 	
 private:
 	int sock;
-	int err = 0;
 	
 };
 

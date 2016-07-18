@@ -6,6 +6,7 @@
  */
 
 #include <vnl/Router.h>
+#include <vnl/Layer.h>
 
 namespace vnl {
 
@@ -15,7 +16,7 @@ bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
 		if(pkt->src_addr.A == 0) {
-			pkt->src_addr.A = mac;
+			pkt->src_addr.A = local_domain;
 		}
 		Basic* src = msg->src;
 		if(src) {

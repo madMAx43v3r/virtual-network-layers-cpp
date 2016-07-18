@@ -139,8 +139,10 @@ private:
 };
 
 
-inline void spawn(Object* object) {
+inline Address spawn(Object* object) {
+	Address addr = object->my_address;
 	ThreadEngine::spawn(object);
+	return addr;
 }
 
 inline void run(Object* object) {

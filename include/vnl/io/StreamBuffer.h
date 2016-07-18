@@ -9,8 +9,8 @@
 #define INCLUDE_IO_STREAMBUFFER_H_
 
 #include <string.h>
-#include <algorithm>
 #include <vnl/Memory.h>
+#include <vnl/Util.h>
 #include <vnl/io/Error.h>
 #include <vnl/io/Stream.h>
 
@@ -22,6 +22,8 @@ public:
 	InputBuffer(InputStream* in) : in(in) {
 		buf = vnl::Page::alloc();
 	}
+	
+	InputBuffer(const InputBuffer&) = delete;
 	
 	~InputBuffer() {
 		buf->free();
@@ -49,12 +51,17 @@ public:
 				left = limit;
 			}
 			int n = std::min(len, left);
-			memcpy(dst, buf->mem + pos, n);
+			vnl::memcpy(dst, buf->mem + pos, n);
 			dst = (char*)dst + n;
 			len -= n;
 			pos += n;
 		}
 		return;
+	}
+	
+	void reset() {
+		pos = 0;
+		limit = 0;
 	}
 	
 	int error() const {
@@ -90,6 +97,8 @@ public:
 		buf = vnl::Page::alloc();
 	}
 	
+	OutputBuffer(const InputBuffer&) = delete;
+	
 	~OutputBuffer() {
 		buf->free();
 	}
@@ -109,7 +118,7 @@ public:
 				left = Page::size;
 			}
 			int n = std::min(len, left);
-			memcpy(buf->mem + pos, src, n);
+			vnl::memcpy(buf->mem + pos, src, n);
 			src = (const char*)src + n;
 			len -= n;
 			pos += n;

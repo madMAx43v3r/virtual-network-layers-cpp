@@ -40,12 +40,12 @@ protected:
 		}
 	}
 	
-	virtual void read(vnl::io::TypeInput& in, int id, int size) {
+	virtual void read(vnl::io::TypeInput& in) {
 		if(!data) {
 			data = vnl::Page::alloc();
 			in.getBinary(data, size);
 		} else {
-			in.skip(id, size);
+			in.skip();
 		}
 	}
 	

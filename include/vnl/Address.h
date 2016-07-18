@@ -88,12 +88,8 @@ inline bool operator==(const Address& A, const Address& B) {
 	return A.A == B.A && A.B == B.B;
 }
 
-inline static const char* get_local_domain_name() {
-	return "vnl/local/domain";
-}
-
-inline static uint64_t get_local_domain() {
-	return hash64(get_local_domain_name());
+inline bool operator!=(const Address& A, const Address& B) {
+	return A.A != B.A && A.B != B.B;
 }
 
 

@@ -15,6 +15,10 @@
 
 namespace vnl {
 
+void Object::serialize(vnl::io::TypeOutput& out) const {
+	out.putNull();
+}
+
 void Object::exit() {
 	dorun = false;
 }
@@ -113,18 +117,18 @@ bool Object::handle(Packet* pkt) {
 		if(((Sample*)pkt->payload)->data->vni_hash() == vnl::Shutdown::VNI_HASH) {
 			dorun = false;
 		}
-	} else if(pkt->pkt_id == Frame::PID) {
+	} else if(pkt->pkt_id == Frame::PID && pkt->dst_addr == my_address) {
 		Frame* request = (Frame*)pkt->payload;
 		Frame* result = buffer.create<Frame>();
 		result->seq_num = request->seq_num;
 		buf_in.wrap(request->data, request->size);
+		in.reset();
 		int size = 0;
 		int id = in.getEntry(size);
 		if(id == VNL_IO_INTERFACE) {
 			uint32_t hash = 0;
 			in.getHash(hash);
 			while(!in.error()) {
-				uint32_t hash = 0;
 				int size = 0;
 				int id = in.getEntry(size);
 				if(id == VNL_IO_CALL) {
@@ -150,6 +154,9 @@ bool Object::handle(Packet* pkt) {
 			}
 			result->size = buf_out.position();
 			result->data = buf_out.release();
+		}
+		if(in.error()) {
+			log(WARN).out << "Invalid Frame received: " << " size=" << request->size << vnl::endl;
 		}
 		send_async(result, request->src_addr);
 	}

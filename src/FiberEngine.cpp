@@ -6,6 +6,7 @@
  */
 
 #include "vnl/build/config.h"
+#include <vnl/Object.h>
 
 #ifdef VNL_HAVE_FIBER_ENGINE
 
@@ -14,8 +15,7 @@
 #include <boost/coroutine/symmetric_coroutine.hpp>
 #include <boost/coroutine/protected_stack_allocator.hpp>
 
-#include "vnl/FiberEngine.h"
-#include "vnl/Stream.h"
+#include <vnl/FiberEngine.h>
 
 
 namespace vnl {
@@ -258,14 +258,16 @@ private:
 FiberServer* FiberServer::instance = 0;
 
 
-void fork(Module* object) {
+Address fork(Module* object) {
 	if(!FiberServer::instance) {
 		FiberServer::instance = new FiberServer();
 		vnl::spawn(FiberServer::instance);
 	}
+	Address addr = object->my_address;
 	Actor actor;
 	FiberServer::fork_t fork(object);
 	actor.send(&fork, FiberServer::instance);
+	return addr;
 }
 
 
@@ -278,8 +280,10 @@ void fork(Module* object) {
 
 namespace vnl {
 
-void fork(Object* object) {
+Address fork(Object* object) {
+	Address addr = object->my_address;
 	vnl::spawn(object);
+	return addr;
 }
 
 } // vnl

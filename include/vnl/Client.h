@@ -9,6 +9,7 @@
 #define INCLUDE_VNI_CLIENT_H_
 
 #include <vnl/ClientSupport.hxx>
+#include <vnl/Topic.hxx>
 #include <vnl/Frame.h>
 #include <vnl/Stream.h>
 #include <vnl/Router.h>
@@ -43,6 +44,18 @@ public:
 	
 	void set_address(Hash64 domain, Hash64 topic) {
 		dst = vnl::Address(domain, topic);
+	}
+	
+	void set_address(Topic topic) {
+		dst = vnl::Address(topic.domain, topic.name);
+	}
+	
+	void set_address(Address addr) {
+		dst = addr;
+	}
+	
+	Address get_address() const {
+		return dst;
 	}
 	
 	void connect(vnl::Engine* engine) {
@@ -110,6 +123,7 @@ protected:
 		}
 		if(ret) {
 			_buf.wrap(ret->data, ret->size);
+			_in.reset();
 			_error = VNI_SUCCESS;
 		} else {
 			_error = VNI_ERROR;

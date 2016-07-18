@@ -8,123 +8,101 @@
 #ifndef CPP_INCLUDE_VNI_DOWNLINK_H_
 #define CPP_INCLUDE_VNI_DOWNLINK_H_
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/poll.h>
-
-#include <vnl/Uplink.h>
-#include <vnl/Module.h>
 #include <vnl/Map.h>
-#include <vnl/io/Socket.h>
+#include <vnl/Sample.h>
+#include <vnl/UplinkSupport.hxx>
+#include <vnl/DownlinkSupport.hxx>
 
 
 namespace vnl {
 
-class Downlink : public vnl::Module {
+class Downlink : public vnl::DownlinkBase {
 public:
-	Downlink(const vnl::String& port)
-		:	Module(vnl::String(port) << "/downlink"),
-			port(port), sock(0)
+	Downlink(const vnl::String& domain_, const vnl::String& topic_)
+		:	DownlinkBase(domain_, topic_)
 	{
+		sub_topic = Address("vnl/downlink", "subscribe");
 	}
-	
-	static const int error_interval = 3*1000;
-	static const int maintain_interval = 10;
-	static const int forward_timeout = 99;
 	
 	virtual void receive(vnl::Message* msg) {
-		if(msg->msg_id == vnl::Registry::exit_t::MID) {
+		if(msg->msg_id == close_t::MID) {
 			dorun = false;
-			if(sock) {
-				sock->close();
-			}
+			sock.close();
 		}
-		msg->ack();
+		Object::receive(msg);
 	}
 	
+	UplinkClient uplink;
+	
+	typedef vnl::SignalType<0x2965956f> close_t;
+	
 protected:
-	virtual void main(vnl::Engine* engine) {
-		fork(new Uplink(vnl::String(port) << "/uplink"));
-		int64_t last_maintain = vnl::currentTime();
+	virtual void main(vnl::Engine* engine, vnl::Message* init) {
+		init->ack();
+		uplink.connect(engine);
 		while(dorun) {
-			sock = connect();
-			if(!sock) {
+			uplink.reset();
+			int fd = -1;
+			uplink.get_fd(fd);
+			if(fd < 0) {
 				break;
 			}
-			Uplink::enable_t* enable = buffer.create<Uplink::enable_t>();
-			enable->data = sock;
-			send_async(enable, uplink);
-			vnl::io::TypeInput in(sock);
+			sock = vnl::io::Socket(fd);
+			vnl::io::TypeInput in(&sock);
 			while(dorun) {
 				int size = 0;
 				int id = in.getEntry(size);
 				if(id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
 					uint32_t hash = 0;
 					in.getHash(hash);
-					if(!read_packet(in, hash, uplink.get())) {
+					if(!read_packet(in, hash)) {
 						log(ERROR).out << "Invalid input data: hash=" << vnl::hex(hash) << vnl::endl;
 						usleep(error_interval*1000);
 						break;
 					}
 				} else {
-					log(ERROR).out << "Invalid input data: id=" << vnl::dec(id) << " size=" << vnl::dec(size) << vnl::endl;
+					log(ERROR).out << "Invalid input data: id=" << id << " size=" << size << vnl::endl;
 					usleep(error_interval*1000);
 					break;
-				}
-				int64_t now = vnl::currentTime();
-				if(now - last_maintain > maintain_interval) {
-					maintain();
-					last_maintain = now;
 				}
 				poll(0);
 			}
 			::close(fd);
 		}
-		for(vnl::Address addr : table.keys()) {
-			vnl::Router::close_t msg(std::make_pair(uplink.get(), addr));
-			send(&msg, vnl::Router::instance);
-		}
-		for(vnl::Address addr : fwd_table.keys()) {
-			vnl::Router::close_t msg(std::make_pair(uplink.get(), addr));
-			send(&msg, vnl::Router::instance);
-		}
+		uplink.shutdown();
+		// wait for close signal
+		run();
 	}
 	
-	bool read_packet(vnl::io::TypeInput& in, uint32_t hash, Uplink* uplink) {
+	bool read_packet(vnl::io::TypeInput& in, uint32_t hash) {
 		switch(hash) {
-		case Uplink::open_t::MID: {
-			vnl::Address addr;
-			addr.deserialize(in, 0);
-			in.skip(VNL_IO_INTERFACE, 0);
-			vnl::Router::open_t msg(std::make_pair(uplink, addr));
-			send(&msg, vnl::Router::instance);
-			table[addr] = 1;
-			break;
-		}
-		case Uplink::close_t::MID: {
-			vnl::Address addr;
-			addr.deserialize(in, 0);
-			in.skip(VNL_IO_INTERFACE, 0);
-			vnl::Router::close_t msg(std::make_pair(uplink, addr));
-			send(&msg, vnl::Router::instance);
-			table.erase(addr);
-			break;
-		}
 		case vnl::Sample::PID: {
 			vnl::Sample* sample = buffer.create<vnl::Sample>();
 			sample->deserialize(in, 0);
-			send_async(sample, sample->dst_addr);
+			if(sample->data) {
+				if(sample->dst_addr == sub_topic) {
+					Topic* topic = dynamic_cast<Topic*>(sample->data);
+					if(topic) {
+						uplink.publish(*topic);
+					} else {
+						sample->ack();
+					}
+				} else {
+					send_async(sample, sample->dst_addr);
+				}
+			} else {
+				sample->ack();
+			}
 			break;
 		}
 		case vnl::Frame::PID: {
 			vnl::Frame* frame = buffer.create<vnl::Frame>();
 			frame->deserialize(in, 0);
-			int64_t& time = fwd_table[frame->src_addr];
-			if(time == 0) {
-				vnl::Router::open_t msg(std::make_pair(uplink, frame->src_addr));
-				send(&msg, vnl::Router::instance);
+			int& count = fwd_table[frame->src_addr];
+			if(count == 0) {
+				uplink.forward(frame->src_addr.A, frame->src_addr.B);
 			}
-			time = vnl::currentTime();
+			count++;
 			send_async(frame, frame->dst_addr);
 			break;
 		}
@@ -134,21 +112,10 @@ protected:
 		return true;
 	}
 	
-	void maintain() {
-		// TODO
-	}
-	
-	virtual vnl::io::Socket* connect() = 0;
-	
-protected:
-	volatile bool dorun = true;
-	vnl::String port;
-	
 private:
-	vnl::io::Socket* sock;
-	vnl::Map<vnl::Address, int> table;
-	vnl::Map<vnl::Address, int64_t> fwd_table;
-	
+	vnl::io::Socket sock;
+	Address sub_topic;
+	Map<Address, int> fwd_table;
 	
 };
 

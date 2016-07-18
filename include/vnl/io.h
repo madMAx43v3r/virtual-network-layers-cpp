@@ -13,16 +13,8 @@
 #include <vnl/io/TypeInput.h>
 #include <vnl/io/TypeOutput.h>
 #include <vnl/io/Serializable.h>
+#include <vnl/io/Socket.h>
 
 
-namespace vnl { namespace io {
-
-struct block_t {
-	int32_t addr;
-	int32_t size;
-};
-
-
-}}
 
 #endif /* INCLUDE_VNL_IO_H_ */

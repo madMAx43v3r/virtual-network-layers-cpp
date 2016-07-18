@@ -95,40 +95,14 @@ static uint64_t hash64(T a, R b, S c) {
 }
 
 
-inline uint16_t vnl_htons(uint16_t v) {
-	return htons(v);
-}
-inline uint32_t vnl_htonl(uint32_t v) {
-	return htonl(v);
-}
-inline uint64_t vnl_htonll(uint64_t v) {
-	return htobe64(v);
-}
-inline float vnl_htonf(float v) {
-	uint32_t tmp = vnl_htonl(*((uint32_t*)&v));
-	return *((float*)&tmp);
-}
-inline double vnl_htond(double v) {
-	uint64_t tmp = vnl_htonll(*((uint64_t*)&v));
-	return *((double*)&tmp);
-}
-
-inline uint16_t vnl_ntohs(uint16_t v) {
-	return ntohs(v);
-}
-inline uint32_t vnl_ntohl(uint32_t v) {
-	return ntohl(v);
-}
-inline uint64_t vnl_ntohll(uint64_t v) {
-	return be64toh(v);
-}
-inline float vnl_ntohf(uint32_t v) {
-	uint32_t tmp = vnl_ntohl(v);
-	return *((float*)&tmp);
-}
-inline double vnl_ntohd(uint64_t v) {
-	uint64_t tmp = vnl_ntohll(v);
-	return *((double*)&tmp);
+inline void memcpy(void* dst, const void* src, int size) {
+	switch(size) {
+	case 1: *((uint8_t*)dst) = *((uint8_t*)src); break;
+	case 2: *((uint16_t*)dst) = *((uint16_t*)src); break;
+	case 4: *((uint32_t*)dst) = *((uint32_t*)src); break;
+	case 8: *((uint64_t*)dst) = *((uint64_t*)src); break;
+	default: ::memcpy(dst, src, size);
+	}
 }
 
 
@@ -165,6 +139,44 @@ static std::string demangle(const char* abiName) {
 
 
 
+} // vnl
+
+
+inline uint16_t vnl_htons(uint16_t v) {
+	return htons(v);
 }
+inline uint32_t vnl_htonl(uint32_t v) {
+	return htonl(v);
+}
+inline uint64_t vnl_htonll(uint64_t v) {
+	return htobe64(v);
+}
+inline float vnl_htonf(float v) {
+	uint32_t tmp = vnl_htonl(*((uint32_t*)&v));
+	return *((float*)&tmp);
+}
+inline double vnl_htond(double v) {
+	uint64_t tmp = vnl_htonll(*((uint64_t*)&v));
+	return *((double*)&tmp);
+}
+
+inline uint16_t vnl_ntohs(uint16_t v) {
+	return ntohs(v);
+}
+inline uint32_t vnl_ntohl(uint32_t v) {
+	return ntohl(v);
+}
+inline uint64_t vnl_ntohll(uint64_t v) {
+	return be64toh(v);
+}
+inline float vnl_ntohf(uint32_t v) {
+	uint32_t tmp = vnl_ntohl(v);
+	return *((float*)&tmp);
+}
+inline double vnl_ntohd(uint64_t v) {
+	uint64_t tmp = vnl_ntohll(v);
+	return *((double*)&tmp);
+}
+
 
 #endif /* INCLUDE_UTIL_H_ */

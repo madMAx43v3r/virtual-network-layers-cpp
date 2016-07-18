@@ -8,6 +8,8 @@
 #ifndef INCLUDE_VNL_IO_STREAM_H_
 #define INCLUDE_VNL_IO_STREAM_H_
 
+#include <vnl/io/Error.h>
+
 
 namespace vnl { namespace io {
 

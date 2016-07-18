@@ -55,7 +55,11 @@ public:
 		for(int i = 0; i < num_hops && !out.error(); ++i) {
 			out.writeInt(route[i]);
 		}
-		write(out);
+		if(parent) {
+			parent->write(out);
+		} else {
+			write(out);
+		}
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
@@ -76,12 +80,13 @@ public:
 		if(left > 0) {
 			in.skip(VNL_IO_BINARY, left);
 		}
+		read(in);
 		while(!in.error()) {
 			int id = in.getEntry(size);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 				break;
 			}
-			read(in, id, size);
+			in.skip(id, size);
 		}
 	}
 	
@@ -90,8 +95,8 @@ protected:
 		out.putNull();
 	}
 	
-	virtual void read(vnl::io::TypeInput& in, int id, int size) {
-		in.skip(id, size);
+	virtual void read(vnl::io::TypeInput& in) {
+		in.skip();
 	}
 	
 private:

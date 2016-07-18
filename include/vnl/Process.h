@@ -52,10 +52,7 @@ protected:
 	}
 	
 	void handle(const vnl::Shutdown& event, const vnl::Packet& packet) {
-		log(INFO).out << "Got Shutdown from " << objects[packet.src_addr].topic << vnl::endl;
-		for(Address addr : objects.keys()) {
-			publish(vnl::Shutdown::create(), addr);
-		}
+		shutdown();
 	}
 	
 	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
@@ -87,6 +84,17 @@ protected:
 	void set_log_filter(const vnl::String& filter) {
 		filtering = !filter.empty();
 		grep = filter.to_string();
+	}
+	
+	void shutdown() {
+		if(!Layer::shutdown) {
+			log(INFO).out << "Shutdown activated" << vnl::endl;
+			Layer::shutdown = true;
+			for(Address addr : objects.keys()) {
+				publish(vnl::Shutdown::create(), addr);
+			}
+			exit();
+		}
 	}
 	
 	void output(const vnl::LogMsg& log) {

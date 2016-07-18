@@ -16,6 +16,7 @@ namespace vnl {
 uint64_t local_domain = 0;
 const char* local_domain_name = 0;
 
+volatile bool Layer::shutdown = false;
 volatile bool Layer::finished = false;
 
 Layer::Layer(const char* domain_name) {
@@ -35,6 +36,13 @@ Layer::Layer(const char* domain_name) {
 }
 
 Layer::~Layer() {
+	if(!shutdown) {
+		ThreadEngine engine;
+		ProcessClient proc;
+		proc.set_address(local_domain, "vnl/process");
+		proc.connect(&engine);
+		proc.shutdown();
+	}
 	while(!finished) {
 		usleep(10*1000);
 	}

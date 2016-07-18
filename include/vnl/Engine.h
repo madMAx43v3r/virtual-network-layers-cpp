@@ -12,6 +12,7 @@
 #include <condition_variable>
 
 #include <vnl/Basic.h>
+#include <vnl/Address.h>
 #include <vnl/Message.h>
 #include <vnl/Memory.h>
 #include <vnl/Random.h>
@@ -27,10 +28,10 @@ class ThreadEngine;
 class FiberEngine;
 
 // running module in new thread
-void spawn(Object* object);
+Address spawn(Object* object);
 
 // running module in a fiber if possible, otherwise uses spawn
-void fork(Object* object);
+Address fork(Object* object);
 
 
 class Engine : public Basic {

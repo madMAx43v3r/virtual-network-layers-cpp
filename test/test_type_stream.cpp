@@ -6,12 +6,15 @@
  */
 
 #include <vnl/io.h>
+#include <vnl/Layer.h>
 #include <test/TestType.hxx>
 
 
 int main() {
 	
 	int N = 100000;
+	
+	vnl::Layer layer("test_type_stream");
 	
 	vnl::io::ByteBuffer buf;
 	vnl::io::TypeOutput out(&buf);

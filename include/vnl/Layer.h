@@ -8,6 +8,8 @@
 #ifndef INCLUDE_LAYER_H_
 #define INCLUDE_LAYER_H_
 
+#include <vnl/Basic.h>
+
 
 namespace vnl {
 
@@ -22,6 +24,8 @@ public:
 	Layer(const char* domain);
 	
 	~Layer();
+	
+	static volatile bool shutdown;
 	
 private:
 	static volatile bool finished;
