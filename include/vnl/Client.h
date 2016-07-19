@@ -38,6 +38,11 @@ public:
 		_data->free_all();
 	}
 	
+	Client& operator=(const Address& addr) {
+		set_address(addr);
+		return *this;
+	}
+	
 	virtual void set_address(const vnl::String& domain, const vnl::String& topic) {
 		set_address(Hash64(domain), Hash64(topic));
 	}

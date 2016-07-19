@@ -35,9 +35,23 @@ protected:
 		}
 	}
 	
+	virtual void publish(const vnl::String& domain, const vnl::String& topic) {
+		vnl::Topic desc;
+		desc.domain = domain;
+		desc.name = topic;
+		publish(desc);
+	}
+	
 	virtual void publish(const vnl::Topic& topic) {
 		open(topic.domain, topic.name);
 		log(INFO).out << "Publishing " << topic.domain << ":" << topic.name << vnl::endl;
+	}
+	
+	virtual void subscribe(const vnl::String& domain, const vnl::String& topic) {
+		vnl::Topic desc;
+		desc.domain = domain;
+		desc.name = topic;
+		subscribe(desc);
 	}
 	
 	virtual void subscribe(const vnl::Topic& topic) {
