@@ -199,19 +199,19 @@ void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArra
  * Generic to_string functions
  */
 inline void to_string(vnl::String& str, const Value& obj) {
-	return obj.to_string(str);
+	return obj.to_string_ex(str);
 }
 
 inline void to_string(vnl::String& str, const Value* obj) {
 	if(obj) {
-		obj->to_string(str);
+		obj->to_string_ex(str);
 	} else {
 		str << "{}";
 	}
 }
 
 inline void to_string(vnl::String& str, const Interface& obj) {
-	obj.to_string(str);
+	obj.to_string_ex(str);
 }
 
 inline void to_string(vnl::String& str, const String& obj) {

@@ -33,7 +33,7 @@ public:
 		// TODO
 	}
 	
-	virtual void to_string(vnl::String& str) const {
+	virtual void to_string_ex(vnl::String& str) const {
 		str << "{VNI_NAME: \"" << type_name() << "\"";
 		int N = num_fields();
 		for(int i = 0; i < N; ++i) {
@@ -45,7 +45,7 @@ public:
 	
 	vnl::String to_string() const {
 		vnl::String str;
-		to_string(str);
+		to_string_ex(str);
 		return str;
 	}
 	
