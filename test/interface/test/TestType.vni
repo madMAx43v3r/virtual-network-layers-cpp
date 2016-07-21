@@ -1,0 +1,34 @@
+package test;
+
+class TestType {
+	
+	TestValue val;
+	List<TestValue> list;
+	
+	test_value_t val2;
+	List<test_value_t> list2;
+	
+	String text = "test test";
+	
+	TestValue test_01;
+	TestValue test_02;
+	TestValue test_03;
+	TestValue test_04;
+	TestValue test_05;
+	TestValue test_06;
+	TestValue test_07;
+	TestValue test_08;
+	TestValue test_09;
+	TestValue test_10;
+	TestValue test_11;
+	TestValue test_12;
+	TestValue test_13;
+	TestValue test_14;
+	TestValue test_15;
+	TestValue test_16;
+	TestValue test_17;
+	TestValue test_18;
+	TestValue test_19;
+	TestValue test_20;
+	
+}

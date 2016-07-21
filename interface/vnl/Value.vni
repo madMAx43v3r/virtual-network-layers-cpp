@@ -1,0 +1,7 @@
+package vnl;
+
+// Note: Value is the base class for everything.
+
+class Value {
+	
+}

@@ -1,0 +1,5 @@
+package vnl;
+
+class Integer {
+	long value;
+}

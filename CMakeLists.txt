@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.4)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g -O2 -pthread -Wfatal-errors")
-
-include_directories(include/ test/generated/include/)
+include_directories(include/)
 
 ADD_LIBRARY(vnl STATIC
 	src/CRC64.cpp
@@ -15,4 +13,3 @@ ADD_LIBRARY(vnl STATIC
 	src/Router.cpp
 )
 
-add_subdirectory(test)

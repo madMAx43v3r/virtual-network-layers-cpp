@@ -1,0 +1,5 @@
+package vnl;
+
+class Bool {
+	bool value;
+}

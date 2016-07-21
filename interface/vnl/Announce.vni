@@ -1,0 +1,7 @@
+package vnl;
+
+class Announce {
+	
+	Instance instance;
+	
+}

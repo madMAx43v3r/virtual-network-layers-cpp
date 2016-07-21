@@ -1,0 +1,10 @@
+package vnl;
+
+class LogMsg {
+	
+	int level;
+	String domain;
+	String topic;
+	String msg;
+	
+}

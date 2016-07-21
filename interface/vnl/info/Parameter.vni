@@ -1,0 +1,6 @@
+package vnl.info;
+
+class Parameter {
+	String type;
+	String name;
+}

@@ -1,0 +1,7 @@
+package vnl;
+
+// Notification sent to local domain if shutdown activated
+
+class Shutdown {
+	
+}

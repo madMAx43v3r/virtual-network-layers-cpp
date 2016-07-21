@@ -1,0 +1,9 @@
+package vnl;
+
+class Instance {
+	
+	String type;
+	String domain;
+	String topic;
+	
+}

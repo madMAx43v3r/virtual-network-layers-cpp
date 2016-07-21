@@ -1,0 +1,7 @@
+package vnl;
+
+// Notification sent to local domain when an object dies
+
+class Exit {
+	
+}

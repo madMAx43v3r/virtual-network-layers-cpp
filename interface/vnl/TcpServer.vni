@@ -1,0 +1,9 @@
+package vnl;
+
+object TcpServer {
+	
+	int port = 8916;
+	
+	int error_interval = 3000;
+	
+}

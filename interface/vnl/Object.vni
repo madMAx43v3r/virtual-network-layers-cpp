@@ -1,0 +1,21 @@
+package vnl;
+
+import vnl.info.Class;
+
+// Note: This is the base class for all objects.
+
+object Object {
+	
+	const int ERROR = 1;
+	const int WARN = 2;
+	const int INFO = 3;
+	const int DEBUG = 4;
+	
+	int log_level = INFO;
+	
+	Class get_class() const;
+	
+	Binary vni_serialize() const;
+	void vni_deserialize(Binary blob);
+	
+}

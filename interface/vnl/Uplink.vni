@@ -1,0 +1,19 @@
+package vnl;
+
+object Uplink {
+	
+	int error_interval = 3000;
+	
+	void reset();
+	void shutdown();
+	int get_fd() const;
+	
+	void publish(Topic topic);
+	void publish(String domain, String topic);
+	
+	void subscribe(Topic topic);
+	void subscribe(String domain, String topic);
+	
+	void forward(long domain, long topic);
+	
+}

@@ -1,0 +1,8 @@
+package vnl.info;
+
+class Class {
+	
+	String name;
+	List<Field> fields;
+	
+}
