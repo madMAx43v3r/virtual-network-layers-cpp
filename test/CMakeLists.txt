@@ -22,10 +22,6 @@ ADD_LIBRARY(vnl STATIC
 	../src/Router.cpp
 )
 
-file(MAKE_DIRECTORY generated)
-
-add_custom_target(codegen ALL COMMAND vnicppcodegen ../interface interface/)
-
 add_subdirectory(generated)
 
 add_executable(test_module test_module.cpp)
