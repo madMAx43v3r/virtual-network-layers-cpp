@@ -265,53 +265,53 @@ vnl::String to_string(const T& ref) {
 /*
  * Generic from_string functions
  */
-inline void from_string(vnl::io::ByteInput& in, const Value& obj) {
+inline void from_string(vnl::io::ByteInput& in, Value& obj) {
 	return obj.from_string(in);
 }
 
-inline void from_string(vnl::io::ByteInput& in, const Value* obj) {
+inline void from_string(vnl::io::ByteInput& in, Value* obj) {
 	if(obj) {
 		obj->from_string(in);
 	}
 }
 
-inline void from_string(vnl::io::ByteInput& in, const Interface& obj) {
+inline void from_string(vnl::io::ByteInput& in, Interface& obj) {
 	obj.from_string(in);
 }
 
-inline void from_string(vnl::io::ByteInput& in, const String& obj) {
+inline void from_string(vnl::io::ByteInput& in, String& obj) {
 	// TODO
 }
 
-inline void from_string(vnl::io::ByteInput& in, const Binary& obj) {
-	// TODO
-}
-
-template<typename T>
-inline void from_string(vnl::io::ByteInput& in, const Array<T>& obj) {
+inline void from_string(vnl::io::ByteInput& in, Binary& obj) {
 	// TODO
 }
 
 template<typename T>
-inline void from_string(vnl::io::ByteInput& in, const List<T>& obj) {
+inline void from_string(vnl::io::ByteInput& in, Array<T>& obj) {
 	// TODO
 }
 
-inline void from_string(vnl::io::ByteInput& in, const bool& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const int8_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const int16_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const int32_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const int64_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const float& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, const double& val) { /* TODO */ }
+template<typename T>
+inline void from_string(vnl::io::ByteInput& in, List<T>& obj) {
+	// TODO
+}
+
+inline void from_string(vnl::io::ByteInput& in, bool& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, int8_t& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, int16_t& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, int32_t& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, int64_t& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, float& val) { /* TODO */ }
+inline void from_string(vnl::io::ByteInput& in, double& val) { /* TODO */ }
 
 template<typename T, int N>
-void from_string(vnl::io::ByteInput& in, const vnl::Vector<T, N>& vec) {
+void from_string(vnl::io::ByteInput& in, vnl::Vector<T, N>& vec) {
 	// TODO
 }
 
 template<typename T>
-void from_string(const vnl::String& str, const T& ref) {
+void from_string(const vnl::String& str, T& ref) {
 	// TODO
 }
 

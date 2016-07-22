@@ -29,7 +29,7 @@ public:
 	virtual void get_field(int index, vnl::String& str) const = 0;
 	virtual void set_field(int index, vnl::io::ByteInput& in) = 0;
 	
-	virtual void from_string(vnl::io::ByteInput& in) const {
+	virtual void from_string(vnl::io::ByteInput& in) {
 		// TODO
 	}
 	
