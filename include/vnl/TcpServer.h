@@ -28,11 +28,10 @@ public:
 	
 protected:
 	virtual void main(vnl::Engine* engine, vnl::Message* init) {
-		init->ack();
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
 		downlink->uplink.set_address(my_address);
 		vnl::spawn(downlink);
-		run();
+		Uplink::main(engine, init);
 		Downlink::close_t close;
 		send(&close, downlink);
 	}
@@ -74,15 +73,16 @@ public:
 	}
 	
 	virtual void receive(vnl::Message* msg) {
-		// TODO: this will never be called
-		::close(server);
-		Object::receive(msg);
+		if(Layer::shutdown) {
+			dorun = false;
+			::close(server);
+		}
+		Super::receive(msg);
 	}
 	
 protected:
 	virtual void main(vnl::Engine* engine, vnl::Message* init) {
 		init->ack();
-		signal(SIGPIPE, SIG_IGN);	// avoid SIGPIPE
 		while(dorun) {
 			if(server > 0) {
 				usleep(error_interval*1000);
@@ -91,6 +91,10 @@ protected:
 			if(server < 0) {
 				log(ERROR).out << "Failed to create server socket, error=" << server << vnl::endl;
 				return;
+			}
+			int enable = 1;
+			if(setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+				log(ERROR).out << "setsockopt(SO_REUSEADDR) failed, error=" << errno << vnl::endl;
 			}
 			sockaddr_in addr;
 			addr.sin_family = AF_INET;
@@ -110,15 +114,22 @@ protected:
 			while(dorun) {
 				int sock = ::accept(server, 0, 0);
 				if(sock < 0) {
-					log(ERROR).out << "accept() returned error " << errno << vnl::endl;
+					log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
 					break;
 				}
 				vnl::spawn(new TcpProxy(sock));
 				log(INFO).out << "New client on socket " << sock << vnl::endl;
-				poll(0);
 			}
 			::close(server);
 		}
+	}
+	
+	virtual void publish(const vnl::Topic& topic) {
+		// TODO
+	}
+	
+	virtual void publish(const vnl::String& domain, const vnl::String& topic) {
+		// TODO
 	}
 	
 private:

@@ -33,21 +33,18 @@ StringWriter Object::log(int level) {
 }
 
 Timer* Object::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type) {
-	Timer* timer = memory.create<Timer>();
-	timer->interval = micros;
-	timer->func = func;
-	timer->type = type;
+	Timer& timer = timers.push();
+	timer.interval = micros;
+	timer.func = func;
+	timer.type = type;
 	if(type != VNL_TIMER_MANUAL) {
-		timer->reset();
+		timer.reset();
 	}
-	timers.push(timer);
-	return timer;
+	return &timer;
 }
 
 void Object::publish(Value* data, Address topic) {
 	vnl::Sample* pkt = buffer.create<vnl::Sample>();
-	pkt->src_addr = my_address;
-	pkt->seq_num = next_seq++;
 	pkt->data = data;
 	send_async(pkt, topic);
 }
@@ -55,22 +52,22 @@ void Object::publish(Value* data, Address topic) {
 bool Object::poll(int64_t micros) {
 	int64_t to = micros;
 	int64_t now = currentTimeMicros();
-	for(Timer* timer : timers) {
-		if(timer->active) {
-			int64_t diff = timer->deadline - now;
+	for(Timer& timer : timers) {
+		if(timer.active) {
+			int64_t diff = timer.deadline - now;
 			if(diff <= 0) {
-				timer->func(timer);
-				switch(timer->type) {
+				timer.func(&timer);
+				switch(timer.type) {
 					case VNL_TIMER_REPEAT:
-						timer->active = true;
-						timer->deadline += timer->interval;
+						timer.active = true;
+						timer.deadline += timer.interval;
 						break;
 					case VNL_TIMER_MANUAL:
 					case VNL_TIMER_ONCE:
-						timer->active = false;
+						timer.active = false;
 						break;
 				}
-				diff = timer->deadline - now;
+				diff = timer.deadline - now;
 				if(diff < 0) {
 					diff = 0;
 				}
@@ -170,7 +167,7 @@ bool Object::sleep(int64_t secs) {
 bool Object::usleep(int64_t micros) {
 	int64_t now = currentTimeMicros();
 	int64_t deadline = now + micros;
-	while(now < deadline) {
+	while(dorun && now < deadline) {
 		int64_t to = deadline - now;
 		if(!poll(to)) {
 			return false;
@@ -180,6 +177,10 @@ bool Object::usleep(int64_t micros) {
 	return true;
 }
 
+const List<Address>& Object::get_ifconfig() const {
+	return ifconfig;
+}
+
 void Object::run() {
 	while(dorun && poll(-1));
 }
@@ -187,7 +188,7 @@ void Object::run() {
 void Object::exec(Engine* engine_, Message* msg) {
 	engine = engine_;
 	stream.connect(engine_);
-	open(my_address);
+	subscribe(my_address);
 	Announce* announce = Announce::create();
 	announce->instance.type = type_name();
 	announce->instance.domain = my_domain;
@@ -195,7 +196,7 @@ void Object::exec(Engine* engine_, Message* msg) {
 	publish(announce, local_domain, "vnl/announce");
 	main(engine_, msg);
 	for(Address addr : ifconfig) {
-		close(addr);
+		unsubscribe(addr);
 	}
 	while(true) {
 		Message* msg = stream.poll(0);
@@ -204,9 +205,6 @@ void Object::exec(Engine* engine_, Message* msg) {
 		} else {
 			break;
 		}
-	}
-	for(Timer* timer : timers) {
-		timer->~Timer();
 	}
 	publish(Exit::create(), local_domain, "vnl/exit");
 	stream.flush();

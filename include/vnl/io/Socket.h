@@ -38,7 +38,7 @@ public:
 	
 	virtual bool write(const void* src, int len) {
 		while(len > 0) {
-			int res = ::write(sock, src, len);
+			int res = ::send(sock, src, len, MSG_NOSIGNAL);
 			if(res > 0) {
 				len -= res;
 				src = (char*)src + res;

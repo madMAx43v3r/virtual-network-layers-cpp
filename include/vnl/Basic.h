@@ -19,7 +19,9 @@ namespace vnl {
 
 class Basic {
 public:
-	Basic() {}
+	Basic() : _impl(0) {
+		mac = Random64::global_rand();
+	}
 	
 	Basic(const Basic&) = delete;
 	Basic& operator=(const Basic&) = delete;
@@ -31,10 +33,10 @@ public:
 	// must be thread safe !!!
 	virtual void receive(Message* msg) = 0;
 	
-	void* _impl = 0;
+	void* _impl;
 	
 protected:
-	uint64_t mac = 0;
+	uint64_t mac;
 	
 };
 

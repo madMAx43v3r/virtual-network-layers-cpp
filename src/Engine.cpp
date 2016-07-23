@@ -15,6 +15,8 @@
 
 namespace vnl {
 
+int Engine::max_num_pending = 1000;
+
 Engine::Engine()
 {
 	mac = Random64::global_rand();

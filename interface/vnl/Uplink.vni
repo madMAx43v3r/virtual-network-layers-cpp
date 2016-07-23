@@ -2,7 +2,9 @@ package vnl;
 
 object Uplink {
 	
-	int error_interval = 3000;
+	int send_timeout = -1;		// how long a packet can be in the queue (ms)
+	
+	long num_drop = 0;			// how many packets have been dropped so far
 	
 	void reset();
 	void shutdown();

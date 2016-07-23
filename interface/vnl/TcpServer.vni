@@ -3,7 +3,9 @@ package vnl;
 object TcpServer {
 	
 	int port = 8916;
+	int error_interval = 1000;
 	
-	int error_interval = 3000;
+	void publish(Topic topic);
+	void publish(String domain, String topic);
 	
 }

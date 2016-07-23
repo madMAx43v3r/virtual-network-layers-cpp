@@ -10,18 +10,16 @@
 
 #include <vnl/Basic.h>
 #include <vnl/Engine.h>
-#include <vnl/Memory.h>
 #include <vnl/Queue.h>
 #include <vnl/Router.h>
+#include <vnl/Layer.h>
 
 
 namespace vnl {
 
 class Stream : public Basic {
 public:
-	Stream() : engine(0) {
-		mac = Random64::global_rand();
-	}
+	Stream() : engine(0), next_seq(1) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -50,28 +48,48 @@ public:
 		}
 	}
 	
-	void open(Address address) {
+	void subscribe(Address address) {
 		Router::open_t msg(std::make_pair(this, address));
 		send(&msg, Router::instance);
 	}
-	void close(Address address) {
+	
+	void unsubscribe(Address address) {
 		Router::close_t msg(std::make_pair(this, address));
 		send(&msg, Router::instance);
 	}
 	
 	void send(Message* msg, Basic* dst) {
+		if(!msg->src) {
+			msg->src = this;
+		}
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
+		if(!msg->src) {
+			msg->src = this;
+		}
 		engine->send_async(msg, dst);
 	}
 	
 	void send(Packet* packet, Address dst) {
+		if(packet->src_addr.is_null()) {
+			packet->src_addr = Address(local_domain, mac);
+		}
+		if(!packet->seq_num) {
+			packet->seq_num = next_seq++;
+		}
 		packet->dst_addr = dst;
 		send(packet, Router::instance);
 	}
+	
 	void send_async(Packet* packet, Address dst) {
+		if(packet->src_addr.is_null()) {
+			packet->src_addr = Address(local_domain, mac);
+		}
+		if(!packet->seq_num) {
+			packet->seq_num = next_seq++;
+		}
 		packet->dst_addr = dst;
 		send_async(packet, Router::instance);
 	}
@@ -101,6 +119,7 @@ public:
 private:
 	Engine* engine;
 	Queue<Message*> queue;
+	uint32_t next_seq;
 	
 	friend class Engine;
 	

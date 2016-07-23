@@ -25,7 +25,10 @@ enum {
 class Client : public ClientBase, public vnl::Stream {
 public:
 	Client()
-		:	_error(0), _in(&_buf), _out(&_buf)
+		:	_error(0), _in(&_buf), _out(&_buf),
+		 	next_seq(1), timeout(1000),
+		 	do_fail_if_timeout(false),
+		 	is_connected(false)
 	{
 		src = Address(local_domain, mac);
 		_data = Page::alloc();
@@ -33,7 +36,7 @@ public:
 	
 	~Client() {
 		if(is_connected) {
-			Stream::close(src);
+			Stream::unsubscribe(src);
 		}
 		_data->free_all();
 	}
@@ -41,10 +44,6 @@ public:
 	Client& operator=(const Address& addr) {
 		set_address(addr);
 		return *this;
-	}
-	
-	virtual void set_address(const vnl::String& domain, const vnl::String& topic) {
-		set_address(Hash64(domain), Hash64(topic));
 	}
 	
 	void set_address(Hash64 domain, Hash64 topic) {
@@ -65,10 +64,10 @@ public:
 	
 	void connect(vnl::Engine* engine) {
 		if(is_connected) {
-			Stream::close(dst);
+			Stream::unsubscribe(dst);
 		}
 		Stream::connect(engine);
-		Stream::open(src);
+		Stream::subscribe(src);
 		is_connected = true;
 	}
 	
@@ -139,10 +138,10 @@ protected:
 private:
 	Address src;
 	Address dst;
-	uint32_t next_seq = 0;
-	int64_t timeout = 1000;
-	bool do_fail_if_timeout = false;
-	bool is_connected = false;
+	uint32_t next_seq;
+	int64_t timeout;
+	bool do_fail_if_timeout;
+	bool is_connected;
 	
 };
 

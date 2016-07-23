@@ -72,7 +72,7 @@ public:
 	
 protected:
 	void destroy() {
-		vni::destroy<T>(ptr);
+		vnl::destroy<T>(ptr);
 	}
 	
 private:

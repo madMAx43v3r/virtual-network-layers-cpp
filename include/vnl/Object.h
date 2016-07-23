@@ -22,13 +22,12 @@ namespace vnl {
 class Object : public Basic, public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
-		:	dorun(true), engine(0), next_seq(1),
+		:	dorun(true), engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			in(&buf_in), out(&buf_out),
 			log_writer(this)
 	{
-		mac = Random64::global_rand();
 	}
 	
 	vnl::Address my_address;
@@ -55,17 +54,19 @@ protected:
 		return object;
 	}
 	
-	void open(vnl::Hash64 domain, vnl::Hash64 topic) {
-		open(Address(domain, topic));
+	void subscribe(Hash64 domain, Hash64 topic) {
+		subscribe(Address(domain, topic));
 	}
 	
-	void open(Address address) {
-		stream.open(address);
+	void subscribe(Address address) {
+		Router::open_t msg(std::make_pair(this, address));
+		send(&msg, Router::instance);
 		ifconfig.push_back(address);
 	}
 	
-	void close(Address address) {
-		stream.close(address);
+	void unsubscribe(Address address) {
+		Router::close_t msg(std::make_pair(this, address));
+		send(&msg, Router::instance);
 	}
 	
 	void publish(Value* data, Hash64 domain, Hash64 topic) {
@@ -75,18 +76,36 @@ protected:
 	void publish(Value* data, Address topic);
 	
 	void send(Packet* packet, Address dst) {
+		if(!packet->src) {
+			packet->src = this;
+		}
+		if(packet->src_addr.is_null()) {
+			packet->src_addr = my_address;
+		}
 		stream.send(packet, dst);
 	}
 	
 	void send_async(Packet* packet, Address dst) {
+		if(!packet->src) {
+			packet->src = this;
+		}
+		if(packet->src_addr.is_null()) {
+			packet->src_addr = my_address;
+		}
 		stream.send_async(packet, dst);
 	}
 	
 	void send(Message* msg, Basic* dst) {
+		if(!msg->src) {
+			msg->src = this;
+		}
 		stream.send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
+		if(!msg->src) {
+			msg->src = this;
+		}
 		stream.send_async(msg, dst);
 	}
 	
@@ -102,6 +121,8 @@ protected:
 	
 	bool sleep(int64_t secs);
 	bool usleep(int64_t micros);
+	
+	const List<Address>& get_ifconfig() const;
 	
 	void exit();
 	
@@ -128,10 +149,9 @@ private:
 	Stream stream;
 	Engine* engine;
 	
-	List<Timer*> timers;
+	List<Timer> timers;
 	List<Address> ifconfig;
 	
-	uint32_t next_seq;
 	vnl::Map<vnl::Address, uint32_t> sources;
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;

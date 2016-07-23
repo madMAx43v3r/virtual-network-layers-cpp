@@ -49,6 +49,10 @@ public:
 		}
 	}
 	
+	T& push() {
+		return push(T());
+	}
+	
 	T& push(const T& obj) {
 		if(!p_front) {
 			p_front = Block::alloc_ex<block_t>()->create();

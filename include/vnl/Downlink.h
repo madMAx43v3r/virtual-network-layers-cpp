@@ -29,7 +29,7 @@ public:
 			dorun = false;
 			sock.close();
 		}
-		Object::receive(msg);
+		Super::receive(msg);
 	}
 	
 	UplinkClient uplink;
@@ -41,8 +41,8 @@ protected:
 		init->ack();
 		uplink.connect(engine);
 		while(dorun) {
-			uplink.reset();
 			int fd = -1;
+			uplink.reset();
 			uplink.get_fd(fd);
 			if(fd < 0) {
 				break;
@@ -57,12 +57,10 @@ protected:
 					in.getHash(hash);
 					if(!read_packet(in, hash)) {
 						log(ERROR).out << "Invalid input data: hash=" << vnl::hex(hash) << vnl::endl;
-						usleep(error_interval*1000);
 						break;
 					}
 				} else {
 					log(ERROR).out << "Invalid input data: id=" << id << " size=" << size << vnl::endl;
-					usleep(error_interval*1000);
 					break;
 				}
 				poll(0);
@@ -88,6 +86,7 @@ protected:
 						sample->ack();
 					}
 				} else {
+					forward(sample);
 					send_async(sample, sample->dst_addr);
 				}
 			} else {
@@ -98,11 +97,7 @@ protected:
 		case vnl::Frame::PID: {
 			vnl::Frame* frame = buffer.create<vnl::Frame>();
 			frame->deserialize(in, 0);
-			int& count = fwd_table[frame->src_addr];
-			if(count == 0) {
-				uplink.forward(frame->src_addr.A, frame->src_addr.B);
-			}
-			count++;
+			forward(frame);
 			send_async(frame, frame->dst_addr);
 			break;
 		}
@@ -110,6 +105,14 @@ protected:
 			return false;
 		}
 		return true;
+	}
+	
+	void forward(vnl::Packet* pkt) {
+		int& count = fwd_table[pkt->src_addr];
+		if(count == 0) {
+			uplink.forward(pkt->src_addr.A, pkt->src_addr.B);
+		}
+		count++;
 	}
 	
 private:

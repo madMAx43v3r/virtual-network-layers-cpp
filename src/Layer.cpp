@@ -22,14 +22,15 @@ volatile bool Layer::finished = false;
 Layer::Layer(const char* domain_name) {
 	assert(local_domain == 0);
 	assert(global_pool == 0);
-	assert(Random64::instance == 0);
 	assert(Router::instance == 0);
 	
 	local_domain_name = domain_name;
 	local_domain = vnl::hash64(domain_name);
 	global_pool = new GlobalPool();
 	
-	Random64::instance = new Random64();
+	if(!Random64::instance) {
+		Random64::instance = new Random64();
+	}
 	Router::instance = new Router();
 	
 	vnl::spawn(new Process());

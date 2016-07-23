@@ -15,15 +15,7 @@ Router* Router::instance = 0;
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
-		if(pkt->src_addr.A == 0) {
-			pkt->src_addr.A = local_domain;
-		}
 		Basic* src = msg->src;
-		if(src) {
-			if(pkt->src_addr.B == 0) {
-				pkt->src_addr.B = src->get_mac();
-			}
-		}
 		for(int i = 0; i < pkt->num_hops; ++i) {
 			if(pkt->route[i] == (uint32_t)mac) {
 				num_drop++;

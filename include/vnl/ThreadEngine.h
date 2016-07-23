@@ -41,11 +41,15 @@ protected:
 		assert(msg->isack == false);
 		assert(dst);
 		
-		msg->src = this;
+		if(!msg->src) {
+			msg->src = this;
+		}
 		dst->receive(msg);
 		pending++;
 		if(!async && pending > 0) {
 			wait_for_ack(msg);
+		} else {
+			wait_for_acks(max_num_pending);
 		}
 	}
 	
@@ -61,12 +65,7 @@ protected:
 	}
 	
 	virtual void flush() {
-		while(pending > 0) {
-			Message* msg = collect(-1);
-			if(msg) {
-				handle(msg);
-			}
-		}
+		wait_for_acks(0);
 	}
 	
 private:
@@ -78,6 +77,15 @@ private:
 				if(msg == snd) {
 					return;
 				}
+			}
+		}
+	}
+	
+	void wait_for_acks(int max_num) {
+		while(pending > max_num) {
+			Message* msg = collect(-1);
+			if(msg) {
+				handle(msg);
 			}
 		}
 	}

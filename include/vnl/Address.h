@@ -37,8 +37,12 @@ public:
 		return A;
 	}
 	
-	uint64_t mac() const {
+	uint64_t topic() const {
 		return B;
+	}
+	
+	bool is_null() {
+		return A == 0 && B == 0;
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {

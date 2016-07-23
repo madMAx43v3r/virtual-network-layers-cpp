@@ -56,6 +56,9 @@ public:
 	// not thread safe
 	virtual void fork(Object* object) = 0;
 	
+	// maximum number of pending messages
+	static int max_num_pending;
+	
 protected:
 	void exec(Object* object, Message* init);
 	

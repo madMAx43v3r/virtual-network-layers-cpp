@@ -33,6 +33,9 @@ public:
 	}
 	
 	static uint64_t global_rand() {
+		if(!instance) {
+			instance = new Random64();
+		}
 		return instance->rand();
 	}
 	

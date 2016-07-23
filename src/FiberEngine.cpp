@@ -45,6 +45,10 @@ public:
 			while(wait_msg) {
 				wait();
 			}
+		} else {
+			while(pending > max_num_pending) {
+				wait();
+			}
 		}
 	}
 	
@@ -174,7 +178,9 @@ void FiberEngine::send_impl(Message* msg, Basic* dst, bool async) {
 	assert(msg->isack == false);
 	assert(current);
 	
-	msg->src = this;
+	if(!msg->src) {
+		msg->src = this;
+	}
 	msg->_impl = current;
 	dst->receive(msg);
 	current->sent(msg, async);
