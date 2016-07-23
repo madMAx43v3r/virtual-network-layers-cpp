@@ -65,7 +65,6 @@ protected:
 				}
 				poll(0);
 			}
-			::close(fd);
 		}
 		uplink.shutdown();
 		// wait for close signal
@@ -77,7 +76,7 @@ protected:
 		case vnl::Sample::PID: {
 			vnl::Sample* sample = buffer.create<vnl::Sample>();
 			sample->deserialize(in, 0);
-			if(sample->data) {
+			if(sample->data && !in.error()) {
 				if(sample->dst_addr == sub_topic) {
 					Topic* topic = dynamic_cast<Topic*>(sample->data);
 					if(topic) {

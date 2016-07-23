@@ -51,12 +51,8 @@ public:
 	}
 	
 	void deserialize(vnl::io::TypeInput& in, int size) {
-		int64_t a = 0;
-		int64_t b = 0;
-		in.readLong(a);
-		in.readLong(b);
-		A = a;
-		B = b;
+		in.readLong(A);
+		in.readLong(B);
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {

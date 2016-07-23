@@ -2,6 +2,8 @@ package test;
 
 class TestType {
 	
+	long time;
+	
 	TestValue val;
 	List<TestValue> list;
 	

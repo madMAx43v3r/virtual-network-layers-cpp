@@ -79,6 +79,7 @@ public:
 		if(!packet->seq_num) {
 			packet->seq_num = next_seq++;
 		}
+		packet->src_mac = mac;
 		packet->dst_addr = dst;
 		send(packet, Router::instance);
 	}
@@ -89,6 +90,9 @@ public:
 		}
 		if(!packet->seq_num) {
 			packet->seq_num = next_seq++;
+		}
+		if(!packet->src_mac) {
+			packet->src_mac = mac;
 		}
 		packet->dst_addr = dst;
 		send_async(packet, Router::instance);

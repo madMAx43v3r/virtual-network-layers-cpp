@@ -25,12 +25,13 @@ public:
 	
 protected:
 	virtual bool handle(Packet* pkt) {
-		if(!ModuleBase::handle(pkt)) {
-			if(pkt->pkt_id == vnl::Sample::PID) {
-				Sample* sample = (Sample*)pkt->payload;
-				if(sample->data) {
-					handle_switch(sample->data, pkt);
-				}
+		if(Super::handle(pkt)) {
+			return true;
+		}
+		if(pkt->pkt_id == vnl::Sample::PID) {
+			Sample* sample = (Sample*)pkt->payload;
+			if(sample->data) {
+				handle_switch(sample->data, pkt);
 			}
 		}
 		return false;

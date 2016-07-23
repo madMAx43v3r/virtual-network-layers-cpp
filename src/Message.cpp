@@ -12,11 +12,10 @@
 namespace vnl {
 
 void Message::ack() {
-	if(!isack) {
-		isack = true;
-		if(src) {
-			src->receive(this);
-		}
+	assert(!isack);
+	isack = true;
+	if(src) {
+		src->receive(this);
 	}
 }
 

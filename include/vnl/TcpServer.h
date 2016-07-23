@@ -117,6 +117,12 @@ protected:
 					log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
 					break;
 				}
+				if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
+					log(WARN).out << "setsockopt() for send_buffer_size failed, error=" << errno << vnl::endl;
+				}
+				if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
+					log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
+				}
 				vnl::spawn(new TcpProxy(sock));
 				log(INFO).out << "New client on socket " << sock << vnl::endl;
 			}

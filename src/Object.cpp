@@ -99,8 +99,10 @@ bool Object::handle(Message* msg) {
 }
 
 bool Object::handle(Packet* pkt) {
-	uint32_t& last_seq = sources[pkt->src_addr];
-	// TODO: handle sequence wrap around
+	int64_t& last_seq = sources[pkt->src_mac];
+	if(last_seq == 0) {
+		log(DEBUG).out << "New source: mac=" << vnl::hex(pkt->src_mac) << " num_hops=" << pkt->num_hops << vnl::endl;
+	}
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == vnl::Frame::PID) {
 			Frame* result = buffer.create<Frame>();

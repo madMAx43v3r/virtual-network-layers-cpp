@@ -152,7 +152,7 @@ private:
 	List<Timer> timers;
 	List<Address> ifconfig;
 	
-	vnl::Map<vnl::Address, uint32_t> sources;
+	vnl::Map<uint64_t, int64_t> sources;
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;
 	vnl::io::TypeInput in;

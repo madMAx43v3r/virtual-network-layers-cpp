@@ -22,7 +22,8 @@ public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	
 	uint32_t pkt_id;
-	uint32_t seq_num;
+	int64_t seq_num;
+	uint64_t src_mac;
 	Address src_addr;
 	Address dst_addr;
 	void* payload;
@@ -31,24 +32,30 @@ public:
 	uint32_t route[VNL_MAX_ROUTE_LENGTH];
 	
 	Packet()
-		:	Message(MID), pkt_id(0), seq_num(0), num_hops(0), payload(0) {}
+		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0) {}
 	
 	void copy_from(Packet* org) {
 		parent = org;
 		pkt_id = org->pkt_id;
 		seq_num = org->seq_num;
+		src_mac = org->src_mac;
 		src_addr = org->src_addr;
 		dst_addr = org->dst_addr;
 		payload = org->payload;
 		num_hops = org->num_hops;
-		memcpy(route, org->route, sizeof(uint32_t)*VNL_MAX_ROUTE_LENGTH);
+		vnl::memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
+	}
+	
+	int16_t get_header_size() const {
+		return 8+16+16+2 + num_hops*4;
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
-		out.writeShort(4+16+16+2 + num_hops*4);
-		out.writeInt(seq_num);
+		out.putValue(seq_num);
+		out.writeShort(get_header_size());
+		out.writeLong(src_mac);
 		src_addr.serialize(out);
 		dst_addr.serialize(out);
 		out.writeShort(num_hops);
@@ -64,9 +71,10 @@ public:
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
-		int16_t header = 0;
-		in.readShort(header);
-		in.readInt(seq_num);
+		int16_t header_len = 0;
+		in.getValue(seq_num);
+		in.readShort(header_len);
+		in.readLong(src_mac);
 		src_addr.deserialize(in, 0);
 		dst_addr.deserialize(in, 0);
 		in.readShort(num_hops);
@@ -76,7 +84,7 @@ public:
 			in.readInt(hash);
 			route[i] = hash;
 		}
-		int left = header - (4+16+16+2 + num_hops*4);
+		int left = header_len - get_header_size();
 		if(left > 0) {
 			in.skip(VNL_IO_BINARY, left);
 		}

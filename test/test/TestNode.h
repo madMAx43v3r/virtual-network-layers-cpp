@@ -21,6 +21,7 @@ public:
 	}
 	
 	int counter = 0;
+	int latency = 0;
 	
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
@@ -32,11 +33,14 @@ protected:
 	}
 	
 	void print_stats() {
-		log(INFO).out << "counter = " << vnl::dec(counter) << " (System: " << vnl::Page::get_num_alloc() << " Pages, " << vnl::Block::get_num_alloc() << " Blocks)" << vnl::endl;
+		log(INFO).out << "counter = " << vnl::dec(counter) << " latency=" << latency
+				<< " (System: " << vnl::Page::get_num_alloc() << " Pages, " << vnl::Block::get_num_alloc() << " Blocks)" << vnl::endl;
 		counter = 0;
 	}
 	
 	void handle(const TestType& ev, const vnl::Packet& packet) {
+		int64_t now = vnl::currentTimeMicros();
+		latency = now - ev.time;
 		counter++;
 	}
 	

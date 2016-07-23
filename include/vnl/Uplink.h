@@ -18,7 +18,7 @@ namespace vnl {
 class Uplink : public vnl::UplinkBase {
 public:
 	Uplink(const vnl::String& domain_, const vnl::String& topic_)
-		:	UplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1)
+		:	UplinkBase(domain_, topic_), fd(-1), out(&sock), timer(0), next_seq(1)
 	{
 		sub_topic = Address("vnl/downlink", "subscribe");
 	}
@@ -35,6 +35,7 @@ protected:
 	}
 	
 	virtual void reset() {
+		sock = vnl::io::Socket(fd);
 		for(Topic& topic : table.values()) {
 			do_subscribe(topic);
 		}
@@ -122,6 +123,7 @@ protected:
 	}
 	
 protected:
+	int fd;
 	Address sub_topic;
 	vnl::io::Socket sock;
 	vnl::io::TypeOutput out;

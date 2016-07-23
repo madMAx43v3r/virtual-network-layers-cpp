@@ -17,8 +17,7 @@ namespace vnl {
 class TcpClient : public TcpClientBase {
 public:
 	TcpClient(vnl::String endpoint, int port = 8916)
-		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint),
-			fd(-1)
+		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint)
 	{
 		this->endpoint = endpoint;
 		this->port = port;
@@ -35,23 +34,21 @@ protected:
 	}
 	
 	virtual void reset() {
-		fd = connect();
+		connect();
 		if(fd > 0) {
-			Super::sock = vnl::io::Socket(fd);
 			Super::reset();
 		}
-	}
-	
-	virtual void shutdown() {
-		exit();
 	}
 	
 	virtual int32_t get_fd() const {
 		return fd;
 	}
 	
-	int32_t connect() {
-		fd = -1;
+	virtual void shutdown() {
+		exit();
+	}
+	
+	void connect() {
 		while(dorun) {
 			if(fd > 0) {
 				::close(fd);
@@ -60,7 +57,14 @@ protected:
 			fd = ::socket(AF_INET, SOCK_STREAM, 0);
 			if(fd < 0) {
 				log(ERROR).out << "Failed to create client socket, error=" << fd << vnl::endl;
-				return -1;
+				usleep(error_interval*10*1000);
+				continue;
+			}
+			if(setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
+				log(WARN).out << "setsockopt() for send_buffer_size failed, error=" << errno << vnl::endl;
+			}
+			if(setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
+				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 			}
 			sockaddr_in addr;
 			memset(&addr, 0, sizeof(addr));
@@ -70,7 +74,7 @@ protected:
 			if(host) {
 				memcpy(&addr.sin_addr.s_addr, host->h_addr_list[0], host->h_length);
 			} else {
-				log(DEBUG).out << "Could not resolve " << endpoint << vnl::endl;
+				log(ERROR).out << "Could not resolve " << endpoint << vnl::endl;
 				continue;
 			}
 			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
@@ -81,11 +85,7 @@ protected:
 			}
 			break;
 		}
-		return fd;
 	}
-	
-private:
-	int fd;
 	
 };
 

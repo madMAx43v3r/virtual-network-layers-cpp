@@ -43,6 +43,7 @@ protected:
 	
 	void fire_machine_gun() {
 		TestType* data = vnl::create<TestType>();
+		data->time = vnl::currentTimeMicros();
 		publish(data, dst);
 		counter++;
 		//std::this_thread::yield();	// for valgrind to switch threads
