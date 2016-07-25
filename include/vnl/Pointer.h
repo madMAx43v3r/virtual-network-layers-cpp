@@ -21,9 +21,7 @@ public:
 	Pointer(T* obj) : ptr(obj) {}
 	
 	Pointer(const Pointer& other) : ptr(0) {
-		if(other.ptr) {
-			ptr = other.ptr->clone();
-		}
+		ptr = other.clone();
 	}
 	
 	~Pointer() {
@@ -38,7 +36,7 @@ public:
 	
 	Pointer& operator=(const Pointer& other) {
 		destroy();
-		ptr = other.ptr;
+		ptr = other.clone();
 		return *this;
 	}
 	
@@ -67,7 +65,11 @@ public:
 	}
 	
 	T* clone() const {
-		return ptr->clone();
+		if(ptr) {
+			return ptr->clone();
+		} else {
+			return 0;
+		}
 	}
 	
 protected:

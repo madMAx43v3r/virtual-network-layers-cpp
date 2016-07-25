@@ -63,9 +63,7 @@ public:
 	}
 	
 	void connect(vnl::Engine* engine) {
-		if(is_connected) {
-			Stream::unsubscribe(dst);
-		}
+		assert(!is_connected);
 		Stream::connect(engine);
 		Stream::subscribe(src);
 		is_connected = true;
