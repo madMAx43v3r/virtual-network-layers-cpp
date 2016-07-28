@@ -47,14 +47,14 @@ public:
 	}
 	
 	int16_t get_header_size() const {
-		return 8+16+16+2 + num_hops*4;
+		return 8+8+16+16+2 + num_hops*4;
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
-		out.writeLong(seq_num);
 		out.writeShort(get_header_size());
+		out.writeLong(seq_num);
 		out.writeLong(src_mac);
 		src_addr.serialize(out);
 		dst_addr.serialize(out);
@@ -72,8 +72,8 @@ public:
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
 		int16_t header_len = 0;
-		in.readLong(seq_num);
 		in.readShort(header_len);
+		in.readLong(seq_num);
 		in.readLong(src_mac);
 		src_addr.deserialize(in, 0);
 		dst_addr.deserialize(in, 0);
