@@ -126,6 +126,10 @@ public:
 		return;
 	}
 	
+	void reset() {
+		pos = 0;
+	}
+	
 	bool flush() {
 		if(pos) {
 			if(!out->write(buf->mem, pos)) {

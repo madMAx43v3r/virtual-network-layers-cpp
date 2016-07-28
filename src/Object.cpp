@@ -155,7 +155,7 @@ bool Object::handle(Packet* pkt) {
 			result->data = buf_out.release();
 		}
 		if(in.error()) {
-			log(WARN).out << "Invalid Frame received: " << " size=" << request->size << vnl::endl;
+			log(WARN).out << "Invalid Frame received: size=" << request->size << vnl::endl;
 		}
 		send_async(result, request->src_addr);
 	}

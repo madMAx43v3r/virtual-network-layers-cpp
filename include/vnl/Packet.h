@@ -53,7 +53,7 @@ public:
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(pkt_id);
-		out.putValue(seq_num);
+		out.writeLong(seq_num);
 		out.writeShort(get_header_size());
 		out.writeLong(src_mac);
 		src_addr.serialize(out);
@@ -72,7 +72,7 @@ public:
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
 		int16_t header_len = 0;
-		in.getValue(seq_num);
+		in.readLong(seq_num);
 		in.readShort(header_len);
 		in.readLong(src_mac);
 		src_addr.deserialize(in, 0);

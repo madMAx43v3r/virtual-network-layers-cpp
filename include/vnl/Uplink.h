@@ -35,6 +35,7 @@ protected:
 	}
 	
 	virtual void reset() {
+		out.reset();
 		sock = vnl::io::Socket(fd);
 		for(Topic& topic : table.values()) {
 			do_subscribe(topic);
@@ -66,6 +67,7 @@ protected:
 	}
 	
 	virtual void forward(int64_t domain, int64_t topic) {
+		log(INFO).out << "Forwarding " << vnl::hex(domain) << ":" << vnl::hex(topic) << vnl::endl;
 		Super::subscribe((uint64_t)domain, (uint64_t)topic);
 	}
 	
