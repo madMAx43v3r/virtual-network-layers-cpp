@@ -10,9 +10,8 @@
 
 #include <string.h>
 #include <ostream>
-#include <string>
 #include <sstream>
-#include <mutex>
+#include <string>
 
 #include <vnl/Memory.h>
 
@@ -231,6 +230,24 @@ public:
 			chunk = chunk->next_chunk();
 		}
 		return stream.str();
+	}
+	
+	int to_string(char* str, int len) const {
+		chunk_t* chunk = p_front;
+		int left = len-1;
+		while(chunk && left > 0) {
+			int n = std::min((int)chunk->len(), left);
+			if(n <= 0) {
+				break;
+			}
+			memcpy(str, chunk->str(), n);
+			chunk = chunk->next_chunk();
+			str += n;
+			left -= n;
+		}
+		int num_bytes = len - left;
+		str[num_bytes] = 0;
+		return num_bytes + 1;
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {

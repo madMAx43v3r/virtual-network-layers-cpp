@@ -49,6 +49,11 @@ public:
 		return str;
 	}
 	
+	Type& operator=(const vnl::String& str) {
+		// TODO
+		return *this;
+	}
+	
 };
 
 
