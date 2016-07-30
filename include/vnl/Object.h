@@ -54,14 +54,15 @@ protected:
 		return object;
 	}
 	
-	void subscribe(Hash64 domain, Hash64 topic) {
-		subscribe(Address(domain, topic));
+	Address subscribe(Hash64 domain, Hash64 topic) {
+		return subscribe(Address(domain, topic));
 	}
 	
-	void subscribe(Address address) {
+	Address subscribe(Address address) {
 		Router::open_t msg(std::make_pair(this, address));
 		send(&msg, Router::instance);
 		ifconfig.push_back(address);
+		return address;
 	}
 	
 	void unsubscribe(Address address) {
