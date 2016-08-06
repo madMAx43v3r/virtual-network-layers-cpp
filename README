@@ -1,0 +1,28 @@
+
+Virtual Network Layers
+======================
+
+Build:
+
+- Clone vnl
+  > git clone https://github.com/madMAx43v3r/virtual-network-layers.git
+  - NOTE: currently the development branch is required
+  > git checkout devel
+
+- Clone vni
+  > git clone https://github.com/madMAx43v3r/virtual-network-interface.git
+   
+- Build vni
+  > cd <vni-dir>
+  > mkdir build
+  > cd build
+  > cmake ../codegen/cpp
+  > make
+   
+- Build vnl libraries
+  > cd <vnl-dir>
+  > mkdir build
+  - Generate sources
+    > <vni-dir>/build/vnicppcodegen interface
+   > cd build
+   > cmake ../

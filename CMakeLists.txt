@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 2.4)
 
-include_directories(include/)
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -O3 -pthread -Wfatal-errors")
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/env/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/env/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/env/bin)
+
+include_directories(
+  include/
+  generated/include/
+)
 
 ADD_LIBRARY(vnl STATIC
 	src/CRC64.cpp
@@ -13,3 +22,4 @@ ADD_LIBRARY(vnl STATIC
 	src/Router.cpp
 )
 
+add_subdirectory(generated)
