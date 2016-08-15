@@ -46,6 +46,14 @@ protected:
 	
 	virtual void main(Engine* engine, Message* init) {
 		init->ack();
+		main(engine);
+	}
+	
+	virtual void main(Engine* engine) {
+		main();
+	}
+	
+	virtual void main() {
 		run();
 	}
 	

@@ -104,7 +104,7 @@ public:
 	String(const String& other) : String() {
 		chunk_t* chunk = other.p_front;
 		while(chunk) {
-			memcpy(p_back->str(), chunk->str(), CHUNK_SIZE);
+			memcpy(p_back->str(), chunk->str(), chunk->len());
 			p_back->len() = chunk->len();
 			chunk = chunk->next_chunk();
 			if(chunk) {
