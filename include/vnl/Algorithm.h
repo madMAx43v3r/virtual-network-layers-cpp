@@ -12,7 +12,7 @@
 namespace vnl {
 
 template<class Iter>
-void sort(Iter first, Iter last) {
+void sort(Iter first, Iter last, bool asc = true) {
 	if(first != last) {
 		while(true) {
 			Iter prev = first;
@@ -20,7 +20,7 @@ void sort(Iter first, Iter last) {
 			curr++;
 			bool pass = true;
 			while(curr != last) {
-				if(*curr < *prev) {
+				if((*curr < *prev) xor asc) {
 					std::swap(*prev, *curr);
 					pass = false;
 				}
@@ -35,7 +35,7 @@ void sort(Iter first, Iter last) {
 }
 
 template<class Iter>
-void sort_ptr(Iter first, Iter last) {
+void sort_ptr(Iter first, Iter last, bool asc = true) {
 	if(first != last) {
 		while(true) {
 			Iter prev = first;
@@ -43,7 +43,7 @@ void sort_ptr(Iter first, Iter last) {
 			curr++;
 			bool pass = true;
 			while(curr != last) {
-				if(**curr < **prev) {
+				if((**curr < **prev) xor asc) {
 					std::swap(*prev, *curr);
 					pass = false;
 				}
