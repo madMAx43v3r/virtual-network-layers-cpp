@@ -12,7 +12,7 @@
 namespace vnl {
 
 template<class Iter>
-void sort(Iter first, Iter last, bool asc = true) {
+void sort(Iter first, Iter last) {
 	if(first != last) {
 		while(true) {
 			Iter prev = first;
@@ -20,7 +20,7 @@ void sort(Iter first, Iter last, bool asc = true) {
 			curr++;
 			bool pass = true;
 			while(curr != last) {
-				if((*curr < *prev) xor asc) {
+				if(*curr < *prev) {
 					std::swap(*prev, *curr);
 					pass = false;
 				}
@@ -35,7 +35,7 @@ void sort(Iter first, Iter last, bool asc = true) {
 }
 
 template<class Iter>
-void sort_ptr(Iter first, Iter last, bool asc = true) {
+void sort_desc(Iter first, Iter last) {
 	if(first != last) {
 		while(true) {
 			Iter prev = first;
@@ -43,7 +43,54 @@ void sort_ptr(Iter first, Iter last, bool asc = true) {
 			curr++;
 			bool pass = true;
 			while(curr != last) {
-				if((**curr < **prev) xor asc) {
+				if(*curr > *prev) {
+					std::swap(*prev, *curr);
+					pass = false;
+				}
+				prev = curr;
+				curr++;
+			}
+			if(pass) {
+				break;
+			}
+		}
+	}
+}
+
+
+template<class Iter>
+void sort_ptr(Iter first, Iter last) {
+	if(first != last) {
+		while(true) {
+			Iter prev = first;
+			Iter curr = first;
+			curr++;
+			bool pass = true;
+			while(curr != last) {
+				if(**curr < **prev) {
+					std::swap(*prev, *curr);
+					pass = false;
+				}
+				prev = curr;
+				curr++;
+			}
+			if(pass) {
+				break;
+			}
+		}
+	}
+}
+
+template<class Iter>
+void sort_desc_ptr(Iter first, Iter last) {
+	if(first != last) {
+		while(true) {
+			Iter prev = first;
+			Iter curr = first;
+			curr++;
+			bool pass = true;
+			while(curr != last) {
+				if(**curr > **prev) {
 					std::swap(*prev, *curr);
 					pass = false;
 				}

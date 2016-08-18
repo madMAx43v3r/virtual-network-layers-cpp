@@ -16,15 +16,6 @@ class Enum : public Interface {
 public:
 	Enum() : value(0) {}
 	
-	operator uint32_t() const {
-		return value;
-	}
-	
-	Enum& operator=(const uint32_t& val) {
-		value = val;
-		return *this;
-	}
-	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(vni_hash());

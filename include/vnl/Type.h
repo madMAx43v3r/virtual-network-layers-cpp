@@ -34,10 +34,13 @@ public:
 	}
 	
 	virtual void to_string_ex(vnl::String& str) const {
-		str << "{VNI_NAME: \"" << type_name() << "\"";
+		str << "{";
 		int N = num_fields();
 		for(int i = 0; i < N; ++i) {
-			str << ", " << field_name(i) << ": ";
+			if(i > 0) {
+				str << ", ";
+			}
+			str << "\"" << field_name(i) << "\": ";
 			get_field(i, str);
 		}
 		str << "}";
