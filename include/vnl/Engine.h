@@ -51,8 +51,11 @@ public:
 				queue.push(msg);
 				num_queued++;
 				cond.notify_all();
+				mutex.unlock();
+			} else {
+				mutex.unlock();
+				msg->ack();
 			}
-			mutex.unlock();
 		}
 	}
 	
