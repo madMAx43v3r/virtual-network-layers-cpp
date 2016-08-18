@@ -47,17 +47,28 @@ public:
 		} else {
 			msg->gate = this;
 			mutex.lock();
-			queue.push(msg);
-			cond.notify_all();
+			if(max_num_queued < 0 || num_queued < max_num_queued) {
+				queue.push(msg);
+				num_queued++;
+				cond.notify_all();
+			}
 			mutex.unlock();
 		}
 	}
 	
-	// not thread safe
-	virtual void fork(Object* object) = 0;
+	/*
+	 * Maximum number of pending messages (default = 1000)
+	 * If limit is reached sending will block until below limit again.
+	 */
+	static int default_max_num_pending;
+	int max_num_pending;
 	
-	// maximum number of pending messages
-	static int max_num_pending;
+	/*
+	 * Maximum number of queued messages (default = -1/infinite)
+	 * If limit is reached incomming messages will be dropped.
+	 */
+	static int default_max_num_queued;
+	int max_num_queued;
 	
 protected:
 	void exec(Object* object, Message* init);
@@ -73,6 +84,8 @@ protected:
 	Message* collect(int64_t timeout);
 	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
+	virtual void fork(Object* object) = 0;
+	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
@@ -84,6 +97,7 @@ private:
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
+	size_t num_queued;
 	
 	friend class Stream;
 	friend class ThreadEngine;

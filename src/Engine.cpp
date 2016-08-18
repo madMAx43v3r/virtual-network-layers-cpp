@@ -15,9 +15,13 @@
 
 namespace vnl {
 
-int Engine::max_num_pending = 1000;
+int Engine::default_max_num_pending = 1000;
+int Engine::default_max_num_queued = -1;
 
 Engine::Engine()
+	:	max_num_pending(default_max_num_pending),
+		max_num_queued(default_max_num_queued),
+		num_queued(0)
 {
 	mac = Random64::global_rand();
 }
@@ -31,6 +35,7 @@ Message* Engine::collect(int64_t timeout) {
 	std::unique_lock<std::mutex> ulock(mutex);
 	Message* msg = 0;
 	if(queue.pop(msg)) {
+		num_queued--;
 		return msg;
 	}
 	if(timeout != 0) {
@@ -39,7 +44,9 @@ Message* Engine::collect(int64_t timeout) {
 		} else {
 			cond.wait(ulock);
 		}
-		queue.pop(msg);
+		if(queue.pop(msg)) {
+			num_queued--;
+		}
 	}
 	return msg;
 }
@@ -63,6 +70,7 @@ size_t Engine::collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
 			count++;
 		}
 	}
+	num_queued -= count;
 	return count;
 }
 

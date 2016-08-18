@@ -27,8 +27,6 @@ public:
 	
 	virtual ~FiberEngine();
 	
-	virtual void fork(Object* object);
-	
 	void run();
 	
 	static void spawn(Object* object, int stack_size = default_stack) {
@@ -41,6 +39,8 @@ public:
 	}
 	
 protected:
+	virtual void fork(Object* object);
+	
 	virtual void send_impl(Message* msg, Basic* dst, bool async);
 	
 	virtual bool poll(Stream* stream, int64_t micros) override;

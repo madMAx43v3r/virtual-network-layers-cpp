@@ -18,10 +18,6 @@ namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
-	virtual void fork(Object* object) {
-		spawn(object);
-	}
-	
 	virtual void run(Object* object) {
 		Message msg;
 		exec(object, &msg);
@@ -37,6 +33,10 @@ public:
 	}
 	
 protected:
+	virtual void fork(Object* object) {
+		spawn(object);
+	}
+	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) {
 		assert(msg->isack == false);
 		assert(dst);
