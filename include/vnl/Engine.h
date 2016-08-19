@@ -103,6 +103,7 @@ private:
 	size_t num_queued;
 	
 	friend class Stream;
+	friend class Object;
 	friend class ThreadEngine;
 	friend class FiberEngine;
 	
