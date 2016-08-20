@@ -25,8 +25,6 @@ public:
 	typedef MessageType<std::pair<Basic*, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<std::pair<Basic*, Address>, 0xfbe7dd5a> close_t;
 	
-	typedef MessageType<Array<uint64_t>, 0x65ec22d9> get_domain_list_t;
-	
 	uint64_t num_drop = 0;
 	uint64_t num_cycle = 0;
 	

@@ -1,5 +1,8 @@
+cmake_minimum_required(VERSION 2.4)
 
-include_directories(include/)
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -O3 -pthread -Wfatal-errors")
+
+include_directories(include/ generated/include)
 
 ADD_LIBRARY(vnl STATIC
 	src/CRC64.cpp

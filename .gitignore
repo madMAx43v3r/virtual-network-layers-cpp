@@ -33,6 +33,8 @@
 .cproject
 .settings
 
+/generated
+
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake

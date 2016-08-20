@@ -43,6 +43,10 @@ protected:
 		objects[packet.src_addr] = event.instance;
 	}
 	
+	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
+		objects.erase(packet.src_addr);
+	}
+	
 	void handle(const vnl::LogMsg& event) {
 		if(!paused) {
 			output(event);
@@ -53,10 +57,6 @@ protected:
 	
 	void handle(const vnl::Shutdown& event) {
 		shutdown();
-	}
-	
-	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
-		objects.erase(packet.src_addr);
 	}
 	
 	vnl::Array<vnl::Instance> get_objects() const {

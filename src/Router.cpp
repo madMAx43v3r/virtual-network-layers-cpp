@@ -31,16 +31,8 @@ bool Router::handle(Message* msg) {
 			msg->ack();
 			return true;
 		}
-		// direct match
 		route(pkt, src, table.find(pkt->dst_addr));
-		// domain match
-		uint64_t domain = pkt->dst_addr.A;
-		Row* prow = table.find(Address(domain, (uint64_t)0));
-		if(prow == 0) {
-			domains.push_back(domain);
-			table[Address(domain, (uint64_t)0)] = Row();
-		}
-		route(pkt, src, prow);
+		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
 		if(!pkt->count) {
 			msg->ack();
 		}
@@ -49,8 +41,6 @@ bool Router::handle(Message* msg) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
-	} else if(msg->msg_id == get_domain_list_t::MID) {
-		((get_domain_list_t*)msg)->data = domains;
 	}
 	return false;
 }
