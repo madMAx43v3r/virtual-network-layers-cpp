@@ -43,7 +43,7 @@ protected:
 		objects[packet.src_addr] = event.instance;
 	}
 	
-	void handle(const vnl::LogMsg& event, const vnl::Packet& packet) {
+	void handle(const vnl::LogMsg& event) {
 		if(!paused) {
 			output(event);
 		} else {
@@ -51,18 +51,12 @@ protected:
 		}
 	}
 	
-	void handle(const vnl::Shutdown& event, const vnl::Packet& packet) {
+	void handle(const vnl::Shutdown& event) {
 		shutdown();
 	}
 	
 	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
 		objects.erase(packet.src_addr);
-	}
-	
-	vnl::List<vnl::String> get_domains() const {
-		vnl::List<vnl::String> list;
-		// TODO
-		return list;
 	}
 	
 	vnl::Array<vnl::Instance> get_objects() const {

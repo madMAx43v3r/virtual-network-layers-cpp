@@ -29,6 +29,8 @@
 *.app
 
 # Eclipse
+.project
+.cproject
 .settings
 
 CMakeCache.txt
