@@ -8,13 +8,13 @@
 #ifndef CPP_INCLUDE_VNI_POINTER_H_
 #define CPP_INCLUDE_VNI_POINTER_H_
 
-#include <vnl/Pool.h>
+#include <vnl/PointerSupport.hxx>
 
 
 namespace vnl {
 
 template<typename T>
-class Pointer {
+class Pointer : public PointerBase<T> {
 public:
 	Pointer() : ptr(0) {}
 	

@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "vnl/Engine.h"
-#include "vnl/Module.h"
+#include "vnl/Object.h"
 #include "vnl/Random.h"
 
 

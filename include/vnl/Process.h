@@ -29,6 +29,7 @@ public:
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
 		subscribe(local_domain, "vnl/announce");
+		subscribe(local_domain, "vnl/topic");
 		subscribe(local_domain, "vnl/log");
 		subscribe(local_domain, "vnl/shutdown");
 		subscribe(local_domain, "vnl/exit");
@@ -47,6 +48,10 @@ protected:
 		objects.erase(packet.src_addr);
 	}
 	
+	void handle(const vnl::Topic& topic) {
+		topics[Address(topic.domain, topic.name)] = topic;
+	}
+	
 	void handle(const vnl::LogMsg& event) {
 		if(!paused) {
 			output(event);
@@ -61,6 +66,10 @@ protected:
 	
 	vnl::Array<vnl::Instance> get_objects() const {
 		return objects.values();
+	}
+	
+	vnl::Array<vnl::Topic> get_topics() const {
+		return topics.values();
 	}
 	
 	void pause_log() {
@@ -84,8 +93,8 @@ protected:
 		if(!Layer::shutdown) {
 			log(INFO).out << "Shutdown activated" << vnl::endl;
 			Layer::shutdown = true;
-			for(Address addr : objects.keys()) {
-				publish(vnl::Shutdown::create(), addr);
+			for(Instance inst : objects.values()) {
+				publish(vnl::Shutdown::create(), inst.domain, inst.topic);
 			}
 			exit();
 		}
@@ -106,6 +115,7 @@ protected:
 	
 private:
 	Map<Address, Instance> objects;
+	Map<Address, Topic> topics;
 	
 	bool paused = false;
 	bool filtering = false;

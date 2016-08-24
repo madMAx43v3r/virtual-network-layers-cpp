@@ -43,7 +43,7 @@ public:
 		dst_addr = org->dst_addr;
 		payload = org->payload;
 		num_hops = org->num_hops;
-		vnl::memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
+		memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
 	}
 	
 	int16_t get_header_size() const {

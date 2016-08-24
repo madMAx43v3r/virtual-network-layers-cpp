@@ -36,7 +36,7 @@ public:
 		vnl::Page* src = other.data;
 		vnl::Page* dst = data;
 		while(src) {
-			memcpy(dst->mem, src->mem, vnl::Page::size);
+			::memcpy(dst->mem, src->mem, vnl::Page::size);
 			if(src->next) {
 				dst->next = vnl::Page::alloc();
 			}
@@ -49,6 +49,7 @@ public:
 	void clear() {
 		if(data) {
 			data->free_all();
+			data = 0;
 		}
 		size = 0;
 	}

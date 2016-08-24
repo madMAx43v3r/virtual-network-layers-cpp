@@ -85,7 +85,7 @@ public:
 		}
 	}
 	
-	void getBinary(vnl::Page* buf, int& size) {
+	void getBinary(vnl::Page*& buf, int& size) {
 		int id = getEntry(size);
 		if(id == VNL_IO_BINARY) {
 			readBinary(buf, size);

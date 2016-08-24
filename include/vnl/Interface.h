@@ -13,6 +13,9 @@
 
 namespace vnl {
 
+class Value;
+class Packet;
+
 class Interface : public Type {
 public:
 	virtual ~Interface() {}
@@ -73,6 +76,10 @@ protected:
 	}
 	
 	virtual bool vni_const_call(vnl::io::TypeInput& in, uint32_t hash, int num_args, vnl::io::TypeOutput& out) {
+		return false;
+	}
+	
+	virtual bool handle_switch(vnl::Value* sample, vnl::Packet* packet) {
 		return false;
 	}
 	

@@ -78,11 +78,7 @@ protected:
 		send(&msg, Router::instance);
 	}
 	
-	void publish(Value* data, Hash64 domain, Hash64 topic) {
-		publish(data, Address(domain, topic));
-	}
-	
-	void publish(Value* data, Address topic);
+	void publish(Value* data, const String& domain, const String& topic);
 	
 	void send(Packet* packet, Address dst) {
 		if(!packet->src) {
@@ -140,6 +136,8 @@ protected:
 	virtual bool handle(Message* msg);
 	virtual bool handle(Packet* pkt);
 	
+	virtual void handle(const vnl::Shutdown& event);
+	
 	void set_log_level(int32_t level);
 	vnl::info::Class get_class() const;
 	
@@ -154,6 +152,8 @@ protected:
 private:
 	void exec(Engine* engine, Message* msg);
 	
+	void publish_impl(Value* data, Address topic);
+	
 private:
 	Stream stream;
 	Engine* engine;
@@ -162,6 +162,8 @@ private:
 	List<Address> ifconfig;
 	
 	vnl::Map<uint64_t, int64_t> sources;
+	vnl::Map<Address, int64_t> topics;
+	
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;
 	vnl::io::TypeInput in;

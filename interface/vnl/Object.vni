@@ -13,6 +13,8 @@ object Object {
 	
 	int log_level = INFO;
 	
+	void handle(Shutdown event);
+	
 	Class get_class() const;
 	
 	Binary vni_serialize() const;
