@@ -50,13 +50,13 @@ void Object::publish(Value* data, const String& domain, const String& topic) {
 		Topic* top = Topic::create();
 		top->domain = domain;
 		top->name = topic;
-		publish_impl(top, Address(local_domain, "vnl/topic"));
+		publish(top, Address(local_domain, "vnl/topic"));
 	}
-	publish_impl(data, addr);
+	publish(data, addr);
 	count++;
 }
 
-void Object::publish_impl(Value* data, Address topic) {
+void Object::publish(Value* data, Address topic) {
 	Sample* pkt = buffer.create<Sample>();
 	pkt->data = data;
 	send_async(pkt, topic);

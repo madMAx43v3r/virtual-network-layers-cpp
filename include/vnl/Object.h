@@ -80,6 +80,8 @@ protected:
 	
 	void publish(Value* data, const String& domain, const String& topic);
 	
+	void publish(Value* data, Address topic);
+	
 	void send(Packet* packet, Address dst) {
 		if(!packet->src) {
 			packet->src = this;
@@ -151,8 +153,6 @@ protected:
 	
 private:
 	void exec(Engine* engine, Message* msg);
-	
-	void publish_impl(Value* data, Address topic);
 	
 private:
 	Stream stream;
