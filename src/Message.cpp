@@ -20,7 +20,7 @@ void Message::ack() {
 }
 
 vnl::String Message::to_string() {
-	return vnl::String() << "[" << vnl::demangle(this) << "] mid=0x" << vnl::hex(msg_id)
+	return vnl::String() << "[" << vnl::class_name(this) << "] mid=0x" << vnl::hex(msg_id)
 			<< " src=" << src << " dst=" << dst << " isack=" << isack;
 }
 

@@ -20,4 +20,6 @@ object Object {
 	Binary vni_serialize() const;
 	void vni_deserialize(Binary blob);
 	
+	void exit();
+	
 }

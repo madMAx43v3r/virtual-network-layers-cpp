@@ -105,6 +105,19 @@ void sort_desc_ptr(Iter first, Iter last) {
 }
 
 
+template<class Iter, class T>
+Iter find(Iter first, Iter last, T obj) {
+	Iter iter = first;
+	while(iter != last) {
+		if(*iter == obj) {
+			return iter;
+		}
+		iter++;
+	}
+	return last;
+}
+
+
 
 }
 

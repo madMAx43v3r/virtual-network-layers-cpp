@@ -118,8 +118,30 @@ public:
 		p_front->free_all();
 	}
 	
+	char& operator[](int index) {
+		// TODO
+		assert(false);
+	}
+	
+	const char& operator[](int index) const {
+		// TODO
+		assert(false);
+	}
+	
 	bool operator!=(const String& other) const {
 		return !(*this == other);
+	}
+	
+	bool operator<(const String& other) const {
+		// TODO
+		assert(false);
+		return false;
+	}
+	
+	bool operator>(const String& other) const {
+		// TODO
+		assert(false);
+		return false;
 	}
 	
 	bool operator==(const String& other) const {

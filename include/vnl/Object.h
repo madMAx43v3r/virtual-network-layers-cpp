@@ -14,6 +14,7 @@
 #include <vnl/Timer.h>
 #include <vnl/String.h>
 #include <vnl/Frame.h>
+#include <vnl/Algorithm.h>
 #include <vnl/ObjectSupport.hxx>
 
 
@@ -69,7 +70,9 @@ protected:
 	Address subscribe(Address address) {
 		Router::open_t msg(std::make_pair(this, address));
 		send(&msg, Router::instance);
-		ifconfig.push_back(address);
+		if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
+			ifconfig.push_back(address);
+		}
 		return address;
 	}
 	
