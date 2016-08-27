@@ -35,11 +35,11 @@ protected:
 			std::cout << "Terminal: ";
 			std::cout.flush();
 			std::getline(std::cin, input);
-			if(input == "quit") {
+			if(input == "quit" || input == "q") {
 				resume();
 				publish(vnl::Shutdown::create(), local_domain_name, "vnl/shutdown");
 				break;
-			} else if(input == "log") {
+			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;
 				Array<Instance> list;
 				process.get_objects(list);

@@ -101,7 +101,10 @@ protected:
 	}
 	
 	void output(const vnl::LogMsg& log) {
-		if(!filtering || log.msg.to_string().find(grep) != std::string::npos) {
+		if(!filtering
+			|| log.msg.to_string().find(grep) != std::string::npos
+			|| log.topic.to_string().find(grep) != std::string::npos)
+		{
 			std::cout << "[" << log.topic << "] ";
 			switch(log.level) {
 				case ERROR: std::cout << "ERROR: "; break;

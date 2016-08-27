@@ -8,9 +8,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "vnl/Engine.h"
-#include "vnl/Object.h"
-#include "vnl/Random.h"
+#include <vnl/Engine.h>
+#include <vnl/Object.h>
+#include <vnl/Random.h>
 
 
 namespace vnl {
