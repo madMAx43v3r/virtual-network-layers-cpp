@@ -13,6 +13,12 @@ object Object {
 	
 	int log_level = INFO;
 	
+	/*
+	 * Maximum number of pending messages (-1 = infinite)
+	 * If limit is reached sending will block until below limit again.
+	 */
+	int vnl_max_num_pending = -1;
+	
 	void handle(Shutdown event);
 	
 	Class get_class() const;

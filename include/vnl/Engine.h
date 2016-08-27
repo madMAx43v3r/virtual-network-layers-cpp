@@ -42,36 +42,13 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) {
-		if(!msg->dst || msg->dst == this) {
-			msg->ack();
-		} else {
-			msg->gate = this;
-			mutex.lock();
-			if(max_num_queued < 0 || num_queued < max_num_queued) {
-				queue.push(msg);
-				num_queued++;
-				cond.notify_all();
-				mutex.unlock();
-			} else {
-				mutex.unlock();
-				msg->ack();
-			}
-		}
+		msg->gate = this;
+		mutex.lock();
+		queue.push(msg);
+		num_queued++;
+		cond.notify_all();
+		mutex.unlock();
 	}
-	
-	/*
-	 * Maximum number of pending messages (default = 1000)
-	 * If limit is reached sending will block until below limit again.
-	 */
-	static int default_max_num_pending;
-	int max_num_pending;
-	
-	/*
-	 * Maximum number of queued messages (default = -1/infinite)
-	 * If limit is reached incomming messages will be dropped.
-	 */
-	static int default_max_num_queued;
-	int max_num_queued;
 	
 protected:
 	void exec(Object* object, Message* init);

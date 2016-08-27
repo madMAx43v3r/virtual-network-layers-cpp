@@ -15,13 +15,8 @@
 
 namespace vnl {
 
-int Engine::default_max_num_pending = 1000;
-int Engine::default_max_num_queued = -1;
-
 Engine::Engine()
-	:	max_num_pending(default_max_num_pending),
-		max_num_queued(default_max_num_queued),
-		num_queued(0)
+	:	num_queued(0)
 {
 	mac = Random64::global_rand();
 }

@@ -33,7 +33,7 @@ public:
 		call();
 	}
 	
-	void exec(Module* obj_) {
+	void exec(Object* obj_) {
 		obj = obj_;
 		call();
 	}
@@ -46,7 +46,7 @@ public:
 				wait();
 			}
 		} else {
-			while(pending > max_num_pending) {
+			while(pending > obj->vnl_max_num_pending && obj->vnl_max_num_pending >= 0) {
 				wait();
 			}
 		}
@@ -133,7 +133,7 @@ protected:
 	FiberEngine* engine;
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
-	Module* obj;
+	Object* obj;
 	int pending = 0;
 	bool result = false;
 	bool waiting = false;
@@ -199,7 +199,7 @@ void FiberEngine::flush() {
 	current->flush();
 }
 
-void FiberEngine::fork(Module* object) {
+void FiberEngine::fork(Object* object) {
 	Fiber* fiber;
 	if(!avail.pop(fiber)) {
 		fiber = new Fiber(this, stack_size);
@@ -237,11 +237,11 @@ int FiberEngine::timeout() {
 }
 
 
-class FiberServer : public Module {
+class FiberServer : public Object {
 public:
 	static FiberServer* instance;
 	
-	typedef MessageType<Module*, 0xede39599> fork_t;
+	typedef MessageType<Object*, 0xede39599> fork_t;
 	
 protected:
 	virtual void main(Engine* engine_) {
@@ -264,7 +264,7 @@ private:
 FiberServer* FiberServer::instance = 0;
 
 
-Address fork(Module* object) {
+Address fork(Object* object) {
 	if(!FiberServer::instance) {
 		FiberServer::instance = new FiberServer();
 		vnl::spawn(FiberServer::instance);

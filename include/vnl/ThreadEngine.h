@@ -18,6 +18,8 @@ namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
+	ThreadEngine() : pending(0), max_num_pending(-1) {}
+	
 	virtual void run(Object* object) {
 		Message msg;
 		exec(object, &msg);
@@ -33,6 +35,11 @@ public:
 	}
 	
 protected:
+	void exec(Object* object, Message* init) {
+		max_num_pending = object->vnl_max_num_pending;
+		Engine::exec(object, init);
+	}
+	
 	virtual void fork(Object* object) {
 		spawn(object);
 	}
@@ -82,7 +89,7 @@ private:
 	}
 	
 	void wait_for_acks(int max_num) {
-		while(pending > max_num) {
+		while(pending > max_num && max_num >= 0) {
 			Message* msg = collect(-1);
 			if(msg) {
 				handle(msg);
@@ -142,7 +149,8 @@ private:
 	}
 	
 private:
-	int pending = 0;
+	int pending;
+	int max_num_pending;
 	
 };
 
