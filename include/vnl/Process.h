@@ -28,11 +28,11 @@ public:
 	
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
-		subscribe(local_domain, "vnl/announce");
-		subscribe(local_domain, "vnl/topic");
-		subscribe(local_domain, "vnl/log");
-		subscribe(local_domain, "vnl/shutdown");
-		subscribe(local_domain, "vnl/exit");
+		subscribe(local_domain_name, "vnl/announce");
+		subscribe(local_domain_name, "vnl/topic");
+		subscribe(local_domain_name, "vnl/log");
+		subscribe(local_domain_name, "vnl/shutdown");
+		subscribe(local_domain_name, "vnl/exit");
 		init->ack();
 		run();
 		while(!objects.empty()) {

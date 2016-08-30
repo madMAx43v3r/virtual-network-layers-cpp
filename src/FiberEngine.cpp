@@ -287,7 +287,7 @@ Address fork(Object* object) {
 namespace vnl {
 
 Address fork(Object* object) {
-	Address addr = object->my_address;
+	Address addr = object->get_my_address();
 	vnl::spawn(object);
 	return addr;
 }

@@ -43,23 +43,89 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void(Timer*)>& fu
 	return &timer;
 }
 
-void Object::publish(Value* data, const String& domain, const String& topic) {
-	Address addr(domain, topic);
-	int64_t& count = topics[addr];
-	if(!count) {
+Object* Object::fork(Object* object) {
+	engine->fork(object);
+	return object;
+}
+
+Address Object::subscribe(const String& domain, const String& topic) {
+	Address address(domain, topic);
+	Router::open_t msg(std::make_pair(this, address));
+	send(&msg, Router::instance);
+	if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
 		Topic* top = Topic::create();
 		top->domain = domain;
 		top->name = topic;
 		publish(top, Address(local_domain, "vnl/topic"));
+		ifconfig.push_back(address);
 	}
-	publish(data, addr);
-	count++;
+	return address;
+}
+
+Address Object::subscribe(Address address) {
+	Router::open_t msg(std::make_pair(this, address));
+	send(&msg, Router::instance);
+	if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
+		ifconfig.push_back(address);
+	}
+	return address;
+}
+
+void Object::unsubscribe(Hash64 domain, Hash64 topic) {
+	unsubscribe(Address(domain, topic));
+}
+
+void Object::unsubscribe(Address address) {
+	Router::close_t msg(std::make_pair(this, address));
+	send(&msg, Router::instance);
+}
+
+void Object::publish(Value* data, Hash64 domain, Hash64 topic) {
+	publish(data, Address(domain, topic));
 }
 
 void Object::publish(Value* data, Address topic) {
 	Sample* pkt = buffer.create<Sample>();
 	pkt->data = data;
 	send_async(pkt, topic);
+}
+
+void Object::send(Packet* packet, Address dst) {
+	if(!packet->src) {
+		packet->src = this;
+	}
+	if(packet->src_addr.is_null()) {
+		packet->src_addr = my_address;
+	}
+	stream.send(packet, dst);
+}
+
+void Object::send_async(Packet* packet, Address dst) {
+	if(!packet->src) {
+		packet->src = this;
+	}
+	if(packet->src_addr.is_null()) {
+		packet->src_addr = my_address;
+	}
+	stream.send_async(packet, dst);
+}
+
+void Object::send(Message* msg, Basic* dst) {
+	if(!msg->src) {
+		msg->src = this;
+	}
+	stream.send(msg, dst);
+}
+
+void Object::send_async(Message* msg, Basic* dst) {
+	if(!msg->src) {
+		msg->src = this;
+	}
+	stream.send_async(msg, dst);
+}
+
+void Object::flush() {
+	stream.flush();
 }
 
 bool Object::poll(int64_t micros) {
@@ -125,6 +191,7 @@ bool Object::handle(Packet* pkt) {
 		return true;
 	}
 	last_seq = pkt->seq_num;
+	
 	if(pkt->pkt_id == vnl::Sample::PID) {
 		Sample* sample = (Sample*)pkt->payload;
 		if(sample->data) {
@@ -195,10 +262,6 @@ bool Object::usleep(int64_t micros) {
 		now = currentTimeMicros();
 	}
 	return true;
-}
-
-const List<Address>& Object::get_ifconfig() const {
-	return ifconfig;
 }
 
 void Object::run() {

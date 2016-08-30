@@ -26,6 +26,12 @@ namespace vnl {
 Value* create(vnl::Hash32 hash);
 
 /*
+ * Returns all class names known to this process.
+ */
+Array<String> get_class_names();
+
+
+/*
  * Generic reader functions
  */
 inline Value* read(vnl::io::TypeInput& in) {

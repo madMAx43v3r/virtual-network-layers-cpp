@@ -24,9 +24,8 @@ public:
 	}
 	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
+	virtual void main() {
 		timer = set_timeout(0, std::bind(&Uplink::write_out, this), VNL_TIMER_MANUAL);
-		init->ack();
 		run();
 		for(Address& topic : table.keys()) {
 			Super::unsubscribe(topic);
@@ -67,8 +66,8 @@ protected:
 	}
 	
 	virtual void forward(int64_t domain, int64_t topic) {
+		Super::subscribe(Address((uint64_t)domain, (uint64_t)topic));
 		log(INFO).out << "Forwarding " << vnl::hex(domain) << ":" << vnl::hex(topic) << vnl::endl;
-		Super::subscribe((uint64_t)domain, (uint64_t)topic);
 	}
 	
 	virtual bool handle(Packet* pkt) {

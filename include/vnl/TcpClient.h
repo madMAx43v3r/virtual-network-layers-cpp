@@ -24,11 +24,12 @@ public:
 	}
 	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
+	virtual void main() {
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
 		downlink->uplink.set_address(my_address);
+		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
-		Super::main(engine, init);
+		Super::main();
 		Downlink::close_t close;
 		send(&close, downlink);
 	}

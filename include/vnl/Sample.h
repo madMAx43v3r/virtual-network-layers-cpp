@@ -42,6 +42,42 @@ protected:
 };
 
 
+class BinarySample : public vnl::Packet {
+public:
+	static const uint32_t PID = 0xfd63c06a;
+	
+	BinarySample() : data(0), size(0) {
+		pkt_id = PID;
+		payload = this;
+	}
+	
+	~BinarySample() {
+		if(data) {
+			data->free_all();
+		}
+	}
+	
+	vnl::Page* data;
+	int size;
+	
+protected:
+	virtual void write(vnl::io::TypeOutput& out) const {
+		out.putBinary(data, size);
+	}
+	
+	virtual void read(vnl::io::TypeInput& in) {
+		if(!data) {
+			data = Page::alloc();
+		}
+		vnl::io::ByteBuffer buf(data);
+		vnl::io::TypeOutput out(&buf);
+		in.copy(&out);
+		size = buf.position();
+	}
+	
+};
+
+
 }
 
 #endif /* INCLUDE_VNL_SAMPLE_H_ */

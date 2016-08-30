@@ -193,7 +193,7 @@ public:
 	}
 	
 	String& operator<<(const void* p) {
-		return *this << vnl::hex((uint64_t)p);
+		return *this << vnl::hex((size_t)p);
 	}
 	
 	String& operator<<(const int32_t& i) {

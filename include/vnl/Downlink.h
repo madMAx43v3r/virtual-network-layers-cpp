@@ -37,8 +37,7 @@ public:
 	typedef vnl::SignalType<0x2965956f> close_t;
 	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
-		init->ack();
+	virtual void main(vnl::Engine* engine) {
 		uplink.connect(engine);
 		while(dorun) {
 			int fd = -1;
@@ -73,17 +72,16 @@ protected:
 	
 	bool read_packet(vnl::io::TypeInput& in, uint32_t hash) {
 		switch(hash) {
-		case vnl::Sample::PID: {
-			vnl::Sample* sample = buffer.create<vnl::Sample>();
+		case Sample::PID: if(do_deserialize) {
+			Sample* sample = buffer.create<Sample>();
 			sample->deserialize(in, 0);
 			if(sample->data && !in.error()) {
 				if(sample->dst_addr == sub_topic) {
 					Topic* topic = dynamic_cast<Topic*>(sample->data);
 					if(topic) {
 						uplink.publish(*topic);
-					} else {
-						sample->ack();
 					}
+					sample->ack();
 				} else {
 					forward(sample);
 					send_async(sample, sample->dst_addr);
@@ -91,17 +89,29 @@ protected:
 			} else {
 				sample->ack();
 			}
-			break;
+		} else {
+			BinarySample* sample = buffer.create<BinarySample>();
+			sample->deserialize(in, 0);
+			if(sample->data && !in.error()) {
+				forward(sample);
+				send_async(sample, sample->dst_addr);
+			} else {
+				sample->ack();
+			}
 		}
-		case vnl::Frame::PID: {
-			vnl::Frame* frame = buffer.create<vnl::Frame>();
+		break;
+		case Frame::PID: {
+			Frame* frame = buffer.create<Frame>();
 			frame->deserialize(in, 0);
-			forward(frame);
-			send_async(frame, frame->dst_addr);
+			if(!in.error()) {
+				forward(frame);
+				send_async(frame, frame->dst_addr);
+			} else {
+				frame->ack();
+			}
 			break;
 		}
-		default:
-			return false;
+		default: return false;
 		}
 		return true;
 	}

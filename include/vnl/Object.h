@@ -31,13 +31,13 @@ public:
 	{
 	}
 	
-	vnl::Address my_address;
-	vnl::String my_domain;
-	vnl::String my_topic;
-	
  	// thread safe
 	virtual void receive(Message* msg) {
 		stream.receive(msg);
+	}
+	
+	Address get_my_address() const {
+		return my_address;
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const;
@@ -58,70 +58,24 @@ protected:
 		run();
 	}
 	
-	Object* fork(Object* object) {
-		engine->fork(object);
-		return object;
-	}
+	Object* fork(Object* object);
 	
-	Address subscribe(Hash64 domain, Hash64 topic) {
-		return subscribe(Address(domain, topic));
-	}
+	Address subscribe(const String& domain, const String& topic);
+	Address subscribe(Address address);
 	
-	Address subscribe(Address address) {
-		Router::open_t msg(std::make_pair(this, address));
-		send(&msg, Router::instance);
-		if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
-			ifconfig.push_back(address);
-		}
-		return address;
-	}
+	void unsubscribe(Hash64 domain, Hash64 topic);
+	void unsubscribe(Address address);
 	
-	void unsubscribe(Address address) {
-		Router::close_t msg(std::make_pair(this, address));
-		send(&msg, Router::instance);
-	}
-	
-	void publish(Value* data, const String& domain, const String& topic);
-	
+	void publish(Value* data, Hash64 domain, Hash64 topic);
 	void publish(Value* data, Address topic);
 	
-	void send(Packet* packet, Address dst) {
-		if(!packet->src) {
-			packet->src = this;
-		}
-		if(packet->src_addr.is_null()) {
-			packet->src_addr = my_address;
-		}
-		stream.send(packet, dst);
-	}
+	void send(Packet* packet, Address dst);
+	void send_async(Packet* packet, Address dst);
 	
-	void send_async(Packet* packet, Address dst) {
-		if(!packet->src) {
-			packet->src = this;
-		}
-		if(packet->src_addr.is_null()) {
-			packet->src_addr = my_address;
-		}
-		stream.send_async(packet, dst);
-	}
+	void send(Message* msg, Basic* dst);
+	void send_async(Message* msg, Basic* dst);
 	
-	void send(Message* msg, Basic* dst) {
-		if(!msg->src) {
-			msg->src = this;
-		}
-		stream.send(msg, dst);
-	}
-	
-	void send_async(Message* msg, Basic* dst) {
-		if(!msg->src) {
-			msg->src = this;
-		}
-		stream.send_async(msg, dst);
-	}
-	
-	void flush() {
-		stream.flush();
-	}
+	void flush();
 	
 	StringWriter log(int level);
 	
@@ -131,8 +85,6 @@ protected:
 	
 	bool sleep(int64_t secs);
 	bool usleep(int64_t micros);
-	
-	const List<Address>& get_ifconfig() const;
 	
 	void exit();
 	
@@ -154,6 +106,10 @@ protected:
 	PageAllocator memory;
 	MessagePool buffer;
 	
+	vnl::Address my_address;
+	vnl::String my_domain;
+	vnl::String my_topic;
+	
 private:
 	void exec(Engine* engine, Message* msg);
 	
@@ -165,7 +121,6 @@ private:
 	List<Address> ifconfig;
 	
 	vnl::Map<uint64_t, int64_t> sources;
-	vnl::Map<Address, int64_t> topics;
 	
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;

@@ -46,7 +46,6 @@ protected:
 	
 private:
 	Map<Address, Row> table;
-	Array<uint64_t> domains;
 	
 };
 
