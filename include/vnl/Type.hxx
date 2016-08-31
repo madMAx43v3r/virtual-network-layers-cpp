@@ -79,20 +79,7 @@ inline void read(vnl::io::TypeInput& in, Value* obj) {
 }
 
 inline void read(vnl::io::TypeInput& in, Interface& obj) {
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_INTERFACE: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj.deserialize(in, size);
-			break;
-		}
-		case VNL_IO_ARRAY:
-			obj.deserialize(in, size);
-			break;
-		default: in.skip(id, size);
-	}
+	obj.deserialize(in, 0);
 }
 
 inline void read(vnl::io::TypeInput& in, String& obj) {

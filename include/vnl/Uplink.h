@@ -18,7 +18,7 @@ namespace vnl {
 class Uplink : public vnl::UplinkBase {
 public:
 	Uplink(const vnl::String& domain_, const vnl::String& topic_)
-		:	UplinkBase(domain_, topic_), fd(-1), out(&sock), timer(0), next_seq(1)
+		:	UplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1)
 	{
 		sub_topic = Address("vnl/downlink", "subscribe");
 	}
@@ -28,14 +28,13 @@ protected:
 		timer = set_timeout(0, std::bind(&Uplink::write_out, this), VNL_TIMER_MANUAL);
 		run();
 		for(Address& topic : table.keys()) {
-			Super::unsubscribe(topic);
+			Object::unsubscribe(topic);
 		}
 		drop_all();
 	}
 	
 	virtual void reset() {
 		out.reset();
-		sock = vnl::io::Socket(fd);
 		for(Topic& topic : table.values()) {
 			do_subscribe(topic);
 		}
@@ -49,7 +48,8 @@ protected:
 	}
 	
 	virtual void publish(const vnl::Topic& topic) {
-		Super::subscribe(topic.domain, topic.name);
+		Address addr = Object::subscribe(topic.domain, topic.name);
+		route[addr] = true;
 		log(INFO).out << "Publishing " << topic.domain << ":" << topic.name << vnl::endl;
 	}
 	
@@ -66,7 +66,7 @@ protected:
 	}
 	
 	virtual void forward(int64_t domain, int64_t topic) {
-		Super::subscribe(Address((uint64_t)domain, (uint64_t)topic));
+		Object::subscribe(Address((uint64_t)domain, (uint64_t)topic));
 		log(INFO).out << "Forwarding " << vnl::hex(domain) << ":" << vnl::hex(topic) << vnl::endl;
 	}
 	
@@ -74,12 +74,10 @@ protected:
 		if(UplinkBase::handle(pkt)) {
 			return true;
 		}
-		if(pkt->pkt_id == vnl::Sample::PID || pkt->pkt_id == vnl::Frame::PID) {
-			if(pkt->dst_addr != my_address) {
-				queue.push(pkt);
-				timer->reset();
-				return true;
-			}
+		if(sock.fd >= 0) {
+			queue.push(pkt);
+			timer->reset();
+			return true;
 		}
 		return false;
 	}
@@ -88,7 +86,7 @@ protected:
 		int64_t begin = vnl::currentTimeMillis();
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
-			write(pkt);
+			pkt->serialize(out);
 			pkt->ack();
 			if(send_timeout >= 0) {
 				int64_t now = vnl::currentTimeMillis();
@@ -97,6 +95,7 @@ protected:
 				}
 			}
 		}
+		out.flush();
 		drop_all(); // drop the rest
 	}
 	
@@ -108,29 +107,28 @@ protected:
 		}
 	}
 	
-	void write(Packet* pkt) {
-		pkt->serialize(out);
-		out.flush();
-	}
-	
 	void do_subscribe(const vnl::Topic& topic) {
+		if(sock.fd < 0) {
+			return;
+		}
 		Sample sample;
 		sample.seq_num = next_seq++;
 		sample.src_addr = my_address;
 		sample.dst_addr = sub_topic;
 		sample.data = topic.clone();
-		write(&sample);
+		sample.serialize(out);
+		out.flush();
 		log(INFO).out << "Subscribed to " << topic.domain << ":" << topic.name << vnl::endl;
 	}
 	
 protected:
-	int fd;
 	Address sub_topic;
 	vnl::io::Socket sock;
 	vnl::io::TypeOutput out;
 	Timer* timer;
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
+	vnl::Map<Address, bool> route;
 	uint32_t next_seq;
 	
 };

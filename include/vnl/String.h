@@ -254,7 +254,8 @@ public:
 		return stream.str();
 	}
 	
-	int to_string(char* str, int len) const {
+	void to_string(char* str, int len) const {
+		memset(str, 0, len);
 		chunk_t* chunk = p_front;
 		int left = len-1;
 		while(chunk && left > 0) {
@@ -267,9 +268,6 @@ public:
 			str += n;
 			left -= n;
 		}
-		int num_bytes = len - left;
-		str[num_bytes] = 0;
-		return num_bytes + 1;
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {

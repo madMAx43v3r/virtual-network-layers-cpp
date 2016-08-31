@@ -17,7 +17,7 @@ namespace vnl {
 class TcpClient : public TcpClientBase {
 public:
 	TcpClient(vnl::String endpoint, int port = 8916)
-		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint)
+		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint << "/" << port)
 	{
 		this->endpoint = endpoint;
 		this->port = port;
@@ -25,8 +25,10 @@ public:
 	
 protected:
 	virtual void main() {
+		Address channel(vnl::local_domain, mac);
+		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
-		downlink->uplink.set_address(my_address);
+		downlink->uplink.set_address(channel);
 		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
 		Super::main();
@@ -36,13 +38,13 @@ protected:
 	
 	virtual void reset() {
 		connect();
-		if(fd > 0) {
+		if(sock.fd > 0) {
 			Super::reset();
 		}
 	}
 	
 	virtual int32_t get_fd() const {
-		return fd;
+		return sock.fd;
 	}
 	
 	virtual void shutdown() {
@@ -51,20 +53,20 @@ protected:
 	
 	void connect() {
 		while(dorun) {
-			if(fd > 0) {
-				::close(fd);
+			if(sock.fd > 0) {
+				::close(sock.fd);
 				usleep(error_interval*1000);
 			}
-			fd = ::socket(AF_INET, SOCK_STREAM, 0);
-			if(fd < 0) {
-				log(ERROR).out << "Failed to create client socket, error=" << fd << vnl::endl;
+			sock.fd = ::socket(AF_INET, SOCK_STREAM, 0);
+			if(sock.fd < 0) {
+				log(ERROR).out << "Failed to create client socket, error=" << sock.fd << vnl::endl;
 				usleep(error_interval*10*1000);
 				continue;
 			}
-			if(setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
+			if(setsockopt(sock.fd, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for send_buffer_size failed, error=" << errno << vnl::endl;
 			}
-			if(setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
+			if(setsockopt(sock.fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 			}
 			sockaddr_in addr;
@@ -79,7 +81,7 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
-			int err = ::connect(fd, (sockaddr*)&addr, sizeof(addr));
+			int err = ::connect(sock.fd, (sockaddr*)&addr, sizeof(addr));
 			if(err < 0) {
 				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << err << vnl::endl;
 				continue;

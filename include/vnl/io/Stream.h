@@ -24,7 +24,7 @@ public:
 	void set_error(int err_) {
 		err = err_;
 #ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS);
+		assert(err == VNL_IO_SUCCESS || err == VNL_IO_CLOSED);
 #endif
 	}
 	
@@ -48,7 +48,7 @@ public:
 	void set_error(int err_) {
 		err = err_;
 #ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS);
+		assert(err == VNL_IO_SUCCESS || err == VNL_IO_CLOSED);
 #endif
 	}
 	

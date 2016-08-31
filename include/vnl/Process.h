@@ -35,8 +35,15 @@ protected:
 		subscribe(local_domain_name, "vnl/exit");
 		init->ack();
 		run();
+		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
 			poll(100);
+		}
+	}
+	
+	void print_waitlist() {
+		for(Instance& obj : objects.values()) {
+			log(INFO).out << "Waiting on " << obj.domain << ":" << obj.topic << vnl::endl;
 		}
 	}
 	

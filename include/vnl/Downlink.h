@@ -65,7 +65,9 @@ protected:
 				poll(0);
 			}
 		}
-		uplink.shutdown();
+		if(!Layer::shutdown) {
+			uplink.shutdown();
+		}
 		// wait for close signal
 		run();
 	}
@@ -87,6 +89,11 @@ protected:
 					send_async(sample, sample->dst_addr);
 				}
 			} else {
+				if(sample->data) {
+					log(ERROR).out << "Invalid Sample: " << sample->data->type_name() << vnl::endl;
+				} else {
+					log(ERROR).out << "Invalid Sample: <unknown>" << vnl::endl;
+				}
 				sample->ack();
 			}
 		} else {
@@ -96,6 +103,7 @@ protected:
 				forward(sample);
 				send_async(sample, sample->dst_addr);
 			} else {
+				log(ERROR).out << "Invalid BinarySample: size=" << sample->size << vnl::endl;
 				sample->ack();
 			}
 		}

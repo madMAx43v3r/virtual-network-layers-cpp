@@ -30,8 +30,10 @@ public:
 	
 protected:
 	virtual void main() {
+		Address channel(vnl::local_domain, mac);
+		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
-		downlink->uplink.set_address(my_address);
+		downlink->uplink.set_address(channel);
 		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
 		Uplink::main();
@@ -76,16 +78,16 @@ public:
 	}
 	
 	virtual void receive(vnl::Message* msg) {
-		if(Layer::shutdown) {
+		if(dorun && Layer::shutdown) {
 			dorun = false;
-			::close(server);
+			::shutdown(server, SHUT_RDWR);
+			server = -1;
 		}
 		Super::receive(msg);
 	}
 	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
-		init->ack();
+	virtual void main() {
 		while(dorun) {
 			if(server > 0) {
 				usleep(error_interval*1000);
@@ -117,7 +119,11 @@ protected:
 			while(dorun) {
 				int sock = ::accept(server, 0, 0);
 				if(sock < 0) {
-					log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
+					if(errno == EINVAL) {
+						log(INFO).out << "Server shutdown ..." << vnl::endl;
+					} else {
+						log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
+					}
 					break;
 				}
 				if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {

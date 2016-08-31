@@ -54,7 +54,7 @@ protected:
 				Topic* topic = topics.find(pkt->dst_addr);
 				if(topic && value) {
 					std::cout << vnl::currentTimeMillis() << " " << topic->domain
-							<< " " << topic->name << " " << value->type_name() << std::endl;
+							<< " : " << topic->name << " -> " << value->type_name() << std::endl;
 					if(dump) {
 						std::cout << value->to_string() << std::endl;
 					}

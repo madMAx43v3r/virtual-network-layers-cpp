@@ -197,7 +197,7 @@ bool Object::handle(Packet* pkt) {
 		if(sample->data) {
 			handle_switch(sample->data, pkt);
 		}
-	} else if(pkt->pkt_id == Frame::PID && pkt->dst_addr == my_address) {
+	} else if(pkt->pkt_id == Frame::PID) {
 		Frame* request = (Frame*)pkt->payload;
 		Frame* result = buffer.create<Frame>();
 		result->seq_num = request->seq_num;
