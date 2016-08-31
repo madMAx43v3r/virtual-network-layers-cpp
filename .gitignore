@@ -29,7 +29,11 @@
 *.app
 
 # Eclipse
+.project
+.cproject
 .settings
+
+/generated
 
 CMakeCache.txt
 CMakeFiles

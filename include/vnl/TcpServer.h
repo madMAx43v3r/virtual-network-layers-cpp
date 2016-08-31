@@ -21,17 +21,22 @@ class TcpProxy : public Uplink {
 public:
 	TcpProxy(int fd)
 		:	Uplink(local_domain_name, vnl::String() << "vnl/tcp/proxy/" << fd),
-			running(false), error(false)
+			running(false), error(false), do_deserialize(true)
 	{
 		sock = vnl::io::Socket(fd);
 	}
 	
+	bool do_deserialize;
+	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
+	virtual void main() {
+		Address channel(vnl::local_domain, mac);
+		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
-		downlink->uplink.set_address(my_address);
+		downlink->uplink.set_address(channel);
+		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
-		Uplink::main(engine, init);
+		Uplink::main();
 		Downlink::close_t close;
 		send(&close, downlink);
 	}
@@ -73,16 +78,16 @@ public:
 	}
 	
 	virtual void receive(vnl::Message* msg) {
-		if(Layer::shutdown) {
+		if(dorun && Layer::shutdown) {
 			dorun = false;
-			::close(server);
+			::shutdown(server, SHUT_RDWR);
+			server = -1;
 		}
 		Super::receive(msg);
 	}
 	
 protected:
-	virtual void main(vnl::Engine* engine, vnl::Message* init) {
-		init->ack();
+	virtual void main() {
 		while(dorun) {
 			if(server > 0) {
 				usleep(error_interval*1000);
@@ -114,7 +119,11 @@ protected:
 			while(dorun) {
 				int sock = ::accept(server, 0, 0);
 				if(sock < 0) {
-					log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
+					if(errno == EINVAL) {
+						log(INFO).out << "Server shutdown ..." << vnl::endl;
+					} else {
+						log(ERROR).out << "accept() failed, error=" << errno << vnl::endl;
+					}
 					break;
 				}
 				if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
@@ -123,7 +132,9 @@ protected:
 				if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 					log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 				}
-				vnl::spawn(new TcpProxy(sock));
+				TcpProxy* proxy = new TcpProxy(sock);
+				proxy->do_deserialize = do_deserialize;
+				vnl::spawn(proxy);
 				log(INFO).out << "New client on socket " << sock << vnl::endl;
 			}
 			::close(server);
@@ -131,7 +142,7 @@ protected:
 	}
 	
 	virtual void publish(const vnl::Topic& topic) {
-		// TODO
+		publish(topic.domain, topic.name);
 	}
 	
 	virtual void publish(const vnl::String& domain, const vnl::String& topic) {

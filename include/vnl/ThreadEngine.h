@@ -18,9 +18,7 @@ namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
-	virtual void fork(Object* object) {
-		spawn(object);
-	}
+	ThreadEngine() : pending(0), max_num_pending(-1) {}
 	
 	virtual void run(Object* object) {
 		Message msg;
@@ -37,6 +35,15 @@ public:
 	}
 	
 protected:
+	void exec(Object* object, Message* init) {
+		max_num_pending = object->vnl_max_num_pending;
+		Engine::exec(object, init);
+	}
+	
+	virtual void fork(Object* object) {
+		spawn(object);
+	}
+	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) {
 		assert(msg->isack == false);
 		assert(dst);
@@ -82,7 +89,7 @@ private:
 	}
 	
 	void wait_for_acks(int max_num) {
-		while(pending > max_num) {
+		while(pending > max_num && max_num >= 0) {
 			Message* msg = collect(-1);
 			if(msg) {
 				handle(msg);
@@ -142,13 +149,14 @@ private:
 	}
 	
 private:
-	int pending = 0;
+	int pending;
+	int max_num_pending;
 	
 };
 
 
 inline Address spawn(Object* object) {
-	Address addr = object->my_address;
+	Address addr = object->get_my_address();
 	ThreadEngine::spawn(object);
 	return addr;
 }

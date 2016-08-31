@@ -8,13 +8,13 @@
 #ifndef CPP_INCLUDE_VNI_POINTER_H_
 #define CPP_INCLUDE_VNI_POINTER_H_
 
-#include <vnl/Pool.h>
+#include <vnl/PointerSupport.hxx>
 
 
 namespace vnl {
 
-template<typename T>
-class Pointer {
+template<class T>
+class Pointer : public PointerBase<T> {
 public:
 	Pointer() : ptr(0) {}
 	
@@ -69,6 +69,33 @@ public:
 			return ptr->clone();
 		} else {
 			return 0;
+		}
+	}
+	
+	void serialize(vnl::io::TypeOutput& out) const {
+		if(ptr) {
+			vnl::write(out, ptr);
+		} else {
+			out.putNull();
+		}
+	}
+	
+	void deserialize(vnl::io::TypeInput& in, int size) {
+		int id = in.getEntry(size);
+		if(id == VNL_IO_CLASS) {
+			uint32_t hash;
+			in.getHash(hash);
+			Value* value = vnl::create(hash);
+			if(value) {
+				ptr = dynamic_cast<T*>(value);
+				if(!ptr) {
+					vnl::destroy(value);
+				}
+			} else {
+				in.skip(id, size, hash);
+			}
+		} else {
+			in.skip(id, size);
 		}
 	}
 	

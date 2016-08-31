@@ -1,0 +1,13 @@
+package vnl;
+
+object SpyTool {
+
+	bool dump = false;
+	
+	void set_filter(String expr);
+	
+	void stop();
+	
+	void handle(Topic topic);
+	
+}

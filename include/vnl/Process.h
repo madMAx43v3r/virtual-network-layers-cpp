@@ -28,14 +28,22 @@ public:
 	
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
-		subscribe(local_domain, "vnl/announce");
-		subscribe(local_domain, "vnl/log");
-		subscribe(local_domain, "vnl/shutdown");
-		subscribe(local_domain, "vnl/exit");
+		subscribe(local_domain_name, "vnl/announce");
+		subscribe(local_domain_name, "vnl/topic");
+		subscribe(local_domain_name, "vnl/log");
+		subscribe(local_domain_name, "vnl/shutdown");
+		subscribe(local_domain_name, "vnl/exit");
 		init->ack();
 		run();
+		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
 			poll(100);
+		}
+	}
+	
+	void print_waitlist() {
+		for(Instance& obj : objects.values()) {
+			log(INFO).out << "Waiting on " << obj.domain << ":" << obj.topic << vnl::endl;
 		}
 	}
 	
@@ -43,7 +51,15 @@ protected:
 		objects[packet.src_addr] = event.instance;
 	}
 	
-	void handle(const vnl::LogMsg& event, const vnl::Packet& packet) {
+	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
+		objects.erase(packet.src_addr);
+	}
+	
+	void handle(const vnl::Topic& topic) {
+		topics[Address(topic.domain, topic.name)] = topic;
+	}
+	
+	void handle(const vnl::LogMsg& event) {
 		if(!paused) {
 			output(event);
 		} else {
@@ -51,22 +67,22 @@ protected:
 		}
 	}
 	
-	void handle(const vnl::Shutdown& event, const vnl::Packet& packet) {
+	void handle(const vnl::Shutdown& event) {
 		shutdown();
-	}
-	
-	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
-		objects.erase(packet.src_addr);
-	}
-	
-	vnl::List<vnl::String> get_domains() const {
-		vnl::List<vnl::String> list;
-		// TODO
-		return list;
 	}
 	
 	vnl::Array<vnl::Instance> get_objects() const {
 		return objects.values();
+	}
+	
+	vnl::Array<vnl::Topic> get_topics() const {
+		return topics.values();
+	}
+	
+	vnl::Array<vnl::String> get_class_names() const {
+		vnl::Array<vnl::String> list;
+		// TODO
+		return list;
 	}
 	
 	void pause_log() {
@@ -90,15 +106,18 @@ protected:
 		if(!Layer::shutdown) {
 			log(INFO).out << "Shutdown activated" << vnl::endl;
 			Layer::shutdown = true;
-			for(Address addr : objects.keys()) {
-				publish(vnl::Shutdown::create(), addr);
+			for(Instance inst : objects.values()) {
+				publish(vnl::Shutdown::create(), inst.domain, inst.topic);
 			}
 			exit();
 		}
 	}
 	
 	void output(const vnl::LogMsg& log) {
-		if(!filtering || log.msg.to_string().find(grep) != std::string::npos) {
+		if(!filtering
+			|| log.msg.to_string().find(grep) != std::string::npos
+			|| log.topic.to_string().find(grep) != std::string::npos)
+		{
 			std::cout << "[" << log.topic << "] ";
 			switch(log.level) {
 				case ERROR: std::cout << "ERROR: "; break;
@@ -112,6 +131,7 @@ protected:
 	
 private:
 	Map<Address, Instance> objects;
+	Map<Address, Topic> topics;
 	
 	bool paused = false;
 	bool filtering = false;

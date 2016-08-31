@@ -36,9 +36,7 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) {
-		if(!engine) {
-			msg->ack();
-		} else if(msg->gate == engine) {
+		if(msg->gate == engine) {
 			push(msg);
 		} else {
 			if(!msg->dst) {

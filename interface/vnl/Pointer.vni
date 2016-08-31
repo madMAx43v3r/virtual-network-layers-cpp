@@ -1,0 +1,5 @@
+package vnl;
+
+interface Pointer<T> {
+	
+}

@@ -104,7 +104,7 @@ public:
 	String(const String& other) : String() {
 		chunk_t* chunk = other.p_front;
 		while(chunk) {
-			memcpy(p_back->str(), chunk->str(), CHUNK_SIZE);
+			memcpy(p_back->str(), chunk->str(), chunk->len());
 			p_back->len() = chunk->len();
 			chunk = chunk->next_chunk();
 			if(chunk) {
@@ -118,8 +118,30 @@ public:
 		p_front->free_all();
 	}
 	
+	char& operator[](int index) {
+		// TODO
+		assert(false);
+	}
+	
+	const char& operator[](int index) const {
+		// TODO
+		assert(false);
+	}
+	
 	bool operator!=(const String& other) const {
 		return !(*this == other);
+	}
+	
+	bool operator<(const String& other) const {
+		// TODO
+		assert(false);
+		return false;
+	}
+	
+	bool operator>(const String& other) const {
+		// TODO
+		assert(false);
+		return false;
 	}
 	
 	bool operator==(const String& other) const {
@@ -171,7 +193,7 @@ public:
 	}
 	
 	String& operator<<(const void* p) {
-		return *this << vnl::hex((uint64_t)p);
+		return *this << vnl::hex((size_t)p);
 	}
 	
 	String& operator<<(const int32_t& i) {
@@ -232,7 +254,8 @@ public:
 		return stream.str();
 	}
 	
-	int to_string(char* str, int len) const {
+	void to_string(char* str, int len) const {
+		memset(str, 0, len);
 		chunk_t* chunk = p_front;
 		int left = len-1;
 		while(chunk && left > 0) {
@@ -245,9 +268,6 @@ public:
 			str += n;
 			left -= n;
 		}
-		int num_bytes = len - left;
-		str[num_bytes] = 0;
-		return num_bytes + 1;
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {

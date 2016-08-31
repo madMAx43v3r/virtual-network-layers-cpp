@@ -20,30 +20,32 @@ namespace vnl { namespace io {
 
 class Socket : public InputStream, public OutputStream {
 public:
-	Socket() : sock(-1) {}
+	int fd;
 	
-	Socket(int sock) : sock(sock) {}
+	Socket() : fd(-1) {}
+	
+	Socket(int sock) : fd(sock) {}
 	
 	int get_fd() const {
-		return sock;
+		return fd;
 	}
 	
 	virtual int read(void* dst, int len) {
-		int res = ::read(sock, dst, len);
+		int res = ::read(fd, dst, len);
 		if(res <= 0) {
-			InputStream::set_error(VNL_IO_ERROR);
+			InputStream::set_error(VNL_IO_CLOSED);
 		}
 		return res;
 	}
 	
 	virtual bool write(const void* src, int len) {
 		while(len > 0) {
-			int res = ::send(sock, src, len, MSG_NOSIGNAL);
+			int res = ::send(fd, src, len, MSG_NOSIGNAL);
 			if(res > 0) {
 				len -= res;
 				src = (char*)src + res;
 			} else {
-				OutputStream::set_error(VNL_IO_ERROR);
+				OutputStream::set_error(VNL_IO_CLOSED);
 				return false;
 			}
 		}
@@ -51,11 +53,8 @@ public:
 	}
 	
 	void close() {
-		::close(sock);
+		::close(fd);
 	}
-	
-private:
-	int sock;
 	
 };
 

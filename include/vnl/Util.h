@@ -119,22 +119,17 @@ static int stick_to_core(int core_id) {
    return pthread_setaffinity_np(current_thread, sizeof(cpu_set_t), &cpuset);
 }
 
-template<typename T>
-static std::string demangle(T* ptr) {
-	return demangle(typeid(*ptr).name());
-}
-
-template<typename T>
-static std::string demangle(const T& ptr) {
-	return demangle(typeid(ptr).name());
-}
-
 static std::string demangle(const char* abiName) {
 	int status;    
 	char* ret = abi::__cxa_demangle(abiName, 0, 0, &status);  
 	std::string str(ret);
 	free((void*)ret);
 	return str;
+}
+
+template<typename T>
+static std::string class_name(T* ptr) {
+	return demangle(typeid(*ptr).name());
 }
 
 

@@ -63,7 +63,7 @@ void GlobalLogWriter::write(const String& str) {
 	msg->topic = node->my_topic;
 	msg->level = level;
 	msg->msg = str;
-	node->publish(msg, local_domain, "vnl/log");
+	node->publish(msg, local_domain_name, "vnl/log");
 }
 
 

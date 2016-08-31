@@ -42,22 +42,13 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) {
-		if(!msg->dst || msg->dst == this) {
-			msg->ack();
-		} else {
-			msg->gate = this;
-			mutex.lock();
-			queue.push(msg);
-			cond.notify_all();
-			mutex.unlock();
-		}
+		msg->gate = this;
+		mutex.lock();
+		queue.push(msg);
+		num_queued++;
+		cond.notify_all();
+		mutex.unlock();
 	}
-	
-	// not thread safe
-	virtual void fork(Object* object) = 0;
-	
-	// maximum number of pending messages
-	static int max_num_pending;
 	
 protected:
 	void exec(Object* object, Message* init);
@@ -73,6 +64,8 @@ protected:
 	Message* collect(int64_t timeout);
 	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
+	virtual void fork(Object* object) = 0;
+	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
@@ -84,8 +77,10 @@ private:
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
+	size_t num_queued;
 	
 	friend class Stream;
+	friend class Object;
 	friend class ThreadEngine;
 	friend class FiberEngine;
 	

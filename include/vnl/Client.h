@@ -16,11 +16,11 @@
 #include <vnl/Layer.h>
 
 
-namespace vnl {
-
 enum {
-	VNI_SUCCESS = 0, VNI_ERROR = -1
+	VNL_SUCCESS = 0, VNL_ERROR = -1
 };
+
+namespace vnl {
 
 class Client : public ClientBase, public vnl::Stream {
 public:
@@ -94,6 +94,7 @@ protected:
 	int _error;
 	
 	Packet* _call() {
+		assert(is_connected);
 		_out.flush();
 		next_seq++;
 		int64_t ts_begin = vnl::currentTimeMillis();
@@ -126,9 +127,9 @@ protected:
 		if(ret) {
 			_buf.wrap(ret->data, ret->size);
 			_in.reset();
-			_error = VNI_SUCCESS;
+			_error = VNL_SUCCESS;
 		} else {
-			_error = VNI_ERROR;
+			_error = VNL_ERROR;
 		}
 		return ret;
 	}

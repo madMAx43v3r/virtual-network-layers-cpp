@@ -17,7 +17,7 @@ class Frame : public vnl::Packet {
 public:
 	static const uint32_t PID = 0xde2104f2;
 	
-	Frame() {
+	Frame() : data(0), size(0) {
 		pkt_id = PID;
 		payload = this;
 	}
@@ -28,25 +28,16 @@ public:
 		}
 	}
 	
-	vnl::Page* data = 0;
-	int size = 0;
+	vnl::Page* data;
+	int size;
 	
 protected:
 	virtual void write(vnl::io::TypeOutput& out) const {
-		if(data) {
-			out.putBinary(data, size);
-		} else {
-			out.putNull();
-		}
+		out.putBinary(data, size);
 	}
 	
 	virtual void read(vnl::io::TypeInput& in) {
-		if(!data) {
-			data = vnl::Page::alloc();
-			in.getBinary(data, size);
-		} else {
-			in.skip();
-		}
+		in.getBinary(data, size);
 	}
 	
 };

@@ -26,6 +26,12 @@ namespace vnl {
 Value* create(vnl::Hash32 hash);
 
 /*
+ * Returns all class names known to this process.
+ */
+Array<String> get_class_names();
+
+
+/*
  * Generic reader functions
  */
 inline Value* read(vnl::io::TypeInput& in) {
@@ -73,20 +79,7 @@ inline void read(vnl::io::TypeInput& in, Value* obj) {
 }
 
 inline void read(vnl::io::TypeInput& in, Interface& obj) {
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_INTERFACE: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj.deserialize(in, size);
-			break;
-		}
-		case VNL_IO_ARRAY:
-			obj.deserialize(in, size);
-			break;
-		default: in.skip(id, size);
-	}
+	obj.deserialize(in, 0);
 }
 
 inline void read(vnl::io::TypeInput& in, String& obj) {
@@ -123,6 +116,8 @@ inline void read(vnl::io::TypeInput& in, List<T>& obj) {
 	}
 }
 
+template<typename T, int N>
+void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) { in.getArray(vec); }
 
 inline void read(vnl::io::TypeInput& in, bool& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, int8_t& val) { in.getValue(val); }
@@ -131,9 +126,6 @@ inline void read(vnl::io::TypeInput& in, int32_t& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
-
-template<typename T, int N>
-void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) { in.getArray(vec); }
 
 
 /*
@@ -183,6 +175,9 @@ inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 	}
 }
 
+template<typename T, int N>
+void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArray(vec); }
+
 inline void write(vnl::io::TypeOutput& out, const bool& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const int8_t& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const int16_t& val) { out.putValue(val); }
@@ -190,9 +185,6 @@ inline void write(vnl::io::TypeOutput& out, const int32_t& val) { out.putValue(v
 inline void write(vnl::io::TypeOutput& out, const int64_t& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const float& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const double& val) { out.putValue(val); }
-
-template<typename T, int N>
-void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArray(vec); }
 
 
 /*
@@ -226,21 +218,25 @@ inline void to_string(vnl::String& str, const Binary& obj) {
 
 template<typename T>
 inline void to_string(vnl::String& str, const Array<T>& obj) {
-	// TODO
+	to_string(str, obj.begin(), obj.end());
 }
 
 template<typename T>
 inline void to_string(vnl::String& str, const List<T>& obj) {
-	// TODO
+	to_string(str, obj.begin(), obj.end());
 }
 
-inline void to_string(vnl::String& str, const bool& val) { str << (val ? "true" : "false"); }
-inline void to_string(vnl::String& str, const int8_t& val) { str << vnl::dec(val); }
-inline void to_string(vnl::String& str, const int16_t& val) { str << vnl::dec(val); }
-inline void to_string(vnl::String& str, const int32_t& val) { str << vnl::dec(val); }
-inline void to_string(vnl::String& str, const int64_t& val) { str << vnl::dec(val); }
-inline void to_string(vnl::String& str, const float& val) { str << vnl::def(val, 6); }
-inline void to_string(vnl::String& str, const double& val) { str << vnl::def(val, 12); }
+template<class Iter>
+void to_string(vnl::String& str, Iter first, Iter last) {
+	str << "[";
+	for(Iter it = first; it != last; ++it) {
+		to_string(str, *it);
+		if(it != first) {
+			str << ", ";
+		}
+	}
+	str << "]";
+}
 
 template<typename T, int N>
 void to_string(vnl::String& str, const vnl::Vector<T, N>& vec) {
@@ -253,6 +249,14 @@ void to_string(vnl::String& str, const vnl::Vector<T, N>& vec) {
 	}
 	str << "]";
 }
+
+inline void to_string(vnl::String& str, const bool& val) { str << (val ? "true" : "false"); }
+inline void to_string(vnl::String& str, const int8_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const int16_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const int32_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const int64_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const float& val) { str << vnl::def(val, 6); }
+inline void to_string(vnl::String& str, const double& val) { str << vnl::def(val, 12); }
 
 template<typename T>
 vnl::String to_string(const T& ref) {
@@ -297,6 +301,11 @@ inline void from_string(vnl::io::ByteInput& in, List<T>& obj) {
 	// TODO
 }
 
+template<typename T, int N>
+void from_string(vnl::io::ByteInput& in, vnl::Vector<T, N>& vec) {
+	// TODO
+}
+
 inline void from_string(vnl::io::ByteInput& in, bool& val) { /* TODO */ }
 inline void from_string(vnl::io::ByteInput& in, int8_t& val) { /* TODO */ }
 inline void from_string(vnl::io::ByteInput& in, int16_t& val) { /* TODO */ }
@@ -304,11 +313,6 @@ inline void from_string(vnl::io::ByteInput& in, int32_t& val) { /* TODO */ }
 inline void from_string(vnl::io::ByteInput& in, int64_t& val) { /* TODO */ }
 inline void from_string(vnl::io::ByteInput& in, float& val) { /* TODO */ }
 inline void from_string(vnl::io::ByteInput& in, double& val) { /* TODO */ }
-
-template<typename T, int N>
-void from_string(vnl::io::ByteInput& in, vnl::Vector<T, N>& vec) {
-	// TODO
-}
 
 template<typename T>
 void from_string(const vnl::String& str, T& ref) {

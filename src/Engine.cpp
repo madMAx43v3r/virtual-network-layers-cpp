@@ -8,16 +8,15 @@
 #include <assert.h>
 #include <string.h>
 
-#include "vnl/Engine.h"
-#include "vnl/Module.h"
-#include "vnl/Random.h"
+#include <vnl/Engine.h>
+#include <vnl/Object.h>
+#include <vnl/Random.h>
 
 
 namespace vnl {
 
-int Engine::max_num_pending = 1000;
-
 Engine::Engine()
+	:	num_queued(0)
 {
 	mac = Random64::global_rand();
 }
@@ -31,6 +30,7 @@ Message* Engine::collect(int64_t timeout) {
 	std::unique_lock<std::mutex> ulock(mutex);
 	Message* msg = 0;
 	if(queue.pop(msg)) {
+		num_queued--;
 		return msg;
 	}
 	if(timeout != 0) {
@@ -39,7 +39,9 @@ Message* Engine::collect(int64_t timeout) {
 		} else {
 			cond.wait(ulock);
 		}
-		queue.pop(msg);
+		if(queue.pop(msg)) {
+			num_queued--;
+		}
 	}
 	return msg;
 }
@@ -63,6 +65,7 @@ size_t Engine::collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
 			count++;
 		}
 	}
+	num_queued -= count;
 	return count;
 }
 
