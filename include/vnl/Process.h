@@ -72,6 +72,12 @@ protected:
 		return topics.values();
 	}
 	
+	vnl::Array<vnl::String> get_class_names() const {
+		vnl::Array<vnl::String> list;
+		// TODO
+		return list;
+	}
+	
 	void pause_log() {
 		paused = true;
 	}

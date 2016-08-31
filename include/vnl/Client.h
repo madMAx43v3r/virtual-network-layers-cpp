@@ -94,6 +94,7 @@ protected:
 	int _error;
 	
 	Packet* _call() {
+		assert(is_connected);
 		_out.flush();
 		next_seq++;
 		int64_t ts_begin = vnl::currentTimeMillis();
