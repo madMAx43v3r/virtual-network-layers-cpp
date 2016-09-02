@@ -230,10 +230,10 @@ template<class Iter>
 void to_string(vnl::String& str, Iter first, Iter last) {
 	str << "[";
 	for(Iter it = first; it != last; ++it) {
-		to_string(str, *it);
 		if(it != first) {
 			str << ", ";
 		}
+		to_string(str, *it);
 	}
 	str << "]";
 }
@@ -242,10 +242,10 @@ template<typename T, int N>
 void to_string(vnl::String& str, const vnl::Vector<T, N>& vec) {
 	str << "[";
 	for(int i = 0; i < vec.size(); ++i) {
-		to_string(str, vec[i]);
-		if(i < vec.size()-1) {
+		if(i > 0) {
 			str << ", ";
 		}
+		to_string(str, vec[i]);
 	}
 	str << "]";
 }
