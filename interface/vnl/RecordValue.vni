@@ -1,0 +1,12 @@
+package vnl;
+
+class RecordValue {
+	
+	long time;
+	
+	long domain;
+	long topic;
+	
+	Pointer<Value> value;
+	
+}

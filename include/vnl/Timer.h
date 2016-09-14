@@ -33,9 +33,10 @@ public:
 		active = false;
 	}
 	
+	int64_t interval;
+	
 private:
 	int64_t deadline;
-	int64_t interval;
 	std::function<void(Timer*)> func;
 	int type;
 	bool active;

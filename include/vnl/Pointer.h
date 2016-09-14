@@ -24,7 +24,7 @@ public:
 		ptr = other.clone();
 	}
 	
-	~Pointer() {
+	virtual ~Pointer() {
 		destroy();
 	}
 	
@@ -64,12 +64,27 @@ public:
 		return *ptr;
 	}
 	
+	T* release() {
+		T* ret = ptr;
+		destroy();
+		return ret;
+	}
+	
 	T* clone() const {
 		if(ptr) {
 			return ptr->clone();
 		} else {
 			return 0;
 		}
+	}
+	
+	virtual void to_string_ex(vnl::String& str) const {
+		vnl::to_string(str, ptr);
+	}
+	
+	virtual void from_string(const vnl::String& str) {
+		// TODO
+		assert(false);
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {

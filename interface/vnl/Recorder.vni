@@ -1,0 +1,11 @@
+package vnl;
+
+object Recorder {
+	
+	String filename = "rec-";
+	
+	Array<String> domains;
+	
+	void handle(vnl.Value sample);
+	
+}
