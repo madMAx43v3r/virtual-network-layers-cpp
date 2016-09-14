@@ -48,8 +48,7 @@ protected:
 	}
 	
 	virtual void publish(const vnl::Topic& topic) {
-		Address addr = Object::subscribe(topic.domain, topic.name);
-		route[addr] = true;
+		Object::subscribe(topic.domain, topic.name);
 		log(INFO).out << "Publishing " << topic.domain << ":" << topic.name << vnl::endl;
 	}
 	
@@ -128,7 +127,6 @@ protected:
 	Timer* timer;
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
-	vnl::Map<Address, bool> route;
 	uint32_t next_seq;
 	
 };

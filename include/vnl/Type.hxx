@@ -16,6 +16,7 @@
 #include <vnl/List.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
+#include <vnl/Layer.h>
 
 
 namespace vnl {
@@ -269,58 +270,87 @@ vnl::String to_string(const T& ref) {
 /*
  * Generic from_string functions
  */
-inline void from_string(vnl::io::ByteInput& in, Value& obj) {
-	return obj.from_string(in);
+inline void from_string(const vnl::String& str, Value& obj) {
+	obj.from_string(str);
 }
 
-inline void from_string(vnl::io::ByteInput& in, Value* obj) {
+inline void from_string(const vnl::String& str, Value* obj) {
 	if(obj) {
-		obj->from_string(in);
+		obj->from_string(str);
 	}
 }
 
-inline void from_string(vnl::io::ByteInput& in, Interface& obj) {
-	obj.from_string(in);
+inline void from_string(const vnl::String& str, Interface& obj) {
+	obj.from_string(str);
 }
 
-inline void from_string(vnl::io::ByteInput& in, String& obj) {
-	// TODO
+inline void from_string(const vnl::String& str, String& obj) {
+	obj = str;
 }
 
-inline void from_string(vnl::io::ByteInput& in, Binary& obj) {
+inline void from_string(const vnl::String& str, Binary& obj) {
 	// TODO
-}
-
-template<typename T>
-inline void from_string(vnl::io::ByteInput& in, Array<T>& obj) {
-	// TODO
+	assert(false);
 }
 
 template<typename T>
-inline void from_string(vnl::io::ByteInput& in, List<T>& obj) {
+inline void from_string(const vnl::String& str, Array<T>& obj) {
 	// TODO
+	assert(false);
+}
+
+template<typename T>
+inline void from_string(const vnl::String& str, List<T>& obj) {
+	// TODO
+	assert(false);
 }
 
 template<typename T, int N>
-void from_string(vnl::io::ByteInput& in, vnl::Vector<T, N>& vec) {
+void from_string(const vnl::String& str, vnl::Vector<T, N>& vec) {
 	// TODO
+	assert(false);
 }
 
-inline void from_string(vnl::io::ByteInput& in, bool& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, int8_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, int16_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, int32_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, int64_t& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, float& val) { /* TODO */ }
-inline void from_string(vnl::io::ByteInput& in, double& val) { /* TODO */ }
+inline int64_t atoi(const vnl::String& str) {
+	char buf[256];
+	str.to_string(buf, sizeof(buf));
+	return ::atoi(buf);
+}
 
+inline int64_t atol(const vnl::String& str) {
+	char buf[256];
+	str.to_string(buf, sizeof(buf));
+	return ::atol(buf);
+}
+
+inline double atof(const vnl::String& str) {
+	char buf[256];
+	str.to_string(buf, sizeof(buf));
+	return ::atof(buf);
+}
+
+inline void from_string(const vnl::String& str, bool& val) { val = str == "true"; }
+inline void from_string(const vnl::String& str, int8_t& val) { val = atoi(str); }
+inline void from_string(const vnl::String& str, int16_t& val) { val = atoi(str); }
+inline void from_string(const vnl::String& str, int32_t& val) { val = atoi(str); }
+inline void from_string(const vnl::String& str, int64_t& val) { val = atol(str); }
+inline void from_string(const vnl::String& str, float& val) { val = atof(str); }
+inline void from_string(const vnl::String& str, double& val) { val = atof(str); }
+
+
+
+/*
+ * Generic util functions
+ */
 template<typename T>
-void from_string(const vnl::String& str, T& ref) {
-	// TODO
+bool read_config(String domain, String topic, String name, T& ref) {
+	const String* value = Layer::get_config(domain, topic, name);
+	if(value) {
+		vnl::from_string(*value, ref);
+		return true;
+	}
+	return false;
 }
-
-
-
 
 
 

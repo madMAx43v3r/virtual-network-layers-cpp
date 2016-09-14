@@ -26,10 +26,6 @@ public:
 	
 	Socket(int sock) : fd(sock) {}
 	
-	int get_fd() const {
-		return fd;
-	}
-	
 	virtual int read(void* dst, int len) {
 		int res = ::read(fd, dst, len);
 		if(res <= 0) {

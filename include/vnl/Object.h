@@ -23,7 +23,8 @@ namespace vnl {
 class Object : public Basic, public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
-		:	dorun(true), engine(0),
+		:	ObjectBase(domain, topic),
+			dorun(true), engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			in(&buf_in), out(&buf_out),
@@ -95,7 +96,6 @@ protected:
 	
 	virtual void handle(const vnl::Shutdown& event);
 	
-	void set_log_level(int32_t level);
 	vnl::info::Class get_class() const;
 	
 	Binary vni_serialize() const;

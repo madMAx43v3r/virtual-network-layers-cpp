@@ -24,8 +24,9 @@ public:
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
-	virtual void from_string(vnl::io::ByteInput& in) {
+	virtual void from_string(const vnl::String& str) {
 		// TODO
+		assert(false);
 	}
 	
 protected:

@@ -25,7 +25,7 @@ void Object::exit() {
 
 StringWriter Object::log(int level) {
 	StringOutput* out = 0;
-	if(level <= log_level) {
+	if(level <= vnl_log_level) {
 		log_writer.level = level;
 		out = &log_writer;
 	}
@@ -291,10 +291,6 @@ void Object::exec(Engine* engine_, Message* msg) {
 	}
 	publish(Exit::create(), local_domain_name, "vnl/exit");
 	stream.flush();
-}
-
-void Object::set_log_level(int32_t level) {
-	log_level = level;
 }
 
 vnl::info::Class Object::get_class() const {

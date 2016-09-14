@@ -30,7 +30,7 @@ public:
 	
 protected:
 	virtual void main() {
-		Address channel(vnl::local_domain, mac);
+		Address channel(local_domain, mac);
 		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
 		downlink->uplink.set_address(channel);
@@ -55,7 +55,7 @@ protected:
 	
 	virtual int32_t get_fd() const {
 		if(!error) {
-			return sock.get_fd();
+			return sock.fd;
 		} else {
 			return -1;
 		}
