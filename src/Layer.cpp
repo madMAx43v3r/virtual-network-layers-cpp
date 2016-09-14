@@ -119,9 +119,6 @@ void Layer::parse_config(const char* root_dir) {
 							while(true) {
 								int num = fread(buf, 1, sizeof(buf)-1, file);
 								if(num > 0) {
-									if(buf[num-1] == '\n') {
-										num--;
-									}
 									buf[num] = 0;
 									value << buf;
 								} else {
