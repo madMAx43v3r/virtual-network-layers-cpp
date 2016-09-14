@@ -117,8 +117,12 @@ void Layer::parse_config(const char* root_dir) {
 							String& value = config[key];
 							char buf[1024];
 							while(true) {
-								int num = fread(buf, 1, sizeof(buf)-1, file);
+								int count = sizeof(buf)-1;
+								int num = fread(buf, 1, count, file);
 								if(num > 0) {
+									if(feof(file) && buf[num-1] == '\n') {
+										num--;
+									}
 									buf[num] = 0;
 									value << buf;
 								} else {
