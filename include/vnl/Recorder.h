@@ -25,8 +25,8 @@ public:
 	
 protected:
 	void main() {
-		String filepath = filename << vnl::currentTime() << ".dat";
 		char buf[1024];
+		String filepath = filename << vnl::currentDate("%Y%m%d_%H%M%S") << ".dat";
 		filepath.to_string(buf, sizeof(buf));
 		FILE* p_file = ::fopen(buf, "w");
 		if(!p_file) {

@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <endian.h>
+#include <time.h>
 
 #include <cxxabi.h>
 
@@ -41,6 +42,18 @@ static int64_t currentTimeMicros() {
 
 static int64_t nanoTime() {
 	return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+static String currentDate(const char* format) {
+	::time_t timer;
+	time(&timer);
+	char buf[256];
+	strftime(buf, sizeof(buf), format, ::localtime(&timer));
+	return String() << buf;
+}
+
+static String currentDate() {
+	return currentDate("%Y-%m-%d_%H:%M:%S");
 }
 
 static uint64_t hash64(const char* str) {
