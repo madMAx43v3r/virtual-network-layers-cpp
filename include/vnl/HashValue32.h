@@ -23,6 +23,11 @@ public:
 		return value;
 	}
 	
+	HashValue32& operator=(const Hash32& hash) {
+		value = hash;
+		return *this;
+	}
+	
 	void to_string_ex(vnl::String& str) const {
 		str << vnl::hex(value);
 	}
