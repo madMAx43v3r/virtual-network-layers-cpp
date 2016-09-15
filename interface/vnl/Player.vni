@@ -1,0 +1,16 @@
+package vnl;
+
+object Player {
+	
+	String filename = "rec-???.dat";
+	
+	bool autostart = true;
+	bool autoloop = false;
+	
+	void reset();
+	
+	void play();
+	
+	void handle(Topic topic);
+	
+}

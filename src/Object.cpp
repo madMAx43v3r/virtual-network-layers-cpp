@@ -135,7 +135,6 @@ bool Object::poll(int64_t micros) {
 		if(timer.active) {
 			int64_t diff = timer.deadline - now;
 			if(diff <= 0) {
-				timer.func(&timer);
 				switch(timer.type) {
 					case VNL_TIMER_REPEAT:
 						timer.active = true;
@@ -146,6 +145,7 @@ bool Object::poll(int64_t micros) {
 						timer.active = false;
 						break;
 				}
+				timer.func(&timer);
 				diff = timer.deadline - now;
 				if(diff < 0) {
 					diff = 0;

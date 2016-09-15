@@ -6,6 +6,4 @@ object Recorder {
 	
 	Array<String> domains;
 	
-	void handle(vnl.Value sample);
-	
 }

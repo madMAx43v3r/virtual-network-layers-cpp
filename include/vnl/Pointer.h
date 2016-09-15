@@ -66,7 +66,7 @@ public:
 	
 	T* release() {
 		T* ret = ptr;
-		destroy();
+		ptr = 0;
 		return ret;
 	}
 	
@@ -88,11 +88,7 @@ public:
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {
-		if(ptr) {
-			vnl::write(out, ptr);
-		} else {
-			out.putNull();
-		}
+		vnl::write(out, ptr);
 	}
 	
 	void deserialize(vnl::io::TypeInput& in, int size) {
@@ -102,6 +98,7 @@ public:
 			in.getHash(hash);
 			Value* value = vnl::create(hash);
 			if(value) {
+				value->deserialize(in, size);
 				ptr = dynamic_cast<T*>(value);
 				if(!ptr) {
 					vnl::destroy(value);
