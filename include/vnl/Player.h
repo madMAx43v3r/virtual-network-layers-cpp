@@ -17,8 +17,8 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_, const vnl::String& topic_)
-		:	PlayerBase(domain_, topic_),
+	Player(const vnl::String& domain_)
+		:	PlayerBase(domain_, "Player"),
 		 	p_file(0), in(&file), timer(0), playing(false), time_offset(0)
 	{
 	}

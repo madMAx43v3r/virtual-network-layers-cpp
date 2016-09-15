@@ -4,8 +4,8 @@ class RecordValue {
 	
 	long time;
 	
-	long domain;
-	long topic;
+	HashValue64 domain;
+	HashValue64 topic;
 	
 	Pointer<Value> value;
 	

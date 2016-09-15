@@ -1,0 +1,12 @@
+package vnl.gui;
+
+object Object extends vnl.Object {
+	
+	String window_title;
+	
+	int window_width = 100;
+	int window_height = 100;
+	
+	
+	
+}

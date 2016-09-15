@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_BUILD_CONFIG_H_
-#define INCLUDE_BUILD_CONFIG_H_
+#ifndef INCLUDE_VNL_BUILD_CONFIG_H_
+#define INCLUDE_VNL_BUILD_CONFIG_H_
 
 
 /*
@@ -49,12 +49,12 @@
  * If we have boost coroutine >= version 1.56
  * Needed for FiberEngine.
  */
-//#define VNL_HAVE_BOOST_COROUTINE true
+//#define VNL_HAVE_BOOST_COROUTINE
 
 #ifdef VNL_HAVE_BOOST_COROUTINE
-#define VNL_HAVE_FIBER_ENGINE true
+#define VNL_HAVE_FIBER_ENGINE
 #endif
 
 
 
-#endif /* INCLUDE_BUILD_CONFIG_H_ */
+#endif /* INCLUDE_VNL_BUILD_CONFIG_H_ */

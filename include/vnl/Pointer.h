@@ -78,11 +78,17 @@ public:
 		}
 	}
 	
-	virtual void to_string_ex(vnl::String& str) const {
+	void to_string_ex(vnl::String& str) const {
+		str << "{\"T\": \"";
+		if(ptr) {
+			str << ptr->type_name();
+		}
+		str << "\", \"V\": ";
 		vnl::to_string(str, ptr);
+		str << "}";
 	}
 	
-	virtual void from_string(const vnl::String& str) {
+	void from_string(const vnl::String& str) {
 		// TODO
 		assert(false);
 	}
