@@ -29,7 +29,6 @@ protected:
 		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
 		downlink->uplink.set_address(channel);
-		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
 		Super::main();
 		Downlink::close_t close;

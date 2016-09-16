@@ -21,12 +21,10 @@ class TcpProxy : public Uplink {
 public:
 	TcpProxy(int fd)
 		:	Uplink(local_domain_name, vnl::String() << "vnl/tcp/proxy/" << fd),
-			running(false), error(false), do_deserialize(true)
+			running(false), error(false)
 	{
 		sock = vnl::io::Socket(fd);
 	}
-	
-	bool do_deserialize;
 	
 protected:
 	virtual void main() {
@@ -34,7 +32,6 @@ protected:
 		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
 		downlink->uplink.set_address(channel);
-		downlink->do_deserialize = do_deserialize;
 		vnl::spawn(downlink);
 		Uplink::main();
 		Downlink::close_t close;
@@ -133,7 +130,6 @@ protected:
 					log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 				}
 				TcpProxy* proxy = new TcpProxy(sock);
-				proxy->do_deserialize = do_deserialize;
 				vnl::spawn(proxy);
 				log(INFO).out << "New client on socket " << sock << vnl::endl;
 			}

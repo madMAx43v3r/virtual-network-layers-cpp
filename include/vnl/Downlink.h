@@ -74,7 +74,7 @@ protected:
 	
 	bool read_packet(vnl::io::TypeInput& in, uint32_t hash) {
 		switch(hash) {
-		case Sample::PID: if(do_deserialize) {
+		case Sample::PID: {
 			Sample* sample = buffer.create<Sample>();
 			sample->deserialize(in, 0);
 			if(sample->data && !in.error()) {
@@ -94,16 +94,6 @@ protected:
 				} else {
 					log(ERROR).out << "Invalid Sample: <unknown>" << vnl::endl;
 				}
-				sample->ack();
-			}
-		} else {
-			BinarySample* sample = buffer.create<BinarySample>();
-			sample->deserialize(in, 0);
-			if(sample->data && !in.error()) {
-				forward(sample);
-				send_async(sample, sample->dst_addr);
-			} else {
-				log(ERROR).out << "Invalid BinarySample: size=" << sample->size << vnl::endl;
 				sample->ack();
 			}
 		}
