@@ -9,6 +9,7 @@
 #include <vnl/Sample.h>
 #include <vnl/Announce.hxx>
 #include <vnl/LogMsg.hxx>
+#include <vnl/Topic.hxx>
 #include <vnl/Shutdown.hxx>
 #include <vnl/Exit.hxx>
 

@@ -8,7 +8,8 @@
 #ifndef INCLUDE_VNL_TERMINAL_H_
 #define INCLUDE_VNL_TERMINAL_H_
 
-#include <vnl/ProcessSupport.hxx>
+#include <vnl/ProcessClient.hxx>
+#include <vnl/SpyToolClient.hxx>
 #include <vnl/SpyTool.h>
 
 #include <iostream>

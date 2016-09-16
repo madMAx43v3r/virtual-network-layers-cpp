@@ -10,6 +10,12 @@
 
 #include <vnl/io.h>
 #include <vnl/Hash.h>
+#include <vnl/Vector.h>
+#include <vnl/String.h>
+#include <vnl/Binary.h>
+#include <vnl/Array.h>
+#include <vnl/List.h>
+#include <vnl/Pool.h>
 
 
 namespace vnl {

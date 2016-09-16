@@ -10,7 +10,7 @@
 
 #include <vnl/Map.h>
 #include <vnl/Sample.h>
-#include <vnl/UplinkSupport.hxx>
+#include <vnl/UplinkClient.hxx>
 #include <vnl/DownlinkSupport.hxx>
 
 

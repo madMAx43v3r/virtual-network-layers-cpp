@@ -10,7 +10,7 @@
 
 #include <vnl/Sample.h>
 #include <vnl/SpyToolSupport.hxx>
-#include <vnl/ProcessSupport.hxx>
+#include <vnl/ProcessClient.hxx>
 
 #include <iostream>
 #include <string>

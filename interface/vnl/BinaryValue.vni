@@ -1,0 +1,10 @@
+package vnl;
+
+class BinaryValue {
+	
+	Hash32 hash;
+	int size;
+	
+	Binary data;
+	
+}

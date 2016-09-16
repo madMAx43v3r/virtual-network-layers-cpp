@@ -9,6 +9,7 @@
 #include <vnl/Layer.h>
 #include <vnl/Pool.h>
 #include <vnl/Process.h>
+#include <vnl/ProcessClient.hxx>
 
 #include <iostream>
 #include <mutex>

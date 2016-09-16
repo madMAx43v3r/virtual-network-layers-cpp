@@ -20,10 +20,8 @@ class Interface : public Type {
 public:
 	virtual ~Interface() {}
 	
-	virtual void serialize(vnl::io::TypeOutput& _out) const {
-		_out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
-		_out.putHash(vni_hash());
-		_out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
+	virtual void serialize(vnl::io::TypeOutput& out) const {
+		out.putNull();
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {

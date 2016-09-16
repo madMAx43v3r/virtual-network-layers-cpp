@@ -5,12 +5,3 @@ package vnl;
 class Value {
 	
 }
-
-class BinaryValue {
-	
-	HashValue32 hash;
-	int size;
-	
-	Binary data;
-	
-}

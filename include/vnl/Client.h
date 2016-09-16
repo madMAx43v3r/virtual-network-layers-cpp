@@ -78,8 +78,10 @@ public:
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
-		Writer wr(out);
+		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
+		out.putHash(VNI_HASH);
 		dst.serialize(out);
+		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
