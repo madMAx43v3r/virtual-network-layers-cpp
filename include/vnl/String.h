@@ -188,8 +188,11 @@ public:
 	}
 	
 	String& operator=(const String& str) {
-		clear();
-		return *this << str;
+		if(&str != this) {
+			clear();
+			*this << str;
+		}
+		return *this;
 	}
 	
 	String& operator<<(const void* p) {

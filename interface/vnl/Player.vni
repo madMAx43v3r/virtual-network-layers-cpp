@@ -4,13 +4,18 @@ object Player {
 	
 	String filename = "rec-???.dat";
 	
+	Array<String> domain_blacklist;
+	Array<Topic> topic_blacklist;
+	
 	bool autostart = true;
 	bool autoloop = false;
 	
+	int interval = 200000;
+	
+	void open(String file);
 	void reset();
-	
 	void play();
-	
-	void handle(Topic topic);
+	void pause();
+	void seek(long time);
 	
 }

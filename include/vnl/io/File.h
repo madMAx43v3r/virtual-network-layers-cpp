@@ -26,7 +26,7 @@ public:
 	virtual int read(void* dst, int len) {
 		int res = ::read(fd, dst, len);
 		if(res <= 0) {
-			InputStream::set_error(VNL_IO_CLOSED);
+			InputStream::set_error(VNL_IO_EOF);
 		}
 		return res;
 	}
@@ -38,7 +38,7 @@ public:
 				len -= res;
 				src = (char*)src + res;
 			} else {
-				OutputStream::set_error(VNL_IO_CLOSED);
+				OutputStream::set_error(VNL_IO_EOF);
 				return false;
 			}
 		}

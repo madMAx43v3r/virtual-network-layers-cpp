@@ -1,7 +1,0 @@
-package vnl.gui;
-
-object ReplayGUI extends Object {
-	
-	void handle(vnl.info.PlayerStatus status);
-	
-}

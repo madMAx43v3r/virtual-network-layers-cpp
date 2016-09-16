@@ -38,11 +38,17 @@ public:
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {
+		out.putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
 		out.writeInt(value);
 	}
 	
 	void deserialize(vnl::io::TypeInput& in, int size) {
-		in.readInt(value);
+		int id = in.getEntry(size);
+		if(id == VNL_IO_INTEGER && size == VNL_IO_DWORD) {
+			in.readInt(value);
+		} else {
+			in.skip(id, size);
+		}
 	}
 	
 };

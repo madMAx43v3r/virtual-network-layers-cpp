@@ -29,22 +29,12 @@ public:
 		buf->free();
 	}
 	
-	char read() {
-		int left = Page::size - pos;
-		if(!left) {
-			left = fetch();
-			if(left <= 0) {
-				return 0;
-			}
-		}
-		return buf->mem[pos++];
-	}
-	
 	void read(void* dst, int len) {
 		while(len) {
 			int left = limit - pos;
 			if(!left) {
-				limit = fetch();
+				pos = 0;
+				limit = in->read(buf->mem, Page::size);
 				if(limit <= 0) {
 					return;
 				}
@@ -73,16 +63,6 @@ public:
 	}
 	
 protected:
-	int fetch() {
-		pos = 0;
-		int n = in->read(buf->mem, Page::size);
-		if(n <= 0) {
-			return n;
-		}
-		return n;
-	}
-	
-protected:
 	InputStream* in = 0;
 	Page* buf;
 	int pos = 0;
@@ -101,11 +81,6 @@ public:
 	
 	~OutputBuffer() {
 		buf->free();
-	}
-	
-	void write(char c) {
-		// TODO
-		assert(false);
 	}
 	
 	void write(const void* src, int len) {

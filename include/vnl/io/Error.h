@@ -17,7 +17,7 @@ enum {
 	VNL_IO_INVALID_ID = -4,
 	VNL_IO_INVALID_SIZE = -5,
 	VNL_IO_STACK_OVERFLOW = -6,
-	VNL_IO_CLOSED = -7
+	VNL_IO_EOF = -7
 };
 
 

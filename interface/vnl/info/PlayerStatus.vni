@@ -2,6 +2,13 @@ package vnl.info;
 
 class PlayerStatus {
 	
+	String filename;
 	
+	bool playing;
+	
+	long begin_time;
+	long end_time;
+	long current_time;
+	long time_offset;
 	
 }
