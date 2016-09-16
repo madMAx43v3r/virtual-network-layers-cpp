@@ -90,9 +90,7 @@ inline void read(vnl::io::TypeInput& in, BinaryValue& obj) {
 		vnl::io::TypeOutput out(&buf);
 		in.copy(&out, id, size, hash);
 		out.flush();
-		if(!out.error()) {
-			obj.data.size = buf.position();
-		}
+		obj.data.size = out.error() ? 0 : buf.position();
 	} else {
 		in.skip(id, size);
 	}
