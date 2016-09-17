@@ -78,50 +78,62 @@ const String* Layer::get_config(String domain, String topic, String name) {
 
 
 void Layer::parse_config(const char* root_dir) {
-	DIR* dir = opendir(root_dir);
+	char buf[4096];
+	// try to find parent
+	{
+		(String(root_dir) << "/parent").to_string(buf, sizeof(buf));
+		FILE* parent = ::fopen(buf, "r");
+		if(parent) {
+			int num = ::fread(buf, 1, sizeof(buf)-1, parent);
+			if(num > 1) {
+				buf[num-1] = 0;
+				(String(root_dir) << "/" << buf).to_string(buf, sizeof(buf));
+				parse_config(buf);
+			}
+			::fclose(parent);
+		}
+	}
+	// parse the whole tree
+	DIR* dir = ::opendir(root_dir);
 	if(!dir) {
 		std::cout << "ERROR: could not open: " << root_dir << std::endl;
 		return;
 	}
-	char buf[1024];
 	dirent* domain;
-	while((domain = readdir(dir)) != 0) {
+	while((domain = ::readdir(dir)) != 0) {
 		if(domain->d_type == DT_DIR && domain->d_name[0] != '.') {
-			String full = String(root_dir) << "/" << domain->d_name;
-			full.to_string(buf, sizeof(buf));
-			DIR* dir = opendir(buf);
+			(String(root_dir) << "/" << domain->d_name).to_string(buf, sizeof(buf));
+			DIR* dir = ::opendir(buf);
 			if(!dir) {
 				std::cout << "WARNING: could not open: " << buf << std::endl;
 				continue;
 			}
 			dirent* topic;
-			while((topic = readdir(dir)) != 0) {
+			while((topic = ::readdir(dir)) != 0) {
 				if(topic->d_type == DT_DIR && topic->d_name[0] != '.') {
-					String full = String(root_dir) << "/" << domain->d_name << "/" << topic->d_name;
-					full.to_string(buf, sizeof(buf));
-					DIR* dir = opendir(buf);
+					(String(root_dir) << "/" << domain->d_name << "/" << topic->d_name).to_string(buf, sizeof(buf));
+					DIR* dir = ::opendir(buf);
 					if(!dir) {
 						std::cout << "WARNING: could not open: " << buf << std::endl;
 						continue;
 					}
 					dirent* name;
-					while((name = readdir(dir)) != 0) {
+					while((name = ::readdir(dir)) != 0) {
 						if(name->d_type == DT_REG && name->d_name[0] != '.') {
-							String full = String(root_dir) << "/" << domain->d_name << "/" << topic->d_name << "/" << name->d_name;
-							full.to_string(buf, sizeof(buf));
-							FILE* file = fopen(buf, "r");
+							(String(root_dir) << "/" << domain->d_name << "/" << topic->d_name << "/" << name->d_name).to_string(buf, sizeof(buf));
+							FILE* file = ::fopen(buf, "r");
 							if(!file) {
 								std::cout << "WARNING: could not open: " << buf << std::endl;
 								continue;
 							}
 							String key = String(domain->d_name) << ":" << topic->d_name << "->" << name->d_name;
 							String& value = config[key];
-							char buf[1024];
+							value.clear();
 							while(true) {
 								int count = sizeof(buf)-1;
-								int num = fread(buf, 1, count, file);
+								int num = ::fread(buf, 1, count, file);
 								if(num > 0) {
-									if(feof(file) && buf[num-1] == '\n') {
+									if(::feof(file) && buf[num-1] == '\n') {
 										num--;
 									}
 									buf[num] = 0;
@@ -131,16 +143,16 @@ void Layer::parse_config(const char* root_dir) {
 								}
 							}
 							//std::cout << "[config] " << key << " = " << value << std::endl;
-							fclose(file);
+							::fclose(file);
 						}
 					}
-					closedir(dir);
+					::closedir(dir);
 				}
 			}
-			closedir(dir);
+			::closedir(dir);
 		}
 	}
-	closedir(dir);
+	::closedir(dir);
 }
 
 
