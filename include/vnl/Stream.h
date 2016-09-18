@@ -36,6 +36,7 @@ public:
 	
 	// thread safe
 	virtual void receive(Message* msg) {
+		assert(engine);
 		if(msg->gate == engine) {
 			push(msg);
 		} else {
@@ -57,6 +58,7 @@ public:
 	}
 	
 	void send(Message* msg, Basic* dst) {
+		assert(engine);
 		if(!msg->src) {
 			msg->src = this;
 		}
@@ -64,6 +66,7 @@ public:
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
+		assert(engine);
 		if(!msg->src) {
 			msg->src = this;
 		}
@@ -97,6 +100,7 @@ public:
 	}
 	
 	void flush() {
+		assert(engine);
 		engine->flush();
 	}
 	
@@ -105,6 +109,7 @@ public:
 	}
 	
 	Message* poll(int64_t micros) {
+		assert(engine);
 		Message* msg = 0;
 		if(!queue.pop(msg)) {
 			if(engine->poll(this, micros)) {

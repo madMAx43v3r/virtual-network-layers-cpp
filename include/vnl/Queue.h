@@ -25,6 +25,8 @@ public:
 	}
 	
 	~Queue() {
+		T tmp;
+		while(pop(tmp));
 		Block* block = p_front;
 		while(block) {
 			Block* next = block->next;

@@ -10,6 +10,7 @@
 
 #include <vnl/RecorderSupport.hxx>
 #include <vnl/RecordValue.hxx>
+#include <vnl/RecordHeader.hxx>
 #include <vnl/io/File.h>
 
 
@@ -20,7 +21,6 @@ public:
 	Recorder(const vnl::String& domain_)
 		:	RecorderBase(domain_, "Recorder"), out(&file)
 	{
-		domains.push_back();
 	}
 	
 protected:
@@ -28,20 +28,27 @@ protected:
 		char buf[1024];
 		String filepath = filename << vnl::currentDate("%Y%m%d_%H%M%S") << ".dat";
 		filepath.to_string(buf, sizeof(buf));
-		FILE* p_file = ::fopen(buf, "w");
-		if(!p_file) {
+		file = ::fopen(buf, "w");
+		if(!file.good()) {
 			log(ERROR).out << "Unable to open file for writing: " << filepath << vnl::endl;
 			return;
 		}
 		log(INFO).out << "Recording to file: " << filepath << vnl::endl;
-		file.fd = ::fileno(p_file);
+		header.header_size = header_size;
+		if(do_write_header) {
+			write_header();
+			::fseek(file, header_size-4, SEEK_SET);
+			out.writeInt(-1);
+			out.flush();
+		}
 		for(String& domain : domains) {
 			subscribe(domain, "");
 			domain_map[vnl::hash64(domain)] = domain;
 			log(DEBUG).out << "Recording domain: " << domain << vnl::endl;
 		}
+		set_timeout(interval, std::bind(&Recorder::update, this), VNL_TIMER_REPEAT);
 		run();
-		::fclose(p_file);
+		::fclose(file);
 	}
 	
 	bool handle(vnl::Packet* packet) {
@@ -57,6 +64,10 @@ protected:
 					rec.value = sample->data;
 					vnl::write(out, rec);
 					out.flush();
+					if(!header.num_samples++) {
+						header.begin_time = rec.time;
+					}
+					header.end_time = rec.time;
 					rec.value.release();
 				}
 			}
@@ -65,8 +76,25 @@ protected:
 	}
 	
 private:
+	void update() {
+		if(do_write_header) {
+			write_header();
+		}
+		::fflush(file);
+	}
+	
+	void write_header() {
+		::fseek(file, 0, SEEK_SET);
+		vnl::write(out, header);
+		out.flush();
+		::fseek(file, 0, SEEK_END);
+	}
+	
+private:
 	vnl::io::File file;
 	vnl::io::TypeOutput out;
+	
+	RecordHeader header;
 	
 	vnl::Map<uint64_t, String> domain_map;
 	

@@ -26,8 +26,8 @@ public:
 	
 	virtual void receive(vnl::Message* msg) {
 		if(msg->msg_id == close_t::MID) {
-			dorun = false;
-			sock.close();
+			closed = true;
+			::shutdown(sock.fd, SHUT_RDWR);
 		}
 		Super::receive(msg);
 	}
@@ -39,27 +39,35 @@ public:
 protected:
 	virtual void main(vnl::Engine* engine) {
 		uplink.connect(engine);
-		while(dorun) {
+		while(dorun && !Layer::shutdown) {
 			int fd = -1;
 			uplink.reset();
+			poll(0);
+			if(!dorun) {
+				break;
+			}
 			uplink.get_fd(fd);
 			if(fd < 0) {
 				break;
 			}
-			sock = vnl::io::Socket(fd);
+			sock = fd;
 			vnl::io::TypeInput in(&sock);
 			while(dorun) {
 				int size = 0;
 				int id = in.getEntry(size);
-				if(id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
+				if(!in.error() && id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
 					uint32_t hash = 0;
 					in.getHash(hash);
 					if(!read_packet(in, hash)) {
-						log(ERROR).out << "Invalid input data: hash=" << vnl::hex(hash) << vnl::endl;
+						if(in.error() != VNL_IO_EOF) {
+							log(ERROR).out << "Invalid input data: hash=" << vnl::hex(hash) << vnl::endl;
+						}
 						break;
 					}
 				} else {
-					log(ERROR).out << "Invalid input data: id=" << id << " size=" << size << vnl::endl;
+					if(in.error() != VNL_IO_EOF) {
+						log(ERROR).out << "Invalid input data: id=" << id << " size=" << size << vnl::endl;
+					}
 					break;
 				}
 				poll(0);
@@ -69,7 +77,9 @@ protected:
 			uplink.shutdown();
 		}
 		// wait for close signal
-		run();
+		while(!closed) {
+			poll(1000);
+		}
 	}
 	
 	bool read_packet(vnl::io::TypeInput& in, uint32_t hash) {
@@ -77,7 +87,7 @@ protected:
 		case Sample::PID: {
 			Sample* sample = buffer.create<Sample>();
 			sample->deserialize(in, 0);
-			if(sample->data && !in.error()) {
+			if(!in.error() && sample->data) {
 				if(sample->dst_addr == sub_topic) {
 					Topic* topic = dynamic_cast<Topic*>(sample->data);
 					if(topic) {
@@ -126,6 +136,7 @@ private:
 	vnl::io::Socket sock;
 	Address sub_topic;
 	Map<Address, int> fwd_table;
+	bool closed = false;
 	
 };
 

@@ -11,7 +11,7 @@
 #include <vnl/Type.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
-#include <vnl/BinaryValue.hxx>
+#include <vnl/BinaryValue.h>
 #include <vnl/Layer.h>
 
 
@@ -40,9 +40,10 @@ inline Value* read(vnl::io::TypeInput& in) {
 			uint32_t hash = 0;
 			in.getHash(hash);
 			obj = vnl::create(hash);
-			if(obj) {
-				obj->deserialize(in, size);
+			if(!obj) {
+				obj = BinaryValue::create();
 			}
+			obj->deserialize(in, size);
 			break;
 		}
 		default: in.skip(id, size);
@@ -68,35 +69,6 @@ inline void read(vnl::io::TypeInput& in, Value& obj) {
 }
 
 inline void read(vnl::io::TypeInput& in, Value* obj) {
-	if(obj) {
-		read(in, *obj);
-	} else {
-		in.skip();
-	}
-}
-
-inline void read(vnl::io::TypeInput& in, BinaryValue& obj) {
-	int size = 0;
-	int id = in.getEntry(size);
-	if(id == VNL_IO_CLASS) {
-		uint32_t hash = 0;
-		in.getHash(hash);
-		obj.hash = hash;
-		obj.size = size;
-		if(!obj.data.data) {
-			obj.data.data = vnl::Page::alloc();
-		}
-		vnl::io::ByteBuffer buf(obj.data.data);
-		vnl::io::TypeOutput out(&buf);
-		in.copy(&out, id, size, hash);
-		out.flush();
-		obj.data.size = out.error() ? 0 : buf.position();
-	} else {
-		in.skip(id, size);
-	}
-}
-
-inline void read(vnl::io::TypeInput& in, BinaryValue* obj) {
 	if(obj) {
 		read(in, *obj);
 	} else {
@@ -186,24 +158,6 @@ inline void write(vnl::io::TypeOutput& out, const Value& obj) {
 }
 
 inline void write(vnl::io::TypeOutput& out, const Value* obj) {
-	if(obj) {
-		write(out, *obj);
-	} else {
-		out.putNull();
-	}
-}
-
-inline void write(vnl::io::TypeOutput& out, const BinaryValue& obj) {
-	out.putEntry(VNL_IO_CLASS, obj.size);
-	out.putHash(obj.hash);
-	if(obj.data.data) {
-		vnl::io::ByteBuffer buf(obj.data.data, obj.data.size);
-		vnl::io::TypeInput in(&buf);
-		in.copy(&out, VNL_IO_CLASS, obj.size, obj.hash);
-	}
-}
-
-inline void write(vnl::io::TypeOutput& out, const BinaryValue* obj) {
 	if(obj) {
 		write(out, *obj);
 	} else {

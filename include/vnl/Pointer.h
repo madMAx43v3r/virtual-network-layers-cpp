@@ -64,6 +64,10 @@ public:
 		return *ptr;
 	}
 	
+	T* value() {
+		return ptr;
+	}
+	
 	T* release() {
 		T* ret = ptr;
 		ptr = 0;
@@ -98,22 +102,14 @@ public:
 	}
 	
 	void deserialize(vnl::io::TypeInput& in, int size) {
-		int id = in.getEntry(size);
-		if(id == VNL_IO_CLASS) {
-			uint32_t hash;
-			in.getHash(hash);
-			Value* value = vnl::create(hash);
-			if(value) {
-				value->deserialize(in, size);
-				ptr = dynamic_cast<T*>(value);
-				if(!ptr) {
-					vnl::destroy(value);
-				}
-			} else {
-				in.skip(id, size, hash);
+		destroy();
+		Value* value = vnl::read(in);
+		if(value) {
+			value->deserialize(in, size);
+			ptr = dynamic_cast<T*>(value);
+			if(!ptr) {
+				vnl::destroy(value);
 			}
-		} else {
-			in.skip(id, size);
 		}
 	}
 	
@@ -126,8 +122,6 @@ private:
 	T* ptr;
 	
 };
-
-
 
 
 }

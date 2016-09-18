@@ -203,40 +203,42 @@ bool Object::handle(Packet* pkt) {
 		Frame* result = buffer.create<Frame>();
 		result->seq_num = request->seq_num;
 		buf_in.wrap(request->data, request->size);
-		in.reset();
+		input.reset();
 		int size = 0;
-		int id = in.getEntry(size);
+		int id = input.getEntry(size);
 		if(id == VNL_IO_INTERFACE) {
 			uint32_t hash = 0;
-			in.getHash(hash);
-			while(!in.error()) {
+			input.getHash(hash);
+			while(!input.error()) {
 				int size = 0;
-				int id = in.getEntry(size);
+				int id = input.getEntry(size);
 				if(id == VNL_IO_CALL) {
-					in.getHash(hash);
-					bool res = vni_call(in, hash, size);
+					input.getHash(hash);
+					bool res = vni_call(input, hash, size);
 					if(!res) {
-						in.skip(id, size, hash);
+						input.skip(id, size, hash);
 						log(WARN).out << "VNL_IO_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
 					}
 				} else if(id == VNL_IO_CONST_CALL) {
-					in.getHash(hash);
-					if(!vni_const_call(in, hash, size, out)) {
-						in.skip(id, size, hash);
-						out.putNull();
+					input.getHash(hash);
+					result->data = Page::alloc();
+					buf_out.wrap(result->data);
+					if(!vni_const_call(input, hash, size, output)) {
+						input.skip(id, size, hash);
+						output.putNull();
 						log(WARN).out << "VNL_IO_CONST_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
 					}
-					out.flush();
+					output.flush();
 				} else if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
 					break;
 				} else {
-					in.skip(id, size);
+					input.skip(id, size);
 				}
 			}
 			result->size = buf_out.position();
-			result->data = buf_out.release();
+			buf_out.clear();
 		}
-		if(in.error()) {
+		if(input.error()) {
 			log(WARN).out << "Invalid Frame received: size=" << request->size << endl;
 		}
 		send_async(result, request->src_addr);
@@ -302,13 +304,14 @@ vnl::info::Class Object::get_class() const {
 }
 
 Binary Object::vni_serialize() const {
+	Binary blob;
+	blob.data = Page::alloc();
 	vnl::io::ByteBuffer buf;
+	buf.wrap(blob.data);
 	vnl::io::TypeOutput out(&buf);
 	serialize(out);
 	out.flush();
-	Binary blob;
 	blob.size = buf.position();
-	blob.data = buf.release();
 	return blob;
 }
 

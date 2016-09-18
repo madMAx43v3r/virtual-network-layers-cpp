@@ -73,7 +73,7 @@ protected:
 		if(UplinkBase::handle(pkt)) {
 			return true;
 		}
-		if(sock.fd >= 0) {
+		if(sock.good()) {
 			queue.push(pkt);
 			timer->reset();
 			return true;
@@ -107,7 +107,7 @@ protected:
 	}
 	
 	void do_subscribe(const vnl::Topic& topic) {
-		if(sock.fd < 0) {
+		if(!sock.good()) {
 			return;
 		}
 		Sample sample;

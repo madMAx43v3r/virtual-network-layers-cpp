@@ -53,9 +53,8 @@ public:
 	
 	template<typename T>
 	T* create() {
-		Queue<void*>& list = table[sizeof(T)];
 		void* obj;
-		if(list.pop(obj)) {
+		if(table[sizeof(T)].pop(obj)) {
 			return new(obj) T();
 		} else {
 			return memory.create<T>();
@@ -64,9 +63,8 @@ public:
 	
 	template<typename T>
 	void destroy(T* obj, int size) {
-		Queue<void*>& list = table[size];
 		obj->~T();
-		list.push(obj);
+		table[size].push(obj);
 	}
 	
 protected:

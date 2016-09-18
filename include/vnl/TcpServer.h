@@ -23,7 +23,7 @@ public:
 		:	Uplink(local_domain_name, vnl::String() << "vnl/tcp/proxy/" << fd),
 			running(false), error(false)
 	{
-		sock = vnl::io::Socket(fd);
+		sock = fd;
 	}
 	
 protected:
@@ -36,6 +36,7 @@ protected:
 		Uplink::main();
 		Downlink::close_t close;
 		send(&close, downlink);
+		::close(sock.fd);
 	}
 	
 	virtual void reset() {

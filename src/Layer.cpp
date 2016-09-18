@@ -24,7 +24,7 @@ const char* local_domain_name = 0;
 volatile bool Layer::shutdown = false;
 volatile bool Layer::finished = false;
 
-Map<String, String> Layer::config;
+Map<String, String>* Layer::config = 0;
 
 Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(local_domain == 0);
@@ -32,10 +32,12 @@ Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(shutdown == false);
 	assert(finished == false);
 	assert(Router::instance == 0);
+	assert(Layer::config == 0);
 	
 	local_domain_name = domain_name;
 	local_domain = vnl::hash64(domain_name);
 	global_pool = new GlobalPool();
+	config = new Map<String, String>();
 	
 	if(config_dir) {
 		parse_config(config_dir);
@@ -61,6 +63,7 @@ Layer::~Layer() {
 	delete Router::instance;
 	delete Random64::instance;
 	delete global_pool;
+	delete config;
 	
 	Page::cleanup();
 	Block::cleanup();
@@ -71,7 +74,7 @@ const String* Layer::get_config(String domain, String topic, String name) {
 	static std::mutex mutex;
 	String key = domain << ":" << topic << "->" << name;
 	mutex.lock();
-	String* value = config.find(key);
+	String* value = config->find(key);
 	mutex.unlock();
 	return value;
 }
@@ -127,7 +130,7 @@ void Layer::parse_config(const char* root_dir) {
 								continue;
 							}
 							String key = String(domain->d_name) << ":" << topic->d_name << "->" << name->d_name;
-							String& value = config[key];
+							String& value = (*config)[key];
 							value.clear();
 							while(true) {
 								int count = sizeof(buf)-1;

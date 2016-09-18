@@ -33,11 +33,12 @@ protected:
 		Super::main();
 		Downlink::close_t close;
 		send(&close, downlink);
+		::close(sock.fd);
 	}
 	
 	virtual void reset() {
 		connect();
-		if(sock.fd > 0) {
+		if(sock.good()) {
 			Super::reset();
 		}
 	}
@@ -52,13 +53,17 @@ protected:
 	
 	void connect() {
 		while(dorun) {
-			if(sock.fd > 0) {
+			if(sock.good()) {
 				::close(sock.fd);
 				usleep(error_interval*1000);
 			}
-			sock.fd = ::socket(AF_INET, SOCK_STREAM, 0);
-			if(sock.fd < 0) {
-				log(ERROR).out << "Failed to create client socket, error=" << sock.fd << vnl::endl;
+			if(!dorun) {
+				sock = -1;
+				break;
+			}
+			sock = ::socket(AF_INET, SOCK_STREAM, 0);
+			if(!sock.good()) {
+				log(ERROR).out << "Failed to create client socket, error=" << errno << vnl::endl;
 				usleep(error_interval*10*1000);
 				continue;
 			}
@@ -82,7 +87,7 @@ protected:
 			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
 			int err = ::connect(sock.fd, (sockaddr*)&addr, sizeof(addr));
 			if(err < 0) {
-				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << err << vnl::endl;
+				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << errno << vnl::endl;
 				continue;
 			}
 			break;

@@ -26,6 +26,15 @@ public:
 	
 	Socket(int sock) : fd(sock) {}
 	
+	bool good() const {
+		return fd >= 0;
+	}
+	
+	Socket& operator=(int fd_) {
+		fd = fd_;
+		return *this;
+	}
+	
 	virtual int read(void* dst, int len) {
 		int res = ::read(fd, dst, len);
 		if(res <= 0) {
@@ -48,8 +57,9 @@ public:
 		return true;
 	}
 	
-	void close() {
-		::close(fd);
+	void set_error(int err_) {
+		InputStream::set_error(err_);
+		OutputStream::set_error(err_);
 	}
 	
 };

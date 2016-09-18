@@ -52,6 +52,7 @@ public:
 	void reset() {
 		pos = 0;
 		limit = 0;
+		set_error(VNL_SUCCESS);
 	}
 	
 	int error() const {
@@ -103,6 +104,7 @@ public:
 	
 	void reset() {
 		pos = 0;
+		set_error(VNL_SUCCESS);
 	}
 	
 	bool flush() {

@@ -27,7 +27,7 @@ public:
 			dorun(true), engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
-			in(&buf_in), out(&buf_out),
+			input(&buf_in), output(&buf_out),
 			log_writer(this)
 	{
 	}
@@ -124,8 +124,8 @@ private:
 	
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;
-	vnl::io::TypeInput in;
-	vnl::io::TypeOutput out;
+	vnl::io::TypeInput input;
+	vnl::io::TypeOutput output;
 	
 	GlobalLogWriter log_writer;
 	

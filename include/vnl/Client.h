@@ -16,10 +16,6 @@
 #include <vnl/Layer.h>
 
 
-enum {
-	VNL_SUCCESS = 0, VNL_ERROR = -1
-};
-
 namespace vnl {
 
 class Client : public ClientBase, public vnl::Stream {
@@ -27,15 +23,14 @@ public:
 	Client()
 		:	_error(0), _in(&_buf), _out(&_buf),
 		 	next_seq(1), timeout(1000),
-		 	do_fail_if_timeout(false),
-		 	is_connected(false)
+		 	do_fail_if_timeout(false)
 	{
 		src = Address(local_domain, mac);
 		_data = Page::alloc();
 	}
 	
 	~Client() {
-		if(is_connected) {
+		if(Stream::get_engine()) {
 			Stream::unsubscribe(src);
 		}
 		_data->free_all();
@@ -63,10 +58,8 @@ public:
 	}
 	
 	void connect(vnl::Engine* engine) {
-		assert(!is_connected);
 		Stream::connect(engine);
 		Stream::subscribe(src);
-		is_connected = true;
 	}
 	
 	void set_timeout(int64_t timeout_ms) {
@@ -96,7 +89,7 @@ protected:
 	int _error;
 	
 	Packet* _call() {
-		assert(is_connected);
+		assert(Stream::get_engine());
 		_out.flush();
 		next_seq++;
 		int64_t ts_begin = vnl::currentTimeMillis();
@@ -142,7 +135,6 @@ private:
 	uint32_t next_seq;
 	int64_t timeout;
 	bool do_fail_if_timeout;
-	bool is_connected;
 	
 };
 

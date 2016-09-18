@@ -37,13 +37,6 @@ public:
 		lim = size;
 	}
 	
-	Page* release() {
-		Page* tmp = first;
-		first = 0;
-		reset();
-		return tmp;
-	}
-	
 	void reset() {
 		buf = first;
 		lim = 0;
@@ -51,6 +44,11 @@ public:
 		off = 0;
 		InputStream::err = 0;
 		OutputStream::err = 0;
+	}
+	
+	void clear() {
+		first = 0;
+		reset();
 	}
 	
 	void flip() {
@@ -91,9 +89,7 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) {
-		if(!buf) {
-			wrap(Page::alloc());
-		}
+		assert(buf);
 		while(len) {
 			int left = Page::size - off;
 			if(!left) {

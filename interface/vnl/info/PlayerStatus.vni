@@ -5,6 +5,7 @@ class PlayerStatus {
 	String filename;
 	
 	bool playing;
+	bool error;
 	
 	long begin_time;
 	long end_time;

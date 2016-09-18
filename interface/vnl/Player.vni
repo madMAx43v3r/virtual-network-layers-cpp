@@ -1,5 +1,7 @@
 package vnl;
 
+import vnl.info.PlayerStatus;
+
 object Player {
 	
 	String filename = "rec-???.dat";
@@ -7,7 +9,7 @@ object Player {
 	Array<String> domain_blacklist;
 	Array<Topic> topic_blacklist;
 	
-	bool autostart = true;
+	bool autostart = false;
 	bool autoloop = false;
 	
 	int interval = 200000;
@@ -17,5 +19,7 @@ object Player {
 	void play();
 	void pause();
 	void seek(long time);
+	
+	PlayerStatus get_status() const;
 	
 }

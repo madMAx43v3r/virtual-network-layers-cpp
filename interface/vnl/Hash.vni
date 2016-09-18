@@ -1,0 +1,4 @@
+package vnl;
+
+interface Hash32;
+interface Hash64;

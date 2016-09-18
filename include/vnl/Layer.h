@@ -36,7 +36,7 @@ protected:
 private:
 	static volatile bool finished;
 	
-	static Map<String, String> config;
+	static Map<String, String>* config;
 	
 	friend class Process;
 	
