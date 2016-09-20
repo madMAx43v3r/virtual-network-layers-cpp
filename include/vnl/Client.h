@@ -91,6 +91,10 @@ protected:
 	Packet* _call() {
 		assert(Stream::get_engine());
 		_out.flush();
+		if(Layer::shutdown) {
+			_error = VNL_IO_EOF;
+			return 0;
+		}
 		next_seq++;
 		int64_t ts_begin = vnl::currentTimeMillis();
 		Frame* ret = 0;

@@ -10,6 +10,7 @@
 
 #include <vnl/Sample.h>
 #include <vnl/io/Socket.h>
+#include <vnl/Downlink.h>
 #include <vnl/UplinkSupport.hxx>
 
 
@@ -26,11 +27,18 @@ public:
 protected:
 	virtual void main() {
 		timer = set_timeout(0, std::bind(&Uplink::write_out, this), VNL_TIMER_MANUAL);
+		Address channel(local_domain, mac);
+		Object::subscribe(channel);
+		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
+		downlink->uplink.set_address(channel);
+		vnl::spawn(downlink);
 		run();
 		for(Address& topic : table.keys()) {
 			Object::unsubscribe(topic);
 		}
 		drop_all();
+		::shutdown(sock.fd, SHUT_RDWR);
+		::close(sock.fd);
 	}
 	
 	virtual void reset() {
@@ -66,7 +74,7 @@ protected:
 	
 	virtual void forward(int64_t domain, int64_t topic) {
 		Object::subscribe(Address((uint64_t)domain, (uint64_t)topic));
-		log(INFO).out << "Forwarding " << vnl::hex(domain) << ":" << vnl::hex(topic) << vnl::endl;
+		log(DEBUG).out << "Forwarding " << vnl::hex(domain) << ":" << vnl::hex(topic) << vnl::endl;
 	}
 	
 	virtual bool handle(Packet* pkt) {
@@ -112,6 +120,7 @@ protected:
 		}
 		Sample sample;
 		sample.seq_num = next_seq++;
+		sample.src_mac = mac;
 		sample.src_addr = my_address;
 		sample.dst_addr = sub_topic;
 		sample.data = topic.clone();

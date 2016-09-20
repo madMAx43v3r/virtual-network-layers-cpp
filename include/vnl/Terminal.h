@@ -134,6 +134,7 @@ protected:
 		}
 		ObjectClient client;
 		client.set_fail(true);
+		client.set_timeout(100);
 		client.set_address(node.domain, node.topic);
 		client.connect(engine);
 		if(client.set_vnl_log_level(level) != VNL_SUCCESS) {

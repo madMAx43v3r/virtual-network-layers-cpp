@@ -25,27 +25,20 @@ public:
 	}
 	
 	virtual void receive(vnl::Message* msg) {
-		if(msg->msg_id == close_t::MID) {
-			closed = true;
+		Super::receive(msg);
+		if(!dorun) {
 			::shutdown(sock.fd, SHUT_RDWR);
 		}
-		Super::receive(msg);
 	}
 	
 	UplinkClient uplink;
 	
-	typedef vnl::SignalType<0x2965956f> close_t;
-	
 protected:
 	virtual void main(vnl::Engine* engine) {
 		uplink.connect(engine);
-		while(dorun && !Layer::shutdown) {
+		while(dorun) {
 			int fd = -1;
 			uplink.reset();
-			poll(0);
-			if(!dorun) {
-				break;
-			}
 			uplink.get_fd(fd);
 			if(fd < 0) {
 				break;
@@ -72,13 +65,6 @@ protected:
 				}
 				poll(0);
 			}
-		}
-		if(!Layer::shutdown) {
-			uplink.shutdown();
-		}
-		// wait for close signal
-		while(!closed) {
-			poll(1000);
 		}
 	}
 	

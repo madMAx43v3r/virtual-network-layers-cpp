@@ -27,28 +27,12 @@ public:
 	}
 	
 protected:
-	virtual void main() {
-		Address channel(local_domain, mac);
-		Object::subscribe(channel);
-		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
-		downlink->uplink.set_address(channel);
-		vnl::spawn(downlink);
-		Uplink::main();
-		Downlink::close_t close;
-		send(&close, downlink);
-		::close(sock.fd);
-	}
-	
 	virtual void reset() {
 		if(!running) {
 			running = true;
 		} else {
 			error = true;
 		}
-	}
-	
-	virtual void shutdown() {
-		exit();
 	}
 	
 	virtual int32_t get_fd() const {
@@ -79,7 +63,6 @@ public:
 		if(dorun && Layer::shutdown) {
 			dorun = false;
 			::shutdown(server, SHUT_RDWR);
-			server = -1;
 		}
 		Super::receive(msg);
 	}
