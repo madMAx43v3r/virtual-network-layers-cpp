@@ -57,7 +57,7 @@ Address Object::subscribe(const String& domain, const String& topic) {
 		Topic* top = Topic::create();
 		top->domain = domain;
 		top->name = topic;
-		publish(top, Address(local_domain, "vnl/topic"));
+		publish(top, Address(local_domain, "vnl.topic"));
 		ifconfig.push_back(address);
 	}
 	return address;
@@ -284,7 +284,7 @@ void Object::exec(Engine* engine_, Message* msg) {
 	announce->instance.type = type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
-	publish(announce, local_domain_name, "vnl/announce");
+	publish(announce, local_domain_name, "vnl.announce");
 	main(engine_, msg);
 	for(Address addr : ifconfig) {
 		unsubscribe(addr);
@@ -297,7 +297,7 @@ void Object::exec(Engine* engine_, Message* msg) {
 			break;
 		}
 	}
-	publish(Exit::create(), local_domain_name, "vnl/exit");
+	publish(Exit::create(), local_domain_name, "vnl.exit");
 	stream.flush();
 }
 

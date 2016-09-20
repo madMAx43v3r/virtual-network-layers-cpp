@@ -23,7 +23,7 @@ public:
 	Uplink(const vnl::String& domain_, const vnl::String& topic_)
 		:	UplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1), do_reset(false)
 	{
-		sub_topic = Address("vnl/downlink", "subscribe");
+		sub_topic = Address("vnl.downlink", "subscribe");
 	}
 	
 	typedef MessageType<Topic, 0x2b70291f> subscribe_t;

@@ -21,17 +21,17 @@ namespace vnl {
 class SpyTool : public SpyToolBase {
 public:
 	SpyTool(const String& domain = local_domain_name)
-		:	SpyToolBase(domain, "vnl/spytool")
+		:	SpyToolBase(domain, "vnl.SpyTool")
 	{
 		running = false;
 	}
 	
 protected:
 	void main(vnl::Engine* engine) {
-		subscribe(my_domain, "vnl/topic");
+		subscribe(my_domain, "vnl.topic");
 		
 		vnl::ProcessClient process;
-		process.set_address(my_domain, "vnl/process");
+		process.set_address(my_domain, "vnl.Process");
 		process.connect(engine);
 		vnl::Array<Topic> list;
 		if(process.get_topics(list) == VNL_SUCCESS) {

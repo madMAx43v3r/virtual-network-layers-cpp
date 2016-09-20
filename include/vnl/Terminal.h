@@ -20,13 +20,13 @@ namespace vnl {
 class Terminal : public Object {
 public:
 	Terminal(const String& domain = local_domain_name)
-		:	Object(domain, "vnl/terminal")
+		:	Object(domain, "vnl.Terminal")
 	{
 	}
 	
 protected:
 	void main(Engine* engine) {
-		process.set_address(my_domain, "vnl/process");
+		process.set_address(my_domain, "vnl.Process");
 		process.connect(engine);
 		std::string input;
 		while(poll(0)) {
@@ -38,7 +38,7 @@ protected:
 			std::getline(std::cin, input);
 			if(input == "quit" || input == "q") {
 				resume();
-				publish(vnl::Shutdown::create(), local_domain_name, "vnl/shutdown");
+				publish(vnl::Shutdown::create(), local_domain_name, "vnl.shutdown");
 				break;
 			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;

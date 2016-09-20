@@ -52,7 +52,7 @@ Layer::~Layer() {
 	if(!shutdown) {
 		ThreadEngine engine;
 		ProcessClient proc;
-		proc.set_address(local_domain, "vnl/process");
+		proc.set_address(local_domain, "vnl.Process");
 		proc.connect(&engine);
 		proc.shutdown();
 	}
@@ -165,7 +165,7 @@ void GlobalLogWriter::write(const String& str) {
 	msg->topic = node->my_topic;
 	msg->level = level;
 	msg->msg = str;
-	node->publish(msg, local_domain_name, "vnl/log");
+	node->publish(msg, local_domain_name, "vnl.log");
 }
 
 

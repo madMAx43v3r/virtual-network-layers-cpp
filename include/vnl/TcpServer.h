@@ -19,7 +19,7 @@ namespace vnl {
 class TcpProxy : public Uplink {
 public:
 	TcpProxy(int fd)
-		:	Uplink(local_domain_name, vnl::String() << "vnl/tcp/proxy/" << fd),
+		:	Uplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
 			running(false)
 	{
 		this->fd = fd;
@@ -46,7 +46,7 @@ private:
 class TcpServer : public vnl::TcpServerBase {
 public:
 	TcpServer(int port = 8916)
-		:	TcpServerBase(local_domain_name, vnl::String() << "vnl/tcp/server/" << port),
+		:	TcpServerBase(local_domain_name, vnl::String() << "vnl.tcp.server." << port),
 			server(-1), do_reset(false)
 	{
 		this->port = port;

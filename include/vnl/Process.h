@@ -18,7 +18,7 @@ namespace vnl {
 class Process : public ProcessBase {
 public:
 	Process()
-		:	ProcessBase(local_domain_name, "vnl/process")
+		:	ProcessBase(local_domain_name, "vnl.Process")
 	{
 	}
 	
@@ -28,11 +28,11 @@ public:
 	
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
-		subscribe(local_domain_name, "vnl/announce");
-		subscribe(local_domain_name, "vnl/topic");
-		subscribe(local_domain_name, "vnl/log");
-		subscribe(local_domain_name, "vnl/shutdown");
-		subscribe(local_domain_name, "vnl/exit");
+		subscribe(local_domain_name, "vnl.announce");
+		subscribe(local_domain_name, "vnl.topic");
+		subscribe(local_domain_name, "vnl.log");
+		subscribe(local_domain_name, "vnl.shutdown");
+		subscribe(local_domain_name, "vnl.exit");
 		init->ack();
 		run();
 		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
