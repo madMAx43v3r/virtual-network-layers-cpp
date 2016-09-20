@@ -41,6 +41,7 @@ protected:
 			uplink.reset();
 			uplink.get_fd(fd);
 			if(fd < 0) {
+				uplink.shutdown();
 				break;
 			}
 			sock = fd;

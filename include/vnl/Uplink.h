@@ -30,6 +30,7 @@ protected:
 		Address channel(local_domain, mac);
 		Object::subscribe(channel);
 		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
+		Address downlink_addr = downlink->get_my_address();
 		downlink->uplink.set_address(channel);
 		vnl::spawn(downlink);
 		run();
@@ -37,7 +38,7 @@ protected:
 			Object::unsubscribe(topic);
 		}
 		drop_all();
-		::shutdown(sock.fd, SHUT_RDWR);
+		Object::publish(vnl::Shutdown::create(), downlink_addr);
 		::close(sock.fd);
 	}
 	
@@ -46,6 +47,10 @@ protected:
 		for(Topic& topic : table.values()) {
 			do_subscribe(topic);
 		}
+	}
+	
+	virtual void shutdown() {
+		exit();
 	}
 	
 	virtual void publish(const vnl::String& domain, const vnl::String& topic) {

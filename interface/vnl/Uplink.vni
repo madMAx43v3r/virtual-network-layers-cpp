@@ -11,6 +11,7 @@ object Uplink {
 	long num_drop = 0;			// how many packets have been dropped so far
 	
 	void reset();
+	void shutdown();
 	int get_fd() const;
 	
 	void publish(Topic topic);
