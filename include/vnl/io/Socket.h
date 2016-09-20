@@ -62,6 +62,11 @@ public:
 		OutputStream::set_error(err_);
 	}
 	
+	void close() {
+		::close(fd);
+		fd = -1;
+	}
+	
 };
 
 

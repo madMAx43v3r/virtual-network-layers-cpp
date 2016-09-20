@@ -59,42 +59,26 @@ public:
 	
 	void send(Message* msg, Basic* dst) {
 		assert(engine);
-		if(!msg->src) {
-			msg->src = this;
-		}
+		msg->src = this;
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		assert(engine);
-		if(!msg->src) {
-			msg->src = this;
-		}
+		msg->src = this;
 		engine->send_async(msg, dst);
 	}
 	
 	void send(Packet* packet, Address dst) {
-		if(packet->src_addr.is_null()) {
-			packet->src_addr = Address(local_domain, mac);
-		}
-		if(!packet->seq_num) {
-			packet->seq_num = next_seq++;
-		}
+		packet->seq_num = next_seq++;
 		packet->src_mac = mac;
 		packet->dst_addr = dst;
 		send(packet, Router::instance);
 	}
 	
 	void send_async(Packet* packet, Address dst) {
-		if(packet->src_addr.is_null()) {
-			packet->src_addr = Address(local_domain, mac);
-		}
-		if(!packet->seq_num) {
-			packet->seq_num = next_seq++;
-		}
-		if(!packet->src_mac) {
-			packet->src_mac = mac;
-		}
+		packet->seq_num = next_seq++;
+		packet->src_mac = mac;
 		packet->dst_addr = dst;
 		send_async(packet, Router::instance);
 	}

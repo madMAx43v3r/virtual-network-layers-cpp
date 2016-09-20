@@ -196,7 +196,10 @@ bool Object::handle(Packet* pkt) {
 	if(pkt->pkt_id == vnl::Sample::PID) {
 		Sample* sample = (Sample*)pkt->payload;
 		if(sample->data) {
-			handle_switch(sample->data, pkt);
+			if(handle_switch(sample->data, pkt)) {
+				pkt->ack();
+				return true;
+			}
 		}
 	} else if(pkt->pkt_id == Frame::PID) {
 		Frame* request = (Frame*)pkt->payload;
@@ -242,6 +245,8 @@ bool Object::handle(Packet* pkt) {
 			log(WARN).out << "Invalid Frame received: size=" << request->size << endl;
 		}
 		send_async(result, request->src_addr);
+		pkt->ack();
+		return true;
 	}
 	return false;
 }

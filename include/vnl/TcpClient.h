@@ -8,7 +8,6 @@
 #ifndef CPP_INCLUDE_VNI_TCPCLIENT_H_
 #define CPP_INCLUDE_VNI_TCPCLIENT_H_
 
-#include <vnl/Downlink.h>
 #include <vnl/TcpClientSupport.hxx>
 
 
@@ -24,37 +23,27 @@ public:
 	}
 	
 protected:
-	virtual void reset() {
-		connect();
-		if(sock.good()) {
-			Super::reset();
-		}
-	}
-	
-	virtual int32_t get_fd() const {
-		return sock.fd;
-	}
-	
-	void connect() {
-		while(dorun) {
-			if(sock.good()) {
-				::close(sock.fd);
-				usleep(error_interval*1000);
+	int connect() {
+		int sock = -1;
+		while(true) {
+			if(sock >= 0) {
+				::close(sock);
+				usleep(error_interval);
 			}
 			if(!dorun) {
 				sock = -1;
 				break;
 			}
 			sock = ::socket(AF_INET, SOCK_STREAM, 0);
-			if(!sock.good()) {
+			if(sock < 0) {
 				log(ERROR).out << "Failed to create client socket, error=" << errno << vnl::endl;
-				usleep(error_interval*10*1000);
+				usleep(error_interval*10);
 				continue;
 			}
-			if(setsockopt(sock.fd, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
+			if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for send_buffer_size failed, error=" << errno << vnl::endl;
 			}
-			if(setsockopt(sock.fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
+			if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 			}
 			sockaddr_in addr;
@@ -69,17 +58,17 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
-			int err = ::connect(sock.fd, (sockaddr*)&addr, sizeof(addr));
+			int err = ::connect(sock, (sockaddr*)&addr, sizeof(addr));
 			if(err < 0) {
 				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << errno << vnl::endl;
 				continue;
 			}
 			break;
 		}
+		return sock;
 	}
 	
 };
-
 
 
 }

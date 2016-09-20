@@ -55,6 +55,11 @@ public:
 		in.readLong(B);
 	}
 	
+	friend vnl::String& operator<<(vnl::String& stream, const Address& addr) {
+		stream << hex(addr.A) << ":" << hex(addr.B);
+		return stream;
+	}
+	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {
 		auto state = stream.flags(std::ios::hex);
 		stream << addr.A << ":" << addr.B;

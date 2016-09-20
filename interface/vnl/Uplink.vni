@@ -8,18 +8,14 @@ object Uplink {
 	 */
 	int send_timeout = -1;
 	
-	long num_drop = 0;			// how many packets have been dropped so far
+	int error_interval = 1000000;			// how long to wait after an error (ms)
 	
-	void reset();
-	void shutdown();
-	int get_fd() const;
+	long num_drop = 0;			// how many packets have been dropped so far
 	
 	void publish(Topic topic);
 	void publish(String domain, String topic);
 	
 	void subscribe(Topic topic);
 	void subscribe(String domain, String topic);
-	
-	void forward(long domain, long topic);
 	
 }

@@ -20,11 +20,6 @@ class ThreadEngine : public Engine {
 public:
 	ThreadEngine() : pending(0), max_num_pending(-1) {}
 	
-	virtual void run(Object* object) {
-		Message msg;
-		exec(object, &msg);
-	}
-	
 	static void spawn(Object* object) {
 		Actor sync;
 		Message msg;
@@ -34,14 +29,36 @@ public:
 		sync.wait();
 	}
 	
-protected:
-	void exec(Object* object, Message* init) {
-		max_num_pending = object->vnl_max_num_pending;
-		Engine::exec(object, init);
+	// all below NOT thread safe
+	
+	virtual void run(Object* object) {
+		Message msg;
+		exec(object, &msg);
 	}
 	
 	virtual void fork(Object* object) {
 		spawn(object);
+	}
+	
+	virtual bool poll(Stream* stream, int64_t micros) {
+		assert(stream);
+		assert(stream->get_engine() == this);
+		
+		if(micros > 0) {
+			return timed_poll(stream, micros);
+		} else {
+			return simple_poll(stream, micros);
+		}
+	}
+	
+	virtual void flush() {
+		wait_for_acks(0);
+	}
+	
+protected:
+	void exec(Object* object, Message* init) {
+		max_num_pending = object->vnl_max_num_pending;
+		Engine::exec(object, init);
 	}
 	
 	virtual void send_impl(Message* msg, Basic* dst, bool async) {
@@ -58,21 +75,6 @@ protected:
 		} else {
 			wait_for_acks(max_num_pending);
 		}
-	}
-	
-	virtual bool poll(Stream* stream, int64_t micros) {
-		assert(stream);
-		assert(stream->get_engine() == this);
-		
-		if(micros > 0) {
-			return timed_poll(stream, micros);
-		} else {
-			return simple_poll(stream, micros);
-		}
-	}
-	
-	virtual void flush() {
-		wait_for_acks(0);
 	}
 	
 private:

@@ -5,8 +5,6 @@ object TcpClient extends Uplink {
 	String endpoint;
 	int port = 8616;
 	
-	int error_interval = 1000;		// how long to wait after an error (ms)
-	
 	int send_buffer_size = 1048576;			// in bytes
 	int receive_buffer_size = 1048576;		// in bytes
 	

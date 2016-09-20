@@ -50,8 +50,7 @@ public:
 		mutex.unlock();
 	}
 	
-protected:
-	void exec(Object* object, Message* init);
+	// all below NOT thread safe
 	
 	void send(Message* msg, Basic* dst) {
 		send_impl(msg, dst, false);
@@ -61,16 +60,19 @@ protected:
 		send_impl(msg, dst, true);
 	}
 	
-	Message* collect(int64_t timeout);
-	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
-	
 	virtual void fork(Object* object) = 0;
-	
-	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
+	
+protected:
+	void exec(Object* object, Message* init);
+	
+	Message* collect(int64_t timeout);
+	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
+	
+	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 private:
 	std::mutex mutex;

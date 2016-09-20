@@ -1,7 +1,0 @@
-package vnl;
-
-object Downlink {
-	
-	int error_interval = 3000;
-	
-}
