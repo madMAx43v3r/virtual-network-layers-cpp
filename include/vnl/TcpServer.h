@@ -29,7 +29,6 @@ protected:
 	int connect() {
 		if(!running) {
 			running = true;
-			log(INFO).out << "New client on socket " << fd << vnl::endl;
 			return fd;
 		} else {
 			return -1;
@@ -52,7 +51,11 @@ public:
 		this->port = port;
 	}
 	
-	typedef MessageType<int, 0xae664cbf> new_client_t;
+	void receive(Message* msg) {
+		Super::receive(msg);
+	}
+	
+	typedef MessageType<int, 0xaea64cbf> new_client_t;
 	typedef MessageType<int, 0x0252a160> error_t;
 	
 protected:
@@ -116,6 +119,7 @@ protected:
 			}
 			TcpProxy* proxy = new TcpProxy(sock);
 			vnl::spawn(proxy);
+			log(INFO).out << "New client on socket " << sock << vnl::endl;
 		} else if(msg->msg_id == error_t::MID) {
 			log(ERROR).out << "accept() failed, error=" << ((error_t*)msg)->data << vnl::endl;
 			do_reset = true;

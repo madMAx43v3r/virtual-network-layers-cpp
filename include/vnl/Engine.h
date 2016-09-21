@@ -36,16 +36,16 @@ Address fork(Object* object);
 
 class Engine : public Basic {
 public:
-	Engine();
+	Engine() {}
 	
 	virtual ~Engine() {}
 	
 	// thread safe
 	virtual void receive(Message* msg) {
+		assert(msg->dst);
 		msg->gate = this;
 		mutex.lock();
 		queue.push(msg);
-		num_queued++;
 		cond.notify_all();
 		mutex.unlock();
 	}
@@ -53,11 +53,13 @@ public:
 	// all below NOT thread safe
 	
 	void send(Message* msg, Basic* dst) {
-		send_impl(msg, dst, false);
+		msg->dst = dst;
+		send_impl(msg, false);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
-		send_impl(msg, dst, true);
+		msg->dst = dst;
+		send_impl(msg, true);
 	}
 	
 	virtual void fork(Object* object) = 0;
@@ -72,14 +74,13 @@ protected:
 	Message* collect(int64_t timeout);
 	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
-	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
+	virtual void send_impl(Message* msg, bool async) = 0;
 	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
-	size_t num_queued;
 	
 	friend class Stream;
 	friend class Object;

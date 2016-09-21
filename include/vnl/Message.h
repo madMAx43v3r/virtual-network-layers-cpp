@@ -32,12 +32,7 @@ public:
 	virtual vnl::String to_string();
 	
 	void ack();
-	
-	void destroy() {
-		if(buffer) {
-			buffer->destroy(this, msg_size);
-		}
-	}
+	void destroy();
 	
 	uint32_t msg_id;
 	Basic* src = 0;

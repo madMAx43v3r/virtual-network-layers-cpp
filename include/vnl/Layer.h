@@ -11,6 +11,8 @@
 #include <vnl/Basic.h>
 #include <vnl/Map.h>
 
+#include <atomic>
+
 
 namespace vnl {
 
@@ -26,16 +28,15 @@ public:
 	
 	~Layer();
 	
-	static const String* get_config(String domain, String topic, String name);
+	static const String* get_config(const String& domain, const String& topic, const String& name);
 	
 	static volatile bool shutdown;
+	static std::atomic<int> num_threads;
 	
 protected:
 	static void parse_config(const char* config_dir);
 	
 private:
-	static volatile bool finished;
-	
 	static Map<String, String>* config;
 	
 	friend class Process;

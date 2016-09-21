@@ -57,11 +57,6 @@ public:
 		return true;
 	}
 	
-	void set_error(int err_) {
-		InputStream::set_error(err_);
-		OutputStream::set_error(err_);
-	}
-	
 	void close() {
 		::close(fd);
 		fd = -1;

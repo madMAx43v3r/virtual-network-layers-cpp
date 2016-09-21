@@ -28,6 +28,19 @@
 
 namespace vnl {
 
+template<typename K, typename V>
+struct pair {
+	K first;
+	V second;
+	pair() {}
+	pair(const K& key, const V& value) : first(key), second(value) {}
+};
+
+template<typename K, typename V>
+inline pair<K,V> make_pair(const K& key, const V& value) {
+	return pair<K,V>(key, value);
+}
+
 static int64_t currentTime() {
 	return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }

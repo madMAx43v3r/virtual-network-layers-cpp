@@ -9,7 +9,6 @@ ADD_LIBRARY(vnl STATIC
 	src/Layer.cpp
 	src/Message.cpp
 	src/Object.cpp
-	src/Random.cpp
 	src/Router.cpp
 )
 

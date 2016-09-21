@@ -4,6 +4,8 @@ object Process {
 	
 	String name;
 	
+	bool do_print_stats = true;
+	
 	void handle(LogMsg event);
 	void handle(Announce event);
 	void handle(Topic topic);

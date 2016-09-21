@@ -35,21 +35,8 @@ public:
 		}
 	}
 	
-	Queue(const Queue& other) {
-		append(other);
-	}
-	
-	Queue& operator=(const Queue& other) {
-		clear();
-		append(other);
-		return *this;
-	}
-	
-	void append(const Queue& other) {
-		for(const T& obj : other) {
-			push(obj);
-		}
-	}
+	Queue(const Queue& other) = delete;
+	Queue& operator=(const Queue& other) = delete;
 	
 	T& push() {
 		return push(T());
@@ -57,12 +44,12 @@ public:
 	
 	T& push(const T& obj) {
 		if(!p_front) {
-			p_front = Block::alloc_ex<block_t>()->create();
+			p_front = block_t::create();
 			p_back = p_front;
 		}
 		if(p_back->write() >= N) {
 			if(!p_back->next_block()) {
-				p_back->next_block() = Block::alloc_ex<block_t>()->create();
+				p_back->next_block() = block_t::create();
 			}
 			p_back = p_back->next_block();
 			p_back->write() = 0;
@@ -102,14 +89,6 @@ public:
 		return obj;
 	}
 	
-	T& operator[](int index) {
-		auto iter = begin();
-		for(int i = 0; i < index; ++i) {
-			++iter;
-		}
-		return *iter;
-	}
-	
 	T& front() {
 		return p_front->elem(p_front->read());
 	}
@@ -144,81 +123,17 @@ public:
 protected:
 	class block_t : public Block {
 	public:
-		block_t* create() {
-			read() = 0;
-			write() = 0;
-			return this;
+		static block_t* create() {
+			block_t* block = Block::alloc_ex<block_t>();
+			block->read() = 0;
+			block->write() = 0;
+			return block;
 		}
 		block_t*& next_block() { return *((block_t**)(&next)); }
 		int16_t& read() { return type_at<int16_t>(0); }
 		int16_t& write() { return type_at<int16_t>(2); }
 		T& elem(int i) { return type_at<T>(4 + i*sizeof(T)); }
 	};
-	
-public:
-	
-	template<typename P>
-	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
-	public:
-		iterator_t() : iterator_t(0) {}
-		iterator_t(const iterator_t&) = default;
-		iterator_t& operator++() {
-			advance();
-			return *this;
-		}
-		iterator_t operator++(int) {
-			iterator_t tmp = *this;
-			advance();
-			return tmp;
-		}
-		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return block->elem(pos);
-		}
-		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &block->elem(pos);
-		}
-		friend void swap(iterator_t& lhs, iterator_t& rhs) {
-			std::swap(lhs.block, rhs.block);
-			std::swap(lhs.pos, rhs.pos);
-		}
-		friend bool operator==(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.block == rhs.block && lhs.pos == rhs.pos;
-		}
-		friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.block != rhs.block || lhs.pos != rhs.pos;
-		}
-	private:
-		iterator_t(block_t* block, int pos)
-			:	block(block), pos(pos)
-		{
-			if(pos >= N) {
-				this->block = block->next_block();
-				this->pos = 0;
-			}
-		}
-		void advance() {
-			if(pos >= N-1) {
-				block = block->next_block();
-				pos = 0;
-			} else {
-				pos++;
-			}
-		}
-		block_t* block;
-		int pos;
-		friend class Queue;
-	};
-	
-	typedef iterator_t<T> iterator;
-	typedef iterator_t<const T> const_iterator;
-	
-	iterator begin() { return iterator(p_front, p_front ? p_front->read() : 0); }
-	const_iterator begin() const { return const_iterator(p_front, p_front ? p_front->read() : 0); }
-	const_iterator cbegin() const { return const_iterator(p_front, p_front ? p_front->read() : 0); }
-	
-	iterator end() { return iterator(p_back, p_back ? p_back->write() : 0); }
-	const_iterator end() const { return const_iterator(p_back, p_back ? p_back->write() : 0); }
-	const_iterator cend() const { return const_iterator(p_back, p_back ? p_back->write() : 0); }
 	
 private:
 	block_t* p_front = 0;

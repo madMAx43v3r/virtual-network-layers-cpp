@@ -57,9 +57,6 @@ protected:
 			thread.join();
 			sock.close();
 		}
-		for(Address& topic : table.keys()) {
-			Object::unsubscribe(topic);
-		}
 		drop_all();
 	}
 	
@@ -84,7 +81,7 @@ protected:
 	}
 	
 	bool handle(Packet* pkt) {
-		if(UplinkBase::handle(pkt)) {
+		if(Super::handle(pkt)) {
 			return true;
 		}
 		if(sock.good()) {
@@ -195,12 +192,11 @@ protected:
 			if(error) {
 				if(dorun) {
 					error_t msg(in.error());
-					engine.send(&msg, this);
+					stream.send(&msg, this);
 				}
 				break;
 			}
 		}
-		engine.flush();
 	}
 	
 	bool read_packet(Stream& stream, MessagePool& buffer, vnl::io::TypeInput& in, uint32_t hash) {

@@ -16,6 +16,7 @@
 #include <boost/coroutine/protected_stack_allocator.hpp>
 
 #include <vnl/FiberEngine.h>
+#include <vnl/ThreadEngine.h>
 
 
 namespace vnl {
@@ -174,15 +175,14 @@ void FiberEngine::run() {
 	}
 }
 
-void FiberEngine::send_impl(Message* msg, Basic* dst, bool async) {
+void FiberEngine::send_impl(Message* msg, bool async) {
 	assert(msg->isack == false);
+	assert(msg->src);
+	assert(msg->dst);
 	assert(current);
 	
-	if(!msg->src) {
-		msg->src = this;
-	}
 	msg->_impl = current;
-	dst->receive(msg);
+	msg->dst->receive(msg);
 	current->sent(msg, async);
 }
 

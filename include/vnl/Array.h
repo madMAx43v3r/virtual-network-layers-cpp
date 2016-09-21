@@ -22,11 +22,11 @@ namespace vnl {
 template<typename T>
 class Array {
 public:
-	Array() {
+	Array() : p_front(0), p_back(0), pos(0) {
 		assert(sizeof(T) <= Page::size);
 	}
 	
-	Array(const Array& other) {
+	Array(const Array& other) : p_front(0), p_back(0), pos(0) {
 		append(other);
 	}
 	
@@ -35,8 +35,10 @@ public:
 	}
 	
 	Array& operator=(const Array& other) {
-		clear();
-		append(other);
+		if(&other != this) {
+			clear();
+			append(other);
+		}
 		return *this;
 	}
 	
@@ -140,7 +142,6 @@ public:
 	}
 	
 public:
-	
 	template<typename P>
 	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
 	public:
@@ -201,12 +202,11 @@ public:
 protected:
 	static const int M = Page::size / sizeof(T);
 	
-	Page* p_front = 0;
-	Page* p_back = 0;
-	int pos = 0;
+	Page* p_front;
+	Page* p_back;
+	int pos;
 	
 };
-
 
 
 }

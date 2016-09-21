@@ -49,9 +49,6 @@ public:
 	
 	virtual void receive(Message* msg) override {
 		msg->gate = this;
-		if(!msg->dst) {
-			msg->dst = this;
-		}
 		mutex.lock();
 		if(msg->isack) {
 			callback(msg);
@@ -92,20 +89,24 @@ public:
 		}
 	}
 	
+	void reset() {
+		acked = false;
+	}
+	
 	void send(Message* msg, Basic* dst) {
 		msg->src = this;
+		msg->dst = dst;
 		acked = false;
 		ulock.unlock();
 		dst->receive(msg);
 		ulock.lock();
-		if(!acked) {
+		while(!acked) {
 			cond.wait(ulock);
 		}
 	}
 	
 	void wait() {
-		acked = false;
-		if(!acked) {
+		while(!acked) {
 			cond.wait(ulock);
 		}
 	}
@@ -124,8 +125,6 @@ inline void send(Message* msg, Basic* dst) {
 	Actor actor;
 	actor.send(msg, dst);
 }
-
-
 
 
 }

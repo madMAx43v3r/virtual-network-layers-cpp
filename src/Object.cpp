@@ -6,6 +6,7 @@
  */
 
 #include <vnl/Object.h>
+#include <vnl/Pipe.h>
 #include <vnl/Sample.h>
 #include <vnl/Announce.hxx>
 #include <vnl/LogMsg.hxx>
@@ -34,7 +35,7 @@ StringWriter Object::log(int level) {
 }
 
 Timer* Object::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type) {
-	Timer& timer = timers.push();
+	Timer& timer = timers.push_back();
 	timer.interval = micros;
 	timer.func = func;
 	timer.type = type;
@@ -50,26 +51,15 @@ Object* Object::fork(Object* object) {
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
-	Address address(domain, topic);
-	Router::open_t msg(std::make_pair(this, address));
-	send(&msg, Router::instance);
-	if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
-		Topic* top = Topic::create();
-		top->domain = domain;
-		top->name = topic;
-		publish(top, Address(local_domain, "vnl.topic"));
-		ifconfig.push_back(address);
-	}
-	return address;
+	Topic* top = Topic::create();
+	top->domain = domain;
+	top->name = topic;
+	publish(top, Address(local_domain, "vnl.topic"));
+	return subscribe(Address(domain, topic));
 }
 
 Address Object::subscribe(Address address) {
-	Router::open_t msg(std::make_pair(this, address));
-	send(&msg, Router::instance);
-	if(vnl::find(ifconfig.begin(), ifconfig.end(), address) == ifconfig.end()) {
-		ifconfig.push_back(address);
-	}
-	return address;
+	return stream.subscribe(address);
 }
 
 void Object::unsubscribe(Hash64 domain, Hash64 topic) {
@@ -77,8 +67,7 @@ void Object::unsubscribe(Hash64 domain, Hash64 topic) {
 }
 
 void Object::unsubscribe(Address address) {
-	Router::close_t msg(std::make_pair(this, address));
-	send(&msg, Router::instance);
+	stream.unsubscribe(address);
 }
 
 void Object::publish(Value* data, Hash64 domain, Hash64 topic) {
@@ -92,9 +81,6 @@ void Object::publish(Value* data, Address topic) {
 }
 
 void Object::send(Packet* packet, Address dst) {
-	if(!packet->src) {
-		packet->src = this;
-	}
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
@@ -102,9 +88,6 @@ void Object::send(Packet* packet, Address dst) {
 }
 
 void Object::send_async(Packet* packet, Address dst) {
-	if(!packet->src) {
-		packet->src = this;
-	}
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
@@ -112,16 +95,10 @@ void Object::send_async(Packet* packet, Address dst) {
 }
 
 void Object::send(Message* msg, Basic* dst) {
-	if(!msg->src) {
-		msg->src = this;
-	}
 	stream.send(msg, dst);
 }
 
 void Object::send_async(Message* msg, Basic* dst) {
-	if(!msg->src) {
-		msg->src = this;
-	}
 	stream.send_async(msg, dst);
 }
 
@@ -174,6 +151,16 @@ bool Object::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
 		return handle(pkt);
+	} else if(msg->msg_id == Pipe::connect_t::MID) {
+		Basic* src = ((Pipe::connect_t*)msg)->data;
+		pipes.push_back(src);
+		msg->ack();
+		return true;
+	} else if(msg->msg_id == Pipe::close_t::MID) {
+		Basic* src = ((Pipe::close_t*)msg)->data;
+		pipes.remove(src);
+		msg->ack();
+		return true;
 	}
 	return false;
 }
@@ -276,7 +263,7 @@ void Object::run() {
 	while(dorun && poll(-1));
 }
 
-void Object::exec(Engine* engine_, Message* msg) {
+void Object::exec(Engine* engine_, Message* init) {
 	engine = engine_;
 	stream.connect(engine_);
 	subscribe(my_address);
@@ -285,20 +272,13 @@ void Object::exec(Engine* engine_, Message* msg) {
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
 	publish(announce, local_domain_name, "vnl.announce");
-	main(engine_, msg);
-	for(Address addr : ifconfig) {
-		unsubscribe(addr);
-	}
-	while(true) {
-		Message* msg = stream.poll(0);
-		if(msg) {
-			msg->ack();
-		} else {
-			break;
-		}
+	main(engine_, init);
+	for(Basic* pipe : pipes) {
+		Pipe::close_t msg(this);
+		send(&msg, pipe);
 	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");
-	stream.flush();
+	stream.close();
 }
 
 vnl::info::Class Object::get_class() const {

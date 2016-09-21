@@ -7,6 +7,7 @@
 
 #include <vnl/ThreadEngine.h>
 #include <vnl/Layer.h>
+#include <vnl/Random.h>
 #include <vnl/Pool.h>
 #include <vnl/Process.h>
 #include <vnl/ProcessClient.hxx>
@@ -22,15 +23,17 @@ uint64_t local_domain = 0;
 const char* local_domain_name = 0;
 
 volatile bool Layer::shutdown = false;
-volatile bool Layer::finished = false;
+std::atomic<int> Layer::num_threads(0);
 
 Map<String, String>* Layer::config = 0;
+
+Random64* Random64::instance = 0;
 
 Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(local_domain == 0);
 	assert(global_pool == 0);
 	assert(shutdown == false);
-	assert(finished == false);
+	assert(num_threads == 0);
 	assert(Router::instance == 0);
 	assert(Layer::config == 0);
 	
@@ -56,7 +59,7 @@ Layer::~Layer() {
 		proc.connect(&engine);
 		proc.shutdown();
 	}
-	while(!finished) {
+	while(num_threads.load() > 0) {
 		usleep(10*1000);
 	}
 	
@@ -70,9 +73,10 @@ Layer::~Layer() {
 }
 
 
-const String* Layer::get_config(String domain, String topic, String name) {
+const String* Layer::get_config(const String& domain, const String& topic, const String& name) {
 	static std::mutex mutex;
-	String key = domain << ":" << topic << "->" << name;
+	String key;
+	key << domain << ":" << topic << "->" << name;
 	mutex.lock();
 	String* value = config->find(key);
 	mutex.unlock();

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include <vnl/Basic.h>
+#include <vnl/Pipe.h>
 #include <vnl/Engine.h>
 #include <vnl/Queue.h>
 #include <vnl/Router.h>
@@ -24,10 +24,27 @@ public:
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
 	
-	~Stream() {}
+	~Stream() {
+		if(engine) {
+			close();
+		}
+	}
 	
 	void connect(Engine* engine_) {
 		engine = engine_;
+		Pipe::connect_t msg(this);
+		send(&msg, Router::instance);
+	}
+	
+	void close() {
+		flush();
+		Pipe::close_t msg(this);
+		send(&msg, Router::instance);
+		Message* left = 0;
+		while(queue.pop(left)) {
+			left->ack();
+		}
+		engine = 0;
 	}
 	
 	Engine* get_engine() const {
@@ -40,20 +57,18 @@ public:
 		if(msg->gate == engine) {
 			push(msg);
 		} else {
-			if(!msg->dst) {
-				msg->dst = this;
-			}
 			engine->receive(msg);
 		}
 	}
 	
-	void subscribe(Address address) {
-		Router::open_t msg(std::make_pair(this, address));
+	Address subscribe(Address addr) {
+		Router::open_t msg(vnl::make_pair(mac, addr));
 		send(&msg, Router::instance);
+		return addr;
 	}
 	
-	void unsubscribe(Address address) {
-		Router::close_t msg(std::make_pair(this, address));
+	void unsubscribe(Address addr) {
+		Router::close_t msg(vnl::make_pair(mac, addr));
 		send(&msg, Router::instance);
 	}
 	
@@ -105,6 +120,10 @@ public:
 	
 	void push(Message* msg) {
 		queue.push(msg);
+	}
+	
+	bool empty() const {
+		return queue.empty();
 	}
 	
 private:

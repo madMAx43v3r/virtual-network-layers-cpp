@@ -106,9 +106,9 @@ protected:
 	PageAllocator memory;
 	MessagePool buffer;
 	
-	vnl::Address my_address;
-	vnl::String my_domain;
-	vnl::String my_topic;
+	Address my_address;
+	String my_domain;
+	String my_topic;
 	
 private:
 	void exec(Engine* engine, Message* msg);
@@ -118,9 +118,9 @@ private:
 	Engine* engine;
 	
 	List<Timer> timers;
-	List<Address> ifconfig;
+	List<Basic*> pipes;
 	
-	vnl::Map<uint64_t, int64_t> sources;
+	Map<uint64_t, int64_t> sources;
 	
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;

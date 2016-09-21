@@ -15,22 +15,24 @@
 
 namespace vnl {
 
-Engine::Engine()
-	:	num_queued(0)
-{
-	mac = Random64::global_rand();
-}
-
 void Engine::exec(Object* object, Message* init) {
 	object->exec(this, init);
+	flush();
 	delete object;
+	while(true) {
+		Message* msg = collect(0);
+		if(msg) {
+			msg->ack();
+		} else {
+			break;
+		}
+	}
 }
 
 Message* Engine::collect(int64_t timeout) {
 	std::unique_lock<std::mutex> ulock(mutex);
 	Message* msg = 0;
 	if(queue.pop(msg)) {
-		num_queued--;
 		return msg;
 	}
 	if(timeout != 0) {
@@ -39,9 +41,7 @@ Message* Engine::collect(int64_t timeout) {
 		} else {
 			cond.wait(ulock);
 		}
-		if(queue.pop(msg)) {
-			num_queued--;
-		}
+		queue.pop(msg);
 	}
 	return msg;
 }
@@ -65,7 +65,6 @@ size_t Engine::collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
 			count++;
 		}
 	}
-	num_queued -= count;
 	return count;
 }
 

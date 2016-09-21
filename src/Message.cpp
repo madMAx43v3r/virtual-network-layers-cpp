@@ -19,6 +19,12 @@ void Message::ack() {
 	}
 }
 
+void Message::destroy() {
+	if(buffer) {
+		buffer->destroy(this, msg_size);
+	}
+}
+
 vnl::String Message::to_string() {
 	return vnl::String() << "[" << vnl::class_name(this) << "] mid=0x" << vnl::hex(msg_id)
 			<< " src=" << src << " dst=" << dst << " isack=" << isack;

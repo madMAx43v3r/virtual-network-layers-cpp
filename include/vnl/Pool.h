@@ -54,7 +54,7 @@ public:
 	template<typename T>
 	T* create() {
 		void* obj;
-		if(table[sizeof(T)].pop(obj)) {
+		if(get_queue(sizeof(T)).pop(obj)) {
 			return new(obj) T();
 		} else {
 			return memory.create<T>();
@@ -64,12 +64,21 @@ public:
 	template<typename T>
 	void destroy(T* obj, int size) {
 		obj->~T();
-		table[size].push(obj);
+		get_queue(size).push(obj);
+	}
+	
+protected:
+	Queue<void*>& get_queue(int size) {
+		Queue<void*>*& queue = table[size];
+		if(!queue) {
+			queue = memory.create<Queue<void*> >();
+		}
+		return *queue;
 	}
 	
 protected:
 	PageAllocator memory;
-	Map<int, Queue<void*> > table;
+	Map<int, Queue<void*>* > table;
 	
 };
 

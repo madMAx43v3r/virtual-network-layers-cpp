@@ -20,10 +20,7 @@ public:
 	Process()
 		:	ProcessBase(local_domain_name, "vnl.Process")
 	{
-	}
-	
-	~Process() {
-		Layer::finished = true;
+		name = local_domain_name;
 	}
 	
 protected:
@@ -33,17 +30,28 @@ protected:
 		subscribe(local_domain_name, "vnl.log");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
+		if(do_print_stats) {
+			set_timeout(1000*1000*10, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
+		}
 		init->ack();
 		run();
+		std::cout << "[" << my_topic << "] Shutdown activated" << std::endl;
 		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
 			poll(100);
 		}
 	}
 	
+	void print_stats() {
+		if(!paused) {
+			std::cout << "[" << my_topic << "] System: " << vnl::Page::get_num_alloc() << " Pages, " << vnl::Block::get_num_alloc()
+				<< " Blocks, " << vnl::Layer::num_threads << " Threads" << std::endl;
+		}
+	}
+	
 	void print_waitlist() {
 		for(Instance& obj : objects.values()) {
-			log(INFO).out << "Waiting on " << obj.domain << ":" << obj.topic << vnl::endl;
+			std::cout << "[" << my_topic << "] Waiting on " << obj.domain << ":" << obj.topic << std::endl;
 		}
 	}
 	
@@ -104,7 +112,6 @@ protected:
 	
 	void shutdown() {
 		if(!Layer::shutdown) {
-			log(INFO).out << "Shutdown activated" << vnl::endl;
 			Layer::shutdown = true;
 			for(Instance inst : objects.values()) {
 				publish(vnl::Shutdown::create(), inst.domain, inst.topic);

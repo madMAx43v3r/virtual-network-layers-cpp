@@ -53,6 +53,7 @@ public:
 	
 	virtual void flush() {
 		wait_for_acks(0);
+		assert(pending == 0);
 	}
 	
 protected:
@@ -61,14 +62,12 @@ protected:
 		Engine::exec(object, init);
 	}
 	
-	virtual void send_impl(Message* msg, Basic* dst, bool async) {
+	virtual void send_impl(Message* msg, bool async) {
 		assert(msg->isack == false);
-		assert(dst);
+		assert(msg->src);
+		assert(msg->dst);
 		
-		if(!msg->src) {
-			msg->src = this;
-		}
-		dst->receive(msg);
+		msg->dst->receive(msg);
 		pending++;
 		if(!async && pending > 0) {
 			wait_for_ack(msg);
@@ -104,7 +103,7 @@ private:
 			Message* msg = collect(micros);
 			if(msg) {
 				handle(msg);
-				if(msg->dst == stream && !msg->isack) {
+				if(!stream->empty()) {
 					return true;
 				}
 			} else {
@@ -125,7 +124,7 @@ private:
 			Message* msg = collect(to);
 			if(msg) {
 				handle(msg);
-				if(msg->dst == stream && !msg->isack) {
+				if(!stream->empty()) {
 					return true;
 				}
 			} else {
@@ -146,8 +145,12 @@ private:
 	}
 	
 	static void entry(Object* object, Message* msg) {
-		ThreadEngine engine;
-		engine.exec(object, msg);
+		Layer::num_threads++;
+		{
+			ThreadEngine engine;
+			engine.exec(object, msg);
+		}
+		Layer::num_threads--;
 	}
 	
 private:

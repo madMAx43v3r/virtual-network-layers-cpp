@@ -30,9 +30,6 @@ public:
 	}
 	
 	~Client() {
-		if(Stream::get_engine()) {
-			Stream::unsubscribe(src);
-		}
 		_data->free_all();
 	}
 	
