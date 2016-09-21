@@ -15,17 +15,22 @@ namespace vnl {
 
 class Pipe : public Reactor {
 public:
-	Pipe(Basic* target) : target(target) {
+	Pipe(Basic* target_) : target(target_) {
 		connect_t msg(this);
 		vnl::send(&msg, target);
+		if(!msg.res) {
+			target = 0;
+		}
 	}
 	
 	~Pipe() {
-		close_t msg(this);
-		vnl::send(&msg, target);
+		if(target) {
+			close_t msg(this);
+			vnl::send(&msg, target);
+		}
 	}
 	
-	typedef MessageType<Basic*, 0xd8577f3e> connect_t;
+	typedef RequestType<bool, Basic*, 0xd8577f3e> connect_t;
 	typedef MessageType<Basic*, 0x7ddae559> close_t;
 	
 protected:

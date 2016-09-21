@@ -19,7 +19,7 @@ namespace vnl {
 
 class Stream : public Basic {
 public:
-	Stream() : engine(0), next_seq(1) {}
+	Stream() : engine(0), target(0), next_seq(1) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -30,16 +30,18 @@ public:
 		}
 	}
 	
-	void connect(Engine* engine_) {
+	void connect(Engine* engine_, Basic* target_ = Router::instance) {
 		engine = engine_;
+		target = target_;
 		Pipe::connect_t msg(this);
-		send(&msg, Router::instance);
+		send(&msg, target);
+		assert(msg.res);
 	}
 	
 	void close() {
 		flush();
 		Pipe::close_t msg(this);
-		send(&msg, Router::instance);
+		send(&msg, target);
 		Message* left = 0;
 		while(queue.pop(left)) {
 			left->ack();
@@ -57,19 +59,20 @@ public:
 		if(msg->gate == engine) {
 			push(msg);
 		} else {
+			msg->dst = this;
 			engine->receive(msg);
 		}
 	}
 	
 	Address subscribe(Address addr) {
 		Router::open_t msg(vnl::make_pair(mac, addr));
-		send(&msg, Router::instance);
+		send(&msg, target);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
 		Router::close_t msg(vnl::make_pair(mac, addr));
-		send(&msg, Router::instance);
+		send(&msg, target);
 	}
 	
 	void send(Message* msg, Basic* dst) {
@@ -88,14 +91,14 @@ public:
 		packet->seq_num = next_seq++;
 		packet->src_mac = mac;
 		packet->dst_addr = dst;
-		send(packet, Router::instance);
+		send(packet, target);
 	}
 	
 	void send_async(Packet* packet, Address dst) {
 		packet->seq_num = next_seq++;
 		packet->src_mac = mac;
 		packet->dst_addr = dst;
-		send_async(packet, Router::instance);
+		send_async(packet, target);
 	}
 	
 	void flush() {
@@ -128,6 +131,7 @@ public:
 	
 private:
 	Engine* engine;
+	Basic* target;
 	Queue<Message*> queue;
 	uint32_t next_seq;
 	

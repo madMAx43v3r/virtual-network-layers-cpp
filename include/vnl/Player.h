@@ -19,9 +19,9 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_)
+	Player(const vnl::String& domain_, Basic* target)
 		:	PlayerBase(domain_, "Player"),
-		 	in(&file), timer(0), begin_pos(0)
+		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
 	}
 	
@@ -131,7 +131,9 @@ protected:
 				if(remap) {
 					dst = *remap;
 				}
-				publish(value, dst);
+				Sample* msg = buffer.create<Sample>();
+				msg->data = value;
+				send_async(msg, target);
 			} else {
 				vnl::destroy(value);
 			}
@@ -189,6 +191,7 @@ private:
 	}
 	
 private:
+	Basic* target;
 	vnl::io::File file;
 	vnl::io::TypeInput in;
 	

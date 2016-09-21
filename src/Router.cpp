@@ -42,9 +42,10 @@ bool Router::handle(Message* msg) {
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
 	} else if(msg->msg_id == Pipe::connect_t::MID) {
-		Basic* src = ((Pipe::connect_t*)msg)->data;
+		Basic* src = ((Pipe::connect_t*)msg)->args;
 		if(src) {
 			lookup[src->get_mac()] = src;
+			((Pipe::connect_t*)msg)->res = true;
 		}
 	} else if(msg->msg_id == Pipe::close_t::MID) {
 		Basic* src = ((Pipe::close_t*)msg)->data;

@@ -46,6 +46,10 @@ protected:
 			if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 			}
+			int value = tcp_nodelay ? 1 : 0;
+			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
+				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
+			}
 			sockaddr_in addr;
 			memset(&addr, 0, sizeof(addr));
 			addr.sin_family = AF_INET;

@@ -117,6 +117,14 @@ protected:
 			if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
 			}
+			int value = tcp_keepalive ? 1 : 0;
+			if(setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &value, sizeof(value)) < 0) {
+				log(WARN).out << "setsockopt() for tcp_keepalive failed, error=" << errno << vnl::endl;
+			}
+			value = tcp_nodelay ? 1 : 0;
+			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
+				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
+			}
 			TcpProxy* proxy = new TcpProxy(sock);
 			vnl::spawn(proxy);
 			log(INFO).out << "New client on socket " << sock << vnl::endl;

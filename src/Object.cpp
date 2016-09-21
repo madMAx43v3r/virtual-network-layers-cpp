@@ -152,8 +152,9 @@ bool Object::handle(Message* msg) {
 		Packet* pkt = (Packet*)msg;
 		return handle(pkt);
 	} else if(msg->msg_id == Pipe::connect_t::MID) {
-		Basic* src = ((Pipe::connect_t*)msg)->data;
+		Basic* src = ((Pipe::connect_t*)msg)->args;
 		pipes.push_back(src);
+		((Pipe::connect_t*)msg)->res = true;
 		msg->ack();
 		return true;
 	} else if(msg->msg_id == Pipe::close_t::MID) {
