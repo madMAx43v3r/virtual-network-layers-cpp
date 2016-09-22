@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <vnl/Engine.h>
+#include <vnl/Pipe.h>
 #include <vnl/Stream.h>
 #include <vnl/Object.h>
 
@@ -20,20 +21,20 @@ class ThreadEngine : public Engine {
 public:
 	ThreadEngine() : pending(0), max_num_pending(-1) {}
 	
-	static void spawn(Object* object) {
+	static void spawn(Object* object, Pipe* pipe = 0) {
 		Actor sync;
 		Message msg;
 		msg.src = &sync;
-		std::thread thread(&ThreadEngine::entry, object, &msg);
+		std::thread thread(&ThreadEngine::entry, object, &msg, pipe);
 		thread.detach();
 		sync.wait();
 	}
 	
 	// all below NOT thread safe
 	
-	virtual void run(Object* object) {
+	virtual void run(Object* object, Pipe* pipe = 0) {
 		Message msg;
-		exec(object, &msg);
+		exec(object, &msg, pipe);
 	}
 	
 	virtual void fork(Object* object) {
@@ -57,9 +58,9 @@ public:
 	}
 	
 protected:
-	void exec(Object* object, Message* init) {
+	void exec(Object* object, Message* init, Pipe* pipe) {
 		max_num_pending = object->vnl_max_num_pending;
-		Engine::exec(object, init);
+		Engine::exec(object, init, pipe);
 	}
 	
 	virtual void send_impl(Message* msg, bool async) {
@@ -144,11 +145,11 @@ private:
 		}
 	}
 	
-	static void entry(Object* object, Message* msg) {
+	static void entry(Object* object, Message* msg, Pipe* pipe) {
 		Layer::num_threads++;
 		{
 			ThreadEngine engine;
-			engine.exec(object, msg);
+			engine.exec(object, msg, pipe);
 		}
 		Layer::num_threads--;
 	}
@@ -160,9 +161,9 @@ private:
 };
 
 
-inline Address spawn(Object* object) {
+inline Address spawn(Object* object, Pipe* pipe) {
 	Address addr = object->get_my_address();
-	ThreadEngine::spawn(object);
+	ThreadEngine::spawn(object, pipe);
 	return addr;
 }
 

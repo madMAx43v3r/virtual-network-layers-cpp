@@ -28,11 +28,13 @@ public:
 	
 	~Layer();
 	
+	void shutdown();
+	
 	void close();
 	
 	static const String* get_config(const String& domain, const String& topic, const String& name);
 	
-	static volatile bool shutdown;
+	static volatile bool have_shutdown;
 	static std::atomic<int> num_threads;
 	
 protected:

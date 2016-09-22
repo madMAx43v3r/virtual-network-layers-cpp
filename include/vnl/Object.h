@@ -44,10 +44,6 @@ public:
 	}
 	
 	// NOT thread safe
-	void attach(Pipe* pipe);
-	void close(Pipe* pipe);
-	
-	// NOT thread safe
 	virtual void serialize(vnl::io::TypeOutput& out) const;
 	
 protected:
@@ -65,6 +61,9 @@ protected:
 	virtual void main() {
 		run();
 	}
+	
+	void attach(Pipe* pipe);
+	void close(Pipe* pipe);
 	
 	Object* fork(Object* object);
 	
@@ -121,7 +120,7 @@ protected:
 	String my_topic;
 	
 private:
-	void exec(Engine* engine, Message* msg);
+	void exec(Engine* engine, Message* msg, Pipe* pipe);
 	
 private:
 	Stream stream;

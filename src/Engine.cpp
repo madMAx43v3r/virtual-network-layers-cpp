@@ -15,8 +15,8 @@
 
 namespace vnl {
 
-void Engine::exec(Object* object, Message* init) {
-	object->exec(this, init);
+void Engine::exec(Object* object, Message* init, Pipe* pipe) {
+	object->exec(this, init, pipe);
 	flush();
 	delete object;
 	while(true) {

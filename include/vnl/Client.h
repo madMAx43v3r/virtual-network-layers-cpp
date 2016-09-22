@@ -92,7 +92,7 @@ protected:
 		int64_t first_seq = next_seq;
 		Frame* ret = 0;
 		while(true) {
-			if(Layer::shutdown) {
+			if(Layer::have_shutdown) {
 				_error = VNL_IO_EOF;
 				return 0;
 			}

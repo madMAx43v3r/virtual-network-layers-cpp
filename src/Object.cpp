@@ -282,9 +282,12 @@ void Object::run() {
 	while(dorun && poll(-1));
 }
 
-void Object::exec(Engine* engine_, Message* init) {
+void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	engine = engine_;
 	stream.connect(engine_);
+	if(pipe) {
+		attach(pipe);
+	}
 	subscribe(my_address);
 	Announce* announce = Announce::create();
 	announce->instance.type = type_name();

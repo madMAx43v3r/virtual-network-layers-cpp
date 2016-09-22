@@ -22,7 +22,7 @@ namespace vnl {
 uint64_t local_domain = 0;
 const char* local_domain_name = 0;
 
-volatile bool Layer::shutdown = false;
+volatile bool Layer::have_shutdown = false;
 std::atomic<int> Layer::num_threads(0);
 
 Map<String, String>* Layer::config = 0;
@@ -34,7 +34,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 {
 	assert(local_domain == 0);
 	assert(global_pool == 0);
-	assert(shutdown == false);
+	assert(have_shutdown == false);
 	assert(num_threads == 0);
 	assert(Router::instance == 0);
 	assert(Layer::config == 0);
@@ -57,17 +57,19 @@ Layer::~Layer() {
 	close();
 }
 
-
-void Layer::close() {
-	if(closed) {
-		return;
-	}
-	if(!shutdown) {
+void Layer::shutdown() {
+	if(!have_shutdown) {
 		ThreadEngine engine;
 		ProcessClient proc;
 		proc.set_address(local_domain, "vnl.Process");
 		proc.connect(&engine);
 		proc.shutdown();
+	}
+}
+
+void Layer::close() {
+	if(closed) {
+		return;
 	}
 	while(num_threads.load() > 0) {
 		usleep(10*1000);

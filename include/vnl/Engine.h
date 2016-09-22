@@ -12,6 +12,7 @@
 #include <condition_variable>
 
 #include <vnl/Basic.h>
+#include <vnl/Pipe.h>
 #include <vnl/Address.h>
 #include <vnl/Message.h>
 #include <vnl/Memory.h>
@@ -28,7 +29,7 @@ class ThreadEngine;
 class FiberEngine;
 
 // running module in new thread
-Address spawn(Object* object);
+Address spawn(Object* object, Pipe* pipe = 0);
 
 // running module in a fiber if possible, otherwise uses spawn
 Address fork(Object* object);
@@ -69,7 +70,7 @@ public:
 	virtual void flush() = 0;
 	
 protected:
-	void exec(Object* object, Message* init);
+	void exec(Object* object, Message* init, Pipe* pipe);
 	
 	Message* collect(int64_t timeout);
 	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
