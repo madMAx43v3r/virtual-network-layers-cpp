@@ -17,13 +17,24 @@ class Pipe : public Reactor {
 public:
 	Pipe() : target(0) {}
 	
+	Pipe(const Pipe&) = delete;
+	Pipe& operator=(const Pipe&) = delete;
+	
 	~Pipe() {
 		close();
 	}
 	
 	void ack(Basic* dst) {
+		lock();
 		close();
 		target = dst;
+		unlock();
+	}
+	
+	void fin() {
+		lock();
+		target = 0;
+		unlock();
 	}
 	
 	typedef RequestType<bool, Basic*, 0xd8577f3e> connect_t;

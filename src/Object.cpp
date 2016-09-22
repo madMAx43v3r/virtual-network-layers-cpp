@@ -94,6 +94,20 @@ void Object::send_async(Packet* packet, Address dst) {
 	stream.send_async(packet, dst);
 }
 
+void Object::send(Packet* packet, Basic* dst) {
+	if(packet->src_addr.is_null()) {
+		packet->src_addr = my_address;
+	}
+	stream.send(packet, dst);
+}
+
+void Object::send_async(Packet* packet, Basic* dst) {
+	if(packet->src_addr.is_null()) {
+		packet->src_addr = my_address;
+	}
+	stream.send_async(packet, dst);
+}
+
 void Object::send(Message* msg, Basic* dst) {
 	stream.send(msg, dst);
 }
@@ -109,6 +123,11 @@ void Object::flush() {
 void Object::attach(Pipe* pipe) {
 	pipes.push_back(pipe);
 	pipe->ack(this);
+}
+
+void Object::close(Pipe* pipe) {
+	pipes.remove(pipe);
+	pipe->fin();
 }
 
 bool Object::poll(int64_t micros) {
@@ -157,8 +176,8 @@ bool Object::handle(Message* msg) {
 		Packet* pkt = (Packet*)msg;
 		return handle(pkt);
 	} else if(msg->msg_id == Pipe::close_t::MID) {
-		Basic* src = ((Pipe::close_t*)msg)->data;
-		pipes.remove(src);
+		Basic* pipe = ((Pipe::close_t*)msg)->data;
+		pipes.remove(pipe);
 		msg->ack();
 		return true;
 	}

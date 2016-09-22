@@ -38,22 +38,15 @@ void BinaryValue::serialize(vnl::io::TypeOutput& out) const {
 }
 
 void BinaryValue::deserialize(vnl::io::TypeInput& in, int _size) {
-	int id = in.getEntry(size);
-	if(id == VNL_IO_CLASS) {
-		uint32_t tmp = 0;
-		in.getHash(tmp);
-		hash = tmp;
-		if(!data.data) {
-			data.data = vnl::Page::alloc();
-		}
-		vnl::io::ByteBuffer buf(data.data);
-		vnl::io::TypeOutput out(&buf);
-		in.copy(&out, id, size, hash);
-		out.flush();
-		data.size = out.error() ? 0 : buf.position();
-	} else {
-		in.skip(id, size);
+	size = _size;
+	if(!data.data) {
+		data.data = vnl::Page::alloc();
 	}
+	vnl::io::ByteBuffer buf(data.data);
+	vnl::io::TypeOutput out(&buf);
+	in.copy(&out, VNL_IO_CLASS, size, hash);
+	out.flush();
+	data.size = out.error() ? 0 : buf.position();
 }
 
 

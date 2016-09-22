@@ -9,6 +9,7 @@
 #define INCLUDE_VNI_UPLINK_H_
 
 #include <vnl/Sample.h>
+#include <vnl/Pipe.h>
 #include <vnl/io/Socket.h>
 #include <vnl/UplinkSupport.hxx>
 #include <vnl/ThreadEngine.h>
@@ -47,6 +48,7 @@ protected:
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic);
 			}
+			attach(&pipe);		// first attach pipe, then start thread
 			std::thread thread(std::bind(&Uplink::read_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -55,8 +57,10 @@ protected:
 					break;
 				}
 			}
-			::shutdown(sock.fd, SHUT_RDWR);
-			thread.join();
+			close(&pipe);		// stop read_loop() from sending us messages
+			poll(0);			// handle remaining messages
+			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit in any case
+			thread.join();		// join with read_loop()
 			sock.close();
 		}
 		drop_all();
@@ -194,7 +198,7 @@ protected:
 			if(error) {
 				if(dorun) {
 					error_t msg(in.error());
-					stream.send(&msg, this);
+					stream.send(&msg, &pipe);
 				}
 				break;
 			}
@@ -211,7 +215,7 @@ protected:
 					if(topic) {
 						subscribe_t* msg = buffer.create<subscribe_t>();
 						msg->data = *topic;
-						stream.send_async(msg, this);
+						stream.send_async(msg, &pipe);
 					}
 					sample->destroy();
 				} else {
@@ -243,7 +247,7 @@ protected:
 		if(count == 0) {
 			forward_t* msg = buffer.create<forward_t>();
 			msg->data = pkt->src_addr;
-			stream.send_async(msg, this);
+			stream.send_async(msg, &pipe);
 		}
 		count++;
 	}
@@ -256,6 +260,7 @@ private:
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
 	uint32_t next_seq;
+	Pipe pipe;
 	bool do_reset;
 	
 	Map<Address, int> fwd_table;

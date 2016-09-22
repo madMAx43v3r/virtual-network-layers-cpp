@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_VNI_TCPSERVER_H_
 
 #include <vnl/Uplink.h>
+#include <vnl/Pipe.h>
 #include <vnl/TcpServerSupport.hxx>
 
 #include <thread>
@@ -95,6 +96,7 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Running on port=" << port << vnl::endl;
+			attach(&pipe);
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -103,6 +105,8 @@ protected:
 					break;
 				}
 			}
+			close(&pipe);
+			poll(0);
 			::shutdown(server, SHUT_RDWR);
 			thread.join();
 			::close(server);
@@ -156,18 +160,20 @@ private:
 			if(sock < 0) {
 				if(dorun) {
 					error_t msg(errno);
-					actor.send(&msg, this);
+					actor.send(&msg, &pipe);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			actor.send(&msg, this);
+			actor.send(&msg, &pipe);
 		}
 	}
 	
 private:
 	int server;
 	bool do_reset;
+	
+	Pipe pipe;
 	
 };
 

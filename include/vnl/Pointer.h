@@ -105,7 +105,6 @@ public:
 		destroy();
 		Value* value = vnl::read(in);
 		if(value) {
-			value->deserialize(in, size);
 			ptr = dynamic_cast<T*>(value);
 			if(!ptr) {
 				vnl::destroy(value);

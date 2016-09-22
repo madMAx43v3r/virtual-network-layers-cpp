@@ -87,18 +87,26 @@ public:
 		engine->send_async(msg, dst);
 	}
 	
-	void send(Packet* packet, Address dst) {
-		packet->seq_num = next_seq++;
-		packet->src_mac = mac;
-		packet->dst_addr = dst;
-		send(packet, target);
+	void send(Packet* pkt, Basic* dst) {
+		pkt->seq_num = next_seq++;
+		pkt->src_mac = mac;
+		send((Message*)pkt, dst);
 	}
 	
-	void send_async(Packet* packet, Address dst) {
-		packet->seq_num = next_seq++;
-		packet->src_mac = mac;
-		packet->dst_addr = dst;
-		send_async(packet, target);
+	void send_async(Packet* pkt, Basic* dst) {
+		pkt->seq_num = next_seq++;
+		pkt->src_mac = mac;
+		send_async((Message*)pkt, dst);
+	}
+	
+	void send(Packet* pkt, Address dst) {
+		pkt->dst_addr = dst;
+		send(pkt, target);
+	}
+	
+	void send_async(Packet* pkt, Address dst) {
+		pkt->dst_addr = dst;
+		send_async(pkt, target);
 	}
 	
 	void flush() {

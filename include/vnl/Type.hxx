@@ -41,7 +41,9 @@ inline Value* read(vnl::io::TypeInput& in) {
 			in.getHash(hash);
 			obj = vnl::create(hash);
 			if(!obj) {
-				obj = BinaryValue::create();
+				BinaryValue* bin = BinaryValue::create();
+				bin->hash = hash;
+				obj = bin;
 			}
 			obj->deserialize(in, size);
 			break;

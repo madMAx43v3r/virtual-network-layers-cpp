@@ -71,6 +71,14 @@ protected:
 		dst->receive(msg);
 	}
 	
+	void lock() {
+		mutex.lock();
+	}
+	
+	void unlock() {
+		mutex.unlock();
+	}
+	
 private:
 	std::mutex mutex;
 	

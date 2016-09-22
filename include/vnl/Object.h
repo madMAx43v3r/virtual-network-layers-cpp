@@ -38,12 +38,16 @@ public:
 		stream.receive(msg);
 	}
 	
+	// NOT thread safe
 	Address get_my_address() const {
 		return my_address;
 	}
 	
+	// NOT thread safe
 	void attach(Pipe* pipe);
+	void close(Pipe* pipe);
 	
+	// NOT thread safe
 	virtual void serialize(vnl::io::TypeOutput& out) const;
 	
 protected:
@@ -75,6 +79,9 @@ protected:
 	
 	void send(Packet* packet, Address dst);
 	void send_async(Packet* packet, Address dst);
+	
+	void send(Packet* packet, Basic* dst);
+	void send_async(Packet* packet, Basic* dst);
 	
 	void send(Message* msg, Basic* dst);
 	void send_async(Message* msg, Basic* dst);

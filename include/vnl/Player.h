@@ -24,9 +24,14 @@ public:
 		:	PlayerBase(domain_, "Player"),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
+		type_blacklist["vnl.Announce"] = true;
+		type_blacklist["vnl.LogMsg"] = true;
+		type_blacklist["vnl.Shutdown"] = true;
+		type_blacklist["vnl.Exit"] = true;
 	}
 	
 	vnl::Map<Address, Address> addr_map;
+	vnl::Map<vnl::Hash32, bool> type_blacklist;
 	
 protected:
 	void main() {
@@ -159,10 +164,11 @@ protected:
 		vnl::Value* value = next.value.release();
 		if(value) {
 			bool pass = true;
-			if(blacklist.find(Address(next.domain, ""))) {
+			if(type_blacklist.find(value->vni_hash())) {
 				pass = false;
-			}
-			if(blacklist.find(Address(next.domain, next.topic))) {
+			} else if(blacklist.find(Address(next.domain, ""))) {
+				pass = false;
+			} else if(blacklist.find(Address(next.domain, next.topic))) {
 				pass = false;
 			}
 			if(pass) {

@@ -49,6 +49,10 @@ protected:
 		}
 		set_timeout(interval, std::bind(&Recorder::update, this), VNL_TIMER_REPEAT);
 		run();
+		if(do_write_header) {
+			write_header();
+		}
+		::fflush(file);
 		::fclose(file);
 	}
 	
