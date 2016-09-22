@@ -11,6 +11,7 @@
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Pool.h>
+#include <vnl/Pipe.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
 #include <vnl/Frame.h>
@@ -40,6 +41,8 @@ public:
 	Address get_my_address() const {
 		return my_address;
 	}
+	
+	void attach(Pipe* pipe);
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const;
 	

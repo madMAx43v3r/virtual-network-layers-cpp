@@ -12,6 +12,7 @@
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
 #include <vnl/info/PlayerStatus.hxx>
+#include <vnl/Sample.h>
 #include <vnl/io/File.h>
 
 
@@ -31,30 +32,29 @@ protected:
 	void main() {
 		set_timeout(interval, std::bind(&Player::update, this), VNL_TIMER_REPEAT);
 		timer = set_timeout(0, std::bind(&Player::process, this), VNL_TIMER_MANUAL);
-		open(filename);
-		if(file.good() && autostart) {
+		if(autostart) {
+			open(filename);
 			play();
 		}
 		run();
-		::fclose(file);
+		file.close();
 	}
 	
 	void open(const vnl::String& file) {
 		log(INFO).out << "Opening file: " << file << vnl::endl;
 		filename = file;
-		status = vnl::info::PlayerStatus();
 		reset();
 		update();
 	}
 	
 	void reset() {
-		if(file.good()) {
-			::fclose(file);
-		}
 		char buf[1024];
+		file.close();
+		status = vnl::info::PlayerStatus();
 		filename.to_string(buf, sizeof(buf));
 		file = ::fopen(buf, "r");
 		if(!file.good()) {
+			status.error = true;
 			log(ERROR).out << "Unable to open file for reading: " << filename << vnl::endl;
 			return;
 		}
@@ -65,6 +65,7 @@ protected:
 		if(header) {
 			status.end_time = header->end_time;
 			begin_pos = header->header_size;
+			log(INFO).out << "Found header: size=" << header->header_size << ", end_time=" << header->end_time << vnl::endl;
 			seek_begin();
 		} else {
 			begin_pos = 0;
@@ -83,6 +84,27 @@ protected:
 		}
 	}
 	
+	void scan() {
+		if(status.playing) {
+			return;
+		}
+		log(INFO).out << "Scanning file ..." << vnl::endl;
+		seek_begin();
+		while(!in.error()) {
+			status.end_time = next.time;
+			vnl::read(in, next);
+		}
+		seek_begin();
+		log(INFO).out << "Finished: end_time=" << status.end_time << vnl::endl;
+	}
+	
+	void stop() {
+		status.playing = false;
+		status.current_time = status.begin_time;
+		seek_begin();
+		log(INFO).out << "Stopped, ready to play." << vnl::endl;
+	}
+	
 	void play() {
 		status.playing = true;
 		status.time_offset = vnl::currentTimeMicros() - next.time;
@@ -93,25 +115,43 @@ protected:
 	}
 	
 	void pause() {
-		status.playing = false;
-		log(INFO).out << "Paused at " << next.time << vnl::endl;
+		if(status.playing) {
+			status.playing = false;
+			log(INFO).out << "Paused at " << next.time << vnl::endl;
+		}
 	}
 	
 	void seek(int64_t time) {
+		if(!file.good()) {
+			return;
+		}
 		log(INFO).out << "Seeking to " << time << " ..." << vnl::endl;
 		if(time < next.time) {
 			seek_begin();
 		}
 		while(!in.error()) {
+			status.current_time = next.time;
 			if(next.time >= time) {
 				break;
 			}
 			vnl::read(in, next);
 		}
-		log(INFO).out << "Now at " << next.time << vnl::endl;
+		if(status.playing) {
+			play();
+		} else {
+			log(INFO).out << "Now at " << next.time << vnl::endl;
+		}
+	}
+	
+	void seek_rel(float pos) {
+		seek(status.begin_time + double(pos) * (status.end_time-status.begin_time));
 	}
 	
 	void process() {
+		if(!file.good() || in.error()) {
+			status.error = true;
+			status.playing = false;
+		}
 		if(!status.playing) {
 			return;
 		}
@@ -147,8 +187,8 @@ protected:
 			status.playing = false;
 			if(in.error() == VNL_IO_EOF) {
 				log(INFO).out << "End of file reached." << vnl::endl;
+				seek_begin();
 				if(autoloop) {
-					seek_begin();
 					play();
 				}
 			} else {
@@ -175,19 +215,16 @@ protected:
 	
 private:
 	void seek_begin() {
-		::fseek(file, begin_pos, SEEK_SET);
+		if(!file.good()) {
+			return;
+		}
+		if(::fseek(file, begin_pos, SEEK_SET) < 0) {
+			log(ERROR).out << "fseek() failed with " << errno << vnl::endl;
+			return;
+		}
 		in.reset();
 		vnl::read(in, next);
-	}
-	
-	void scan() {
-		log(INFO).out << "Scanning file ..." << vnl::endl;
-		while(!in.error()) {
-			status.end_time = next.time;
-			vnl::read(in, next);
-		}
-		seek_begin();
-		log(INFO).out << "Finished: end_time=" << status.end_time << ", duration=" << (status.end_time-status.begin_time) << vnl::endl;
+		status.current_time = status.begin_time;
 	}
 	
 private:

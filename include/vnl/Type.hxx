@@ -214,7 +214,7 @@ inline void write(vnl::io::TypeOutput& out, const vnl::Hash32& val) {
 }
 
 inline void write(vnl::io::TypeOutput& out, const vnl::Hash64& val) {
-	out.putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
+	out.putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
 	out.writeLong(val);
 }
 

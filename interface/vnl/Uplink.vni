@@ -10,6 +10,7 @@ object Uplink {
 	
 	int error_interval = 1000000;			// how long to wait after an error (ms)
 	
+	bool are_connected = false;
 	long num_drop = 0;			// how many packets have been dropped so far
 	
 	void publish(Topic topic);

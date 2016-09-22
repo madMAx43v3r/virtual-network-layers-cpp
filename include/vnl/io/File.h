@@ -35,6 +35,10 @@ public:
 	}
 	
 	virtual int read(void* dst, int len) {
+		if(!fd) {
+			InputStream::set_error(VNL_ERROR);
+			return -1;
+		}
 		int res = ::fread(dst, 1, len, fd);
 		if(res <= 0) {
 			InputStream::set_error(VNL_IO_EOF);
@@ -43,6 +47,10 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) {
+		if(!fd) {
+			InputStream::set_error(VNL_ERROR);
+			return -1;
+		}
 		while(len > 0) {
 			int res = ::fwrite(src, 1, len, fd);
 			if(res > 0) {
@@ -57,8 +65,10 @@ public:
 	}
 	
 	void close() {
-		::fclose(fd);
-		fd = 0;
+		if(fd) {
+			::fclose(fd);
+			fd = 0;
+		}
 	}
 	
 private:

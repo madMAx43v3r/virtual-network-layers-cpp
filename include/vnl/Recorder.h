@@ -11,6 +11,7 @@
 #include <vnl/RecorderSupport.hxx>
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
+#include <vnl/Sample.h>
 #include <vnl/io/File.h>
 
 

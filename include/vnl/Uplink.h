@@ -36,11 +36,13 @@ protected:
 	void main() {
 		timer = set_timeout(0, std::bind(&Uplink::write_out, this), VNL_TIMER_MANUAL);
 		while(dorun) {
+			are_connected = false;
 			sock.fd = connect();
 			if(!sock.good()) {
 				exit();
 				break;
 			}
+			are_connected = true;
 			out.reset();
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic);

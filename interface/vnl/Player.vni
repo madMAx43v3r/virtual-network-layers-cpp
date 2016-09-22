@@ -15,10 +15,13 @@ object Player {
 	int interval = 200000;
 	
 	void open(String file);
+	void scan();
 	void reset();
+	void stop();
 	void play();
 	void pause();
 	void seek(long time);
+	void seek_rel(float pos);
 	
 	PlayerStatus get_status() const;
 	

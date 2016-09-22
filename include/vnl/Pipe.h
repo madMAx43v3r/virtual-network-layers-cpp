@@ -15,19 +15,15 @@ namespace vnl {
 
 class Pipe : public Reactor {
 public:
-	Pipe(Basic* target_) : target(target_) {
-		connect_t msg(this);
-		vnl::send(&msg, target);
-		if(!msg.res) {
-			target = 0;
-		}
-	}
+	Pipe() : target(0) {}
 	
 	~Pipe() {
-		if(target) {
-			close_t msg(this);
-			vnl::send(&msg, target);
-		}
+		close();
+	}
+	
+	void ack(Basic* dst) {
+		close();
+		target = dst;
 	}
 	
 	typedef RequestType<bool, Basic*, 0xd8577f3e> connect_t;
@@ -45,6 +41,15 @@ protected:
 			return true;
 		}
 		return false;
+	}
+	
+private:
+	void close() {
+		if(target) {
+			close_t msg(this);
+			vnl::send(&msg, target);
+			target = 0;
+		}
 	}
 	
 private:

@@ -26,6 +26,11 @@ public:
 	}
 	
 protected:
+	void main() {
+		Super::main();
+		log(INFO).out << "Client disconnected" << vnl::endl;
+	}
+	
 	int connect() {
 		if(!running) {
 			running = true;
