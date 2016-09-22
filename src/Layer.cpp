@@ -29,7 +29,9 @@ Map<String, String>* Layer::config = 0;
 
 Random64* Random64::instance = 0;
 
-Layer::Layer(const char* domain_name, const char* config_dir) {
+Layer::Layer(const char* domain_name, const char* config_dir)
+	:	closed(false)
+{
 	assert(local_domain == 0);
 	assert(global_pool == 0);
 	assert(shutdown == false);
@@ -52,6 +54,14 @@ Layer::Layer(const char* domain_name, const char* config_dir) {
 }
 
 Layer::~Layer() {
+	close();
+}
+
+
+void Layer::close() {
+	if(closed) {
+		return;
+	}
 	if(!shutdown) {
 		ThreadEngine engine;
 		ProcessClient proc;
@@ -70,6 +80,7 @@ Layer::~Layer() {
 	
 	Page::cleanup();
 	Block::cleanup();
+	closed = true;
 }
 
 

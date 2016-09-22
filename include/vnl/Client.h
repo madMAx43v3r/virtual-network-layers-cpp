@@ -88,14 +88,14 @@ protected:
 	Packet* _call() {
 		assert(Stream::get_engine());
 		_out.flush();
-		if(Layer::shutdown) {
-			_error = VNL_IO_EOF;
-			return 0;
-		}
 		next_seq++;
-		int64_t ts_begin = vnl::currentTimeMillis();
+		int64_t first_seq = next_seq;
 		Frame* ret = 0;
 		while(true) {
+			if(Layer::shutdown) {
+				_error = VNL_IO_EOF;
+				return 0;
+			}
 			Frame frame;
 			frame.src_addr = src;
 			frame.data = _data;
@@ -103,21 +103,32 @@ protected:
 			frame.seq_num = next_seq;
 			send(&frame, dst);
 			frame.data = 0;
-			Message* msg = poll(timeout*1000);
-			if(msg) {
-				if(msg->msg_id == vnl::Packet::MID) {
-					if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
-						ret = (Frame*)((Packet*)msg)->payload;
-						break;
-					}
-				}
-				msg->ack();
-			}
-			if(do_fail_if_timeout) {
-				int64_t ts_now = vnl::currentTimeMillis();
-				if(ts_now - ts_begin >= timeout) {
+			int64_t ts_begin = vnl::currentTimeMicros();
+			while(true) {
+				int64_t ts_now = vnl::currentTimeMicros();
+				int64_t to = timeout*1000 - (ts_now - ts_begin);
+				if(to < 0) {
 					break;
 				}
+				Message* msg = poll(to);
+				if(msg) {
+					if(msg->msg_id == vnl::Packet::MID) {
+						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
+							ret = (Frame*)((Packet*)msg)->payload;
+							if(ret->seq_num >= first_seq) {
+								break;
+							} else {
+								ret = 0;
+							}
+						}
+					}
+					msg->ack();
+				}
+			}
+			if(ret) {
+				break;
+			} else if(do_fail_if_timeout) {
+				break;
 			}
 		}
 		if(ret) {
@@ -133,7 +144,7 @@ protected:
 private:
 	Address src;
 	Address dst;
-	uint32_t next_seq;
+	int64_t next_seq;
 	int64_t timeout;
 	bool do_fail_if_timeout;
 	

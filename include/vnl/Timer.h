@@ -37,7 +37,7 @@ public:
 	
 private:
 	int64_t deadline;
-	std::function<void(Timer*)> func;
+	std::function<void()> func;
 	int type;
 	bool active;
 	

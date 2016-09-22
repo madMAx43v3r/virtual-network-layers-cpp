@@ -28,6 +28,8 @@ public:
 	
 	~Layer();
 	
+	void close();
+	
 	static const String* get_config(const String& domain, const String& topic, const String& name);
 	
 	static volatile bool shutdown;
@@ -38,6 +40,8 @@ protected:
 	
 private:
 	static Map<String, String>* config;
+	
+	bool closed;
 	
 	friend class Process;
 	

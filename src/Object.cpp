@@ -34,7 +34,7 @@ StringWriter Object::log(int level) {
 	return StringWriter(out);
 }
 
-Timer* Object::set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type) {
+Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, int type) {
 	Timer& timer = timers.push_back();
 	timer.interval = micros;
 	timer.func = func;
@@ -147,7 +147,7 @@ bool Object::poll(int64_t micros) {
 						timer.active = false;
 						break;
 				}
-				timer.func(&timer);
+				timer.func();
 				diff = timer.deadline - now;
 				if(diff < 0) {
 					diff = 0;

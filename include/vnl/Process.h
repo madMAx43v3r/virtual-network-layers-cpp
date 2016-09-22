@@ -38,7 +38,7 @@ protected:
 		std::cout << "[" << my_topic << "] Shutdown activated" << std::endl;
 		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
-			poll(100);
+			poll(-1);
 		}
 	}
 	
@@ -111,13 +111,10 @@ protected:
 	}
 	
 	void shutdown() {
-		if(!Layer::shutdown) {
-			Layer::shutdown = true;
-			for(Instance inst : objects.values()) {
-				publish(vnl::Shutdown::create(), inst.domain, inst.topic);
-			}
-			exit();
+		for(Instance inst : objects.values()) {
+			publish(vnl::Shutdown::create(), inst.domain, inst.topic);
 		}
+		exit();
 	}
 	
 	void output(const vnl::LogMsg& log) {

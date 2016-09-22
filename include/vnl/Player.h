@@ -49,7 +49,6 @@ protected:
 		log(INFO).out << "Opening file: " << file << vnl::endl;
 		filename = file;
 		reset();
-		update();
 	}
 	
 	void reset() {
@@ -87,17 +86,26 @@ protected:
 			status.error = true;
 			log(ERROR).out << "File empty, invalid or corrupt." << vnl::endl;
 		}
+		update();
 	}
 	
 	void scan() {
+		set_timeout(0, std::bind(&Player::do_scan, this), VNL_TIMER_ONCE);
+	}
+	
+	void do_scan() {
 		if(status.playing) {
 			return;
 		}
 		log(INFO).out << "Scanning file ..." << vnl::endl;
 		seek_begin();
+		int counter = 0;
 		while(!in.error()) {
 			status.end_time = next.time;
 			vnl::read(in, next);
+			if(counter++ % 1000 == 0) {
+				update();
+			}
 		}
 		seek_begin();
 		log(INFO).out << "Finished: end_time=" << status.end_time << vnl::endl;
@@ -127,6 +135,14 @@ protected:
 	}
 	
 	void seek(int64_t time) {
+		set_timeout(0, std::bind(&Player::do_seek, this, time), VNL_TIMER_ONCE);
+	}
+	
+	void seek_rel(float pos) {
+		seek(status.begin_time + double(pos) * (status.end_time-status.begin_time));
+	}
+	
+	void do_seek(int64_t time) {
 		if(!file.good()) {
 			return;
 		}
@@ -134,22 +150,22 @@ protected:
 		if(time < next.time) {
 			seek_begin();
 		}
+		int counter = 0;
 		while(!in.error()) {
 			status.current_time = next.time;
 			if(next.time >= time) {
 				break;
 			}
 			vnl::read(in, next);
+			if(counter++ % 1000 == 0) {
+				update();
+			}
 		}
 		if(status.playing) {
 			play();
 		} else {
 			log(INFO).out << "Now at " << next.time << vnl::endl;
 		}
-	}
-	
-	void seek_rel(float pos) {
-		seek(status.begin_time + double(pos) * (status.end_time-status.begin_time));
 	}
 	
 	void process() {
@@ -172,12 +188,13 @@ protected:
 				pass = false;
 			}
 			if(pass) {
-				Address dst(next.domain, next.topic);
-				Address* remap = addr_map.find(dst);
+				Address dst_addr(next.domain, next.topic);
+				Address* remap = addr_map.find(dst_addr);
 				if(remap) {
-					dst = *remap;
+					dst_addr = *remap;
 				}
 				Sample* msg = buffer.create<Sample>();
+				msg->dst_addr = dst_addr;
 				msg->data = value;
 				send_async(msg, target);
 			} else {
