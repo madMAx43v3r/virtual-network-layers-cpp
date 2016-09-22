@@ -121,7 +121,7 @@ protected:
 	}
 	
 	void write_out() {
-		int64_t begin = vnl::currentTimeMillis();
+		int64_t begin = vnl::currentTimeMicros();
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
 			pkt->serialize(out);
@@ -130,7 +130,7 @@ protected:
 				break;
 			}
 			if(send_timeout >= 0) {
-				int64_t now = vnl::currentTimeMillis();
+				int64_t now = vnl::currentTimeMicros();
 				if(now - begin > send_timeout) {
 					break;
 				}

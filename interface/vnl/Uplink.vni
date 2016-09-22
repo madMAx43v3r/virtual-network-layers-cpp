@@ -3,7 +3,7 @@ package vnl;
 object Uplink {
 	
 	/*
-	 * How long a packet can be in the queue (ms) (default = -1/infinite)
+	 * How long a packet can be in the queue (us) (default = -1/infinite)
 	 * If timeout is reached messages will be dropped.
 	 */
 	int send_timeout = -1;

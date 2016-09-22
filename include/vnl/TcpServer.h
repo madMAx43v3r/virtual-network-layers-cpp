@@ -27,7 +27,7 @@ public:
 	
 protected:
 	void main() {
-		Super::main();
+		Uplink::main();
 		log(INFO).out << "Client disconnected" << vnl::endl;
 	}
 	
