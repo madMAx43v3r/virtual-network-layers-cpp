@@ -18,6 +18,7 @@
 #include <vnl/Memory.h>
 #include <vnl/Random.h>
 #include <vnl/Queue.h>
+#include <vnl/List.h>
 #include <vnl/Util.h>
 
 
@@ -48,6 +49,15 @@ public:
 		mutex.lock();
 		queue.push(msg);
 		cond.notify_all();
+		for(auto& func : rcv_hooks) {
+			func(msg);
+		}
+		mutex.unlock();
+	}
+	
+	void add_receive_hook(const std::function<void(Message*)>& func) {
+		mutex.lock();
+		rcv_hooks.push_back(func);
 		mutex.unlock();
 	}
 	
@@ -82,6 +92,7 @@ private:
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
+	List<std::function<void(Message*)> > rcv_hooks;
 	
 	friend class Stream;
 	friend class Object;
