@@ -171,24 +171,25 @@ public:
 			p_front = memory.create<entry_t>();
 			p_back = p_front;
 			ptr = p_front;
-		} else {
-			if(p_back->next) {
-				ptr = p_back->next;
-				p_back->next = ptr->next;
+		} else if(next == p_back->next) {
+			if(next) {
+				ptr = next;
 			} else {
 				ptr = memory.create<entry_t>();
 			}
-			ptr->next = next;
-			if(next) {
-				ptr->prev = next->prev;
-				next->prev = ptr;
-				if(next == p_front) {
-					p_front = ptr;
-				}
+			conn(p_back, ptr);
+			p_back = p_back->next;
+		} else {
+			if(p_back->next) {
+				ptr = p_back->next;
+				conn(p_back, ptr->next);
 			} else {
-				ptr->prev = p_back;
-				p_back->next = ptr;
-				p_back = ptr;
+				ptr = memory.create<entry_t>();
+			}
+			conn(next->prev, ptr);
+			conn(ptr, next);
+			if(next == p_front) {
+				p_front = ptr;
 			}
 		}
 		ptr->value = obj;
@@ -206,13 +207,9 @@ public:
 			return iterator(this, old);
 		} else {
 			entry_t* next = old->next;
-			next->prev = old->prev;
-			if(old->prev) {
-				old->prev->next = next;
-			}
-			old->next = p_back->next;
-			old->prev = p_back;
-			p_back->next = old;
+			conn(old->prev, next);
+			conn(old, p_back->next);
+			conn(p_back, old);
 			if(old == p_front) {
 				p_front = next;
 				p_front->prev = 0;
@@ -272,6 +269,16 @@ public:
 	
 	bool empty() const {
 		return count == 0;
+	}
+	
+private:
+	void conn(entry_t* p0, entry_t* p1) {
+		if(p0) {
+			p0->next = p1;
+		}
+		if(p1) {
+			p1->prev = p0;
+		}
 	}
 	
 private:
