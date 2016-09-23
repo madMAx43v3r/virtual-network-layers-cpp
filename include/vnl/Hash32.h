@@ -32,6 +32,22 @@ public:
 		return value;
 	}
 	
+	bool operator==(const char* str) const {
+		return value == (uint32_t)hash64(str);
+	}
+	
+	bool operator==(const vnl::String& str) const {
+		return value == (uint32_t)hash64(str);
+	}
+	
+	bool operator!=(const char* str) const {
+		return value != (uint32_t)hash64(str);
+	}
+	
+	bool operator!=(const vnl::String& str) const {
+		return value != (uint32_t)hash64(str);
+	}
+	
 	uint32_t value;
 	
 };

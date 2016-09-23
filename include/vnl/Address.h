@@ -33,11 +33,11 @@ public:
 		B = B_;
 	}
 	
-	uint64_t domain() const {
+	Hash64 domain() const {
 		return A;
 	}
 	
-	uint64_t topic() const {
+	Hash64 topic() const {
 		return B;
 	}
 	
