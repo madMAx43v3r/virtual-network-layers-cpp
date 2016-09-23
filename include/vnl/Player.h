@@ -73,7 +73,7 @@ protected:
 			seek_begin();
 		} else {
 			begin_pos = 0;
-			scan();
+			do_scan();
 		}
 		status.filename = filename;
 		status.playing = false;
