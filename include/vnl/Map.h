@@ -8,10 +8,10 @@
 #ifndef INCLUDE_PHY_MAP_H_
 #define INCLUDE_PHY_MAP_H_
 
-#include <utility>
-#include <string.h>
-
+#include <vnl/Util.h>
 #include <vnl/Array.h>
+
+#include <utility>
 
 
 namespace vnl {
@@ -26,7 +26,7 @@ template<typename K, typename V>
 class Map {
 public:
 	Map() {
-		Map::resize((int)Page::size/sizeof(void*));
+		resize((int)Page::size/sizeof(void*));
 	}
 	
 	Map(const Map& other) {
@@ -43,8 +43,8 @@ public:
 		return *this;
 	}
 	
-	Array<std::pair<K,V> > entries() const {
-		Array<std::pair<K,V> > res;
+	Array<vnl::pair<K,V> > entries() const {
+		Array<vnl::pair<K,V> > res;
 		for(entry_t* row : table) {
 			while(row) {
 				res.push_back(row->pair);
@@ -84,7 +84,7 @@ public:
 	
 	V& insert(const K& key, const V& val) {
 		entry_t** p_row;
-		std::pair<K,V>* ptr;
+		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
 			ptr->second = val;
 		} else {
@@ -96,10 +96,10 @@ public:
 				*p_row = p_front;
 				p_front = p_front->next;
 			} else {
-				*p_row = mem.create<entry_t>();
+				*p_row = memory.create<entry_t>();
 			}
 			entry_t* row = *p_row;
-			row->pair = std::make_pair(key, val);
+			row->pair = vnl::make_pair(key, val);
 			row->next = 0;
 			ptr = &row->pair;
 			count++;
@@ -109,7 +109,7 @@ public:
 	
 	V& operator[](const K& key) {
 		entry_t** p_row;
-		std::pair<K,V>* ptr;
+		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
 			return ptr->second;
 		} else {
@@ -119,7 +119,7 @@ public:
 	
 	V* find(const K& key) {
 		entry_t** p_row;
-		std::pair<K,V>* ptr;
+		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
 			return &ptr->second;
 		}
@@ -128,7 +128,7 @@ public:
 	
 	void erase(const K& key) {
 		entry_t** p_row;
-		std::pair<K,V>* ptr;
+		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
 			entry_t* row = *p_row;
 			*p_row = row->next;
@@ -152,25 +152,24 @@ public:
 	
 protected:
 	struct entry_t {
-		std::pair<K,V> pair;
+		vnl::pair<K,V> pair;
 		entry_t* next;
 	};
 	
 	void destroy() {
 		for(entry_t* row : table) {
-			while(row) {
-				entry_t* next = row->next;
-				row->~entry_t();
-				row = row->next;
-			}
+			destroy_list(row);
 		}
-		entry_t* entry = p_front;
-		while(entry) {
-			entry_t* next = entry->next;
-			entry->~entry_t();
-			entry = next;
+		destroy_list(p_front);
+		memory.clear();
+	}
+	
+	void destroy_list(entry_t* row) {
+		while(row) {
+			entry_t* next = row->next;
+			row->~entry_t();
+			row = row->next;
 		}
-		mem.clear();
 	}
 	
 	void resize(int rows) {
@@ -192,7 +191,7 @@ protected:
 		}
 	}
 	
-	bool find(const K& key, entry_t**& p_row, std::pair<K,V>*& val) {
+	bool find(const K& key, entry_t**& p_row, vnl::pair<K,V>*& val) {
 		int ind = std::hash<K>{}(key) % N;
 		p_row = &table[ind];
 		while(true) {
@@ -209,7 +208,7 @@ protected:
 		return false;
 	}
 	
-	PageAllocator mem;
+	PageAllocator memory;
 	
 private:
 	Array<entry_t*> table;
