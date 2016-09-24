@@ -26,7 +26,7 @@ public:
 	uint64_t src_mac;
 	Address src_addr;
 	Address dst_addr;
-	void* payload;
+	Packet* payload;
 	
 	int16_t num_hops;
 	uint32_t route[VNL_MAX_ROUTE_LENGTH];
@@ -62,11 +62,8 @@ public:
 		for(int i = 0; i < num_hops && !out.error(); ++i) {
 			out.writeInt(route[i]);
 		}
-		if(parent) {
-			parent->write(out);
-		} else {
-			write(out);
-		}
+		assert(payload);
+		payload->write(out);
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
@@ -88,7 +85,8 @@ public:
 		if(left > 0) {
 			in.skip(VNL_IO_BINARY, left);
 		}
-		read(in);
+		assert(payload);
+		payload->read(in);
 		while(!in.error()) {
 			int id = in.getEntry(size);
 			if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
@@ -99,13 +97,8 @@ public:
 	}
 	
 protected:
-	virtual void write(vnl::io::TypeOutput& out) const {
-		out.putNull();
-	}
-	
-	virtual void read(vnl::io::TypeInput& in) {
-		in.skip();
-	}
+	virtual void write(vnl::io::TypeOutput& out) const {}
+	virtual void read(vnl::io::TypeInput& in) {}
 	
 private:
 	Packet* parent = 0;
@@ -115,29 +108,6 @@ private:
 	friend class Router;
 	
 };
-
-
-template<typename T, uint32_t PID_>
-class PacketType : public Packet {
-public:
-	PacketType() : Packet() {
-		pkt_id = PID_;
-		payload = &data;
-	}
-	
-	PacketType(const T& data_) : Packet(), data(data_) {
-		pkt_id = PID_;
-		payload = &data;
-	}
-	
-	static const uint32_t PID = PID_;
-	
-	typedef T data_t;
-	
-	T data;
-	
-};
-
 
 
 }

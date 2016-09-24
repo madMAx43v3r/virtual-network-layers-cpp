@@ -192,6 +192,7 @@ bool Object::handle(Packet* pkt) {
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == Frame::PID) {
 			Frame* result = buffer.create<Frame>();
+			result->req_num = ((Frame*)pkt->payload)->req_num;
 			send_async(result, pkt->src_addr);
 		}
 		pkt->ack();
@@ -210,7 +211,7 @@ bool Object::handle(Packet* pkt) {
 	} else if(pkt->pkt_id == Frame::PID) {
 		Frame* request = (Frame*)pkt->payload;
 		Frame* result = buffer.create<Frame>();
-		result->seq_num = request->seq_num;
+		result->req_num = request->req_num;
 		buf_in.wrap(request->data, request->size);
 		input.reset();
 		int size = 0;

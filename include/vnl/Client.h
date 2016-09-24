@@ -22,7 +22,7 @@ class Client : public ClientBase, public vnl::Stream {
 public:
 	Client()
 		:	_error(0), _in(&_buf), _out(&_buf),
-		 	next_seq(1), timeout(1000),
+		 	req_num(0), timeout(1000),
 		 	do_fail_if_timeout(false)
 	{
 		src = Address(local_domain, mac);
@@ -88,8 +88,7 @@ protected:
 	Packet* _call() {
 		assert(Stream::get_engine());
 		_out.flush();
-		next_seq++;
-		int64_t first_seq = next_seq;
+		req_num++;
 		Frame* ret = 0;
 		while(true) {
 			if(Layer::have_shutdown) {
@@ -98,9 +97,9 @@ protected:
 			}
 			Frame frame;
 			frame.src_addr = src;
+			frame.req_num = req_num;
 			frame.data = _data;
 			frame.size = _buf.position();
-			frame.seq_num = next_seq;
 			send(&frame, dst);
 			frame.data = 0;
 			int64_t ts_begin = vnl::currentTimeMicros();
@@ -115,7 +114,7 @@ protected:
 					if(msg->msg_id == vnl::Packet::MID) {
 						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
 							ret = (Frame*)((Packet*)msg)->payload;
-							if(ret->seq_num >= first_seq) {
+							if(ret->req_num == req_num) {
 								break;
 							} else {
 								ret = 0;
@@ -144,7 +143,7 @@ protected:
 private:
 	Address src;
 	Address dst;
-	int64_t next_seq;
+	int64_t req_num;
 	int64_t timeout;
 	bool do_fail_if_timeout;
 	

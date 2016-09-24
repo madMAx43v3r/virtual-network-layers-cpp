@@ -120,6 +120,12 @@ public:
 	}
 	
 	template<typename T>
+	void destroy(T* obj, int size) {
+		obj->~T();
+		push_back(obj, size);
+	}
+	
+	template<typename T>
 	void push_back(T* obj, int size) {
 		sync.lock();
 		table[size].push(obj);
