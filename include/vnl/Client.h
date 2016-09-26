@@ -8,7 +8,6 @@
 #ifndef INCLUDE_VNI_CLIENT_H_
 #define INCLUDE_VNI_CLIENT_H_
 
-#include <vnl/ClientSupport.hxx>
 #include <vnl/Topic.hxx>
 #include <vnl/Frame.h>
 #include <vnl/Stream.h>
@@ -18,18 +17,17 @@
 
 namespace vnl {
 
-class Client : public ClientBase {
+class Client : public vnl::io::Serializable {
 public:
 	Client()
 		:	_error(0), _in(&_buf), _out(&_buf),
-		 	req_num(0), timeout(1000000),
-		 	do_fail(false)
+		 	req_num(0), timeout(1000000), do_fail(false)
 	{
 		src_addr = Address(local_domain, stream.get_mac());
 		_data = Page::alloc();
 	}
 	
-	~Client() {
+	virtual ~Client() {
 		_data->free_all();
 	}
 	
@@ -68,10 +66,7 @@ public:
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
-		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
-		out.putHash(VNI_HASH);
 		dst_addr.serialize(out);
-		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
@@ -145,6 +140,6 @@ private:
 
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_VNI_CLIENT_H_ */
