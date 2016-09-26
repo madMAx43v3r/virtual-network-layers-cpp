@@ -1,17 +1,17 @@
 /*
- * Uplink.h
+ * TcpUplink.h
  *
  *  Created on: Jul 1, 2016
  *      Author: mad
  */
 
-#ifndef INCLUDE_VNI_UPLINK_H_
-#define INCLUDE_VNI_UPLINK_H_
+#ifndef INCLUDE_VNL_TCPUPLINK_H_
+#define INCLUDE_VNL_TCPUPLINK_H_
 
 #include <vnl/Sample.h>
 #include <vnl/Pipe.h>
 #include <vnl/io/Socket.h>
-#include <vnl/UplinkSupport.hxx>
+#include <vnl/TcpUplinkSupport.hxx>
 #include <vnl/ThreadEngine.h>
 
 #include <thread>
@@ -19,10 +19,10 @@
 
 namespace vnl {
 
-class Uplink : public vnl::UplinkBase {
+class TcpUplink : public vnl::TcpUplinkBase {
 public:
-	Uplink(const vnl::String& domain_, const vnl::String& topic_)
-		:	UplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1), do_reset(false)
+	TcpUplink(const vnl::String& domain_, const vnl::String& topic_)
+		:	TcpUplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1), do_reset(false)
 	{
 		sub_topic = Address("vnl.downlink", "subscribe");
 	}
@@ -35,7 +35,7 @@ protected:
 	virtual int connect() = 0;
 	
 	void main() {
-		timer = set_timeout(0, std::bind(&Uplink::write_out, this), VNL_TIMER_MANUAL);
+		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(dorun) {
 			are_connected = false;
 			sock.fd = connect();
@@ -49,7 +49,7 @@ protected:
 				write_subscribe(topic);
 			}
 			attach(&pipe);		// first attach pipe, then start thread
-			std::thread thread(std::bind(&Uplink::read_loop, this));
+			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
 					do_reset = false;
@@ -98,26 +98,26 @@ protected:
 		return false;
 	}
 	
-	virtual void publish(const vnl::String& domain, const vnl::String& topic) {
+	void publish(const vnl::String& domain, const vnl::String& topic) {
 		vnl::Topic desc;
 		desc.domain = domain;
 		desc.name = topic;
 		publish(desc);
 	}
 	
-	virtual void publish(const vnl::Topic& topic) {
+	void publish(const vnl::Topic& topic) {
 		Object::subscribe(topic.domain, topic.name);
 		log(INFO).out << "Publishing " << topic.domain << ":" << topic.name << vnl::endl;
 	}
 	
-	virtual void subscribe(const vnl::String& domain, const vnl::String& topic) {
+	void subscribe(const vnl::String& domain, const vnl::String& topic) {
 		vnl::Topic desc;
 		desc.domain = domain;
 		desc.name = topic;
 		subscribe(desc);
 	}
 	
-	virtual void subscribe(const vnl::Topic& topic) {
+	void subscribe(const vnl::Topic& topic) {
 		if(sock.good()) {
 			write_subscribe(topic);
 		}
@@ -272,4 +272,4 @@ private:
 
 }
 
-#endif /* INCLUDE_VNI_UPLINK_H_ */
+#endif /* INCLUDE_VNL_TCPUPLINK_H_ */

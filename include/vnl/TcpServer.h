@@ -8,8 +8,8 @@
 #ifndef CPP_INCLUDE_VNI_TCPSERVER_H_
 #define CPP_INCLUDE_VNI_TCPSERVER_H_
 
-#include <vnl/Uplink.h>
 #include <vnl/Pipe.h>
+#include <vnl/TcpUplink.h>
 #include <vnl/TcpServerSupport.hxx>
 
 #include <thread>
@@ -17,10 +17,10 @@
 
 namespace vnl {
 
-class TcpProxy : public Uplink {
+class TcpProxy : public TcpUplink {
 public:
 	TcpProxy(int fd)
-		:	Uplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
+		:	TcpUplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
 			running(false)
 	{
 		this->fd = fd;
@@ -28,7 +28,7 @@ public:
 	
 protected:
 	void main() {
-		Uplink::main();
+		TcpUplink::main();
 		log(INFO).out << "Client disconnected" << vnl::endl;
 	}
 	

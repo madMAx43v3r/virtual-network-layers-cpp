@@ -1,6 +1,6 @@
 package vnl;
 
-object TcpClient extends Uplink {
+object TcpClient extends TcpUplink {
 	
 	String endpoint;
 	int port = 8616;
