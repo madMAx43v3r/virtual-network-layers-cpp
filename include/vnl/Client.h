@@ -18,14 +18,14 @@
 
 namespace vnl {
 
-class Client : public ClientBase, public vnl::Stream {
+class Client : public ClientBase {
 public:
 	Client()
 		:	_error(0), _in(&_buf), _out(&_buf),
-		 	req_num(0), timeout(1000),
-		 	do_fail_if_timeout(false)
+		 	req_num(0), timeout(1000000),
+		 	do_fail(false)
 	{
-		src_addr = Address(local_domain, mac);
+		src_addr = Address(local_domain, stream.get_mac());
 		_data = Page::alloc();
 	}
 	
@@ -55,16 +55,16 @@ public:
 	}
 	
 	void connect(vnl::Engine* engine) {
-		Stream::connect(engine);
-		Stream::subscribe(src_addr);
+		stream.connect(engine);
+		stream.subscribe(src_addr);
 	}
 	
 	void set_timeout(int64_t timeout_ms) {
-		timeout = timeout_ms;
+		timeout = timeout_ms*1000;
 	}
 	
-	void set_fail(bool fail_if_timeout) {
-		do_fail_if_timeout = fail_if_timeout;
+	void set_fail(bool fail) {
+		do_fail = fail;
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
@@ -86,7 +86,6 @@ protected:
 	int _error;
 	
 	Packet* _call() {
-		assert(Stream::get_engine());
 		_error = VNL_ERROR;
 		_out.flush();
 		req_num++;
@@ -101,16 +100,14 @@ protected:
 			frame.req_num = req_num;
 			frame.data = _data;
 			frame.size = _buf.position();
-			send(&frame, dst_addr);
+			stream.send(&frame, dst_addr);
 			frame.data = 0;
-			int64_t ts_begin = vnl::currentTimeMicros();
+			if(frame.count == 0 && do_fail) {
+				_error = VNL_IO_EOF;
+				break;
+			}
 			while(!Layer::have_shutdown) {
-				int64_t ts_now = vnl::currentTimeMicros();
-				int64_t to = timeout*1000 - (ts_now - ts_begin);
-				if(to < 0) {
-					break;
-				}
-				Message* msg = poll(to);
+				Message* msg = stream.poll(timeout);
 				if(msg) {
 					if(msg->msg_id == vnl::Packet::MID) {
 						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
@@ -124,24 +121,25 @@ protected:
 					msg->ack();
 				}
 			}
-			if(ret || do_fail_if_timeout) {
+			if(ret || do_fail) {
 				break;
 			}
 		}
 		if(ret) {
+			_error = VNL_SUCCESS;
 			_buf.wrap(ret->data, ret->size);
 			_in.reset();
-			_error = VNL_SUCCESS;
 		}
 		return ret;
 	}
 	
 private:
+	Stream stream;
 	Address src_addr;
 	Address dst_addr;
 	int64_t req_num;
 	int64_t timeout;
-	bool do_fail_if_timeout;
+	bool do_fail;
 	
 };
 

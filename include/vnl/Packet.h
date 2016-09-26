@@ -16,6 +16,7 @@
 namespace vnl {
 
 class Router;
+class Client;
 
 class Packet : public Message, public io::Serializable {
 public:
@@ -108,6 +109,7 @@ private:
 	int32_t acks = 0;
 	
 	friend class Router;
+	friend class Client;
 	
 };
 
