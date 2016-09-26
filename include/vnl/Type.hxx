@@ -127,30 +127,6 @@ inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
 
-inline void read(vnl::io::TypeInput& in, vnl::Hash32& val) {
-	int size = 0;
-	int id = in.getEntry(size);
-	if(id == VNL_IO_INTEGER && size == VNL_IO_DWORD) {
-		uint32_t tmp;
-		in.readInt(tmp);
-		val = tmp;
-	} else {
-		in.skip(id, size);
-	}
-}
-
-inline void read(vnl::io::TypeInput& in, vnl::Hash64& val) {
-	int size = 0;
-	int id = in.getEntry(size);
-	if(id == VNL_IO_INTEGER && size == VNL_IO_QWORD) {
-		uint64_t tmp;
-		in.readLong(tmp);
-		val = tmp;
-	} else {
-		in.skip(id, size);
-	}
-}
-
 
 /*
  * Generic writer functions
@@ -209,16 +185,6 @@ inline void write(vnl::io::TypeOutput& out, const int32_t& val) { out.putValue(v
 inline void write(vnl::io::TypeOutput& out, const int64_t& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const float& val) { out.putValue(val); }
 inline void write(vnl::io::TypeOutput& out, const double& val) { out.putValue(val); }
-
-inline void write(vnl::io::TypeOutput& out, const vnl::Hash32& val) {
-	out.putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
-	out.writeInt(val);
-}
-
-inline void write(vnl::io::TypeOutput& out, const vnl::Hash64& val) {
-	out.putEntry(VNL_IO_INTEGER, VNL_IO_QWORD);
-	out.writeLong(val);
-}
 
 
 /*
@@ -291,9 +257,6 @@ inline void to_string(vnl::String& str, const int32_t& val) { str << vnl::dec(va
 inline void to_string(vnl::String& str, const int64_t& val) { str << vnl::dec(val); }
 inline void to_string(vnl::String& str, const float& val) { str << vnl::def(val, 6); }
 inline void to_string(vnl::String& str, const double& val) { str << vnl::def(val, 12); }
-
-inline void to_string(vnl::String& str, const vnl::Hash32& val) { str << vnl::hex(val); }
-inline void to_string(vnl::String& str, const vnl::Hash64& val) { str << vnl::hex(val); }
 
 template<typename T>
 vnl::String to_string(const T& ref) {
@@ -372,9 +335,6 @@ inline void from_string(const vnl::String& str, int32_t& val) { val = atoi(str);
 inline void from_string(const vnl::String& str, int64_t& val) { val = atol(str); }
 inline void from_string(const vnl::String& str, float& val) { val = atof(str); }
 inline void from_string(const vnl::String& str, double& val) { val = atof(str); }
-
-inline void from_string(const vnl::String& str, vnl::Hash32& val) { /* TODO */ assert(false); }
-inline void from_string(const vnl::String& str, vnl::Hash64& val) { /* TODO */ assert(false); }
 
 
 

@@ -34,12 +34,12 @@ public:
 	
 protected:
 	virtual void write(vnl::io::TypeOutput& out) const {
-		out.writeLong(req_num);
+		out.putValue(req_num);
 		out.putBinary(data, size);
 	}
 	
 	virtual void read(vnl::io::TypeInput& in) {
-		in.readLong(req_num);
+		in.getValue(req_num);
 		in.getBinary(data, size);
 	}
 	

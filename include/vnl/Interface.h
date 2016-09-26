@@ -90,7 +90,6 @@ protected:
 };
 
 
-
-}
+} //vnl
 
 #endif /* INCLUDE_VNI_INTERFACE_H_ */

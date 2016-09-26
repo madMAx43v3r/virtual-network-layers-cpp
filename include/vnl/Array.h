@@ -209,6 +209,6 @@ protected:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_PHY_ARRAY_H_ */

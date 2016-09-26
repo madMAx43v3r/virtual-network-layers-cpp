@@ -28,13 +28,13 @@ bool Router::handle(Message* msg) {
 			pkt->route[pkt->num_hops++] = mac;
 		} else {
 			num_drop++;
-			msg->ack();
+			pkt->ack();
 			return true;
 		}
 		route(pkt, src, table.find(pkt->dst_addr));
 		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
 		if(!pkt->count) {
-			msg->ack();
+			pkt->ack();
 		}
 		return true;
 	} else if(msg->msg_id == open_t::MID) {

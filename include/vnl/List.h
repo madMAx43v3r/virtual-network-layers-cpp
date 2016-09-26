@@ -290,6 +290,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_PHY_LIST_H_ */

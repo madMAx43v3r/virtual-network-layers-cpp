@@ -11,6 +11,7 @@
 #include <string>
 #include <algorithm>
 
+#include <vnl/io.h>
 #include <vnl/Util.h>
 #include <vnl/String.h>
 
@@ -51,6 +52,41 @@ public:
 	uint32_t value;
 	
 };
+
+
+inline void read(vnl::io::TypeInput& in, vnl::Hash32& val) {
+	int size = 0;
+	int id = in.getEntry(size);
+	if(id == VNL_IO_INTEGER) {
+		if(size == VNL_IO_DWORD) {
+			uint32_t tmp;
+			in.readInt(tmp);
+			val = tmp;
+		} else if(size == VNL_IO_QWORD) {
+			uint64_t tmp;
+			in.readLong(tmp);
+			val = tmp;
+		} else {
+			in.skip(id, size);
+		}
+	} else {
+		in.skip(id, size);
+	}
+}
+
+inline void write(vnl::io::TypeOutput& out, const vnl::Hash32& val) {
+	out.putEntry(VNL_IO_INTEGER, VNL_IO_DWORD);
+	out.writeInt(val);
+}
+
+inline void to_string(vnl::String& str, const vnl::Hash32& val) {
+	str << vnl::hex(val);
+}
+
+inline void from_string(const vnl::String& str, vnl::Hash32& val) {
+	/* TODO */
+	assert(false);
+}
 
 
 } // vnl

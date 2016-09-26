@@ -25,7 +25,7 @@ public:
 		 	req_num(0), timeout(1000),
 		 	do_fail_if_timeout(false)
 	{
-		src = Address(local_domain, mac);
+		src_addr = Address(local_domain, mac);
 		_data = Page::alloc();
 	}
 	
@@ -39,24 +39,24 @@ public:
 	}
 	
 	void set_address(Hash64 domain, Hash64 topic) {
-		dst = vnl::Address(domain, topic);
+		dst_addr = vnl::Address(domain, topic);
 	}
 	
 	void set_address(Topic topic) {
-		dst = vnl::Address(topic.domain, topic.name);
+		dst_addr = vnl::Address(topic.domain, topic.name);
 	}
 	
 	void set_address(Address addr) {
-		dst = addr;
+		dst_addr = addr;
 	}
 	
 	Address get_address() const {
-		return dst;
+		return dst_addr;
 	}
 	
 	void connect(vnl::Engine* engine) {
 		Stream::connect(engine);
-		Stream::subscribe(src);
+		Stream::subscribe(src_addr);
 	}
 	
 	void set_timeout(int64_t timeout_ms) {
@@ -70,12 +70,12 @@ public:
 	virtual void serialize(vnl::io::TypeOutput& out) const {
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
 		out.putHash(VNI_HASH);
-		dst.serialize(out);
+		dst_addr.serialize(out);
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
 	}
 	
 	virtual void deserialize(vnl::io::TypeInput& in, int size) {
-		dst.deserialize(in, size);
+		dst_addr.deserialize(in, size);
 	}
 	
 protected:
@@ -87,23 +87,24 @@ protected:
 	
 	Packet* _call() {
 		assert(Stream::get_engine());
+		_error = VNL_ERROR;
 		_out.flush();
 		req_num++;
 		Frame* ret = 0;
 		while(true) {
 			if(Layer::have_shutdown) {
 				_error = VNL_IO_EOF;
-				return 0;
+				break;
 			}
 			Frame frame;
-			frame.src_addr = src;
+			frame.src_addr = src_addr;
 			frame.req_num = req_num;
 			frame.data = _data;
 			frame.size = _buf.position();
-			send(&frame, dst);
+			send(&frame, dst_addr);
 			frame.data = 0;
 			int64_t ts_begin = vnl::currentTimeMicros();
-			while(true) {
+			while(!Layer::have_shutdown) {
 				int64_t ts_now = vnl::currentTimeMicros();
 				int64_t to = timeout*1000 - (ts_now - ts_begin);
 				if(to < 0) {
@@ -113,20 +114,17 @@ protected:
 				if(msg) {
 					if(msg->msg_id == vnl::Packet::MID) {
 						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
-							ret = (Frame*)((Packet*)msg)->payload;
-							if(ret->req_num == req_num) {
+							Frame* pkt = (Frame*)((Packet*)msg)->payload;
+							if(pkt->req_num == req_num) {
+								ret = pkt;
 								break;
-							} else {
-								ret = 0;
 							}
 						}
 					}
 					msg->ack();
 				}
 			}
-			if(ret) {
-				break;
-			} else if(do_fail_if_timeout) {
+			if(ret || do_fail_if_timeout) {
 				break;
 			}
 		}
@@ -134,15 +132,13 @@ protected:
 			_buf.wrap(ret->data, ret->size);
 			_in.reset();
 			_error = VNL_SUCCESS;
-		} else {
-			_error = VNL_ERROR;
 		}
 		return ret;
 	}
 	
 private:
-	Address src;
-	Address dst;
+	Address src_addr;
+	Address dst_addr;
 	int64_t req_num;
 	int64_t timeout;
 	bool do_fail_if_timeout;

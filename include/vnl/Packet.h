@@ -32,7 +32,9 @@ public:
 	uint32_t route[VNL_MAX_ROUTE_LENGTH];
 	
 	Packet()
-		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0) {}
+		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0)
+	{
+	}
 	
 	void copy_from(Packet* org) {
 		parent = org;
