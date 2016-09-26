@@ -15,8 +15,8 @@ namespace vnl {
 
 class TcpClient : public TcpClientBase {
 public:
-	TcpClient(vnl::String endpoint, int port = 8916)
-		:	TcpClientBase(local_domain_name, vnl::String() << "vnl.tcp.client." << endpoint << "." << port)
+	TcpClient(const vnl::String& topic, vnl::String endpoint, int port = 8916)
+		:	TcpClientBase(local_domain_name, topic)
 	{
 		this->endpoint = endpoint;
 		this->port = port;

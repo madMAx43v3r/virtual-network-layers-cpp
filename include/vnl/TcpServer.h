@@ -50,8 +50,8 @@ private:
 
 class TcpServer : public vnl::TcpServerBase {
 public:
-	TcpServer(int port = 8916)
-		:	TcpServerBase(local_domain_name, vnl::String() << "vnl.tcp.server." << port),
+	TcpServer(const vnl::String& topic, int port = 8916)
+		:	TcpServerBase(local_domain_name, topic),
 			server(-1), do_reset(false)
 	{
 		this->port = port;
