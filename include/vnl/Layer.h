@@ -8,7 +8,6 @@
 #ifndef INCLUDE_LAYER_H_
 #define INCLUDE_LAYER_H_
 
-#include <vnl/Basic.h>
 #include <vnl/Map.h>
 
 #include <atomic>
@@ -22,7 +21,7 @@ extern const char* local_domain_name;
 
 class Process;
 
-class Layer : public Actor {
+class Layer {
 public:
 	Layer(const char* domain, const char* config_dir = 0);
 	

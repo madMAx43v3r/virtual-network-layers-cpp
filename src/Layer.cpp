@@ -32,6 +32,7 @@ Random64* Random64::instance = 0;
 Layer::Layer(const char* domain_name, const char* config_dir)
 	:	closed(false)
 {
+	assert(Random64::instance == 0);
 	assert(local_domain == 0);
 	assert(global_pool == 0);
 	assert(have_shutdown == false);
@@ -39,6 +40,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	assert(Router::instance == 0);
 	assert(Layer::config == 0);
 	
+	Random64::instance = new Random64();
 	local_domain_name = domain_name;
 	local_domain = vnl::hash64(domain_name);
 	global_pool = new GlobalPool();

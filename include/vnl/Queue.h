@@ -55,7 +55,7 @@ public:
 			p_back->write() = 0;
 		}
 		T& ref = p_back->elem(p_back->write()++);
-		new (&ref) T();
+		new(&ref) T();
 		ref = obj;
 		count++;
 		return ref;
