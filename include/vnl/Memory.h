@@ -26,15 +26,6 @@ public:
 	Memory(const Memory&) = delete;
 	Memory& operator=(const Memory&) = delete;
 	
-#ifdef VNL_MEMORY_DEBUG
-	static Memory* alloc() {
-		return new Memory();
-	}
-	
-	void free() {
-		delete this;
-	}
-#else
 	static Memory* alloc() {
 		sync.lock();
 		Memory* page = begin;
@@ -49,16 +40,22 @@ public:
 			assert(page != OUT_OF_MEMORY);
 		}
 		page->next = 0;
+#ifdef VNL_MEMORY_DEBUG
+		page->vnl_is_free = false;
+#endif
 		return page;
 	}
 	
 	void free() {
+#ifdef VNL_MEMORY_DEBUG
+		assert(vnl_is_free == false);
+		vnl_is_free = true;
+#endif
 		sync.lock();
 		next = begin;
 		begin = this;
 		sync.unlock();
 	}
-#endif
 	
 	void free_all() {
 		Memory* page = this;
@@ -129,6 +126,10 @@ private:
 	static std::mutex sync;
 	static Memory* begin;
 	static int num_alloc;
+	
+#ifdef VNL_MEMORY_DEBUG
+	bool vnl_is_free = false;
+#endif
 	
 };
 

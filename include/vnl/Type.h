@@ -61,6 +61,10 @@ public:
 		return *this;
 	}
 	
+#ifdef VNL_MEMORY_DEBUG
+	bool vnl_is_free = false;
+#endif
+	
 };
 
 

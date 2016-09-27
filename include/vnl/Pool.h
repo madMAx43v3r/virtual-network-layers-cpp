@@ -144,7 +144,11 @@ extern GlobalPool* global_pool;
 
 template<typename T>
 T* create() {
-	return vnl::global_pool->create<T>();
+	T* obj = vnl::global_pool->create<T>();
+#ifdef VNL_MEMORY_DEBUG
+		obj->vnl_is_free = false;
+#endif
+	return obj;
 }
 
 template<typename T>
@@ -155,6 +159,10 @@ T* clone(const T& other) {
 template<typename T>
 void destroy(T* obj) {
 	if(obj) {
+#ifdef VNL_MEMORY_DEBUG
+		assert(obj->vnl_is_free == false);
+		obj->vnl_is_free = true;
+#endif
 		obj->destroy();
 	}
 }
