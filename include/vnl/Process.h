@@ -44,8 +44,10 @@ protected:
 	
 	void print_stats() {
 		if(!paused) {
-			std::cout << "[" << my_topic << "] System: " << vnl::Page::get_num_alloc() << " Pages, " << vnl::Block::get_num_alloc()
-				<< " Blocks, " << vnl::Layer::num_threads << " Threads" << std::endl;
+			std::cout << "[" << my_topic << "] System: "
+				<< Page::num_used << "/" << Page::num_alloc << " Pages, "
+				<< Block::num_used << "/" << Block::num_alloc << " Blocks, "
+				<< Layer::num_threads << " Threads" << std::endl;
 		}
 	}
 	
