@@ -15,11 +15,15 @@ namespace vnl {
 
 class TcpClient : public TcpClientBase {
 public:
-	TcpClient(const vnl::String& topic, vnl::String endpoint, int port = 8916)
+	TcpClient(const vnl::String& topic, vnl::String endpoint = "", int port = 0)
 		:	TcpClientBase(local_domain_name, topic)
 	{
-		this->endpoint = endpoint;
-		this->port = port;
+		if(endpoint.size()) {
+			this->endpoint = endpoint;
+		}
+		if(port) {
+			this->port = port;
+		}
 	}
 	
 protected:

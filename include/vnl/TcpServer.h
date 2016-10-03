@@ -21,9 +21,8 @@ class TcpProxy : public TcpUplink {
 public:
 	TcpProxy(int fd)
 		:	TcpUplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
-			running(false)
+			running(false), fd(fd)
 	{
-		this->fd = fd;
 	}
 	
 protected:
@@ -50,11 +49,13 @@ private:
 
 class TcpServer : public vnl::TcpServerBase {
 public:
-	TcpServer(const vnl::String& topic, int port = 8916)
+	TcpServer(const vnl::String& topic, int port = 0)
 		:	TcpServerBase(local_domain_name, topic),
 			server(-1), do_reset(false)
 	{
-		this->port = port;
+		if(port) {
+			this->port = port;
+		}
 	}
 	
 	void receive(Message* msg) {
