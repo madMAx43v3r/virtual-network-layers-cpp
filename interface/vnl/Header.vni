@@ -1,0 +1,12 @@
+package vnl;
+
+class Header {
+	
+	Topic src_topic;
+	Topic dst_topic;
+	
+	Hash64 src_mac;
+	
+	long send_time;		// in micro-seconds
+	
+}
