@@ -69,11 +69,12 @@ protected:
 		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.value());
 		if(p_header) {
 			header = *p_header;
-			vnl::destroy(p_header);
 			status.end_time = header.end_time;
 			begin_pos = header.header_size;
 			log(INFO).out << "Found header: size=" << header.header_size << ", end_time=" << header.end_time << vnl::endl;
-			log(INFO).out << "Topics: " << header.topics << vnl::endl;
+			for(Topic& topic : header.topics) {
+				log(INFO).out << "Topic " << topic.domain << ":" << topic.name << vnl::endl;
+			}
 			seek_begin();
 		} else {
 			begin_pos = 0;
@@ -241,7 +242,7 @@ protected:
 	}
 	
 	vnl::Array<vnl::Topic> get_topics() const {
-		return header->topics;
+		return header.topics;
 	}
 	
 private:
