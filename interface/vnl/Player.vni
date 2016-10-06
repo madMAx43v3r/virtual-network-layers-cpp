@@ -24,5 +24,6 @@ object Player {
 	void seek_rel(float pos);
 	
 	PlayerStatus get_status() const;
+	Array<Topic> get_topics() const;
 	
 }

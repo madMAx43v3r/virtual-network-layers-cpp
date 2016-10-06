@@ -70,12 +70,26 @@ void Object::unsubscribe(Address address) {
 	stream.unsubscribe(address);
 }
 
-void Object::publish(Value* data, Hash64 domain, Hash64 topic) {
-	publish(data, Address(domain, topic));
+void Object::publish(Value* data, const String& domain, const String& topic) {
+	Header* header = Header::create();
+	header->send_time = vnl::currentTimeMicros();
+	header->src_mac = mac;
+	header->src_topic.domain = my_domain;
+	header->src_topic.name = my_topic;
+	header->dst_topic.domain = domain;
+	header->dst_topic.name = topic;
+	Sample* pkt = buffer.create<Sample>();
+	pkt->header = header;
+	pkt->data = data;
+	send_async(pkt, Address(domain, topic));
 }
 
 void Object::publish(Value* data, Address topic) {
+	Header* header = Header::create();
+	header->send_time = vnl::currentTimeMicros();
+	header->src_mac = mac;
 	Sample* pkt = buffer.create<Sample>();
+	pkt->header = header;
 	pkt->data = data;
 	send_async(pkt, topic);
 }

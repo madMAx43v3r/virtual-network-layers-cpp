@@ -73,7 +73,7 @@ protected:
 	void unsubscribe(Hash64 domain, Hash64 topic);
 	void unsubscribe(Address address);
 	
-	void publish(Value* data, Hash64 domain, Hash64 topic);
+	void publish(Value* data, const String& domain, const String& topic);
 	void publish(Value* data, Address topic);
 	
 	void send(Packet* packet, Address dst);

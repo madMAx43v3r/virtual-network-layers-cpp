@@ -62,10 +62,15 @@ protected:
 			if(sample->data) {
 				uint64_t domain = packet->dst_addr.domain();
 				if(domain_map.find(domain)) {
+					if(sample->header && !topic_map.find(packet->dst_addr)) {
+						topic_map[packet->dst_addr] = sample->header->dst_topic;
+						header.topics = topic_map.values();
+					}
 					vnl::RecordValue rec;
 					rec.time = vnl::currentTimeMicros();
 					rec.domain = domain;
 					rec.topic = packet->dst_addr.topic();
+					rec.header = sample->header;
 					rec.value = sample->data;
 					vnl::write(out, rec);
 					out.flush();
@@ -73,6 +78,7 @@ protected:
 						header.begin_time = rec.time;
 					}
 					header.end_time = rec.time;
+					rec.header.release();
 					rec.value.release();
 				}
 			}
@@ -102,6 +108,7 @@ private:
 	RecordHeader header;
 	
 	vnl::Map<uint64_t, String> domain_map;
+	vnl::Map<Address, Topic> topic_map;
 	
 };
 

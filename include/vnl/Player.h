@@ -54,6 +54,7 @@ protected:
 	void reset() {
 		char buf[1024];
 		file.close();
+		header = vnl::RecordHeader();
 		status = vnl::info::PlayerStatus();
 		filename.to_string(buf, sizeof(buf));
 		file = ::fopen(buf, "r");
@@ -65,11 +66,14 @@ protected:
 		in.reset();
 		Pointer<Value> ptr;
 		vnl::read(in, ptr);
-		RecordHeader* header = dynamic_cast<RecordHeader*>(ptr.value());
-		if(header) {
-			status.end_time = header->end_time;
-			begin_pos = header->header_size;
-			log(INFO).out << "Found header: size=" << header->header_size << ", end_time=" << header->end_time << vnl::endl;
+		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.value());
+		if(p_header) {
+			header = *p_header;
+			vnl::destroy(p_header);
+			status.end_time = header.end_time;
+			begin_pos = header.header_size;
+			log(INFO).out << "Found header: size=" << header.header_size << ", end_time=" << header.end_time << vnl::endl;
+			log(INFO).out << "Topics: " << header.topics << vnl::endl;
 			seek_begin();
 		} else {
 			begin_pos = 0;
@@ -236,6 +240,10 @@ protected:
 		return status;
 	}
 	
+	vnl::Array<vnl::Topic> get_topics() const {
+		return header->topics;
+	}
+	
 private:
 	void seek_begin() {
 		if(!file.good()) {
@@ -257,6 +265,7 @@ private:
 	
 	vnl::Timer* timer;
 	vnl::info::PlayerStatus status;
+	RecordHeader header;
 	vnl::RecordValue next;
 	int begin_pos;
 	
