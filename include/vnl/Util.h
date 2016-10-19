@@ -83,10 +83,8 @@ static uint64_t hash64(const std::string& str) {
 
 static uint64_t hash64(const String& str) {
 	CRC64 func;
-	auto* chunk = str.front();
-	while(chunk) {
-		func.update(chunk->str(), chunk->len());
-		chunk = chunk->next_chunk();
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		func.update(*it);
 	}
 	return func.getValue();
 }

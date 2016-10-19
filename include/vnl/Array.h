@@ -19,11 +19,11 @@ namespace vnl {
  * This is a paged array.
  * Maximum element size is 4096 bytes.
  */
-template<typename T>
+template<typename T, typename TPage = vnl::Page>
 class Array {
 public:
 	Array() : p_front(0), p_back(0), pos(0) {
-		assert(sizeof(T) <= Page::size);
+		assert(sizeof(T) <= TPage::size);
 	}
 	
 	Array(const Array& other) : p_front(0), p_back(0), pos(0) {
@@ -48,21 +48,38 @@ public:
 		}
 	}
 	
+	bool operator!=(const Array& other) const {
+		return !(*this == other);
+	}
+	
+	bool operator==(const Array& other) const {
+		if(size() == other.size()) {
+			const_iterator cmp = other.begin();
+			for(const_iterator it = begin(); it != end(); ++it, ++cmp) {
+				if(*it != *cmp) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+	
 	T& push_back() {
 		return push_back(T());
 	}
 	
 	T& push_back(const T& obj) {
 		if(!p_front) {
-			p_front = Page::alloc();
+			p_front = TPage::alloc();
 			p_back = p_front;
 		}
 		if(pos >= M) {
-			p_back->next = Page::alloc();
+			p_back->next = TPage::alloc();
 			p_back = p_back->next;
 			pos = 0;
 		}
-		T& ref = p_back->type_at_index<T>(pos++);
+		T& ref = p_back->template type_at_index<T>(pos++);
 		new(&ref) T();
 		ref = obj;
 		return ref;
@@ -79,11 +96,11 @@ public:
 	T& operator[](int index) {
 		int pi = index / M;
 		int ei = index % M;
-		Page* page = p_front;
+		TPage* page = p_front;
 		for(int i = 0; i < pi; ++i) {
 			page = page->next;
 		}
-		return page->type_at_index<T>(ei);
+		return page->template type_at_index<T>(ei);
 	}
 	
 	std::vector<T> to_vector() const {
@@ -111,7 +128,7 @@ public:
 	
 	int size() const {
 		int count = 0;
-		Page* page = p_front;
+		TPage* page = p_front;
 		while(page) {
 			if(page != p_back) {
 				count += M;
@@ -157,10 +174,10 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return page->type_at_index<P>(pos);
+			return page->template type_at_index<P>(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &page->type_at_index<P>(pos);
+			return &page->template type_at_index<P>(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
 			std::swap(lhs.page, rhs.page);
@@ -173,7 +190,7 @@ public:
 			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(Page* page, int pos)
+		iterator_t(TPage* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
 			if(pos >= Array::M-1 && page->next) {
@@ -183,7 +200,7 @@ public:
 				pos++;
 			}
 		}
-		Page* page;
+		TPage* page;
 		int pos;
 		friend class Array;
 	};
@@ -200,10 +217,10 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = Page::size / sizeof(T);
+	static const int M = TPage::size / sizeof(T);
 	
-	Page* p_front;
-	Page* p_back;
+	TPage* p_front;
+	TPage* p_back;
 	int pos;
 	
 };

@@ -53,13 +53,8 @@ public:
 	}
 	
 	void writeString(const vnl::String& str) {
-		int len = str.size();
-		vnl::String::chunk_t* chunk = str.front();
-		while(len > 0) {
-			int n = std::min((int)chunk->len(), len);
-			write(chunk->str(), n);
-			len -= n;
-			chunk = chunk->next_chunk();
+		for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+			write_type(*it);
 		}
 	}
 	
