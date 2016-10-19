@@ -8,12 +8,10 @@ object Process {
 	
 	void handle(LogMsg event);
 	void handle(Announce event);
-	void handle(Topic topic);
 	void handle(Shutdown event);
 	void handle(Exit event);
 	
 	Array<Instance> get_objects() const;
-	Array<Topic> get_topics() const;
 	Array<String> get_class_names() const;
 	
 	void pause_log();

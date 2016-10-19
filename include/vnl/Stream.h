@@ -19,10 +19,12 @@ namespace vnl {
 
 class Stream : public Basic {
 public:
-	Stream() : engine(0), target(0), next_seq(1) {}
+	Stream() : engine(0), target(0), listener(0), next_seq(1) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
+	
+	typedef MessageType<Stream*, 0x70513a1c> notify_t;
 	
 	~Stream() {
 		if(engine) {
@@ -33,15 +35,23 @@ public:
 	void connect(Engine* engine_, Basic* target_ = Router::instance) {
 		engine = engine_;
 		target = target_;
-		Pipe::connect_t msg(this);
-		send(&msg, target);
-		assert(msg.res);
+		if(target) {
+			Pipe::connect_t msg(this);
+			send(&msg, target);
+			assert(msg.res);
+		}
+	}
+	
+	void listen(Basic* dst) {
+		assert(dst != this);
+		listener = dst;
 	}
 	
 	void close() {
-		flush();
-		Pipe::close_t msg(this);
-		send(&msg, target);
+		if(target) {
+			Pipe::close_t msg(this);
+			send(&msg, target);
+		}
 		Message* left = 0;
 		while(queue.pop(left)) {
 			left->ack();
@@ -57,7 +67,11 @@ public:
 	virtual void receive(Message* msg) {
 		assert(engine);
 		if(msg->gate == engine) {
-			push(msg);
+			if(msg->isack) {
+				msg->destroy();
+			} else {
+				push(msg);
+			}
 		} else {
 			msg->dst = this;
 			engine->receive(msg);
@@ -77,13 +91,11 @@ public:
 	
 	void send(Message* msg, Basic* dst) {
 		assert(engine);
-		msg->src = this;
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		assert(engine);
-		msg->src = this;
 		engine->send_async(msg, dst);
 	}
 	
@@ -109,11 +121,6 @@ public:
 		send_async(pkt, target);
 	}
 	
-	void flush() {
-		assert(engine);
-		engine->flush();
-	}
-	
 	Message* poll() {
 		return poll(-1);
 	}
@@ -131,6 +138,16 @@ public:
 	
 	void push(Message* msg) {
 		queue.push(msg);
+		if(listener) {
+			notify_t* msg = engine->buffer.create<notify_t>();
+			msg->data = this;
+			send_async(msg, listener);
+			listener = 0;
+		}
+	}
+	
+	bool pop(Message*& msg) {
+		return queue.pop(msg);
 	}
 	
 	bool empty() const {
@@ -140,6 +157,7 @@ public:
 private:
 	Engine* engine;
 	Basic* target;
+	Basic* listener;
 	Queue<Message*> queue;
 	uint32_t next_seq;
 	

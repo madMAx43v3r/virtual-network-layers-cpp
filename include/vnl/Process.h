@@ -26,7 +26,6 @@ public:
 protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
 		subscribe(local_domain_name, "vnl.announce");
-		subscribe(local_domain_name, "vnl.topic");
 		subscribe(local_domain_name, "vnl.log");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
@@ -65,10 +64,6 @@ protected:
 		objects.erase(packet.src_addr);
 	}
 	
-	void handle(const vnl::Topic& topic) {
-		topics[Address(topic.domain, topic.name)] = topic;
-	}
-	
 	void handle(const vnl::LogMsg& event) {
 		if(!paused) {
 			output(event);
@@ -83,10 +78,6 @@ protected:
 	
 	vnl::Array<vnl::Instance> get_objects() const {
 		return objects.values();
-	}
-	
-	vnl::Array<vnl::Topic> get_topics() const {
-		return topics.values();
 	}
 	
 	vnl::Array<vnl::String> get_class_names() const {
@@ -137,7 +128,6 @@ protected:
 	
 private:
 	Map<Address, Instance> objects;
-	Map<Address, Topic> topics;
 	
 	bool paused = false;
 	bool filtering = false;

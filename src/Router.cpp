@@ -12,6 +12,11 @@ namespace vnl {
 
 Router* Router::instance = 0;
 
+Router::Router()
+	:	hook_dst(0)
+{
+}
+
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
@@ -33,6 +38,9 @@ bool Router::handle(Message* msg) {
 		}
 		route(pkt, src, table.find(pkt->dst_addr));
 		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
+		if(hook_dst) {
+			forward(pkt, hook_dst);
+		}
 		if(!pkt->count) {
 			pkt->ack();
 		}
@@ -51,6 +59,13 @@ bool Router::handle(Message* msg) {
 		Basic* src = ((Pipe::close_t*)msg)->data;
 		if(src) {
 			lookup.erase(src->get_mac());
+		}
+	} else if(msg->msg_id == hook_t::MID) {
+		vnl::pair<Basic*, bool>& data = ((hook_t*)msg)->data;
+		if(!data.second && hook_dst == data.first) {
+			hook_dst = 0;
+		} else if(data.second) {
+			hook_dst = data.first;
 		}
 	}
 	return false;

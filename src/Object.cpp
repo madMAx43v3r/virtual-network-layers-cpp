@@ -51,10 +51,6 @@ Object* Object::fork(Object* object) {
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
-	Topic* top = Topic::create();
-	top->domain = domain;
-	top->name = topic;
-	publish(top, Address(local_domain, "vnl.topic"));
 	return subscribe(Address(domain, topic));
 }
 
@@ -128,10 +124,6 @@ void Object::send(Message* msg, Basic* dst) {
 
 void Object::send_async(Message* msg, Basic* dst) {
 	stream.send_async(msg, dst);
-}
-
-void Object::flush() {
-	stream.flush();
 }
 
 void Object::attach(Pipe* pipe) {
@@ -234,7 +226,6 @@ bool Object::handle(Packet* pkt) {
 			uint32_t hash = 0;
 			input.getHash(hash);
 			while(!input.error()) {
-				int size = 0;
 				int id = input.getEntry(size);
 				if(id == VNL_IO_CALL) {
 					input.getHash(hash);

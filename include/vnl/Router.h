@@ -22,8 +22,12 @@ class Router : public Reactor {
 public:
 	static Router* instance;
 	
+	Router();
+	
 	typedef MessageType<vnl::pair<uint64_t, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<vnl::pair<uint64_t, Address>, 0xfbe7dd5a> close_t;
+	
+	typedef MessageType<vnl::pair<Basic*, bool>, 0x1ea66ea3> hook_t;
 	
 	uint64_t num_drop = 0;
 	uint64_t num_cycle = 0;
@@ -47,6 +51,7 @@ protected:
 private:
 	Map<Address, Row> table;
 	Map<uint64_t, Basic*> lookup;
+	Basic* hook_dst;
 	
 };
 

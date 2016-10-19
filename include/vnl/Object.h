@@ -85,8 +85,6 @@ protected:
 	void send(Message* msg, Basic* dst);
 	void send_async(Message* msg, Basic* dst);
 	
-	void flush();
-	
 	StringWriter log(int level);
 	
 	Timer* set_timeout(int64_t micros, const std::function<void()>& func, int type);
@@ -112,7 +110,6 @@ protected:
 	
 protected:
 	volatile bool dorun;
-	PageAllocator memory;
 	MessagePool buffer;
 	
 	Address my_address;

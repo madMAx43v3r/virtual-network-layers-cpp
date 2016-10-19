@@ -64,11 +64,13 @@ public:
 	// all below NOT thread safe
 	
 	void send(Message* msg, Basic* dst) {
+		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, false);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
+		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, true);
 	}
@@ -76,8 +78,6 @@ public:
 	virtual void fork(Object* object) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
-	
-	virtual void flush() = 0;
 	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe);
@@ -87,9 +87,13 @@ protected:
 	
 	virtual void send_impl(Message* msg, bool async) = 0;
 	
+	virtual void flush() = 0;
+	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
+	
+	MessagePool buffer;
 	
 	Queue<Message*> queue;
 	List<std::function<void(Message*)> > rcv_hooks;
