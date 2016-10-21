@@ -200,6 +200,7 @@ protected:
 				}
 				Sample* msg = buffer.create<Sample>();
 				msg->dst_addr = dst_addr;
+				msg->header = next.header.release();
 				msg->data = value;
 				send_async(msg, target);
 			} else {
