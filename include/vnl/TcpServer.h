@@ -58,10 +58,6 @@ public:
 		}
 	}
 	
-	void receive(Message* msg) {
-		Super::receive(msg);
-	}
-	
 	typedef MessageType<int, 0xaea64cbf> new_client_t;
 	typedef MessageType<int, 0x0252a160> error_t;
 	
