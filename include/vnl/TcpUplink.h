@@ -203,6 +203,7 @@ protected:
 				break;
 			}
 		}
+		engine.flush();
 	}
 	
 	bool read_packet(Stream& stream, MessagePool& buffer, vnl::io::TypeInput& in, uint32_t hash) {

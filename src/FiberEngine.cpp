@@ -98,6 +98,7 @@ public:
 	
 	int64_t deadline = 0;
 	Stream* polling = 0;
+	int pending = 0;
 	
 protected:
 	void run() {
@@ -105,6 +106,7 @@ protected:
 			yield();
 			Message msg;
 			engine->exec(obj, &msg);
+			flush();
 			engine->avail.push(this);
 		}
 	}
@@ -135,7 +137,6 @@ protected:
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
 	Object* obj;
-	int pending = 0;
 	bool result = false;
 	bool waiting = false;
 	Message* wait_msg = 0;
@@ -150,6 +151,7 @@ FiberEngine::FiberEngine(int stack_size)
 
 FiberEngine::~FiberEngine() {
 	for(Fiber* fiber : fibers) {
+		assert(fiber->pending == 0);
 		delete fiber;
 	}
 }

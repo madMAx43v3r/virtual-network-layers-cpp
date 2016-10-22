@@ -21,6 +21,10 @@ class ThreadEngine : public Engine {
 public:
 	ThreadEngine() : pending(0), max_num_pending(-1) {}
 	
+	~ThreadEngine() {
+		assert(pending == 0);
+	}
+	
 	static void spawn(Object* object, Pipe* pipe = 0) {
 		Actor sync;
 		Message msg;
@@ -52,6 +56,11 @@ public:
 		}
 	}
 	
+	virtual void flush() {
+		wait_for_acks(0);
+		assert(pending == 0);
+	}
+	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe) {
 		max_num_pending = object->vnl_max_num_pending;
@@ -70,11 +79,6 @@ protected:
 		} else {
 			wait_for_acks(max_num_pending);
 		}
-	}
-	
-	virtual void flush() {
-		wait_for_acks(0);
-		assert(pending == 0);
 	}
 	
 private:

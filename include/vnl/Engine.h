@@ -79,6 +79,8 @@ public:
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
+	virtual void flush() = 0;
+	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe);
 	
@@ -86,8 +88,6 @@ protected:
 	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
 	virtual void send_impl(Message* msg, bool async) = 0;
-	
-	virtual void flush() = 0;
 	
 private:
 	std::mutex mutex;

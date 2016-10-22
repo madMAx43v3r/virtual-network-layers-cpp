@@ -66,6 +66,7 @@ void Layer::shutdown() {
 		proc.set_address(local_domain, "vnl.Process");
 		proc.connect(&engine);
 		proc.shutdown();
+		engine.flush();
 	}
 }
 
