@@ -19,7 +19,7 @@ namespace vnl {
  * This is a paged array.
  * Maximum element size is 4096 bytes.
  */
-template<typename T, typename TPage = vnl::Page>
+template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Array {
 public:
 	Array() : p_front(0), p_back(0), pos(0) {
