@@ -147,6 +147,9 @@ bool Object::poll(int64_t micros) {
 					case VNL_TIMER_REPEAT:
 						timer.active = true;
 						timer.deadline += timer.interval;
+						if(timer.deadline < now) {
+							timer.deadline = now;
+						}
 						break;
 					case VNL_TIMER_MANUAL:
 					case VNL_TIMER_ONCE:
