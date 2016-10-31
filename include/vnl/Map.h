@@ -18,18 +18,17 @@ namespace vnl {
 
 /*
  * This is a hash map.
- * Maximum pair size is 4080 bytes.
+ * Maximum pair size is VNL_PAGE_SIZE-8 bytes.
  * Memory overhead is minimum 2 pages + 16 bytes per element.
- * Not recommended for more than 10000 elements.
  */
-template<typename K, typename V>
+template<typename K, typename V, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Map {
 public:
-	Map() {
-		resize((int)Page::size/sizeof(void*));
+	Map() : p_front(0), N(0), count(0) {
+		resize((int)TPage::size/sizeof(void*));
 	}
 	
-	Map(const Map& other) {
+	Map(const Map& other) : p_front(0), N(0), count(0) {
 		*this = other;
 	}
 	
@@ -37,48 +36,128 @@ public:
 		destroy();
 	}
 	
+protected:
+	struct entry_t {
+		vnl::pair<K,V> pair;
+		entry_t* next;
+		entry_t() : next(0) {}
+	};
+	
+	typedef Array<entry_t*, TPage> table_t;
+	
+public:
+	template<typename P>
+	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
+	public:
+		iterator_t() : iter(), end(), entry(0) {}
+		iterator_t(const iterator_t& other) : iter(other.iter), end(other.end), entry(other.entry) {}
+		iterator_t& operator++() {
+			inc();
+			return *this;
+		}
+		iterator_t operator++(int) {
+			iterator_t tmp = *this;
+			inc();
+			return tmp;
+		}
+		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
+			return entry->pair;
+		}
+		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
+			return &entry->pair;
+		}
+		friend void swap(iterator_t& lhs, iterator_t& rhs) {
+			std::swap(lhs.iter, rhs.iter);
+			std::swap(lhs.entry, rhs.entry);
+		}
+		friend bool operator==(const iterator_t& lhs, const iterator_t& rhs) {
+			return lhs.iter == rhs.iter && lhs.entry == rhs.entry;
+		}
+		friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs) {
+			return lhs.iter != rhs.iter || lhs.entry != rhs.entry;
+		}
+	private:
+		iterator_t(typename table_t::const_iterator iter, typename table_t::const_iterator end, entry_t* ptr)
+			:	iter(iter), end(end), entry(ptr)
+		{
+			if(iter != end) {
+				search();
+			}
+		}
+		void inc() {
+			if(entry) {
+				entry = entry->next;
+			}
+			search();
+		}
+		void search() {
+			while(!entry) {
+				iter++;
+				if(iter == end) {
+					break;
+				}
+				entry = *iter;
+			}
+		}
+		typename table_t::const_iterator iter;
+		typename table_t::const_iterator end;
+		entry_t* entry;
+		friend class Map;
+	};
+	
+	typedef iterator_t<vnl::pair<K,V> > iterator;
+	typedef iterator_t<const vnl::pair<K,V> > const_iterator;
+	
+	iterator begin() { return iterator(table.cbegin(), table.cend(), table.front()); }
+	const_iterator begin() const { return const_iterator(table.cbegin(), table.cend(), table.front()); }
+	const_iterator cbegin() const { return const_iterator(table.cbegin(), table.cend(), table.front()); }
+	
+	iterator end() { return iterator(table.cend(), table.cend(), 0); }
+	const_iterator end() const { return const_iterator(table.cend(), table.cend(), 0); }
+	const_iterator cend() const { return const_iterator(table.cend(), table.cend(), 0); }
+	
 	Map& operator=(const Map& other) {
 		resize(other.N);
 		insert(other);
 		return *this;
 	}
 	
+	/*
+	 * Retruns a copy of all entries.
+	 */
 	Array<vnl::pair<K,V> > entries() const {
 		Array<vnl::pair<K,V> > res;
-		for(entry_t* row : table) {
-			while(row) {
-				res.push_back(row->pair);
-				row = row->next;
-			}
+		for(const_iterator it = begin(); it != end(); ++it) {
+			res.push_back(*it);
 		}
 		return res;
 	}
 	
+	/*
+	 * Retruns a copy of all keys.
+	 */
 	Array<K> keys() const {
 		Array<K> res;
-		for(entry_t* row : table) {
-			while(row) {
-				res.push_back(row->pair.first);
-				row = row->next;
-			}
+		for(const_iterator it = begin(); it != end(); ++it) {
+			res.push_back(it->first);
 		}
 		return res;
 	}
 	
+	/*
+	 * Retruns a copy of all values.
+	 */
 	Array<V> values() const {
 		Array<V> res;
-		for(entry_t* row : table) {
-			while(row) {
-				res.push_back(row->pair.second);
-				row = row->next;
-			}
+		for(const_iterator it = begin(); it != end(); ++it) {
+			res.push_back(it->second);
 		}
 		return res;
 	}
 	
 	void insert(const Map& other) {
-		for(auto& pair : other.entries()) {
-			insert(pair.first, pair.second);
+		for(const_iterator it = other.begin(); it != other.end(); ++it) {
+			insert(it->first, it->second);
 		}
 	}
 	
@@ -96,7 +175,7 @@ public:
 				*p_row = p_front;
 				p_front = p_front->next;
 			} else {
-				*p_row = memory.create<entry_t>();
+				*p_row = memory.template create<entry_t>();
 			}
 			entry_t* row = *p_row;
 			row->pair = vnl::make_pair(key, val);
@@ -130,12 +209,21 @@ public:
 		entry_t** p_row;
 		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
-			entry_t* row = *p_row;
-			*p_row = row->next;
-			row->next = p_front;
-			p_front = row;
-			count--;
+			remove(p_row);
 		}
+	}
+	
+	iterator erase(iterator pos) {
+		assert(pos.entry);
+		entry_t** p_row = (entry_t**)&(*pos.iter);
+		while(true) {
+			if(*p_row == pos.entry) {
+				remove(p_row);
+				break;
+			}
+			p_row = &(*p_row)->next;
+		}
+		return iterator(pos.iter, pos.end, *p_row);
 	}
 	
 	void clear() {
@@ -151,10 +239,13 @@ public:
 	}
 	
 protected:
-	struct entry_t {
-		vnl::pair<K,V> pair;
-		entry_t* next;
-	};
+	void remove(entry_t** p_row) {
+		entry_t* row = *p_row;
+		*p_row = row->next;
+		row->next = p_front;
+		p_front = row;
+		count--;
+	}
 	
 	void destroy() {
 		for(entry_t* row : table) {
@@ -184,23 +275,23 @@ protected:
 	}
 	
 	void expand(int rows) {
-		auto tmp = entries();
+		Array<vnl::pair<K,V> > tmp = entries();
 		resize(rows);
 		for(auto& pair : tmp) {
 			insert(pair.first, pair.second);
 		}
 	}
 	
-	bool find(const K& key, entry_t**& p_row, vnl::pair<K,V>*& val) {
-		int ind = std::hash<K>{}(key) % N;
-		p_row = &table[ind];
+	bool find(const K& key, entry_t**& p_row, vnl::pair<K,V>*& value) {
+		int index = std::hash<K>{}(key) % N;
+		p_row = &table[index];
 		while(true) {
 			entry_t* row = *p_row;
 			if(!row) {
 				break;
 			}
 			if(row->pair.first == key) {
-				val = &row->pair;
+				value = &row->pair;
 				return true;
 			}
 			p_row = &row->next;
@@ -208,13 +299,13 @@ protected:
 		return false;
 	}
 	
-	PageAllocator memory;
+	Allocator<TPage> memory;
 	
 private:
-	Array<entry_t*> table;
-	entry_t* p_front = 0;
-	int N = 0;
-	int count = 0;
+	table_t table;
+	entry_t* p_front;
+	int N;
+	int count;
 	
 };
 
