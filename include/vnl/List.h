@@ -15,8 +15,10 @@ namespace vnl {
 
 /*
  * This is a doubly linked list for use on small data types.
+ * Maximum element size is VNL_BLOCK_SIZE-16 bytes.
+ * Iterators are valid as long as clear() is not called.
  */
-template<typename T>
+template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
 class List {
 public:
 	List() : p_front(0), p_back(0), count(0) {}
@@ -42,6 +44,9 @@ public:
 	class iterator_t : public std::iterator<std::bidirectional_iterator_tag, P> {
 	public:
 		iterator_t() : list(0), entry(0) {}
+		entry_t* get_entry() {
+			return entry;
+		}
 		iterator_t& operator++() {
 			inc();
 			return *this;
@@ -168,14 +173,14 @@ public:
 		entry_t* next = iter.entry;
 		entry_t* ptr;
 		if(!p_front) {
-			p_front = memory.create<entry_t>();
+			p_front = memory.template create<entry_t>();
 			p_back = p_front;
 			ptr = p_front;
 		} else if(next == p_back->next) {
 			if(next) {
 				ptr = next;
 			} else {
-				ptr = memory.create<entry_t>();
+				ptr = memory.template create<entry_t>();
 			}
 			conn(p_back, ptr);
 			p_back = p_back->next;
@@ -184,7 +189,7 @@ public:
 				ptr = p_back->next;
 				conn(p_back, ptr->next);
 			} else {
-				ptr = memory.create<entry_t>();
+				ptr = memory.template create<entry_t>();
 			}
 			conn(next->prev, ptr);
 			conn(ptr, next);
@@ -282,7 +287,7 @@ private:
 	}
 	
 private:
-	BlockAllocator memory;
+	Allocator<TPage> memory;
 	entry_t* p_front;
 	entry_t* p_back;
 	int count;
