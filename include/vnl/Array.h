@@ -17,7 +17,7 @@ namespace vnl {
 
 /*
  * This is a paged array.
- * Maximum element size is 4096 bytes.
+ * Maximum element size is VNL_PAGE_SIZE bytes.
  */
 template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Array {
@@ -43,7 +43,7 @@ public:
 	}
 	
 	void append(const Array& other) {
-		for(auto iter = other.begin(); iter != other.end(); ++iter) {
+		for(const_iterator iter = other.begin(); iter != other.end(); ++iter) {
 			push_back(*iter);
 		}
 	}
@@ -107,7 +107,7 @@ public:
 		int n = size();
 		std::vector<T> vec(n);
 		int i = 0;
-		for(auto iter = begin(); iter != end(); ++iter) {
+		for(const_iterator iter = begin(); iter != end(); ++iter) {
 			vec[i] = *iter;
 			i++;
 		}
@@ -116,7 +116,7 @@ public:
 	
 	void clear() {
 		if(p_front) {
-			for(auto iter = begin(); iter != end(); ++iter) {
+			for(iterator iter = begin(); iter != end(); ++iter) {
 				iter->~T();
 			}
 			p_front->free_all();
@@ -141,14 +141,14 @@ public:
 	}
 	
 	T& front() {
-		return (*this)[0];
+		return *begin();
 	}
 	T& back() {
 		return (*this)[size()-1];
 	}
 	
 	const T& front() const {
-		return (*this)[0];
+		return *begin();
 	}
 	const T& back() const {
 		return (*this)[size()-1];
@@ -162,8 +162,8 @@ public:
 	template<typename P>
 	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
 	public:
-		iterator_t() : iterator_t(0) {}
-		iterator_t(const iterator_t&) = default;
+		iterator_t() : page(0), pos(0) {}
+		iterator_t(const iterator_t& other) : page(other.page), pos(other.pos) {}
 		iterator_t& operator++() {
 			advance();
 			return *this;
