@@ -42,12 +42,6 @@ public:
 		return *this;
 	}
 	
-	void append(const Array& other) {
-		for(const_iterator iter = other.begin(); iter != other.end(); ++iter) {
-			push_back(*iter);
-		}
-	}
-	
 	bool operator!=(const Array& other) const {
 		return !(*this == other);
 	}
@@ -65,23 +59,23 @@ public:
 		return false;
 	}
 	
+	void append(const Array& other) {
+		for(const_iterator iter = other.begin(); iter != other.end(); ++iter) {
+			push_back(*iter);
+		}
+	}
+	
 	T& push_back() {
 		return push_back(T());
 	}
 	
 	T& push_back(const T& obj) {
-		if(!p_front) {
-			p_front = TPage::alloc();
-			p_back = p_front;
-		}
+		check();
 		if(pos >= M) {
-			p_back->next = TPage::alloc();
-			p_back = p_back->next;
-			pos = 0;
+			extend();
 		}
 		T& ref = p_back->template type_at_index<T>(pos++);
-		new(&ref) T();
-		ref = obj;
+		new(&ref) T(obj);
 		return ref;
 	}
 	
@@ -156,6 +150,20 @@ public:
 	
 	bool empty() const {
 		return p_front == 0;
+	}
+	
+protected:
+	void check() {
+		if(!p_front) {
+			p_front = TPage::alloc();
+			p_back = p_front;
+		}
+	}
+	
+	void extend() {
+		p_back->next = TPage::alloc();
+		p_back = p_back->next;
+		pos = 0;
 	}
 	
 public:
