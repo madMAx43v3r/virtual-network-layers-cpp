@@ -19,8 +19,7 @@ namespace vnl {
 
 class ToString {
 public:
-	static const int BUF_SIZE = 128;
-	char buf[BUF_SIZE];
+	char buf[128];
 	int len = 0;
 };
 
@@ -28,8 +27,8 @@ class str : public ToString {
 public:
 	str(const char src[]) {
 		len = strlen(src);
-		if(len > BUF_SIZE) {
-			len = BUF_SIZE;
+		if(len > sizeof(buf)) {
+			len = sizeof(buf);
 		}
 		strncpy(buf, src, len);
 	}
@@ -39,36 +38,36 @@ static str endl("\n");
 
 class dec : public ToString {
 public:
-	dec(int32_t i)  { len = snprintf(buf, BUF_SIZE, "%d", i); }
-	dec(uint32_t i) { len = snprintf(buf, BUF_SIZE, "%u", i); }
-	dec(int64_t i)  { len = snprintf(buf, BUF_SIZE, "%ld", i); }
-	dec(uint64_t i) { len = snprintf(buf, BUF_SIZE, "%lu", i); }
+	dec(int32_t i)  { len = snprintf(buf, sizeof(buf), "%d", i); }
+	dec(uint32_t i) { len = snprintf(buf, sizeof(buf), "%u", i); }
+	dec(int64_t i)  { len = snprintf(buf, sizeof(buf), "%ld", i); }
+	dec(uint64_t i) { len = snprintf(buf, sizeof(buf), "%lu", i); }
 };
 
 class hex : public ToString {
 public:
-	hex(int32_t i)  { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
-	hex(uint32_t i) { len = snprintf(buf, BUF_SIZE, "0x%x", i); }
-	hex(int64_t i)  { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
-	hex(uint64_t i) { len = snprintf(buf, BUF_SIZE, "0x%lx", i); }
+	hex(int32_t i)  { len = snprintf(buf, sizeof(buf), "0x%x", i); }
+	hex(uint32_t i) { len = snprintf(buf, sizeof(buf), "0x%x", i); }
+	hex(int64_t i)  { len = snprintf(buf, sizeof(buf), "0x%lx", i); }
+	hex(uint64_t i) { len = snprintf(buf, sizeof(buf), "0x%lx", i); }
 };
 
 class def : public ToString {
 public:
-	def(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
-	def(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*f", precision, f); }
+	def(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%.*f", precision, f); }
+	def(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%.*f", precision, f); }
 };
 
 class sci : public ToString {
 public:
-	sci(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
-	sci(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%.*e", precision, f); }
+	sci(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%.*e", precision, f); }
+	sci(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%.*e", precision, f); }
 };
 
 class fix : public ToString {
 public:
-	fix(float f, int precision = 6)  { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
-	fix(double f, int precision = 6) { len = snprintf(buf, BUF_SIZE, "%0*f", precision, f); }
+	fix(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%0*f", precision, f); }
+	fix(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%0*f", precision, f); }
 };
 
 
