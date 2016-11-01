@@ -16,7 +16,7 @@ namespace vnl {
 class TcpClient : public TcpClientBase {
 public:
 	TcpClient(const vnl::String& topic, vnl::String endpoint = "", int port = 0)
-		:	TcpClientBase(local_domain_name, topic)
+		:	TcpClientBase(local_domain_name, topic), connected(false)
 	{
 		if(endpoint.size()) {
 			this->endpoint = endpoint;
@@ -29,7 +29,8 @@ public:
 protected:
 	int connect() {
 		int sock = -1;
-		while(true) {
+		while(!autoclose || !connected) {
+			connected = false;
 			if(sock >= 0) {
 				::close(sock);
 				usleep(error_interval);
@@ -71,10 +72,13 @@ protected:
 				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << errno << vnl::endl;
 				continue;
 			}
-			break;
+			connected = true;
 		}
 		return sock;
 	}
+	
+private:
+	bool connected;
 	
 };
 

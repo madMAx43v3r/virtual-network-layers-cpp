@@ -11,6 +11,7 @@ object Player {
 	
 	bool autostart = false;
 	bool autoloop = false;
+	bool autoshutdown = false;
 	
 	int interval = 200000;
 	
