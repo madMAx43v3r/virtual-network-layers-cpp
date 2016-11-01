@@ -44,6 +44,16 @@ public:
 	}
 	
 	// NOT thread safe
+	String get_my_domain() const {
+		return my_domain;
+	}
+	
+	// NOT thread safe
+	String get_my_topic() const {
+		return my_topic;
+	}
+	
+	// NOT thread safe
 	virtual void serialize(vnl::io::TypeOutput& out) const;
 	
 protected:

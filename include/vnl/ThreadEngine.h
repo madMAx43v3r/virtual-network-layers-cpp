@@ -9,6 +9,8 @@
 #define INCLUDE_PHY_THREADENGINE_H_
 
 #include <thread>
+#include <pthread.h>
+
 #include <vnl/Engine.h>
 #include <vnl/Pipe.h>
 #include <vnl/Stream.h>
@@ -150,6 +152,11 @@ private:
 	}
 	
 	static void entry(Object* object, Message* msg, Pipe* pipe) {
+		{
+			char buf[16];
+			object->get_my_topic().to_string(buf, sizeof(buf));
+			pthread_setname_np(pthread_self(), buf);
+		}
 		Layer::num_threads++;
 		{
 			ThreadEngine engine;
