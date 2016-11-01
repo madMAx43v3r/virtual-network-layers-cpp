@@ -168,6 +168,9 @@ public:
 		return obj;
 	}
 	
+	/*
+	 * Insert element before element referred to by iter.
+	 */
 	iterator insert(iterator iter, const T& obj) {
 		count++;
 		entry_t* next = iter.entry;
