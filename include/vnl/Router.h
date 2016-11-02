@@ -35,7 +35,7 @@ public:
 protected:
 	typedef Array<uint64_t> Row;
 	
-	virtual bool handle(Message* msg) override;
+	virtual bool handle(Message* msg);
 	
 	void open(const Address& addr, uint64_t src);
 	void close(const Address& addr, uint64_t src);
@@ -45,7 +45,6 @@ protected:
 	
 	virtual void callback(Message* msg);
 	
-	PageAllocator memory;
 	MessagePool buffer;
 	
 private:

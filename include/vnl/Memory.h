@@ -210,10 +210,7 @@ private:
 	
 };
 
-typedef Allocator<Page> PageAllocator;
-typedef Allocator<Block> BlockAllocator;
 
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_MEMORY_H_ */

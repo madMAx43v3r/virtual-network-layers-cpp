@@ -48,6 +48,12 @@ class GenericPool {
 public:
 	GenericPool() {}
 	
+	~GenericPool() {
+		for(Queue<void*>* queue : table.values()) {
+			queue->~Queue();
+		}
+	}
+	
 	GenericPool(const GenericPool&) = delete;
 	GenericPool& operator=(const GenericPool&) = delete;
 	
@@ -57,7 +63,7 @@ public:
 		if(get_queue(sizeof(T)).pop(obj)) {
 			return new(obj) T();
 		} else {
-			return memory.create<T>();
+			return memory.template create<T>();
 		}
 	}
 	
@@ -71,13 +77,13 @@ protected:
 	Queue<void*>& get_queue(int size) {
 		Queue<void*>*& queue = table[size];
 		if(!queue) {
-			queue = memory.create<Queue<void*> >();
+			queue = memory.template create<Queue<void*> >();
 		}
 		return *queue;
 	}
 	
 protected:
-	PageAllocator memory;
+	Allocator<Page> memory;
 	Map<int, Queue<void*>* > table;
 	
 };
@@ -133,8 +139,8 @@ public:
 	}
 	
 protected:
-	vnl::PageAllocator memory;
-	vnl::Queue<void*> table[VNL_PAGE_SIZE];
+	Allocator<Page> memory;
+	Queue<void*> table[VNL_PAGE_SIZE];
 	std::mutex sync;
 	
 };
