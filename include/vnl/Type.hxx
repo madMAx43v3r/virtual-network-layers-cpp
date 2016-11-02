@@ -31,6 +31,14 @@ Array<String> get_class_names();
 /*
  * Generic reader functions
  */
+inline void read(vnl::io::TypeInput& in, bool& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, int8_t& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, int16_t& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, int32_t& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
+inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
+
 inline Value* read(vnl::io::TypeInput& in) {
 	Value* obj = 0;
 	int size = 0;
@@ -136,18 +144,18 @@ inline void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
 template<typename T, int N>
 void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) { in.getArray(vec); }
 
-inline void read(vnl::io::TypeInput& in, bool& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, int8_t& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, int16_t& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, int32_t& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
-inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
-
 
 /*
  * Generic writer functions
  */
+inline void write(vnl::io::TypeOutput& out, const bool& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const int8_t& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const int16_t& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const int32_t& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const int64_t& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const float& val) { out.putValue(val); }
+inline void write(vnl::io::TypeOutput& out, const double& val) { out.putValue(val); }
+
 inline void write(vnl::io::TypeOutput& out, const Value& obj) {
 	obj.serialize(out);
 }
@@ -205,14 +213,6 @@ inline void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
 
 template<typename T, int N>
 void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArray(vec); }
-
-inline void write(vnl::io::TypeOutput& out, const bool& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const int8_t& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const int16_t& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const int32_t& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const int64_t& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const float& val) { out.putValue(val); }
-inline void write(vnl::io::TypeOutput& out, const double& val) { out.putValue(val); }
 
 
 /*
