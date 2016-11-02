@@ -24,10 +24,10 @@ public:
 		:	PlayerBase(domain_, "Player"),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
-		type_blacklist["vnl.Announce"] = true;
-		type_blacklist["vnl.LogMsg"] = true;
-		type_blacklist["vnl.Shutdown"] = true;
-		type_blacklist["vnl.Exit"] = true;
+		type_blacklist["vnl.announce"] = true;
+		type_blacklist["vnl.log"] = true;
+		type_blacklist["vnl.shutdown"] = true;
+		type_blacklist["vnl.exit"] = true;
 	}
 	
 	vnl::Map<Address, Address> addr_map;
