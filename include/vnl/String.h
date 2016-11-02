@@ -84,7 +84,7 @@ public:
 	}
 	
 	String(const String& str) : Array() {
-		(*this) << str;
+		assign(str);
 	}
 	
 	bool operator!=(const String& other) const {
@@ -134,8 +134,7 @@ public:
 	
 	String& operator=(const String& str) {
 		if(&str != this) {
-			clear();
-			*this << str;
+			assign(str);
 		}
 		return *this;
 	}
@@ -208,17 +207,45 @@ public:
 		}
 	}
 	
+	void assign(const String& str) {
+		clear();
+		Block* src = str.p_front;
+		while(src) {
+			Block* next = Block::alloc();
+			if(p_back) {
+				p_back->next = next;
+			} else {
+				p_front = next;
+			}
+			p_back = next;
+			::memcpy(p_back->mem, src->mem, src->next ? Block::size : str.pos);
+			src = src->next;
+		}
+		pos = str.pos;
+	}
+	
+	void write(const char* str, int len) {
+		check();
+		while(len > 0) {
+			if(pos >= Block::size) {
+				extend();
+			}
+			int n = Block::size - pos;
+			if(n > len) {
+				n = len;
+			}
+			::memcpy(p_back->mem + pos, str, n);
+			pos += n;
+			str += n;
+			len -= n;
+		}
+	}
+	
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {
 		for(const_iterator it = str.begin(); it != str.end(); ++it) {
 			stream.put(*it);
 		}
 		return stream;
-	}
-	
-	void write(const char* str, int len) {
-		for(int i = 0; i < len; ++i) {
-			push_back(str[i]);
-		}
 	}
 	
 };
