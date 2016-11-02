@@ -15,6 +15,7 @@
 #include <vnl/Binary.h>
 #include <vnl/Array.h>
 #include <vnl/List.h>
+#include <vnl/Map.h>
 #include <vnl/Pool.h>
 
 

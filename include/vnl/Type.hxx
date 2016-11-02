@@ -116,6 +116,23 @@ inline void read(vnl::io::TypeInput& in, List<T>& obj) {
 	}
 }
 
+template<typename K, typename V>
+inline void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
+	int size = 0;
+	int id = in.getEntry(size);
+	if(id == VNL_IO_ARRAY && size % 2 == 0) {
+		for(int i = 0; i < size && !in.error(); i += 2) {
+			K key;
+			V value;
+			vnl::read(in, key);
+			vnl::read(in, value);
+			obj[key] = value;
+		}
+	} else {
+		in.skip(id, size);
+	}
+}
+
 template<typename T, int N>
 void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) { in.getArray(vec); }
 
@@ -175,6 +192,17 @@ inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 	}
 }
 
+template<typename K, typename V>
+inline void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
+	out.putEntry(VNL_IO_ARRAY, obj.size()*2);
+	for(typename vnl::Map<K,V>::const_iterator iter = obj.begin();
+			iter != obj.end() && !out.error(); ++iter)
+	{
+		vnl::write(out, iter->first);
+		vnl::write(out, iter->second);
+	}
+}
+
 template<typename T, int N>
 void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArray(vec); }
 
@@ -224,6 +252,17 @@ inline void to_string(vnl::String& str, const Array<T>& obj) {
 template<typename T>
 inline void to_string(vnl::String& str, const List<T>& obj) {
 	to_string(str, obj.begin(), obj.end());
+}
+
+template<typename K, typename V>
+inline void to_string(vnl::String& str, const Map<K,V>& obj) {
+	to_string(str, obj.begin(), obj.end());
+}
+
+template<typename K, typename V>
+inline void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
+	str << "{\"key\": "; to_string(str, obj.first);
+	str << ", \"value\": "; to_string(str, obj.second); str << "}";
 }
 
 template<class Iter>
@@ -300,6 +339,12 @@ inline void from_string(const vnl::String& str, Array<T>& obj) {
 
 template<typename T>
 inline void from_string(const vnl::String& str, List<T>& obj) {
+	// TODO
+	assert(false);
+}
+
+template<typename K, typename V>
+inline void from_string(const vnl::String& str, Map<K,V>& obj) {
 	// TODO
 	assert(false);
 }
