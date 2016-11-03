@@ -158,6 +158,7 @@ protected:
 	}
 	
 	void resize(int rows) {
+		assert(rows > 0);
 		N = rows;
 		tree.resize(N);
 		for(iterator it = list.begin(); it != list.end(); ++it) {
