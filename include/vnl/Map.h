@@ -170,15 +170,8 @@ protected:
 		entry_t*& row = tree[index];
 		p_row = &row;
 		if(row) {
-			iterator it(&list, row);
-			while(it != list.end()) {
-				if(it->first == key) {
-					return it;
-				}
-				if(get_index(it->first) != index) {
-					break;
-				}
-				it++;
+			if(row->value.first == key) {
+				return iterator(&list, row);
 			}
 		}
 		return list.end();
