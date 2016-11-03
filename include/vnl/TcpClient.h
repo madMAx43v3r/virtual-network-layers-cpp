@@ -73,6 +73,7 @@ protected:
 				continue;
 			}
 			connected = true;
+			break;
 		}
 		return sock;
 	}
