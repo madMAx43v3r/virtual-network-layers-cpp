@@ -35,7 +35,7 @@ StringWriter Object::log(int level) {
 }
 
 Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, int type) {
-	Timer& timer = timers.push_back();
+	Timer& timer = *timers.push_back();
 	timer.interval = micros;
 	timer.func = func;
 	timer.type = type;

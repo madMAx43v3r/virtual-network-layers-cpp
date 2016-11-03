@@ -117,7 +117,7 @@ inline void read(vnl::io::TypeInput& in, List<T>& obj) {
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
 		for(int i = 0; i < size && !in.error(); ++i) {
-			vnl::read(in, obj.push_back());
+			vnl::read(in, *obj.push_back());
 		}
 	} else {
 		in.skip(id, size);

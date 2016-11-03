@@ -31,7 +31,6 @@ public:
 		clear();
 	}
 	
-protected:
 	struct entry_t {
 		entry_t* prev;
 		entry_t* next;
@@ -44,6 +43,7 @@ public:
 	class iterator_t : public std::iterator<std::bidirectional_iterator_tag, P> {
 	public:
 		iterator_t() : list(0), entry(0) {}
+		iterator_t(const List* list, entry_t* entry) : list(list), entry(entry) {}
 		entry_t* get_entry() {
 			return entry;
 		}
@@ -81,7 +81,6 @@ public:
 			return lhs.entry != rhs.entry;
 		}
 	private:
-		iterator_t(const List* list, entry_t* entry) : list(list), entry(entry) {}
 		void inc() {
 			entry = entry->next;
 		}
@@ -122,20 +121,20 @@ public:
 		}
 	}
 	
-	T& push_back() {
+	iterator push_back() {
 		return push_back(T());
 	}
 	
-	T& push_back(const T& obj) {
-		return *insert(end(), obj);
+	iterator push_back(const T& obj) {
+		return insert(end(), obj);
 	}
 	
-	T& push_front() {
+	iterator push_front() {
 		return push_front(T());
 	}
 	
-	T& push_front(const T& obj) {
-		return *insert(begin(), obj);
+	iterator push_front(const T& obj) {
+		return insert(begin(), obj);
 	}
 	
 	bool pop_back(T& obj) {
