@@ -222,10 +222,12 @@ public:
 			src = src->next;
 		}
 		pos = str.pos;
+		count = str.count;
 	}
 	
 	void write(const char* str, int len) {
 		check();
+		count += len;
 		while(len > 0) {
 			if(pos >= Block::size) {
 				extend();

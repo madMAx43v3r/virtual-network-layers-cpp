@@ -18,15 +18,16 @@ namespace vnl {
 /*
  * This is a paged array.
  * Maximum element size is VNL_PAGE_SIZE bytes.
+ * Warning: operator[] has O(n) complexity. Use Tree for O(log(n)).
  */
 template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Array {
 public:
-	Array() : p_front(0), p_back(0), pos(0) {
+	Array() : p_front(0), p_back(0), pos(0), count(0) {
 		assert(sizeof(T) <= TPage::size);
 	}
 	
-	Array(const Array& other) : p_front(0), p_back(0), pos(0) {
+	Array(const Array& other) : p_front(0), p_back(0), pos(0), count(0) {
 		append(other);
 	}
 	
@@ -74,9 +75,21 @@ public:
 		if(pos >= M) {
 			extend();
 		}
+		count++;
 		T& ref = p_back->template type_at_index<T>(pos++);
 		new(&ref) T(obj);
 		return ref;
+	}
+	
+	T& operator[](int index) {
+		assert(index >= 0 && index < count);
+		int pi = index / M;
+		int ei = index % M;
+		TPage* page = p_front;
+		for(int i = 0; i < pi; ++i) {
+			page = page->next;
+		}
+		return page->template type_at_index<T>(ei);
 	}
 	
 	Array& operator=(const std::vector<T>& vec) {
@@ -85,16 +98,6 @@ public:
 			push_back(elem);
 		}
 		return *this;
-	}
-	
-	T& operator[](int index) {
-		int pi = index / M;
-		int ei = index % M;
-		TPage* page = p_front;
-		for(int i = 0; i < pi; ++i) {
-			page = page->next;
-		}
-		return page->template type_at_index<T>(ei);
 	}
 	
 	std::vector<T> to_vector() const {
@@ -117,20 +120,11 @@ public:
 			p_front = 0;
 			p_back = 0;
 			pos = 0;
+			count = 0;
 		}
 	}
 	
 	int size() const {
-		int count = 0;
-		TPage* page = p_front;
-		while(page) {
-			if(page != p_back) {
-				count += M;
-			} else {
-				count += pos;
-			}
-			page = page->next;
-		}
 		return count;
 	}
 	
@@ -149,7 +143,7 @@ public:
 	}
 	
 	bool empty() const {
-		return p_front == 0;
+		return count == 0;
 	}
 	
 protected:
@@ -230,6 +224,7 @@ protected:
 	TPage* p_front;
 	TPage* p_back;
 	int pos;
+	int count;
 	
 };
 
