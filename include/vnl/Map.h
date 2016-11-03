@@ -18,9 +18,9 @@
 namespace vnl {
 
 /*
- * This is a hash map.
- * Maximum pair size is VNL_PAGE_SIZE-8 bytes.
- * Memory overhead is minimum 2 pages + 16 bytes per element.
+ * This is a hash map with O(log(n)) complexity.
+ * Maximum pair size is VNL_PAGE_SIZE-16 bytes.
+ * Memory overhead is minimum 1 page + 1 block + 16 bytes per element.
  */
 template<typename K, typename V, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Map {
