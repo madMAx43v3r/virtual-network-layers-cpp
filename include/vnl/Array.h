@@ -24,7 +24,7 @@ template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Array {
 public:
 	Array() : p_front(0), p_back(0), pos(0), count(0) {
-		assert(sizeof(T) <= TPage::size);
+		assert(M > 0);
 	}
 	
 	Array(const Array& other) : p_front(0), p_back(0), pos(0), count(0) {

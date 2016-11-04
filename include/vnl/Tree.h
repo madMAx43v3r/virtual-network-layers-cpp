@@ -19,7 +19,9 @@ namespace vnl {
 template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
 class Tree {
 public:
-	Tree() : p_root(0), depth(0) {}
+	Tree() : p_root(0), depth(0) {
+		assert(M > 0);
+	}
 	
 	Tree(const Tree& other) : p_root(0), depth(0) {
 		assert(false); // not implemented
@@ -34,15 +36,15 @@ public:
 		return *this;
 	}
 	
-	T*& operator[](int index) {
+	T& operator[](int index) {
 		assert(p_root);
-		return (T*&)walk(p_root, 0, index);
+		return *((T*)walk(p_root, 0, index));
 	}
 	
 	void resize(int n) {
 		clear();
 		p_root = alloc();
-		n /= N;
+		n /= M;
 		while(n > 0) {
 			depth++;
 			n /= N;
@@ -64,15 +66,15 @@ protected:
 		return block;
 	}
 	
-	void*& walk(TPage* block, int level, int index) {
-		void*& ptr = block->template type_at_index<void*>(index % N);
+	void* walk(TPage* block, int level, int index) {
 		if(level == depth) {
-			return ptr;
+			return &block->template type_at_index<T>(index % M);
 		}
-		if(!ptr) {
-			ptr = alloc();
+		TPage*& next = block->template type_at_index<TPage*>(index % N);
+		if(!next) {
+			next = alloc();
 		}
-		return walk((TPage*)ptr, level+1, index/N);
+		return walk(next, level+1, index/N);
 	}
 	
 	void clear(TPage* block, int level) {
@@ -89,6 +91,7 @@ protected:
 	
 protected:
 	static const int N = TPage::size / sizeof(void*);
+	static const int M = TPage::size / sizeof(T);
 	
 	TPage* p_root;
 	int depth;

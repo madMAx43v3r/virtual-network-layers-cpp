@@ -21,7 +21,9 @@ namespace vnl {
 template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
 class List {
 public:
-	List() : p_front(0), p_back(0), count(0) {}
+	List() : p_front(0), p_back(0), count(0) {
+		assert(sizeof(T) <= TPage::size-16);
+	}
 	
 	List(const List& other) : p_front(0), p_back(0), count(0) {
 		append(other);

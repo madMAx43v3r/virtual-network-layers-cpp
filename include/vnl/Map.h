@@ -36,7 +36,7 @@ public:
 protected:
 	typedef List<vnl::pair<K,V>, TPage> list_t;
 	typedef typename list_t::entry_t entry_t;
-	typedef Tree<entry_t> tree_t;
+	typedef Tree<entry_t*> tree_t;
 	
 public:
 	typedef typename list_t::iterator iterator;
