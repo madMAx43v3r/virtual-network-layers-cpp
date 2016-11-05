@@ -348,14 +348,34 @@ inline void from_string(const vnl::String& str, Binary& obj) {
 
 template<typename T>
 inline void from_string(const vnl::String& str, Array<T>& obj) {
-	// TODO
-	assert(false);
+	int i = 0;
+	vnl::String buf;
+	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == ']' || c == ',') {
+			from_string(buf, obj.push_back());
+			buf.clear();
+			i++;
+		} else if(c != '[') {
+			buf.push_back(c);
+		}
+	}
 }
 
 template<typename T>
 inline void from_string(const vnl::String& str, List<T>& obj) {
-	// TODO
-	assert(false);
+	int i = 0;
+	vnl::String buf;
+	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == ']' || c == ',') {
+			from_string(buf, *obj.push_back());
+			buf.clear();
+			i++;
+		} else if(c != '[') {
+			buf.push_back(c);
+		}
+	}
 }
 
 template<typename K, typename V>
@@ -366,8 +386,18 @@ inline void from_string(const vnl::String& str, Map<K,V>& obj) {
 
 template<typename T, int N>
 void from_string(const vnl::String& str, vnl::Vector<T, N>& vec) {
-	// TODO
-	assert(false);
+	int i = 0;
+	vnl::String buf;
+	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == ']' || c == ',') {
+			from_string(buf, vec[i]);
+			buf.clear();
+			i++;
+		} else if(c != '[') {
+			buf.push_back(c);
+		}
+	}
 }
 
 inline int64_t atoi(const vnl::String& str) {
