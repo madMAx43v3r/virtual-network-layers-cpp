@@ -16,7 +16,7 @@ class Vector {
 public:
 	Vector() {
 		for(int i = 0; i < N; ++i) {
-			data[i] = 0;
+			data[i] = T();
 		}
 	}
 	

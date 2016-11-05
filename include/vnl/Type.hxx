@@ -142,7 +142,17 @@ inline void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
 }
 
 template<typename T, int N>
-void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) { in.getArray(vec); }
+void read(vnl::io::TypeInput& in, vnl::Vector<T, N>& vec) {
+	int size = 0;
+	int id = in.getEntry(size);
+	if(id == VNL_IO_ARRAY) {
+		for(int i = 0; i < size && !in.error(); ++i) {
+			vnl::read(in, vec[i]);
+		}
+	} else {
+		in.skip(id, size);
+	}
+}
 
 
 /*
@@ -212,7 +222,12 @@ inline void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
 }
 
 template<typename T, int N>
-void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) { out.putArray(vec); }
+void write(vnl::io::TypeOutput& out, const vnl::Vector<T, N>& vec) {
+	out.putEntry(VNL_IO_ARRAY, vec.size());
+	for(int i = 0; i < vec.size(); ++i) {
+		vnl::write(out, vec[i]);
+	}
+}
 
 
 /*
