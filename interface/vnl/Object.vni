@@ -11,7 +11,7 @@ object Object {
 	const int INFO = 3;
 	const int DEBUG = 4;
 	
-	int log_level = INFO;
+	int vnl_log_level = INFO;
 	
 	/*
 	 * Maximum number of pending messages (-1 = infinite)

@@ -24,7 +24,7 @@ public:
 		ptr = other.clone();
 	}
 	
-	~Pointer() {
+	virtual ~Pointer() {
 		destroy();
 	}
 	
@@ -64,6 +64,16 @@ public:
 		return *ptr;
 	}
 	
+	T* value() {
+		return ptr;
+	}
+	
+	T* release() {
+		T* ret = ptr;
+		ptr = 0;
+		return ret;
+	}
+	
 	T* clone() const {
 		if(ptr) {
 			return ptr->clone();
@@ -72,30 +82,33 @@ public:
 		}
 	}
 	
-	void serialize(vnl::io::TypeOutput& out) const {
+	void to_string_ex(vnl::String& str) const {
+		str << "{\"T\": \"";
 		if(ptr) {
-			vnl::write(out, ptr);
-		} else {
-			out.putNull();
+			str << ptr->type_name();
 		}
+		str << "\", \"V\": ";
+		vnl::to_string(str, ptr);
+		str << "}";
+	}
+	
+	void from_string(const vnl::String& str) {
+		// TODO
+		assert(false);
+	}
+	
+	void serialize(vnl::io::TypeOutput& out) const {
+		vnl::write(out, ptr);
 	}
 	
 	void deserialize(vnl::io::TypeInput& in, int size) {
-		int id = in.getEntry(size);
-		if(id == VNL_IO_CLASS) {
-			uint32_t hash;
-			in.getHash(hash);
-			Value* value = vnl::create(hash);
-			if(value) {
-				ptr = dynamic_cast<T*>(value);
-				if(!ptr) {
-					vnl::destroy(value);
-				}
-			} else {
-				in.skip(id, size, hash);
+		destroy();
+		Value* value = vnl::read(in);
+		if(value) {
+			ptr = dynamic_cast<T*>(value);
+			if(!ptr) {
+				vnl::destroy(value);
 			}
-		} else {
-			in.skip(id, size);
 		}
 	}
 	
@@ -108,8 +121,6 @@ private:
 	T* ptr;
 	
 };
-
-
 
 
 }

@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include <endian.h>
+#include <time.h>
 
 #include <cxxabi.h>
 
@@ -26,6 +27,19 @@
 
 
 namespace vnl {
+
+template<typename K, typename V>
+struct pair {
+	K first;
+	V second;
+	pair() {}
+	pair(const K& key, const V& value) : first(key), second(value) {}
+};
+
+template<typename K, typename V>
+inline pair<K,V> make_pair(const K& key, const V& value) {
+	return pair<K,V>(key, value);
+}
 
 static int64_t currentTime() {
 	return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -43,6 +57,18 @@ static int64_t nanoTime() {
 	return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+static String currentDate(const char* format) {
+	::time_t timer;
+	time(&timer);
+	char buf[256];
+	strftime(buf, sizeof(buf), format, ::localtime(&timer));
+	return String() << buf;
+}
+
+static String currentDate() {
+	return currentDate("%Y-%m-%d_%H:%M:%S");
+}
+
 static uint64_t hash64(const char* str) {
 	CRC64 func;
 	func.update(str, strlen(str));
@@ -57,10 +83,8 @@ static uint64_t hash64(const std::string& str) {
 
 static uint64_t hash64(const String& str) {
 	CRC64 func;
-	auto* chunk = str.front();
-	while(chunk) {
-		func.update(chunk->str(), chunk->len());
-		chunk = chunk->next_chunk();
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		func.update(*it);
 	}
 	return func.getValue();
 }

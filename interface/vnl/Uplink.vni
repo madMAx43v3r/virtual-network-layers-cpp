@@ -1,25 +1,11 @@
 package vnl;
 
-object Uplink {
-	
-	/*
-	 * How long a packet can be in the queue (ms) (default = -1/infinite)
-	 * If timeout is reached messages will be dropped.
-	 */
-	int send_timeout = -1;
-	
-	long num_drop = 0;			// how many packets have been dropped so far
-	
-	void reset();
-	void shutdown();
-	int get_fd() const;
+interface Uplink {
 	
 	void publish(Topic topic);
 	void publish(String domain, String topic);
 	
 	void subscribe(Topic topic);
 	void subscribe(String domain, String topic);
-	
-	void forward(long domain, long topic);
 	
 }

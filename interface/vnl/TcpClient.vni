@@ -1,14 +1,12 @@
 package vnl;
 
-object TcpClient extends Uplink {
+object TcpClient extends TcpUplink {
 	
 	String endpoint;
-	int port = 8616;
+	int port = 8916;
 	
-	int error_interval = 1000;		// how long to wait after an error (ms)
-	
-	bool do_deserialize = true;
-	
+	bool autoclose = false;					// if client should exit on close
+	bool tcp_nodelay = true;
 	int send_buffer_size = 1048576;			// in bytes
 	int receive_buffer_size = 1048576;		// in bytes
 	

@@ -11,6 +11,7 @@
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Pool.h>
+#include <vnl/Pipe.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
 #include <vnl/Frame.h>
@@ -23,10 +24,11 @@ namespace vnl {
 class Object : public Basic, public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
-		:	dorun(true), engine(0),
+		:	ObjectBase(domain, topic),
+			dorun(true), engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
-			in(&buf_in), out(&buf_out),
+			input(&buf_in), output(&buf_out),
 			log_writer(this)
 	{
 	}
@@ -36,10 +38,22 @@ public:
 		stream.receive(msg);
 	}
 	
+	// NOT thread safe
 	Address get_my_address() const {
 		return my_address;
 	}
 	
+	// NOT thread safe
+	String get_my_domain() const {
+		return my_domain;
+	}
+	
+	// NOT thread safe
+	String get_my_topic() const {
+		return my_topic;
+	}
+	
+	// NOT thread safe
 	virtual void serialize(vnl::io::TypeOutput& out) const;
 	
 protected:
@@ -58,6 +72,9 @@ protected:
 		run();
 	}
 	
+	void attach(Pipe* pipe);
+	void close(Pipe* pipe);
+	
 	Object* fork(Object* object);
 	
 	Address subscribe(const String& domain, const String& topic);
@@ -66,20 +83,21 @@ protected:
 	void unsubscribe(Hash64 domain, Hash64 topic);
 	void unsubscribe(Address address);
 	
-	void publish(Value* data, Hash64 domain, Hash64 topic);
+	void publish(Value* data, const String& domain, const String& topic);
 	void publish(Value* data, Address topic);
 	
 	void send(Packet* packet, Address dst);
 	void send_async(Packet* packet, Address dst);
 	
+	void send(Packet* packet, Basic* dst);
+	void send_async(Packet* packet, Basic* dst);
+	
 	void send(Message* msg, Basic* dst);
 	void send_async(Message* msg, Basic* dst);
 	
-	void flush();
-	
 	StringWriter log(int level);
 	
-	Timer* set_timeout(int64_t micros, const std::function<void(Timer*)>& func, int type);
+	Timer* set_timeout(int64_t micros, const std::function<void()>& func, int type);
 	
 	bool poll(int64_t micros);
 	
@@ -95,7 +113,6 @@ protected:
 	
 	virtual void handle(const vnl::Shutdown& event);
 	
-	void set_log_level(int32_t level);
 	vnl::info::Class get_class() const;
 	
 	Binary vni_serialize() const;
@@ -103,29 +120,28 @@ protected:
 	
 protected:
 	volatile bool dorun;
-	PageAllocator memory;
 	MessagePool buffer;
 	
-	vnl::Address my_address;
-	vnl::String my_domain;
-	vnl::String my_topic;
+	Address my_address;
+	String my_domain;
+	String my_topic;
 	
 private:
-	void exec(Engine* engine, Message* msg);
+	void exec(Engine* engine, Message* msg, Pipe* pipe);
 	
 private:
 	Stream stream;
 	Engine* engine;
 	
 	List<Timer> timers;
-	List<Address> ifconfig;
+	List<Basic*> pipes;
 	
-	vnl::Map<uint64_t, int64_t> sources;
+	Map<uint64_t, int64_t> sources;
 	
 	vnl::io::ByteBuffer buf_in;
 	vnl::io::ByteBuffer buf_out;
-	vnl::io::TypeInput in;
-	vnl::io::TypeOutput out;
+	vnl::io::TypeInput input;
+	vnl::io::TypeOutput output;
 	
 	GlobalLogWriter log_writer;
 	

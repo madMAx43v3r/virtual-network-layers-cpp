@@ -48,30 +48,43 @@ class GenericPool {
 public:
 	GenericPool() {}
 	
+	~GenericPool() {
+		for(Queue<void*>* queue : table.values()) {
+			queue->~Queue();
+		}
+	}
+	
 	GenericPool(const GenericPool&) = delete;
 	GenericPool& operator=(const GenericPool&) = delete;
 	
 	template<typename T>
 	T* create() {
-		Queue<void*>& list = table[sizeof(T)];
 		void* obj;
-		if(list.pop(obj)) {
+		if(get_queue(sizeof(T)).pop(obj)) {
 			return new(obj) T();
 		} else {
-			return memory.create<T>();
+			return memory.template create<T>();
 		}
 	}
 	
 	template<typename T>
 	void destroy(T* obj, int size) {
-		Queue<void*>& list = table[size];
 		obj->~T();
-		list.push(obj);
+		get_queue(size).push(obj);
 	}
 	
 protected:
-	PageAllocator memory;
-	Map<int, Queue<void*> > table;
+	Queue<void*>& get_queue(int size) {
+		Queue<void*>*& queue = table[size];
+		if(!queue) {
+			queue = memory.template create<Queue<void*> >();
+		}
+		return *queue;
+	}
+	
+protected:
+	Allocator<Page> memory;
+	Map<int, Queue<void*>* > table;
 	
 };
 
@@ -113,6 +126,12 @@ public:
 	}
 	
 	template<typename T>
+	void destroy(T* obj, int size) {
+		obj->~T();
+		push_back(obj, size);
+	}
+	
+	template<typename T>
 	void push_back(T* obj, int size) {
 		sync.lock();
 		table[size].push(obj);
@@ -120,8 +139,8 @@ public:
 	}
 	
 protected:
-	vnl::PageAllocator memory;
-	vnl::Queue<void*> table[VNL_PAGE_SIZE];
+	Allocator<Page> memory;
+	Queue<void*> table[VNL_PAGE_SIZE];
 	std::mutex sync;
 	
 };
@@ -131,7 +150,11 @@ extern GlobalPool* global_pool;
 
 template<typename T>
 T* create() {
-	return vnl::global_pool->create<T>();
+	T* obj = vnl::global_pool->create<T>();
+#ifdef VNL_MEMORY_DEBUG
+		obj->vnl_is_free = false;
+#endif
+	return obj;
 }
 
 template<typename T>
@@ -142,6 +165,10 @@ T* clone(const T& other) {
 template<typename T>
 void destroy(T* obj) {
 	if(obj) {
+#ifdef VNL_MEMORY_DEBUG
+		assert(obj->vnl_is_free == false);
+		obj->vnl_is_free = true;
+#endif
 		obj->destroy();
 	}
 }

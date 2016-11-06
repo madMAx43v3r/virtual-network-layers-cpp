@@ -29,22 +29,12 @@ public:
 		buf->free();
 	}
 	
-	char read() {
-		int left = Page::size - pos;
-		if(!left) {
-			left = fetch();
-			if(left <= 0) {
-				return 0;
-			}
-		}
-		return buf->mem[pos++];
-	}
-	
 	void read(void* dst, int len) {
 		while(len) {
 			int left = limit - pos;
 			if(!left) {
-				limit = fetch();
+				pos = 0;
+				limit = in->read(buf->mem, Page::size);
 				if(limit <= 0) {
 					return;
 				}
@@ -62,6 +52,7 @@ public:
 	void reset() {
 		pos = 0;
 		limit = 0;
+		set_error(VNL_SUCCESS);
 	}
 	
 	int error() const {
@@ -70,16 +61,6 @@ public:
 	
 	void set_error(int err_) {
 		in->set_error(err_);
-	}
-	
-protected:
-	int fetch() {
-		pos = 0;
-		int n = in->read(buf->mem, Page::size);
-		if(n <= 0) {
-			return n;
-		}
-		return n;
 	}
 	
 protected:
@@ -103,11 +84,6 @@ public:
 		buf->free();
 	}
 	
-	void write(char c) {
-		// TODO
-		assert(false);
-	}
-	
 	void write(const void* src, int len) {
 		while(len) {
 			int left = Page::size - pos;
@@ -128,6 +104,7 @@ public:
 	
 	void reset() {
 		pos = 0;
+		set_error(VNL_SUCCESS);
 	}
 	
 	bool flush() {

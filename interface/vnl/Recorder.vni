@@ -1,0 +1,14 @@
+package vnl;
+
+object Recorder {
+	
+	String filename = "rec-";
+	
+	int interval = 1000000;
+	
+	bool do_write_header = true;
+	int header_size = 262144;
+	
+	Array<String> domains;
+	
+}

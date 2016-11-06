@@ -9,35 +9,28 @@
 #define INCLUDE_VNL_ENUM_H_
 
 #include <vnl/Interface.h>
+#include <vnl/Type.hxx>
 
 namespace vnl {
 
 class Enum : public Interface {
 public:
-	Enum() : value(0) {}
+	Enum() {}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
-		out.putEntry(VNL_IO_INTERFACE, VNL_IO_BEGIN);
-		out.putHash(vni_hash());
-		out.putEntry(VNL_IO_CALL, 0);
-		out.putHash(value);
-		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
+		vnl::write(out, value);
 	}
 	
-	virtual void from_string(vnl::io::ByteInput& in) {
-		// TODO
+	virtual void deserialize(vnl::io::TypeInput& in, int size) {
+		vnl::read(in, value);
+	}
+	
+	virtual void from_string(const vnl::String& str) {
+		value = str;
 	}
 	
 protected:
-	virtual bool vni_call(vnl::io::TypeInput& in, uint32_t hash, int num_args) {
-		if(num_args == 0) {
-			value = hash;
-			return true;
-		}
-		return false;
-	}
-	
-	uint32_t value;
+	vnl::Hash32 value;
 	
 };
 

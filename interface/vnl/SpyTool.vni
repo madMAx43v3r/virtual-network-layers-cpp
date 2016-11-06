@@ -8,6 +8,4 @@ object SpyTool {
 	
 	void stop();
 	
-	void handle(Topic topic);
-	
 }

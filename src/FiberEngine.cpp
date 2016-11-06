@@ -16,6 +16,7 @@
 #include <boost/coroutine/protected_stack_allocator.hpp>
 
 #include <vnl/FiberEngine.h>
+#include <vnl/ThreadEngine.h>
 
 
 namespace vnl {
@@ -97,6 +98,7 @@ public:
 	
 	int64_t deadline = 0;
 	Stream* polling = 0;
+	int pending = 0;
 	
 protected:
 	void run() {
@@ -104,6 +106,7 @@ protected:
 			yield();
 			Message msg;
 			engine->exec(obj, &msg);
+			flush();
 			engine->avail.push(this);
 		}
 	}
@@ -134,7 +137,6 @@ protected:
 	fiber::call_type _call;
 	fiber::yield_type* _yield = 0;
 	Object* obj;
-	int pending = 0;
 	bool result = false;
 	bool waiting = false;
 	Message* wait_msg = 0;
@@ -149,6 +151,7 @@ FiberEngine::FiberEngine(int stack_size)
 
 FiberEngine::~FiberEngine() {
 	for(Fiber* fiber : fibers) {
+		assert(fiber->pending == 0);
 		delete fiber;
 	}
 }
@@ -174,15 +177,14 @@ void FiberEngine::run() {
 	}
 }
 
-void FiberEngine::send_impl(Message* msg, Basic* dst, bool async) {
+void FiberEngine::send_impl(Message* msg, bool async) {
 	assert(msg->isack == false);
+	assert(msg->src);
+	assert(msg->dst);
 	assert(current);
 	
-	if(!msg->src) {
-		msg->src = this;
-	}
 	msg->_impl = current;
-	dst->receive(msg);
+	msg->dst->receive(msg);
 	current->sent(msg, async);
 }
 

@@ -69,11 +69,6 @@ public:
 		readValue(value, id, size);
 	}
 	
-	template<typename T, int N>
-	void getArray(vnl::Vector<T, N>& vec) {
-		getArray(&vec[0], N);
-	}
-	
 	template<typename T>
 	void getArray(T* data, int dim) {
 		int size;
