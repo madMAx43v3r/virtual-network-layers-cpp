@@ -33,11 +33,11 @@ public:
 		B = B_;
 	}
 	
-	uint64_t domain() const {
+	Hash64 domain() const {
 		return A;
 	}
 	
-	uint64_t topic() const {
+	Hash64 topic() const {
 		return B;
 	}
 	
@@ -53,6 +53,11 @@ public:
 	void deserialize(vnl::io::TypeInput& in, int size) {
 		in.readLong(A);
 		in.readLong(B);
+	}
+	
+	friend vnl::String& operator<<(vnl::String& stream, const Address& addr) {
+		stream << hex(addr.A) << ":" << hex(addr.B);
+		return stream;
 	}
 	
 	friend std::ostream& operator<<(std::ostream& stream, const Address& addr) {

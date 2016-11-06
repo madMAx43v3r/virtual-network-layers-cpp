@@ -12,11 +12,13 @@
 #include <condition_variable>
 
 #include <vnl/Basic.h>
+#include <vnl/Pipe.h>
 #include <vnl/Address.h>
 #include <vnl/Message.h>
 #include <vnl/Memory.h>
 #include <vnl/Random.h>
 #include <vnl/Queue.h>
+#include <vnl/List.h>
 #include <vnl/Util.h>
 
 
@@ -28,7 +30,7 @@ class ThreadEngine;
 class FiberEngine;
 
 // running module in new thread
-Address spawn(Object* object);
+Address spawn(Object* object, Pipe* pipe = 0);
 
 // running module in a fiber if possible, otherwise uses spawn
 Address fork(Object* object);
@@ -36,48 +38,65 @@ Address fork(Object* object);
 
 class Engine : public Basic {
 public:
-	Engine();
+	Engine() {}
 	
 	virtual ~Engine() {}
 	
 	// thread safe
 	virtual void receive(Message* msg) {
+		assert(msg->dst);
 		msg->gate = this;
 		mutex.lock();
 		queue.push(msg);
-		num_queued++;
 		cond.notify_all();
+		for(auto& func : rcv_hooks) {
+			func(msg);
+		}
 		mutex.unlock();
 	}
 	
-protected:
-	void exec(Object* object, Message* init);
+	void add_receive_hook(const std::function<void(Message*)>& func) {
+		mutex.lock();
+		rcv_hooks.push_back(func);
+		mutex.unlock();
+	}
+	
+	// all below NOT thread safe
 	
 	void send(Message* msg, Basic* dst) {
-		send_impl(msg, dst, false);
+		msg->src = this;
+		msg->dst = dst;
+		send_impl(msg, false);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
-		send_impl(msg, dst, true);
+		msg->src = this;
+		msg->dst = dst;
+		send_impl(msg, true);
 	}
 	
-	Message* collect(int64_t timeout);
-	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
-	
 	virtual void fork(Object* object) = 0;
-	
-	virtual void send_impl(Message* msg, Basic* dst, bool async) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
 	
+protected:
+	void exec(Object* object, Message* init, Pipe* pipe);
+	
+	Message* collect(int64_t timeout);
+	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
+	
+	virtual void send_impl(Message* msg, bool async) = 0;
+	
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	
+	MessagePool buffer;
+	
 	Queue<Message*> queue;
-	size_t num_queued;
+	List<std::function<void(Message*)> > rcv_hooks;
 	
 	friend class Stream;
 	friend class Object;

@@ -12,6 +12,11 @@ namespace vnl {
 
 Router* Router::instance = 0;
 
+Router::Router()
+	:	hook_dst(0)
+{
+}
+
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
@@ -28,27 +33,48 @@ bool Router::handle(Message* msg) {
 			pkt->route[pkt->num_hops++] = mac;
 		} else {
 			num_drop++;
-			msg->ack();
+			pkt->ack();
 			return true;
 		}
 		route(pkt, src, table.find(pkt->dst_addr));
 		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
+		if(hook_dst) {
+			forward(pkt, hook_dst);
+		}
 		if(!pkt->count) {
-			msg->ack();
+			pkt->ack();
 		}
 		return true;
 	} else if(msg->msg_id == open_t::MID) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
+	} else if(msg->msg_id == Pipe::connect_t::MID) {
+		Basic* src = ((Pipe::connect_t*)msg)->args;
+		if(src) {
+			lookup[src->get_mac()] = src;
+			((Pipe::connect_t*)msg)->res = true;
+		}
+	} else if(msg->msg_id == Pipe::close_t::MID) {
+		Basic* src = ((Pipe::close_t*)msg)->data;
+		if(src) {
+			lookup.erase(src->get_mac());
+		}
+	} else if(msg->msg_id == hook_t::MID) {
+		vnl::pair<Basic*, bool>& data = ((hook_t*)msg)->data;
+		if(!data.second && hook_dst == data.first) {
+			hook_dst = 0;
+		} else if(data.second) {
+			hook_dst = data.first;
+		}
 	}
 	return false;
 }
 
-void Router::open(const Address& addr, Basic* src) {
+void Router::open(const Address& addr, uint64_t src) {
 	Row& row = table[addr];
-	Basic** pcol = 0;
-	for(Basic*& col : row) {
+	uint64_t* pcol = 0;
+	for(uint64_t& col : row) {
 		if(col == 0) {
 			pcol = &col;
 		} else if(col == src) {
@@ -63,10 +89,10 @@ void Router::open(const Address& addr, Basic* src) {
 	}
 }
 
-void Router::close(const Address& addr, Basic* src) {
+void Router::close(const Address& addr, uint64_t src) {
 	Row* row = table.find(addr);
 	if(row) {
-		for(Basic*& col : *row) {
+		for(uint64_t& col : *row) {
 			if(col == src) {
 				col = 0;
 			}
@@ -76,9 +102,16 @@ void Router::close(const Address& addr, Basic* src) {
 
 void Router::route(Packet* pkt, Basic* src, Row* prow) {
 	if(prow) {
-		for(Basic* dst : *prow) {
+		for(uint64_t& dst : *prow) {
 			if(dst) {
-				forward(pkt, dst);
+				Basic** target = lookup.find(dst);
+				if(target) {
+					if(*target != src) {
+						forward(pkt, *target);
+					}
+				} else {
+					dst = 0;
+				}
 			}
 		}
 	}
@@ -87,6 +120,7 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
 	Packet* msg = buffer.create<Packet>();
+	msg->dst = dst;
 	msg->copy_from(org);
 	Reactor::send_async(msg, dst);
 }

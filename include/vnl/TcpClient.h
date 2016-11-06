@@ -8,7 +8,6 @@
 #ifndef CPP_INCLUDE_VNI_TCPCLIENT_H_
 #define CPP_INCLUDE_VNI_TCPCLIENT_H_
 
-#include <vnl/Downlink.h>
 #include <vnl/TcpClientSupport.hxx>
 
 
@@ -16,58 +15,45 @@ namespace vnl {
 
 class TcpClient : public TcpClientBase {
 public:
-	TcpClient(vnl::String endpoint, int port = 8916)
-		:	TcpClientBase(local_domain_name, vnl::String() << "vnl/tcp/client/" << endpoint << "/" << port)
+	TcpClient(const vnl::String& topic, vnl::String endpoint = "", int port = 0)
+		:	TcpClientBase(local_domain_name, topic), connected(false)
 	{
-		this->endpoint = endpoint;
-		this->port = port;
-	}
-	
-protected:
-	virtual void main() {
-		Address channel(vnl::local_domain, mac);
-		Object::subscribe(channel);
-		Downlink* downlink = new Downlink(my_domain, vnl::String(my_topic) << "/downlink");
-		downlink->uplink.set_address(channel);
-		downlink->do_deserialize = do_deserialize;
-		vnl::spawn(downlink);
-		Super::main();
-		Downlink::close_t close;
-		send(&close, downlink);
-	}
-	
-	virtual void reset() {
-		connect();
-		if(sock.fd > 0) {
-			Super::reset();
+		if(endpoint.size()) {
+			this->endpoint = endpoint;
+		}
+		if(port) {
+			this->port = port;
 		}
 	}
 	
-	virtual int32_t get_fd() const {
-		return sock.fd;
-	}
-	
-	virtual void shutdown() {
-		exit();
-	}
-	
-	void connect() {
-		while(dorun) {
-			if(sock.fd > 0) {
-				::close(sock.fd);
-				usleep(error_interval*1000);
+protected:
+	int connect() {
+		int sock = -1;
+		while(!autoclose || !connected) {
+			connected = false;
+			if(sock >= 0) {
+				::close(sock);
+				usleep(error_interval);
 			}
-			sock.fd = ::socket(AF_INET, SOCK_STREAM, 0);
-			if(sock.fd < 0) {
-				log(ERROR).out << "Failed to create client socket, error=" << sock.fd << vnl::endl;
-				usleep(error_interval*10*1000);
+			if(!dorun) {
+				sock = -1;
+				break;
+			}
+			sock = ::socket(AF_INET, SOCK_STREAM, 0);
+			if(sock < 0) {
+				log(ERROR).out << "Failed to create client socket, error=" << errno << vnl::endl;
+				usleep(error_interval*10);
 				continue;
 			}
-			if(setsockopt(sock.fd, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
+			if(setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &send_buffer_size, sizeof(send_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for send_buffer_size failed, error=" << errno << vnl::endl;
 			}
-			if(setsockopt(sock.fd, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
+			if(setsockopt(sock, SOL_SOCKET, SO_RCVBUF, &receive_buffer_size, sizeof(receive_buffer_size)) < 0) {
 				log(WARN).out << "setsockopt() for receive_buffer_size failed, error=" << errno << vnl::endl;
+			}
+			int value = tcp_nodelay ? 1 : 0;
+			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
+				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
 			}
 			sockaddr_in addr;
 			memset(&addr, 0, sizeof(addr));
@@ -81,17 +67,21 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Connecting to " << endpoint << ":" << port << vnl::endl;
-			int err = ::connect(sock.fd, (sockaddr*)&addr, sizeof(addr));
+			int err = ::connect(sock, (sockaddr*)&addr, sizeof(addr));
 			if(err < 0) {
-				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << err << vnl::endl;
+				log(DEBUG).out << "Could not connect to " << endpoint << ", error=" << errno << vnl::endl;
 				continue;
 			}
+			connected = true;
 			break;
 		}
+		return sock;
 	}
 	
+private:
+	bool connected;
+	
 };
-
 
 
 }

@@ -17,16 +17,17 @@ namespace vnl {
 
 /*
  * This is a paged array.
- * Maximum element size is 4096 bytes.
+ * Maximum element size is VNL_PAGE_SIZE bytes.
+ * Warning: operator[] has O(n) complexity. Use Tree for O(log(n)).
  */
-template<typename T>
+template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Array {
 public:
-	Array() {
-		assert(sizeof(T) <= Page::size);
+	Array() : p_front(0), p_back(0), pos(0), count(0) {
+		assert(M > 0);
 	}
 	
-	Array(const Array& other) {
+	Array(const Array& other) : p_front(0), p_back(0), pos(0), count(0) {
 		append(other);
 	}
 	
@@ -35,13 +36,32 @@ public:
 	}
 	
 	Array& operator=(const Array& other) {
-		clear();
-		append(other);
+		if(&other != this) {
+			clear();
+			append(other);
+		}
 		return *this;
 	}
 	
+	bool operator!=(const Array& other) const {
+		return !(*this == other);
+	}
+	
+	bool operator==(const Array& other) const {
+		if(size() == other.size()) {
+			const_iterator cmp = other.begin();
+			for(const_iterator it = begin(); it != end(); ++it, ++cmp) {
+				if(*it != *cmp) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+	
 	void append(const Array& other) {
-		for(auto iter = other.begin(); iter != other.end(); ++iter) {
+		for(const_iterator iter = other.begin(); iter != other.end(); ++iter) {
 			push_back(*iter);
 		}
 	}
@@ -51,19 +71,25 @@ public:
 	}
 	
 	T& push_back(const T& obj) {
-		if(!p_front) {
-			p_front = Page::alloc();
-			p_back = p_front;
-		}
+		check();
 		if(pos >= M) {
-			p_back->next = Page::alloc();
-			p_back = p_back->next;
-			pos = 0;
+			extend();
 		}
-		T& ref = p_back->type_at_index<T>(pos++);
-		new(&ref) T();
-		ref = obj;
+		count++;
+		T& ref = p_back->template type_at_index<T>(pos++);
+		new(&ref) T(obj);
 		return ref;
+	}
+	
+	T& operator[](int index) {
+		assert(index >= 0 && index < count);
+		int pi = index / M;
+		int ei = index % M;
+		TPage* page = p_front;
+		for(int i = 0; i < pi; ++i) {
+			page = page->next;
+		}
+		return page->template type_at_index<T>(ei);
 	}
 	
 	Array& operator=(const std::vector<T>& vec) {
@@ -74,21 +100,11 @@ public:
 		return *this;
 	}
 	
-	T& operator[](int index) {
-		int pi = index / M;
-		int ei = index % M;
-		Page* page = p_front;
-		for(int i = 0; i < pi; ++i) {
-			page = page->next;
-		}
-		return page->type_at_index<T>(ei);
-	}
-	
 	std::vector<T> to_vector() const {
 		int n = size();
 		std::vector<T> vec(n);
 		int i = 0;
-		for(auto iter = begin(); iter != end(); ++iter) {
+		for(const_iterator iter = begin(); iter != end(); ++iter) {
 			vec[i] = *iter;
 			i++;
 		}
@@ -97,55 +113,59 @@ public:
 	
 	void clear() {
 		if(p_front) {
-			for(auto iter = begin(); iter != end(); ++iter) {
+			for(iterator iter = begin(); iter != end(); ++iter) {
 				iter->~T();
 			}
 			p_front->free_all();
 			p_front = 0;
 			p_back = 0;
 			pos = 0;
+			count = 0;
 		}
 	}
 	
 	int size() const {
-		int count = 0;
-		Page* page = p_front;
-		while(page) {
-			if(page != p_back) {
-				count += M;
-			} else {
-				count += pos;
-			}
-			page = page->next;
-		}
 		return count;
 	}
 	
 	T& front() {
-		return (*this)[0];
+		return *begin();
 	}
 	T& back() {
 		return (*this)[size()-1];
 	}
 	
 	const T& front() const {
-		return (*this)[0];
+		return *begin();
 	}
 	const T& back() const {
 		return (*this)[size()-1];
 	}
 	
 	bool empty() const {
-		return p_front == 0;
+		return count == 0;
+	}
+	
+protected:
+	void check() {
+		if(!p_front) {
+			p_front = TPage::alloc();
+			p_back = p_front;
+		}
+	}
+	
+	void extend() {
+		p_back->next = TPage::alloc();
+		p_back = p_back->next;
+		pos = 0;
 	}
 	
 public:
-	
 	template<typename P>
 	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
 	public:
-		iterator_t() : iterator_t(0) {}
-		iterator_t(const iterator_t&) = default;
+		iterator_t() : page(0), pos(0) {}
+		iterator_t(const iterator_t& other) : page(other.page), pos(other.pos) {}
 		iterator_t& operator++() {
 			advance();
 			return *this;
@@ -156,10 +176,10 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
-			return page->type_at_index<P>(pos);
+			return page->template type_at_index<P>(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
-			return &page->type_at_index<P>(pos);
+			return &page->template type_at_index<P>(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
 			std::swap(lhs.page, rhs.page);
@@ -172,7 +192,7 @@ public:
 			return lhs.page != rhs.page || lhs.pos != rhs.pos;
 		}
 	private:
-		iterator_t(Page* page, int pos)
+		iterator_t(TPage* page, int pos)
 			:	page(page), pos(pos) {}
 		void advance() {
 			if(pos >= Array::M-1 && page->next) {
@@ -182,7 +202,7 @@ public:
 				pos++;
 			}
 		}
-		Page* page;
+		TPage* page;
 		int pos;
 		friend class Array;
 	};
@@ -199,16 +219,16 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 protected:
-	static const int M = Page::size / sizeof(T);
+	static const int M = TPage::size / sizeof(T);
 	
-	Page* p_front = 0;
-	Page* p_back = 0;
-	int pos = 0;
+	TPage* p_front;
+	TPage* p_back;
+	int pos;
+	int count;
 	
 };
 
 
-
-}
+} // vnl
 
 #endif /* INCLUDE_PHY_ARRAY_H_ */

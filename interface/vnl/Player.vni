@@ -1,0 +1,30 @@
+package vnl;
+
+import vnl.info.PlayerStatus;
+
+object Player {
+	
+	String filename = "rec-???.dat";
+	
+	Array<String> domain_blacklist;
+	Array<Topic> topic_blacklist;
+	
+	bool autostart = false;
+	bool autoloop = false;
+	bool autoshutdown = false;
+	
+	int interval = 200000;
+	
+	void open(String file);
+	void scan();
+	void reset();
+	void stop();
+	void play();
+	void pause();
+	void seek(long time);
+	void seek_rel(float pos);
+	
+	PlayerStatus get_status() const;
+	Array<Topic> get_topics() const;
+	
+}

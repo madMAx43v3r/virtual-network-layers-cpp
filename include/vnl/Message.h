@@ -32,12 +32,7 @@ public:
 	virtual vnl::String to_string();
 	
 	void ack();
-	
-	void destroy() {
-		if(buffer) {
-			buffer->destroy(this, msg_size);
-		}
-	}
+	void destroy();
 	
 	uint32_t msg_id;
 	Basic* src = 0;
@@ -66,10 +61,9 @@ public:
 template<typename T, uint32_t MID_>
 class MessageType : public Message {
 public:
-	MessageType() : Message(MID_) {}
+	MessageType() : Message(MID_), data(T()) {}
 	
-	template<typename R>
-	MessageType(R&& data) : Message(MID_), data(data) {}
+	MessageType(const T& data) : Message(MID_), data(data) {}
 	
 	static const uint32_t MID = MID_;
 	
@@ -83,10 +77,9 @@ public:
 template<typename T, typename P, uint32_t MID_>
 class RequestType : public Message {
 public:
-	RequestType() : Message(MID_) {}
+	RequestType() : Message(MID_), res(T()), args(P()) {}
 	
-	template<typename R>
-	RequestType(R&& args) : Message(MID_), args(args) {}
+	RequestType(const P& args) : Message(MID_), res(T()), args(args) {}
 	
 	void ack(const T& result) {
 		res = result;

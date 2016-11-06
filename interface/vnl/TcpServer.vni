@@ -3,10 +3,12 @@ package vnl;
 object TcpServer {
 	
 	int port = 8916;
-	int error_interval = 1000;
+	int error_interval = 1000000;
 	
-	bool do_deserialize = true;
+	int accept_queue = 10;
 	
+	bool tcp_keepalive = true;
+	bool tcp_nodelay = true;
 	int send_buffer_size = 1048576;
 	int receive_buffer_size = 1048576;
 	

@@ -10,6 +10,13 @@
 
 #include <vnl/io.h>
 #include <vnl/Hash.h>
+#include <vnl/Vector.h>
+#include <vnl/String.h>
+#include <vnl/Binary.h>
+#include <vnl/Array.h>
+#include <vnl/List.h>
+#include <vnl/Map.h>
+#include <vnl/Pool.h>
 
 
 namespace vnl {
@@ -27,11 +34,9 @@ public:
 	virtual int field_index(vnl::Hash32 hash) const = 0;
 	virtual const char* field_name(int index) const = 0;
 	virtual void get_field(int index, vnl::String& str) const = 0;
-	virtual void set_field(int index, vnl::io::ByteInput& in) = 0;
+	virtual void set_field(int index, const vnl::String& str) = 0;
 	
-	virtual void from_string(vnl::io::ByteInput& in) {
-		// TODO
-	}
+	virtual void from_string(const vnl::String& str) { /* NOT IMPLEMENTED */ }
 	
 	virtual void to_string_ex(vnl::String& str) const {
 		str << "{";
@@ -53,9 +58,13 @@ public:
 	}
 	
 	Type& operator=(const vnl::String& str) {
-		// TODO
+		from_string(str);
 		return *this;
 	}
+	
+#ifdef VNL_MEMORY_DEBUG
+	bool vnl_is_free = false;
+#endif
 	
 };
 

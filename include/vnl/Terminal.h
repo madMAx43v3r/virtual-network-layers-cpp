@@ -8,7 +8,8 @@
 #ifndef INCLUDE_VNL_TERMINAL_H_
 #define INCLUDE_VNL_TERMINAL_H_
 
-#include <vnl/ProcessSupport.hxx>
+#include <vnl/ProcessClient.hxx>
+#include <vnl/SpyToolClient.hxx>
 #include <vnl/SpyTool.h>
 
 #include <iostream>
@@ -19,13 +20,13 @@ namespace vnl {
 class Terminal : public Object {
 public:
 	Terminal(const String& domain = local_domain_name)
-		:	Object(domain, "vnl/terminal")
+		:	Object(domain, "vnl.Terminal")
 	{
 	}
 	
 protected:
 	void main(Engine* engine) {
-		process.set_address(my_domain, "vnl/process");
+		process.set_address(my_domain, "vnl.Process");
 		process.connect(engine);
 		std::string input;
 		while(poll(0)) {
@@ -37,7 +38,7 @@ protected:
 			std::getline(std::cin, input);
 			if(input == "quit" || input == "q") {
 				resume();
-				publish(vnl::Shutdown::create(), local_domain_name, "vnl/shutdown");
+				publish(vnl::Shutdown::create(), local_domain_name, "vnl.shutdown");
 				break;
 			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;
@@ -133,9 +134,10 @@ protected:
 		}
 		ObjectClient client;
 		client.set_fail(true);
+		client.set_timeout(100);
 		client.set_address(node.domain, node.topic);
 		client.connect(engine);
-		if(client.set_log_level(level) != VNL_SUCCESS) {
+		if(client.set_vnl_log_level(level) != VNL_SUCCESS) {
 			log(ERROR).out << "set_log_level() failed for " << node.topic << vnl::endl;
 		}
 	}

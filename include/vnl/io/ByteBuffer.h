@@ -15,33 +15,27 @@
 
 namespace vnl { namespace io {
 
-class ByteBuffer : public InputStream, public OutputStream {
+template<typename TPage, int N = TPage::size>
+class BasicByteBuffer : public InputStream, public OutputStream {
 public:
-	ByteBuffer() : ByteBuffer(0) {}
+	BasicByteBuffer() : BasicByteBuffer(0) {}
 	
-	ByteBuffer(Page* begin) {
+	BasicByteBuffer(TPage* begin) {
 		wrap(begin);
 	}
 	
-	ByteBuffer(Page* begin, int size) {
+	BasicByteBuffer(TPage* begin, int size) {
 		wrap(begin, size);
 	}
 	
-	void wrap(Page* begin) {
+	void wrap(TPage* begin) {
 		first = begin;
 		reset();
 	}
 	
-	void wrap(Page* begin, int size) {
+	void wrap(TPage* begin, int size) {
 		wrap(begin);
 		lim = size;
-	}
-	
-	Page* release() {
-		Page* tmp = first;
-		first = 0;
-		reset();
-		return tmp;
 	}
 	
 	void reset() {
@@ -51,6 +45,11 @@ public:
 		off = 0;
 		InputStream::err = 0;
 		OutputStream::err = 0;
+	}
+	
+	void clear() {
+		first = 0;
+		reset();
 	}
 	
 	void flip() {
@@ -69,7 +68,7 @@ public:
 	}
 	
 	virtual int read(void* dst, int len) {
-		int left = Page::size - off;
+		int left = N - off;
 		int max_left = lim - pos;
 		if(max_left < left) {
 			if(max_left <= 0) {
@@ -81,7 +80,7 @@ public:
 		if(!left) {
 			buf = buf->next;
 			off = 0;
-			left = std::min(Page::size, max_left);
+			left = std::min(N, max_left);
 		}
 		int n = std::min(len, left);
 		memcpy(dst, buf->mem + off, n);
@@ -91,18 +90,16 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) {
-		if(!buf) {
-			wrap(Page::alloc());
-		}
+		assert(buf);
 		while(len) {
-			int left = Page::size - off;
+			int left = N - off;
 			if(!left) {
 				if(!buf->next) {
-					buf->next = Page::alloc();
+					buf->next = TPage::alloc();
 				}
 				buf = buf->next;
 				off = 0;
-				left = Page::size;
+				left = N;
 			}
 			int n = std::min(len, left);
 			memcpy(buf->mem + off, src, n);
@@ -115,15 +112,18 @@ public:
 	}
 	
 protected:
-	Page* buf;
-	Page* first;
+	TPage* buf;
+	TPage* first;
 	int lim = 0;
 	int pos = 0;
 	int off = 0;
 	
 };
 
+typedef BasicByteBuffer<vnl::Page> ByteBuffer;
 
-}}
+
+} // io
+} // vnl
 
 #endif /* INCLUDE_IO_PAGEBUFFER_H_ */

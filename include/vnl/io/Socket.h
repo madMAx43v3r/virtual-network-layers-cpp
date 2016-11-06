@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 
 #include <vnl/io/Stream.h>
@@ -26,14 +27,19 @@ public:
 	
 	Socket(int sock) : fd(sock) {}
 	
-	int get_fd() const {
-		return fd;
+	bool good() const {
+		return fd >= 0;
+	}
+	
+	Socket& operator=(int fd_) {
+		fd = fd_;
+		return *this;
 	}
 	
 	virtual int read(void* dst, int len) {
 		int res = ::read(fd, dst, len);
 		if(res <= 0) {
-			InputStream::set_error(VNL_IO_CLOSED);
+			InputStream::set_error(VNL_IO_EOF);
 		}
 		return res;
 	}
@@ -45,7 +51,7 @@ public:
 				len -= res;
 				src = (char*)src + res;
 			} else {
-				OutputStream::set_error(VNL_IO_CLOSED);
+				OutputStream::set_error(VNL_IO_EOF);
 				return false;
 			}
 		}
@@ -54,6 +60,7 @@ public:
 	
 	void close() {
 		::close(fd);
+		fd = -1;
 	}
 	
 };

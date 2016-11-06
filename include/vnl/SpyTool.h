@@ -10,7 +10,6 @@
 
 #include <vnl/Sample.h>
 #include <vnl/SpyToolSupport.hxx>
-#include <vnl/ProcessSupport.hxx>
 
 #include <iostream>
 #include <string>
@@ -21,56 +20,57 @@ namespace vnl {
 class SpyTool : public SpyToolBase {
 public:
 	SpyTool(const String& domain = local_domain_name)
-		:	SpyToolBase(domain, "vnl/spytool")
+		:	SpyToolBase(domain, "vnl.SpyTool"), running(false)
 	{
-		running = false;
 	}
 	
 protected:
 	void main(vnl::Engine* engine) {
-		subscribe(my_domain, "vnl/topic");
-		
-		vnl::ProcessClient process;
-		process.set_address(my_domain, "vnl/process");
-		process.connect(engine);
-		vnl::Array<Topic> list;
-		if(process.get_topics(list) == VNL_SUCCESS) {
-			log(DEBUG).out << "process.get_topics() returned " << topics.size() << " topics" << vnl::endl;
-			for(Topic& topic : list) {
-				topics[Address(topic.domain, topic.name)] = topic;
-			}
-		} else {
-			log(ERROR).out << "process.get_topics() failed" << vnl::endl;
-		}
-		
+		input.connect(engine, 0);
+		input.listen(this);
+		Router::hook_t enable(vnl::make_pair<Basic*>(&input, true));
+		send(&enable, Router::instance);
 		run();
+		stop();
 	}
 	
-	bool handle(vnl::Packet* pkt) {
-		if(running && pkt->pkt_id == vnl::Sample::PID) {
-			Sample* sample = (Sample*)pkt->payload;
-			if(sample && select.find(pkt->dst_addr)) {
-				Value* value = sample->data;
-				Topic* topic = topics.find(pkt->dst_addr);
-				if(topic && value) {
-					std::cout << vnl::currentTimeMillis() << " " << topic->domain
-							<< " : " << topic->name << " -> " << value->type_name() << std::endl;
-					if(dump) {
-						std::cout << value->to_string() << std::endl;
+	bool handle(vnl::Message* msg) {
+		if(msg->msg_id == Stream::notify_t::MID) {
+			Message* in;
+			while(input.pop(in)) {
+				if(in->msg_id == Packet::MID) {
+					Packet* pkt = (Packet*)in;
+					if(pkt->pkt_id == Sample::PID) {
+						Sample* sample = (Sample*)pkt->payload;
+						if(sample) {
+							process(sample, pkt);
+						}
 					}
 				}
+				in->ack();
 			}
+			input.listen(this);
 		}
-		return Super::handle(pkt);
+		return Super::handle(msg);
 	}
 	
-	void handle(const vnl::Topic& topic) {
-		log(DEBUG).out << "New topic: " << topic.to_string() << vnl::endl;
-		Address addr(topic.domain, topic.name);
-		if(!topics.find(addr)) {
-			topics[addr] = topic;
+	void process(Sample* sample, Packet* pkt) {
+		if(sample->header && !topics.find(pkt->dst_addr)) {
+			log(DEBUG).out << "New topic: " << sample->header->dst_topic.to_string() << vnl::endl;
+			topics[pkt->dst_addr] = sample->header->dst_topic;
 			if(running) {
 				update();
+			}
+		}
+		if(select.find(pkt->dst_addr) || pkt->dst_addr.topic() == filter) {
+			Value* value = sample->data;
+			Topic* topic = topics.find(pkt->dst_addr);
+			if(running && topic && value) {
+				std::cout << vnl::currentTimeMillis() << " " << topic->domain
+						<< " : " << topic->name << " -> " << value->type_name() << std::endl;
+				if(dump) {
+					std::cout << value->to_string() << std::endl;
+				}
 			}
 		}
 	}
@@ -93,9 +93,6 @@ protected:
 				}
 			}
 		}
-		for(Address& addr : select.keys()) {
-			subscribe(addr);
-		}
 	}
 	
 	void set_filter(const vnl::String& expr) {
@@ -105,16 +102,18 @@ protected:
 	}
 	
 	void stop() {
-		running = false;
-		for(Address& addr : select.keys()) {
-			unsubscribe(addr);
+		if(running) {
+			running = false;
+			select.clear();
+			Router::hook_t disable(vnl::make_pair<Basic*>(&input, false));
+			send(&disable, Router::instance);
 		}
-		select.clear();
 	}
 	
 private:
 	bool running;
 	String filter;
+	Stream input;
 	
 	Map<Address, Topic> topics;
 	Map<Address, bool> select;

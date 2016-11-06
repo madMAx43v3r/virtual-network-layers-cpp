@@ -17,32 +17,33 @@
 
 namespace vnl {
 
+class Layer;
+
 class Random64 {
 public:
-	static Random64* instance;
-	
 	Random64() {
 		generator.seed(hash64((uint64_t)std::hash<std::thread::id>{}(std::this_thread::get_id()), (uint64_t)nanoTime()));
 	}
 	
 	uint64_t rand() {
-		sync.lock();
-		uint64_t val = generator();
-		sync.unlock();
-		return val;
+		return generator();
 	}
 	
 	static uint64_t global_rand() {
-		if(!instance) {
-			instance = new Random64();
-		}
-		return instance->rand();
+		assert(instance);
+		static std::mutex sync;
+		sync.lock();
+		uint64_t value = instance->rand();
+		sync.unlock();
+		return value;
 	}
 	
 private:
 	std::mt19937_64 generator;
 	
-	std::mutex sync;
+	static Random64* instance;
+	
+	friend class Layer;
 	
 };
 

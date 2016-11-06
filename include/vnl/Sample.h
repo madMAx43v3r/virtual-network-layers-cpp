@@ -9,6 +9,7 @@
 #define INCLUDE_VNL_SAMPLE_H_
 
 #include <vnl/Packet.h>
+#include <vnl/Header.hxx>
 #include <vnl/Type.hxx>
 
 
@@ -18,61 +19,35 @@ class Sample : public vnl::Packet {
 public:
 	static const uint32_t PID = 0xa37b95eb;
 	
-	Sample() {
+	Sample()
+		:	header(0), data(0)
+	{
 		pkt_id = PID;
 		payload = this;
 	}
 	
 	~Sample() {
+		vnl::destroy(header);
 		vnl::destroy(data);
 	}
 	
-	Value* data = 0;
+	Header* header;
+	Value* data;
 	
 protected:
 	virtual void write(vnl::io::TypeOutput& out) const {
+		if(header) {
+			vnl::write(out, header);
+		}
 		vnl::write(out, data);
 	}
 	
 	virtual void read(vnl::io::TypeInput& in) {
 		data = vnl::read(in);
-	}
-	
-	
-};
-
-
-class BinarySample : public vnl::Packet {
-public:
-	static const uint32_t PID = 0xfd63c06a;
-	
-	BinarySample() : data(0), size(0) {
-		pkt_id = PID;
-		payload = this;
-	}
-	
-	~BinarySample() {
-		if(data) {
-			data->free_all();
+		header = dynamic_cast<Header*>(data);
+		if(header) {
+			data = vnl::read(in);
 		}
-	}
-	
-	vnl::Page* data;
-	int size;
-	
-protected:
-	virtual void write(vnl::io::TypeOutput& out) const {
-		out.putBinary(data, size);
-	}
-	
-	virtual void read(vnl::io::TypeInput& in) {
-		if(!data) {
-			data = Page::alloc();
-		}
-		vnl::io::ByteBuffer buf(data);
-		vnl::io::TypeOutput out(&buf);
-		in.copy(&out);
-		size = buf.position();
 	}
 	
 };

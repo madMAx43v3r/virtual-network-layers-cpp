@@ -83,11 +83,6 @@ public:
 		writeDouble(value);
 	}
 	
-	template<typename T, int N>
-	void putArray(const vnl::Vector<T, N>& vec) {
-		putArray(&vec[0], N);
-	}
-	
 	template<typename T>
 	void putArray(const T* data, int dim) {
 		putEntry(VNL_IO_ARRAY, dim);
