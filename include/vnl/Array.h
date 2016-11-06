@@ -30,7 +30,7 @@ public:
 	Array(const Array& other) : p_front(0), p_back(0), pos(0), count(0) {
 		append(other);
 	}
-	
+
 	~Array() {
 		clear();
 	}
@@ -209,7 +209,7 @@ public:
 	
 	typedef iterator_t<T> iterator;
 	typedef iterator_t<const T> const_iterator;
-	
+
 	iterator begin() { return iterator(p_front, 0); }
 	const_iterator begin() const { return const_iterator(p_front, 0); }
 	const_iterator cbegin() const { return const_iterator(p_front, 0); }
@@ -218,6 +218,13 @@ public:
 	const_iterator end() const { return const_iterator(p_back, pos); }
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
+	Array(Array::const_iterator itbegin, Array::const_iterator itend) : Array() {
+		Array<T> sub;
+		for(Array::const_iterator it=itbegin; it!=itend; ++it) {
+			sub.push_back(*it);
+		}
+	}
+
 protected:
 	static const int M = TPage::size / sizeof(T);
 	

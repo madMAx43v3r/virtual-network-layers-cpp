@@ -87,6 +87,10 @@ public:
 		assign(str);
 	}
 	
+	String(String::const_iterator itbegin, String::const_iterator itend) : Array(itbegin, itend) {
+		// nothing to do
+	}
+
 	bool operator!=(const String& other) const {
 		return !(*this == other);
 	}
@@ -250,6 +254,69 @@ public:
 		return stream;
 	}
 	
+	String trim() const {
+		String::const_iterator first = end();
+		String::const_iterator last = begin();
+		for(String::const_iterator it=begin(); it!=end(); ++it) {
+			switch(*it) {
+				case ' ':
+				case '\t':
+				case '\n':
+				case '\v':
+				case '\f':
+				case '\r':
+					break;
+				default:
+					if(first == end()) {
+						first = it;
+					}
+					last = it;
+			}
+		}
+		return String(first, last);
+	}
+
+	ssize_t find(char c, size_t pos=0, ssize_t n=-1) const {
+		size_t i = 0;
+		for(String::const_iterator it=begin(); it!=end(); ++it) {
+			if(i >= pos && (n < 0 || i < pos+n) && *it == c) {
+				return i;
+			}
+			i++;
+		}
+		return -1;
+	}
+
+	String substr(size_t pos=0, ssize_t len=-1) const {
+		String::const_iterator itbeg = end();
+		String::const_iterator itend = end();
+		int i=0;
+		for(String::const_iterator it=begin(); it!=end(); ++it) {
+			if(itbeg == end() && i >= pos) {
+				itbeg = it;
+			}
+			if(len >= 0 && i >= pos+len) {
+				itend = it;
+				break;
+			}
+		}
+		return String(itbeg, itend);
+	}
+
+	Array<String> tokenize(char tok, bool trim=true) const {
+		Array<String> list;
+		String::const_iterator it0 = begin();
+		for(String::const_iterator it=begin(); it!=end(); ++it) {
+			if(*it == tok) {
+				list.push_back(trim ? String(it0, it).trim() : String(it0, it));
+				it0 = it;
+				++it0;
+			}
+		}
+		list.push_back(trim ? String(it0, end()).trim() : String(it0, end()));
+		return list;
+	}
+
 };
 
 
