@@ -271,6 +271,7 @@ public:
 						first = it;
 					}
 					last = it;
+					last++;
 			}
 		}
 		return String(first, last);

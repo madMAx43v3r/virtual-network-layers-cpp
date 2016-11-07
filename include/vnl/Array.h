@@ -219,9 +219,8 @@ public:
 	const_iterator cend() const { return const_iterator(p_back, pos); }
 	
 	Array(Array::const_iterator itbegin, Array::const_iterator itend) : Array() {
-		Array<T> sub;
 		for(Array::const_iterator it=itbegin; it!=itend; ++it) {
-			sub.push_back(*it);
+			push_back(*it);
 		}
 	}
 
