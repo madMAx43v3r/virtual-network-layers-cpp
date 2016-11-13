@@ -304,14 +304,16 @@ public:
 		return String(itbeg, itend);
 	}
 
-	Array<String> tokenize(char tok, bool trim=true) const {
+	Array<String> tokenize(char tok, bool trim=true, int n=-1) const {
 		Array<String> list;
 		String::const_iterator it0 = begin();
-		for(String::const_iterator it=begin(); it!=end(); ++it) {
+		int i = 1;
+		for(String::const_iterator it=begin(); it!=end() && (n < 0 || i < n); ++it) {
 			if(*it == tok) {
 				list.push_back(trim ? String(it0, it).trim() : String(it0, it));
 				it0 = it;
 				++it0;
+				++i;
 			}
 		}
 		list.push_back(trim ? String(it0, end()).trim() : String(it0, end()));
