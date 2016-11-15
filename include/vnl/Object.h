@@ -25,7 +25,7 @@ class Object : public Basic, public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
-			dorun(true), engine(0),
+			dorun(false), engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			input(&buf_in), output(&buf_out),
