@@ -20,9 +20,9 @@ void Engine::exec(Object* object, Message* init, Pipe* pipe) {
 	try {
 		object->exec(this, init, pipe);
 	} catch(std::exception& ex) {
-		std::cout << "ERROR: " << object->my_topic << ": catched: " << ex.what() << std::endl;
+		std::cout << "ERROR: " << object->my_topic << ": caught " << ex.what() << std::endl;
 	} catch(...) {
-		std::cout << "ERROR: " << object->my_topic << ": catched unknown exeption!" << std::endl;
+		std::cout << "ERROR: " << object->my_topic << ": caught unknown exeption!" << std::endl;
 	}
 	flush();
 	delete object;
