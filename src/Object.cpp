@@ -292,6 +292,7 @@ void Object::run() {
 }
 
 void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
+	dorun = true;
 	engine = engine_;
 	stream.connect(engine_);
 	if(pipe) {

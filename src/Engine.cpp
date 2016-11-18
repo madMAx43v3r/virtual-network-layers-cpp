@@ -16,7 +16,14 @@
 namespace vnl {
 
 void Engine::exec(Object* object, Message* init, Pipe* pipe) {
-	object->exec(this, init, pipe);
+	assert(object->dorun == false);
+	try {
+		object->exec(this, init, pipe);
+	} catch(std::exception& ex) {
+		std::cout << "ERROR: " << object->my_topic << ": caught " << ex.what() << std::endl;
+	} catch(...) {
+		std::cout << "ERROR: " << object->my_topic << ": caught unknown exeption!" << std::endl;
+	}
 	flush();
 	delete object;
 	while(true) {
