@@ -27,7 +27,7 @@ public:
 protected:
 	void main(vnl::Engine* engine) {
 		input.connect(engine, 0);
-		input.listen(this);
+		input.listen(get_basic());
 		Router::hook_t enable(vnl::make_pair<Basic*>(&input, true));
 		send(&enable, Router::instance);
 		run();
@@ -49,7 +49,7 @@ protected:
 				}
 				in->ack();
 			}
-			input.listen(this);
+			input.listen(get_basic());
 		}
 		return Super::handle(msg);
 	}

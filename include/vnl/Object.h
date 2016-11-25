@@ -21,7 +21,7 @@
 
 namespace vnl {
 
-class Object : public Basic, public ObjectBase {
+class Object : public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
@@ -33,28 +33,23 @@ public:
 	{
 	}
 	
- 	// thread safe
-	virtual void receive(Message* msg) {
-		stream.receive(msg);
-	}
-	
 	// NOT thread safe
 	Address get_my_address() const {
+		assert(dorun == false);
 		return my_address;
 	}
 	
 	// NOT thread safe
 	String get_my_domain() const {
+		assert(dorun == false);
 		return my_domain;
 	}
 	
 	// NOT thread safe
 	String get_my_topic() const {
+		assert(dorun == false);
 		return my_topic;
 	}
-	
-	// NOT thread safe
-	virtual void serialize(vnl::io::TypeOutput& out) const;
 	
 protected:
 	virtual ~Object() {}
@@ -70,6 +65,14 @@ protected:
 	
 	virtual void main() {
 		run();
+	}
+	
+	Stream& get_stream() {
+		return stream;
+	}
+	
+	Basic* get_basic() {
+		return &stream;
 	}
 	
 	void attach(Pipe* pipe);

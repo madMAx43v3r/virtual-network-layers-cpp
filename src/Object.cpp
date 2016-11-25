@@ -17,10 +17,6 @@
 
 namespace vnl {
 
-void Object::serialize(vnl::io::TypeOutput& out) const {
-	out.putNull();
-}
-
 void Object::exit() {
 	dorun = false;
 }
@@ -69,7 +65,7 @@ void Object::unsubscribe(Address address) {
 void Object::publish(Value* data, const String& domain, const String& topic) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = mac;
+	header->src_mac = stream.get_mac();
 	header->src_topic.domain = my_domain;
 	header->src_topic.name = my_topic;
 	header->dst_topic.domain = domain;
@@ -83,7 +79,7 @@ void Object::publish(Value* data, const String& domain, const String& topic) {
 void Object::publish(Value* data, Address topic) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = mac;
+	header->src_mac = stream.get_mac();
 	Sample* pkt = buffer.create<Sample>();
 	pkt->header = header;
 	pkt->data = data;
@@ -128,7 +124,7 @@ void Object::send_async(Message* msg, Basic* dst) {
 
 void Object::attach(Pipe* pipe) {
 	pipes.push_back(pipe);
-	pipe->ack(this);
+	pipe->ack(&stream);
 }
 
 void Object::close(Pipe* pipe) {
@@ -306,7 +302,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	publish(announce, local_domain_name, "vnl.announce");
 	main(engine_, init);
 	for(Basic* pipe : pipes) {
-		Pipe::close_t msg(this);
+		Pipe::close_t msg(&stream);
 		send(&msg, pipe);
 	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");

@@ -158,7 +158,7 @@ protected:
 	void write_subscribe(const vnl::Topic& topic) {
 		Sample sample;
 		sample.seq_num = next_seq++;
-		sample.src_mac = mac;
+		sample.src_mac = get_stream().get_mac();
 		sample.src_addr = my_address;
 		sample.dst_addr = sub_topic;
 		sample.data = topic.clone();
