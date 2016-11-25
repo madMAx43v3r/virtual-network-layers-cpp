@@ -3,6 +3,8 @@ package vnl;
 interface Hash32;
 interface Hash64;
 
+interface Pointer;
+
 interface Array;
 interface List;
 interface Map;

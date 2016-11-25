@@ -8,13 +8,13 @@
 #ifndef CPP_INCLUDE_VNI_POINTER_H_
 #define CPP_INCLUDE_VNI_POINTER_H_
 
-#include <vnl/PointerSupport.hxx>
+#include <vnl/io.h>
 
 
 namespace vnl {
 
-template<class T>
-class Pointer : public PointerBase<T> {
+template<typename T>
+class Pointer : public vnl::io::Serializable {
 public:
 	Pointer() : ptr(0) {}
 	
@@ -123,6 +123,27 @@ private:
 };
 
 
+template<typename T>
+void read(vnl::io::TypeInput& in, Pointer<T>& obj) {
+	obj.deserialize(in, 0);
 }
+
+template<typename T>
+void write(vnl::io::TypeOutput& out, const Pointer<T>& obj) {
+	obj.serialize(out);
+}
+
+template<typename T>
+void to_string(vnl::String& str, const Pointer<T>& obj) {
+	obj.to_string_ex(str);
+}
+
+template<typename T>
+void from_string(const vnl::String& str, Pointer<T>& obj) {
+	obj.from_string(str);
+}
+
+
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_POINTER_H_ */

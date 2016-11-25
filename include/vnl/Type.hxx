@@ -99,7 +99,7 @@ inline void read(vnl::io::TypeInput& in, Binary& obj) {
 }
 
 template<typename T>
-inline void read(vnl::io::TypeInput& in, Array<T>& obj) {
+void read(vnl::io::TypeInput& in, Array<T>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -112,7 +112,7 @@ inline void read(vnl::io::TypeInput& in, Array<T>& obj) {
 }
 
 template<typename T>
-inline void read(vnl::io::TypeInput& in, List<T>& obj) {
+void read(vnl::io::TypeInput& in, List<T>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -125,7 +125,7 @@ inline void read(vnl::io::TypeInput& in, List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
+void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY && size % 2 == 0) {
@@ -191,7 +191,7 @@ inline void write(vnl::io::TypeOutput& out, const Binary& obj) {
 }
 
 template<typename T>
-inline void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
+void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
 	for(typename vnl::Array<T>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -201,7 +201,7 @@ inline void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
 }
 
 template<typename T>
-inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
+void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
 	for(typename vnl::List<T>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -211,7 +211,7 @@ inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
+void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size()*2);
 	for(typename vnl::Map<K,V>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -260,22 +260,22 @@ inline void to_string(vnl::String& str, const Binary& obj) {
 }
 
 template<typename T>
-inline void to_string(vnl::String& str, const Array<T>& obj) {
+void to_string(vnl::String& str, const Array<T>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
 template<typename T>
-inline void to_string(vnl::String& str, const List<T>& obj) {
+void to_string(vnl::String& str, const List<T>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
 template<typename K, typename V>
-inline void to_string(vnl::String& str, const Map<K,V>& obj) {
+void to_string(vnl::String& str, const Map<K,V>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
 template<typename K, typename V>
-inline void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
+void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
 	str << "{\"key\": "; to_string(str, obj.first);
 	str << ", \"value\": "; to_string(str, obj.second); str << "}";
 }
@@ -347,7 +347,7 @@ inline void from_string(const vnl::String& str, Binary& obj) {
 }
 
 template<typename T>
-inline void from_string(const vnl::String& str, Array<T>& obj) {
+void from_string(const vnl::String& str, Array<T>& obj) {
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -363,7 +363,7 @@ inline void from_string(const vnl::String& str, Array<T>& obj) {
 }
 
 template<typename T>
-inline void from_string(const vnl::String& str, List<T>& obj) {
+void from_string(const vnl::String& str, List<T>& obj) {
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -379,7 +379,7 @@ inline void from_string(const vnl::String& str, List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void from_string(const vnl::String& str, Map<K,V>& obj) {
+void from_string(const vnl::String& str, Map<K,V>& obj) {
 	// TODO
 	assert(false);
 }

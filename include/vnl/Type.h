@@ -69,7 +69,6 @@ public:
 };
 
 
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNI_TYPE_H_ */
