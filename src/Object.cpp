@@ -309,33 +309,5 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	stream.close();
 }
 
-vnl::info::Class Object::get_class() const {
-	vnl::info::Class res;
-	res.name = type_name();
-	// TODO
-	return res;
-}
 
-Binary Object::vni_serialize() const {
-	Binary blob;
-	blob.data = Page::alloc();
-	vnl::io::ByteBuffer buf;
-	buf.wrap(blob.data);
-	vnl::io::TypeOutput out(&buf);
-	serialize(out);
-	out.flush();
-	blob.size = buf.position();
-	return blob;
-}
-
-void Object::vni_deserialize(const vnl::Binary& blob) {
-	vnl::io::ByteBuffer buf;
-	vnl::io::TypeInput in(&buf);
-	buf.wrap(blob.data, blob.size);
-	vnl::read(in, *this);
-}
-
-
-
-
-}
+} // vnl

@@ -1,6 +1,0 @@
-package vnl.info;
-
-class Field {
-	String type;
-	String name;
-}

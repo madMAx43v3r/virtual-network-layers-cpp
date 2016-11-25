@@ -1,7 +1,0 @@
-package vnl.info;
-
-class Method {
-	String type;
-	String name;
-	List<Parameter> params;
-}

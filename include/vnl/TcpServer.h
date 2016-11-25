@@ -175,10 +175,6 @@ private:
 };
 
 
-
-
-
-
-}
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_TCPSERVER_H_ */

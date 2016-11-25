@@ -122,6 +122,6 @@ private:
 
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_SPYTOOL_H_ */

@@ -1,7 +1,5 @@
 package vnl;
 
-import vnl.info.Class;
-
 // Note: This is the base class for all objects.
 
 object Object {
@@ -20,11 +18,6 @@ object Object {
 	int vnl_max_num_pending = -1;
 	
 	void handle(Shutdown event);
-	
-	Class get_class() const;
-	
-	Binary vni_serialize() const;
-	void vni_deserialize(Binary blob);
 	
 	void exit();
 	

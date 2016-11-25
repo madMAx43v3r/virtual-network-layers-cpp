@@ -116,11 +116,6 @@ protected:
 	
 	virtual void handle(const vnl::Shutdown& event);
 	
-	vnl::info::Class get_class() const;
-	
-	Binary vni_serialize() const;
-	void vni_deserialize(const vnl::Binary& blob);
-	
 protected:
 	volatile bool dorun;
 	MessagePool buffer;

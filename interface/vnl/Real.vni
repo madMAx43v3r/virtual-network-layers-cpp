@@ -1,5 +1,0 @@
-package vnl;
-
-class Real {
-	double value;
-}
