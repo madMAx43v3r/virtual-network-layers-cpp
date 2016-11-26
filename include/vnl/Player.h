@@ -198,7 +198,7 @@ protected:
 				if(remap) {
 					dst_addr = *remap;
 				}
-				Sample* msg = buffer.create<Sample>();
+				Sample* msg = vnl_buffer.create<Sample>();
 				msg->dst_addr = dst_addr;
 				msg->header = next.header.release();
 				msg->data = value;

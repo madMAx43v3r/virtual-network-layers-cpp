@@ -16,7 +16,7 @@
 namespace vnl {
 
 void Engine::exec(Object* object, Message* init, Pipe* pipe) {
-	assert(object->dorun == false);
+	assert(object->vnl_dorun == false);
 	try {
 		object->exec(this, init, pipe);
 	} catch(std::exception& ex) {

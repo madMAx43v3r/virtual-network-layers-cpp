@@ -36,7 +36,7 @@ protected:
 	
 	void main() {
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
-		while(dorun) {
+		while(vnl_dorun) {
 			are_connected = false;
 			sock.fd = connect();
 			if(!sock.good()) {
@@ -175,7 +175,7 @@ protected:
 		stream.connect(&engine);
 		vnl::io::TypeInput in(&sock);
 		in.reset();
-		while(dorun) {
+		while(vnl_dorun) {
 			while(true) {
 				Message* msg = stream.poll(0);
 				if(!msg) {
@@ -196,7 +196,7 @@ protected:
 				error = true;
 			}
 			if(error) {
-				if(dorun) {
+				if(vnl_dorun) {
 					error_t msg(in.error());
 					stream.send(&msg, &pipe);
 				}

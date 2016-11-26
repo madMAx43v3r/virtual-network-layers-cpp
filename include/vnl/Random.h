@@ -48,6 +48,11 @@ private:
 };
 
 
+inline uint64_t rand() {
+	return Random64::global_rand();
 }
+
+
+} // vnl
 
 #endif /* INCLUDE_PHY_RANDOM_H_ */

@@ -80,7 +80,7 @@ protected:
 	vnl::io::TypeOutput _out;
 	int _error;
 	
-	Packet* _call() {
+	Packet* _call(int type) {
 		_error = VNL_ERROR;
 		_out.flush();
 		req_num++;
@@ -92,6 +92,7 @@ protected:
 			}
 			Frame frame;
 			frame.src_addr = src_addr;
+			frame.type = type;
 			frame.req_num = req_num;
 			frame.data = _data;
 			frame.size = _buf.position();
@@ -107,7 +108,7 @@ protected:
 					if(msg->msg_id == vnl::Packet::MID) {
 						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
 							Frame* pkt = (Frame*)((Packet*)msg)->payload;
-							if(pkt->req_num == req_num) {
+							if(pkt->type == Frame::RESULT && pkt->req_num == req_num) {
 								ret = pkt;
 								break;
 							}

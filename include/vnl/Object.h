@@ -14,8 +14,8 @@
 #include <vnl/Pipe.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
+#include <vnl/Sample.h>
 #include <vnl/Frame.h>
-#include <vnl/Algorithm.h>
 #include <vnl/ObjectSupport.hxx>
 
 
@@ -25,29 +25,29 @@ class Object : public ObjectBase {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
-			dorun(false), engine(0),
+			vnl_dorun(false), vnl_engine(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
-			input(&buf_in), output(&buf_out),
-			log_writer(this)
+			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
+			vnl_log_writer(this)
 	{
 	}
 	
 	// NOT thread safe
 	Address get_my_address() const {
-		assert(dorun == false);
+		assert(vnl_dorun == false);
 		return my_address;
 	}
 	
 	// NOT thread safe
 	String get_my_domain() const {
-		assert(dorun == false);
+		assert(vnl_dorun == false);
 		return my_domain;
 	}
 	
 	// NOT thread safe
 	String get_my_topic() const {
-		assert(dorun == false);
+		assert(vnl_dorun == false);
 		return my_topic;
 	}
 	
@@ -68,11 +68,11 @@ protected:
 	}
 	
 	Stream& get_stream() {
-		return stream;
+		return vnl_stream;
 	}
 	
 	Basic* get_basic() {
-		return &stream;
+		return &vnl_stream;
 	}
 	
 	void attach(Pipe* pipe);
@@ -113,12 +113,14 @@ protected:
 	
 	virtual bool handle(Message* msg);
 	virtual bool handle(Packet* pkt);
+	virtual bool handle(Sample* sample);
+	virtual bool handle(Frame* frame);
 	
 	virtual void handle(const vnl::Shutdown& event);
 	
 protected:
-	volatile bool dorun;
-	MessagePool buffer;
+	volatile bool vnl_dorun;
+	MessagePool vnl_buffer;
 	
 	Address my_address;
 	String my_domain;
@@ -128,20 +130,20 @@ private:
 	void exec(Engine* engine, Message* msg, Pipe* pipe);
 	
 private:
-	Stream stream;
-	Engine* engine;
+	Stream vnl_stream;
+	Engine* vnl_engine;
 	
-	List<Timer> timers;
-	List<Basic*> pipes;
+	List<Timer> vnl_timers;
+	List<Basic*> vnl_pipes;
 	
-	Map<uint64_t, int64_t> sources;
+	Map<uint64_t, int64_t> vnl_sources;
 	
-	vnl::io::ByteBuffer buf_in;
-	vnl::io::ByteBuffer buf_out;
-	vnl::io::TypeInput input;
-	vnl::io::TypeOutput output;
+	vnl::io::ByteBuffer vnl_buf_in;
+	vnl::io::ByteBuffer vnl_buf_out;
+	vnl::io::TypeInput vnl_input;
+	vnl::io::TypeOutput vnl_output;
 	
-	GlobalLogWriter log_writer;
+	GlobalLogWriter vnl_log_writer;
 	
 	friend class Engine;
 	friend class GlobalLogWriter;

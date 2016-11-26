@@ -35,7 +35,7 @@ protected:
 				::close(sock);
 				usleep(error_interval);
 			}
-			if(!dorun) {
+			if(!vnl_dorun) {
 				sock = -1;
 				break;
 			}

@@ -14,7 +14,7 @@
 #include <vnl/io/TypeOutput.h>
 #include <vnl/io/Serializable.h>
 #include <vnl/io/Socket.h>
-
+#include <vnl/io/File.h>
 
 
 #endif /* INCLUDE_VNL_IO_H_ */

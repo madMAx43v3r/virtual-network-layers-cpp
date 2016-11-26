@@ -174,7 +174,7 @@ public:
 			ptr->second = val;
 		} else {
 			if(count >= N) {
-				expand(N*2);
+				expand(N*4);
 				return insert(key, val);
 			}
 			if(p_front) {
@@ -206,6 +206,14 @@ public:
 		entry_t** p_row;
 		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
+			return &ptr->second;
+		}
+		return 0;
+	}
+	
+	const V* find(const K& key) const {
+		const vnl::pair<K,V>* ptr;
+		if(const_find(key, ptr)) {
 			return &ptr->second;
 		}
 		return 0;
@@ -301,6 +309,22 @@ protected:
 				return true;
 			}
 			p_row = &row->next;
+		}
+		return false;
+	}
+	
+	bool const_find(const K& key, const vnl::pair<K,V>*& value) const {
+		int index = std::hash<K>{}(key) % N;
+		entry_t* row = table[index];
+		while(true) {
+			if(!row) {
+				break;
+			}
+			if(row->pair.first == key) {
+				value = &row->pair;
+				return true;
+			}
+			row = row->next;
 		}
 		return false;
 	}

@@ -1,0 +1,7 @@
+package vnl;
+
+object Database {
+	
+	String filename = "database.dat";
+	
+}

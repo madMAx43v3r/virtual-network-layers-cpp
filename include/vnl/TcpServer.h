@@ -63,7 +63,7 @@ public:
 	
 protected:
 	void main() {
-		while(dorun) {
+		while(vnl_dorun) {
 			if(server >= 0) {
 				::close(server);
 				usleep(error_interval);
@@ -152,10 +152,10 @@ protected:
 private:
 	void accept_loop() {
 		Actor actor;
-		while(dorun) {
+		while(vnl_dorun) {
 			int sock = ::accept(server, 0, 0);
 			if(sock < 0) {
-				if(dorun) {
+				if(vnl_dorun) {
 					error_t msg(errno);
 					actor.send(&msg, &pipe);
 				}

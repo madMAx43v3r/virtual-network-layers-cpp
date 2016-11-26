@@ -41,6 +41,11 @@ public:
 		return *((T*)walk(p_root, 0, index));
 	}
 	
+	const T& operator[](int index) const {
+		assert(p_root);
+		return *((const T*)walk(p_root, 0, index));
+	}
+	
 	void resize(int n) {
 		clear();
 		p_root = alloc();
@@ -60,13 +65,13 @@ public:
 	}
 	
 protected:
-	TPage* alloc() {
+	TPage* alloc() const {
 		TPage* block = TPage::alloc();
 		memset(block->mem, 0, TPage::size);
 		return block;
 	}
 	
-	void* walk(TPage* block, int level, int index) {
+	void* walk(TPage* block, int level, int index) const {
 		if(level == depth) {
 			return &block->template type_at_index<T>(index % M);
 		}
