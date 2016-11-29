@@ -19,35 +19,92 @@ namespace vnl {
 template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
 class Tree {
 public:
-	Tree() : p_root(0), depth(0) {
+	Tree() : p_root(0), depth(0), count(0) {
 		assert(M > 0);
 	}
 	
-	Tree(const Tree& other) : p_root(0), depth(0) {
-		assert(false); // not implemented
+	Tree(const Tree& other) : p_root(0), depth(0), count(0) {
+		*this = other;
 	}
 	
 	~Tree() {
 		clear();
 	}
 	
+public:
+	template<typename P>
+	class iterator_t : public std::iterator<std::forward_iterator_tag, P> {
+	public:
+		iterator_t() : tree(0), index(0) {}
+		iterator_t(const iterator_t& other) : tree(other.tree), index(other.index) {}
+		iterator_t& operator++() {
+			inc();
+			return *this;
+		}
+		iterator_t operator++(int) {
+			iterator_t tmp = *this;
+			inc();
+			return tmp;
+		}
+		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
+			return get();
+		}
+		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
+			return &get();
+		}
+		friend void swap(iterator_t& lhs, iterator_t& rhs) {
+			std::swap(lhs.tree, rhs.tree);
+			std::swap(lhs.index, rhs.index);
+		}
+		friend bool operator==(const iterator_t& lhs, const iterator_t& rhs) {
+			return lhs.index == rhs.index;
+		}
+		friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs) {
+			return lhs.index != rhs.index;
+		}
+	private:
+		iterator_t(Tree* tree, int index) : tree(tree), index(index) {}
+		void inc() {
+			index++;
+		}
+		P& get() const {
+			return (*tree)[index];
+		}
+		Tree* tree;
+		int index;
+		friend class Tree;
+	};
+	
+	typedef iterator_t<T> iterator;
+	typedef iterator_t<const T> const_iterator;
+	
+	iterator begin() { return iterator(this, 0); }
+	const_iterator begin() const { return const_iterator((Tree*)this, 0); }
+	const_iterator cbegin() const { return const_iterator((Tree*)this, 0); }
+	
+	iterator end() { return iterator(this, count); }
+	const_iterator end() const { return const_iterator((Tree*)this, count); }
+	const_iterator cend() const { return const_iterator((Tree*)this, count); }
+	
 	Tree& operator=(const Tree& other) {
-		assert(false); // not implemented
+		resize(other.size());
+		for(int i = 0; i < count; ++i) {
+			(*this)[i] = other[i];
+		}
 		return *this;
 	}
 	
 	T& operator[](int index) {
-		assert(p_root);
 		return *((T*)walk(p_root, 0, index));
 	}
 	
 	const T& operator[](int index) const {
-		assert(p_root);
 		return *((const T*)walk(p_root, 0, index));
 	}
 	
 	void resize(int n) {
 		clear();
+		count = n;
 		p_root = alloc();
 		n /= M;
 		while(n > 0) {
@@ -62,6 +119,10 @@ public:
 			p_root = 0;
 			depth = 0;
 		}
+	}
+	
+	int size() const {
+		return count;
 	}
 	
 protected:
@@ -100,6 +161,7 @@ protected:
 	
 	TPage* p_root;
 	int depth;
+	int count;
 	
 };
 
