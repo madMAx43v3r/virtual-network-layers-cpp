@@ -287,10 +287,29 @@ protected:
 	}
 	
 	void expand(int rows) {
-		Array<vnl::pair<K,V> > tmp = entries();
-		resize(rows);
-		for(vnl::pair<K,V>& pair : tmp) {
-			insert(pair.first, pair.second);
+		entry_t* start = 0;
+		entry_t* stop = 0;
+		entry_t** p_next = &start;
+		for(iterator it = begin(); it != end(); ++it) {
+			*p_next = it.entry;
+			p_next = &it.entry->next;
+			stop = it.entry;
+		}
+		N = rows;
+		table.resize(rows);
+		entry_t* entry = start;
+		while(entry) {
+			entry_t** p_row;
+			vnl::pair<K,V>* ptr;
+			bool res = find(entry->pair.first, p_row, ptr);
+			assert(res == false);
+			*p_row = entry;
+			if(entry == stop) {
+				break;
+			}
+			entry_t* next = entry->next;
+			entry->next = 0;
+			entry = next;
 		}
 	}
 	
@@ -338,6 +357,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_PHY_MAP_H_ */
