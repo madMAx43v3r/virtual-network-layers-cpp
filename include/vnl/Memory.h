@@ -9,6 +9,7 @@
 #define INCLUDE_VNL_MEMORY_H_
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <mutex>
 #include <iostream>
@@ -41,16 +42,12 @@ public:
 		}
 		assert(page != OUT_OF_MEMORY);
 		page->next = 0;
-#ifdef VNL_MEMORY_DEBUG
-		page->vnl_is_free = false;
-#endif
 		return page;
 	}
 	
 	void free() {
 #ifdef VNL_MEMORY_DEBUG
-		assert(vnl_is_free == false);
-		vnl_is_free = true;
+		memset(mem, 0, size);
 #endif
 		sync.lock();
 		num_used--;
