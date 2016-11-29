@@ -42,7 +42,7 @@ protected:
 					Packet* pkt = (Packet*)in;
 					if(pkt->pkt_id == Sample::PID) {
 						Sample* sample = (Sample*)pkt->payload;
-						if(sample) {
+						if(vnl_dorun && sample) {
 							process(sample, pkt);
 						}
 					}

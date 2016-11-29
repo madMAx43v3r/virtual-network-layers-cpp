@@ -92,7 +92,6 @@ protected:
 				}
 				std::getline(std::cin, input);
 				tool.exit();
-				resume();
 			} else if(input.find("dump") == 0) {
 				std::cout << "Help: press enter to stop" << std::endl;
 				vnl::SpyToolClient tool;
@@ -107,7 +106,6 @@ protected:
 				}
 				std::getline(std::cin, input);
 				tool.exit();
-				resume();
 			} else {
 				print_help();
 			}
