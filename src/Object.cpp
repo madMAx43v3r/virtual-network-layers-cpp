@@ -13,6 +13,7 @@
 #include <vnl/Topic.hxx>
 #include <vnl/Shutdown.hxx>
 #include <vnl/Exit.hxx>
+#include <vnl/NoSuchMethodException.hxx>
 
 
 namespace vnl {
@@ -229,41 +230,52 @@ bool Object::handle(Sample* sample) {
 }
 
 bool Object::handle(Frame* frame) {
+	Frame* result = do_vni_call(frame);
+	if(result) {
+		send_async(result, frame->src_addr);
+		return true;
+	}
+	return false;
+}
+
+Frame* Object::do_vni_call(Frame* frame) {
 	Frame* result = vnl_buffer.create<Frame>();
 	result->type = Frame::RESULT;
 	result->req_num = frame->req_num;
+	result->data = Page::alloc();
+	vnl_buf_out.wrap(result->data);
 	vnl_buf_in.wrap(frame->data, frame->size);
+	vnl_output.reset();
 	vnl_input.reset();
-	uint32_t hash;
-	int size = 0;
-	int id = vnl_input.getEntry(size);
-	if(id == VNL_IO_CALL) {
-		vnl_input.getHash(hash);
-		bool res = vni_call(vnl_input, hash, size);
-		if(!res) {
-			vnl_input.skip(id, size, hash);
-			log(WARN).out << "VNL_IO_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
+	try {
+		uint32_t hash;
+		int size = 0;
+		int id = vnl_input.getEntry(size);
+		if(id == VNL_IO_CALL) {
+			vnl_input.getHash(hash);
+			bool res = vni_call(vnl_input, hash, size);
+			if(!res) {
+				throw NoSuchMethodException();
+			}
+		} else if(id == VNL_IO_CONST_CALL) {
+			vnl_input.getHash(hash);
+			if(!vni_const_call(vnl_input, hash, size, vnl_output)) {
+				throw NoSuchMethodException();
+			}
+		} else {
+			throw IOException();
 		}
-	} else if(id == VNL_IO_CONST_CALL) {
-		vnl_input.getHash(hash);
-		result->data = Page::alloc();
-		vnl_buf_out.wrap(result->data);
-		if(!vni_const_call(vnl_input, hash, size, vnl_output)) {
-			vnl_input.skip(id, size, hash);
-			vnl_output.putNull();
-			log(WARN).out << "VNL_IO_CONST_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
+		if(vnl_input.error()) {
+			throw IOException();
 		}
-		vnl_output.flush();
-	} else {
-		vnl_input.skip(id, size);
+	} catch (const Exception& ex) {
+		result->type = Frame::EXCEPTION;
+		vnl::write(vnl_output, ex);
 	}
+	vnl_output.flush();
 	result->size = vnl_buf_out.position();
 	vnl_buf_out.clear();
-	if(vnl_input.error()) {
-		log(WARN).out << "Invalid Frame received: size=" << frame->size << endl;
-	}
-	send_async(result, frame->src_addr);
-	return true;
+	return result;
 }
 
 void Object::handle(const vnl::Shutdown& event) {

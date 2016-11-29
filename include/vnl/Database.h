@@ -10,6 +10,7 @@
 
 #include <vnl/io.h>
 #include <vnl/DatabaseSupport.hxx>
+#include <vnl/Exception.hxx>
 
 
 namespace vnl {
@@ -44,15 +45,19 @@ protected:
 		if(out.error()) {
 			return false;
 		}
-		if(frame->type == Frame::CALL) {
-			out.writeBinary(frame->data, frame->size);
-			out.flush();
-			if(out.error()) {
-				log(ERROR).out << "Failed to write: " << out.error() << vnl::endl;
-				log(INFO).out << "Database is now freezed!" << vnl::endl;
+		Frame* result = Super::do_vni_call(frame);
+		if(result) {
+			if(frame->type == Frame::CALL && result->type == Frame::RESULT) {
+				out.writeBinary(frame->data, frame->size);
+				out.flush();
+				if(out.error()) {
+					log(ERROR).out << "Failed to write: " << out.error() << vnl::endl;
+				}
 			}
+			send_async(result, frame->src_addr);
+			return true;
 		}
-		return Super::handle(frame);
+		return false;
 	}
 	
 private:
@@ -64,10 +69,18 @@ private:
 			if(id == VNL_IO_CALL) {
 				uint32_t hash;
 				in.getHash(hash);
-				bool res = vni_call(in, hash, size);
-				if(!res) {
-					in.skip(id, size, hash);
-					log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
+				try {
+					bool res = vni_call(in, hash, size);
+					if(!res) {
+						in.skip(id, size, hash);
+						log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
+					}
+				} catch (const vnl::Exception& ex) {
+					if(ignore_errors) {
+						log(WARN).out << "Ignored exception: " << ex.type_name() << vnl::endl;
+					} else {
+						ex.raise();
+					}
 				}
 			} else {
 				in.skip(id, size);

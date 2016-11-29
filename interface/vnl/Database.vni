@@ -4,4 +4,6 @@ object Database {
 	
 	String filename = "database.dat";
 	
+	bool ignore_errors = false;
+	
 }

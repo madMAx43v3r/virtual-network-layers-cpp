@@ -11,6 +11,7 @@
 #include <vnl/Engine.h>
 #include <vnl/Object.h>
 #include <vnl/Random.h>
+#include <vnl/Exception.hxx>
 
 
 namespace vnl {
@@ -19,10 +20,12 @@ void Engine::exec(Object* object, Message* init, Pipe* pipe) {
 	assert(object->vnl_dorun == false);
 	try {
 		object->exec(this, init, pipe);
-	} catch(std::exception& ex) {
-		std::cout << "ERROR: " << object->my_topic << ": caught " << ex.what() << std::endl;
-	} catch(...) {
-		std::cout << "ERROR: " << object->my_topic << ": caught unknown exeption!" << std::endl;
+	} catch (const vnl::Exception& ex) {
+		std::cout << "ERROR: " << object->my_topic << ": Caught " << ex.type_name() << std::endl;
+	} catch (const std::exception& ex) {
+		std::cout << "ERROR: " << object->my_topic << ": Caught " << ex.what() << std::endl;
+	} catch (...) {
+		std::cout << "ERROR: " << object->my_topic << ": Caught unknown exeption!" << std::endl;
 	}
 	flush();
 	delete object;

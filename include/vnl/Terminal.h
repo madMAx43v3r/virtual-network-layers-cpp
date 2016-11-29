@@ -42,8 +42,7 @@ protected:
 				break;
 			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;
-				Array<Instance> list;
-				process.get_objects(list);
+				Array<Instance> list = process.get_objects();
 				int index = 1;
 				for(Instance& desc : list) {
 					std::cout << "[" << index++ << "] " << desc.domain << ":" << desc.topic << std::endl;
@@ -137,7 +136,9 @@ protected:
 		client.set_timeout(100);
 		client.set_address(node.domain, node.topic);
 		client.connect(engine);
-		if(client.set_vnl_log_level(level) != VNL_SUCCESS) {
+		try {
+			client.set_vnl_log_level(level);
+		} catch(...) {
 			log(ERROR).out << "set_log_level() failed for " << node.topic << vnl::endl;
 		}
 	}

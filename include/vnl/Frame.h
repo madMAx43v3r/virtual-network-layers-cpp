@@ -18,7 +18,7 @@ public:
 	static const uint32_t PID = 0xde2104f3;
 	
 	enum {
-		NONE = 0, CALL = 1, CONST_CALL = 2, RESULT = 3
+		NONE = 0, CALL = 1, CONST_CALL = 2, RESULT = 3, EXCEPTION = 4
 	};
 	
 	Frame() : data(0), size(0), req_num(0), type(NONE) {

@@ -8,6 +8,7 @@
 #ifndef INCLUDE_VNI_CLIENT_H_
 #define INCLUDE_VNI_CLIENT_H_
 
+#include <vnl/IOException.hxx>
 #include <vnl/Topic.hxx>
 #include <vnl/Frame.h>
 #include <vnl/Stream.h>
@@ -20,7 +21,7 @@ namespace vnl {
 class Client : public vnl::io::Serializable {
 public:
 	Client()
-		:	_error(0), _in(&_buf), _out(&_buf),
+		:	_in(&_buf), _out(&_buf), _exception(0),
 		 	req_num(0), timeout(1000000), do_fail(false)
 	{
 		src_addr = Address(local_domain, stream.get_mac());
@@ -29,6 +30,7 @@ public:
 	
 	virtual ~Client() {
 		_data->free_all();
+		vnl::destroy(_exception);
 	}
 	
 	Client& operator=(const Address& addr) {
@@ -78,17 +80,15 @@ protected:
 	vnl::io::ByteBuffer _buf;
 	vnl::io::TypeInput _in;
 	vnl::io::TypeOutput _out;
-	int _error;
+	vnl::Exception* _exception;
 	
 	Packet* _call(int type) {
-		_error = VNL_ERROR;
 		_out.flush();
 		req_num++;
 		Frame* ret = 0;
 		while(true) {
 			if(Layer::have_shutdown) {
-				_error = VNL_IO_EOF;
-				break;
+				throw IOException();
 			}
 			Frame frame;
 			frame.src_addr = src_addr;
@@ -99,32 +99,44 @@ protected:
 			stream.send(&frame, dst_addr);
 			frame.data = 0;
 			if(frame.count == 0 && do_fail) {
-				_error = VNL_IO_EOF;
-				break;
+				throw IOException();
 			}
-			while(!Layer::have_shutdown) {
-				Message* msg = stream.poll(timeout);
-				if(msg) {
-					if(msg->msg_id == vnl::Packet::MID) {
-						if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
-							Frame* pkt = (Frame*)((Packet*)msg)->payload;
-							if(pkt->type == Frame::RESULT && pkt->req_num == req_num) {
-								ret = pkt;
-								break;
-							}
+			Message* msg = stream.poll(timeout);
+			if(msg) {
+				if(msg->msg_id == vnl::Packet::MID) {
+					if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
+						Frame* pkt = (Frame*)((Packet*)msg)->payload;
+						if(pkt->req_num == req_num) {
+							ret = pkt;
+							break;
 						}
 					}
-					msg->ack();
 				}
+				msg->ack();
 			}
 			if(ret || do_fail) {
 				break;
 			}
 		}
 		if(ret) {
-			_error = VNL_SUCCESS;
 			_buf.wrap(ret->data, ret->size);
 			_in.reset();
+			if(ret->type == Frame::EXCEPTION) {
+				ret->ack();
+				vnl::Value* value = vnl::read(_in);
+				if(value) {
+					vnl::destroy(_exception);
+					_exception = dynamic_cast<vnl::Exception*>(value);
+					if(_exception) {
+						_exception->raise();
+					}
+					vnl::destroy(value);
+				}
+				throw IOException();
+			} else if(ret->type != Frame::RESULT) {
+				ret->ack();
+				throw IOException();
+			}
 		}
 		return ret;
 	}
