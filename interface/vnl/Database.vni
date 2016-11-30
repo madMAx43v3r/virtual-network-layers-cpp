@@ -7,3 +7,12 @@ object Database {
 	bool ignore_errors = false;
 	
 }
+
+object Table<T> extends Database {
+	
+	void insert(T row);
+	
+	T get(Hash64 id) const;
+	Array<T> get_all(Array<Hash64> ids) const;
+	
+}

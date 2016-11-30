@@ -18,11 +18,20 @@ public:
 	vnl::Page* data;
 	int size;
 	
-	Binary() : data(0), size(0) {
-	}
+	Binary() : data(0), size(0) {}
 	
 	Binary(const Binary& other) : data(0), size(0) {
 		*this = other;
+	}
+	
+	template<typename T>
+	Binary(const T& value) {
+		data = Page::alloc();
+		vnl::io::ByteBuffer buf(data);
+		vnl::io::TypeOutput out(&buf);
+		vnl::write(out, value);
+		out.flush();
+		size = buf.position();
 	}
 	
 	~Binary() {
@@ -57,7 +66,6 @@ public:
 };
 
 
-}
-
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_BINARY_H_ */

@@ -12,6 +12,10 @@ class NoSuchMethodException extends IOException {
 	
 }
 
+class NoSuchFieldException extends IOException {
+	
+}
+
 class DuplicateKeyException extends IOException {
 	
 }
