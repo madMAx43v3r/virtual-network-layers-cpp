@@ -11,7 +11,6 @@
 #include <vnl/Type.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
-#include <vnl/BinaryValue.h>
 #include <vnl/Layer.h>
 
 
@@ -39,52 +38,9 @@ inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
 
-inline Value* read(vnl::io::TypeInput& in) {
-	Value* obj = 0;
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_CLASS: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj = vnl::create(hash);
-			if(!obj) {
-				BinaryValue* bin = BinaryValue::create();
-				bin->hash = hash;
-				obj = bin;
-			}
-			obj->deserialize(in, size);
-			break;
-		}
-		default: in.skip(id, size);
-	}
-	return obj;
-}
-
-inline void read(vnl::io::TypeInput& in, Value& obj) {
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_STRUCT:
-			obj.deserialize(in, size);
-			break;
-		case VNL_IO_CLASS: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj.deserialize(in, size);
-			break;
-		}
-		default: in.skip(id, size);
-	}
-}
-
-inline void read(vnl::io::TypeInput& in, Value* obj) {
-	if(obj) {
-		read(in, *obj);
-	} else {
-		in.skip();
-	}
-}
+Value* read(vnl::io::TypeInput& in);
+void read(vnl::io::TypeInput& in, Value& obj);
+void read(vnl::io::TypeInput& in, Value* obj);
 
 inline void read(vnl::io::TypeInput& in, Interface& obj) {
 	obj.deserialize(in, 0);
@@ -425,7 +381,6 @@ inline void from_string(const vnl::String& str, int32_t& val) { val = atoi(str);
 inline void from_string(const vnl::String& str, int64_t& val) { val = atol(str); }
 inline void from_string(const vnl::String& str, float& val) { val = atof(str); }
 inline void from_string(const vnl::String& str, double& val) { val = atof(str); }
-
 
 
 /*

@@ -10,5 +10,6 @@ ADD_LIBRARY(vnl STATIC
 	src/Message.cpp
 	src/Object.cpp
 	src/Router.cpp
+	src/Type.cpp
 )
 
