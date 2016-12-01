@@ -63,8 +63,11 @@ void Layer::shutdown() {
 	if(!have_shutdown) {
 		ThreadEngine engine;
 		ProcessClient proc = Address(local_domain, "vnl.Process");
+		proc.set_fail(true);
 		proc.connect(&engine);
-		proc.shutdown();
+		try {
+			proc.shutdown();
+		} catch(...) {}
 		engine.flush();
 		have_shutdown = true;
 	}
