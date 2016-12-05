@@ -9,6 +9,7 @@
 #define INCLUDE_PHY_ARRAY_H_
 
 #include <vector>
+#include <type_traits>
 
 #include <vnl/Memory.h>
 
@@ -113,8 +114,10 @@ public:
 	
 	void clear() {
 		if(p_front) {
-			for(iterator iter = begin(); iter != end(); ++iter) {
-				iter->~T();
+			if(std::is_class<T>::value) {
+				for(iterator iter = begin(); iter != end(); ++iter) {
+					iter->~T();
+				}
 			}
 			p_front->free_all();
 			p_front = 0;
