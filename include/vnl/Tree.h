@@ -107,7 +107,7 @@ public:
 		count = n;
 		p_root = alloc();
 		n /= M;
-		while(n > 0) {
+		while(n > 1) {
 			depth++;
 			n /= N;
 		}
