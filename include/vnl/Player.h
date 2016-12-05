@@ -20,8 +20,8 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_, Basic* target)
-		:	PlayerBase(domain_, "Player"),
+	Player(const char* domain_, const char* topic_ = "Player", Basic* target = vnl::Router::instance)
+		:	PlayerBase(domain_, topic_),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
 		type_blacklist["vnl.Announce"] = true;
@@ -42,7 +42,7 @@ protected:
 			play();
 		}
 		run();
-		file.close();
+		close();
 	}
 	
 	void open(const vnl::String& file) {
@@ -53,7 +53,7 @@ protected:
 	
 	void reset() {
 		char buf[1024];
-		file.close();
+		close();
 		header = vnl::RecordHeader();
 		status = vnl::info::PlayerStatus();
 		filename.to_string(buf, sizeof(buf));
@@ -198,7 +198,7 @@ protected:
 				if(remap) {
 					dst_addr = *remap;
 				}
-				Sample* msg = vnl_buffer.create<Sample>();
+				Sample* msg = vnl_sample_buffer.create();
 				msg->dst_addr = dst_addr;
 				msg->header = next.header.release();
 				msg->data = value;
@@ -261,6 +261,12 @@ private:
 		in.reset();
 		vnl::read(in, next);
 		status.current_time = status.begin_time;
+	}
+	
+	void close() {
+		if(file) {
+			::fclose(file);
+		}
 	}
 	
 private:

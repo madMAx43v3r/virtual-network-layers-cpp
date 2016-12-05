@@ -62,12 +62,17 @@ protected:
 				update();
 			}
 		}
-		if(select.find(pkt->dst_addr) || pkt->dst_addr.topic() == filter) {
+		if(select.find(pkt->dst_addr) || pkt->dst_addr.topic() == filter || filter.empty()) {
 			Value* value = sample->data;
 			Topic* topic = topics.find(pkt->dst_addr);
-			if(running && topic && value) {
-				std::cout << vnl::currentTimeMillis() << " " << topic->domain
+			if(running && value) {
+				if(topic) {
+					std::cout << vnl::currentTimeMillis() << " " << topic->domain
 						<< " : " << topic->name << " -> " << value->type_name() << std::endl;
+				} else {
+					std::cout << vnl::currentTimeMillis() << " " << pkt->dst_addr
+						<< " -> " << value->type_name() << std::endl;
+				}
 				if(dump) {
 					std::cout << value->to_string() << std::endl;
 				}
