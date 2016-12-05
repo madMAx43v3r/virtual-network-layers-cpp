@@ -8,7 +8,7 @@
 #ifndef INCLUDE_VNL_PIPE_H_
 #define INCLUDE_VNL_PIPE_H_
 
-#include <vnl/Basic.h>
+#include <vnl/Reactor.h>
 #include <vnl/Queue.h>
 
 
@@ -25,46 +25,25 @@ public:
 		assert(target == 0);
 	}
 	
-	// thread safe
-	void open() {
-		open_t msg;
-		vnl::send(&msg, this);
-	}
-	
-	// thread safe
-	void close() {
-		wait_t msg;
-		vnl::send(&msg, this);
-	}
-	
-	// NOT thread safe (only target is allowed)
-	void ack(Basic* dst) {
-		lock();
-		assert(target == 0);
-		target = dst;
-		Message* wait;
-		while(waitlist.pop(wait)) {
-			wait->ack();
-		}
-		unlock();
-	}
-	
-	// NOT thread safe (only target is allowed)
-	void fin() {
-		lock();
-		target = 0;
-		unlock();
-	}
-	
-	typedef SignalType<0xcb1b0f44> open_t;
-	typedef SignalType<0x1a740a38> wait_t;
-	
-	typedef RequestType<bool, Basic*, 0xd8577f3e> connect_t;
-	typedef MessageType<Basic*, 0x7ddae559> close_t;
+	typedef MessageType<Pipe*, 0x87978b67> connect_t;		// like TCP SYN
+	typedef SignalType<0xcb1b0f44> open_t;					// like TCP wait for SYN ACK
+	typedef RequestType<bool, Basic*, 0xd8577f3e> attach_t;	// like TCP SYN ACK
+	typedef MessageType<Pipe*, 0x7ddae559> close_t;			// like TCP FIN
+	typedef SignalType<0x1a740a38> wait_t;					// like TCP wait for FIN ACK
+	typedef SignalType<0x528852ed> finish_t;				// like TCP FIN ACK
 	
 protected:
 	bool handle(Message* msg) {
-		if(msg->msg_id == open_t::MID) {
+		if(msg->msg_id == attach_t::MID) {
+			attach_t* request = (attach_t*)msg;
+			if(!target) {
+				target = request->args;
+				notify_all();
+				request->res = true;
+			} else {
+				request->res = false;
+			}
+		} else if(msg->msg_id == open_t::MID) {
 			if(!target) {
 				waitlist.push(msg);
 				return true;
@@ -75,19 +54,31 @@ protected:
 				return true;
 			}
 		} else if(msg->msg_id == close_t::MID) {
-			if(((close_t*)msg)->data == target) {
-				Message* wait;
-				while(waitlist.pop(wait)) {
-					wait->ack();
-				}
-				target = 0;
+			if(target) {
+				((close_t*)msg)->data = this;
+				forward(msg);
+				return true;
 			}
+		} else if(msg->msg_id == finish_t::MID) {
+			notify_all();
+			target = 0;
 		} else if(target) {
-			msg->dst = target;
-			target->receive(msg);
+			forward(msg);
 			return true;
 		}
 		return false;
+	}
+	
+	void forward(Message* msg) {
+		msg->dst = target;
+		target->receive(msg);
+	}
+	
+	void notify_all() {
+		Message* wait;
+		while(waitlist.pop(wait)) {
+			wait->ack();
+		}
 	}
 	
 private:

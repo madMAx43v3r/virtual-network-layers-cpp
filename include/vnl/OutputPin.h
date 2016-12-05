@@ -26,7 +26,7 @@ public:
 		}
 	}
 	
-	class pin_data_t : public MessageType<const Value*, 0xe8a3ef08> {
+	class pin_data_t : public MessageType<Value*, 0xe8a3ef08> {
 	public:
 		pin_data_t() : parent(0), count(0), acks(0) {}
 		~pin_data_t() {

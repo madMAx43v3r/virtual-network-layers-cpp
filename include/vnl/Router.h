@@ -24,6 +24,9 @@ public:
 	
 	Router();
 	
+	typedef MessageType<Node*, 0x9567b3a8> connect_t;
+	typedef MessageType<Node*, 0xc22ce373 > finish_t;
+	
 	typedef MessageType<vnl::pair<uint64_t, Address>, 0xbe3fa14f> open_t;
 	typedef MessageType<vnl::pair<uint64_t, Address>, 0xfbe7dd5a> close_t;
 	
@@ -45,7 +48,7 @@ protected:
 	
 	virtual void callback(Message* msg);
 	
-	MessagePool buffer;
+	MessagePool<Packet> buffer;
 	
 private:
 	Map<Address, Row> table;

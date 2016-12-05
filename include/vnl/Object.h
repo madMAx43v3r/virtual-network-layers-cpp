@@ -21,7 +21,7 @@
 
 namespace vnl {
 
-class Object : public ObjectBase {
+class Object : public ObjectBase, public Basic {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
@@ -31,6 +31,16 @@ public:
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
 			vnl_log_writer(this)
 	{
+	}
+	
+	// thread safe
+	virtual void receive(Message* msg) {
+		vnl_stream.receive(msg);
+	}
+	
+	// thread safe
+	uint64_t get_mac() {
+		return vnl_stream.get_mac();
 	}
 	
 	// NOT thread safe
@@ -67,15 +77,7 @@ protected:
 		run();
 	}
 	
-	Stream& get_stream() {
-		return vnl_stream;
-	}
-	
-	Basic* get_basic() {
-		return &vnl_stream;
-	}
-	
-	void attach(Pipe* pipe);
+	bool attach(Pipe* pipe);
 	void close(Pipe* pipe);
 	
 	Object* fork(Object* object);
@@ -112,6 +114,7 @@ protected:
 	virtual void run();
 	
 	virtual bool handle(Message* msg);
+	virtual bool handle(Stream::notify_t* msg);
 	virtual bool handle(Packet* pkt);
 	virtual bool handle(Sample* sample);
 	virtual bool handle(Frame* frame);
@@ -122,7 +125,8 @@ protected:
 	
 protected:
 	volatile bool vnl_dorun;
-	MessagePool vnl_buffer;
+	MessagePool<Sample> vnl_sample_buffer;
+	MessagePool<Frame> vnl_frame_buffer;
 	
 	Address my_address;
 	String my_domain;
@@ -136,8 +140,6 @@ private:
 	Engine* vnl_engine;
 	
 	List<Timer> vnl_timers;
-	List<Basic*> vnl_pipes;
-	
 	Map<uint64_t, int64_t> vnl_sources;
 	
 	vnl::io::ByteBuffer vnl_buf_in;

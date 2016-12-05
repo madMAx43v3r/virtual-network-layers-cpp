@@ -105,8 +105,8 @@ protected:
 	
 private:
 	Packet* parent = 0;
-	int32_t count = 0;
-	int32_t acks = 0;
+	int count = 0;
+	int acks = 0;
 	
 	friend class Router;
 	friend class Client;

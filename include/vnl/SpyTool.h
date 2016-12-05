@@ -27,15 +27,15 @@ public:
 protected:
 	void main(vnl::Engine* engine) {
 		input.connect(engine, 0);
-		input.listen(get_basic());
+		input.listen(this);
 		Router::hook_t enable(vnl::make_pair<Basic*>(&input, true));
 		send(&enable, Router::instance);
 		run();
 		stop();
 	}
 	
-	bool handle(vnl::Message* msg) {
-		if(msg->msg_id == Stream::notify_t::MID) {
+	bool handle(Stream::notify_t* msg) {
+		if(msg->data == &input) {
 			Message* in;
 			while(input.pop(in)) {
 				if(in->msg_id == Packet::MID) {
@@ -49,7 +49,7 @@ protected:
 				}
 				in->ack();
 			}
-			input.listen(get_basic());
+			return false;
 		}
 		return Super::handle(msg);
 	}

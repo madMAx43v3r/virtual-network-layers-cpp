@@ -93,8 +93,6 @@ private:
 	std::mutex mutex;
 	std::condition_variable cond;
 	
-	MessagePool buffer;
-	
 	Queue<Message*> queue;
 	List<std::function<void(Message*)> > rcv_hooks;
 	

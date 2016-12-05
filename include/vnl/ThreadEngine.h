@@ -13,6 +13,7 @@
 
 #include <vnl/Engine.h>
 #include <vnl/Pipe.h>
+#include <vnl/Actor.h>
 #include <vnl/Stream.h>
 #include <vnl/Object.h>
 
@@ -33,7 +34,7 @@ public:
 		msg.src = &sync;
 		std::thread thread(&ThreadEngine::entry, object, &msg, pipe);
 		thread.detach();
-		sync.wait();
+		sync.wait_for_ack();
 	}
 	
 	// all below NOT thread safe

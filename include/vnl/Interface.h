@@ -9,6 +9,7 @@
 #define INCLUDE_VNI_INTERFACE_H_
 
 #include <vnl/Type.h>
+#include <vnl/Stream.h>
 
 
 namespace vnl {
@@ -84,6 +85,10 @@ protected:
 	}
 	
 	virtual bool handle_switch(vnl::Value* sample, vnl::Packet* packet) {
+		return false;
+	}
+	
+	virtual bool handle_switch(vnl::Value* sample, vnl::Stream* input) {
 		return false;
 	}
 	

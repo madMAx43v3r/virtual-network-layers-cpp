@@ -158,7 +158,7 @@ protected:
 	void write_subscribe(const vnl::Topic& topic) {
 		Sample sample;
 		sample.seq_num = next_seq++;
-		sample.src_mac = get_stream().get_mac();
+		sample.src_mac = get_mac();
 		sample.src_addr = my_address;
 		sample.dst_addr = sub_topic;
 		sample.data = topic.clone();
@@ -170,7 +170,6 @@ protected:
 protected:
 	void read_loop() {
 		ThreadEngine engine;
-		MessagePool buffer;
 		Stream stream;
 		stream.connect(&engine);
 		vnl::io::TypeInput in(&sock);
@@ -189,7 +188,7 @@ protected:
 			if(!in.error() && id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
 				uint32_t hash = 0;
 				in.getHash(hash);
-				if(!read_packet(stream, buffer, in, hash)) {
+				if(!read_packet(stream, in, hash)) {
 					error = true;
 				}
 			} else {
@@ -206,21 +205,21 @@ protected:
 		engine.flush();
 	}
 	
-	bool read_packet(Stream& stream, MessagePool& buffer, vnl::io::TypeInput& in, uint32_t hash) {
+	bool read_packet(Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
 		if(hash == Sample::PID) {
-			Sample* sample = buffer.create<Sample>();
+			Sample* sample = sample_buffer.create();
 			sample->deserialize(in, 0);
 			if(!in.error()) {
 				if(sample->dst_addr == sub_topic) {
 					Topic* topic = dynamic_cast<Topic*>(sample->data);
 					if(topic) {
-						subscribe_t* msg = buffer.create<subscribe_t>();
+						subscribe_t* msg = subscribe_buffer.create();
 						msg->data = *topic;
 						stream.send_async(msg, &pipe);
 					}
 					sample->destroy();
 				} else {
-					forward(stream, buffer, sample);
+					forward(stream, sample);
 					stream.send_async(sample, sample->dst_addr);
 				}
 			} else {
@@ -228,10 +227,10 @@ protected:
 				return false;
 			}
 		} else if(hash == Frame::PID) {
-			Frame* frame = buffer.create<Frame>();
+			Frame* frame = frame_buffer.create();
 			frame->deserialize(in, 0);
 			if(!in.error()) {
-				forward(stream, buffer, frame);
+				forward(stream, frame);
 				stream.send_async(frame, frame->dst_addr);
 			} else {
 				frame->destroy();
@@ -243,15 +242,21 @@ protected:
 		return true;
 	}
 	
-	void forward(Stream& stream, MessagePool& buffer, vnl::Packet* pkt) {
+	void forward(Stream& stream, vnl::Packet* pkt) {
 		int& count = fwd_table[pkt->src_addr];
 		if(count == 0) {
-			forward_t* msg = buffer.create<forward_t>();
+			forward_t* msg = forward_buffer.create();
 			msg->data = pkt->src_addr;
 			stream.send_async(msg, &pipe);
 		}
 		count++;
 	}
+	
+private:
+	MessagePool<Sample> sample_buffer;
+	MessagePool<Frame> frame_buffer;
+	MessagePool<subscribe_t> subscribe_buffer;
+	MessagePool<forward_t> forward_buffer;
 	
 private:
 	Address sub_topic;

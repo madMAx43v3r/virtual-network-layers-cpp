@@ -17,9 +17,9 @@
 
 namespace vnl {
 
-class Stream : public Basic {
+class Stream : public Node {
 public:
-	Stream() : engine(0), target(0), listener(0), next_seq(1) {}
+	Stream() : engine(0), router(0), listener(0), next_seq(1) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -32,25 +32,51 @@ public:
 		}
 	}
 	
-	void connect(Engine* engine_, Basic* target_ = Router::instance) {
-		engine = engine_;
-		target = target_;
-		if(target) {
-			Pipe::connect_t msg(this);
-			send(&msg, target);
-			assert(msg.res);
+	// thread safe
+	virtual void receive(Message* msg) {
+		assert(engine);
+		if(msg->gate == engine) {
+			if(msg->isack) {
+				msg->destroy();
+			} else if(msg->msg_id == Pipe::connect_t::MID) {
+				Pipe* pipe = ((Pipe::connect_t*)msg)->data;
+				msg->ack();
+				attach(pipe);
+			} else if(msg->msg_id == Pipe::close_t::MID) {
+				Pipe* pipe = ((Pipe::close_t*)msg)->data;
+				msg->ack();
+				close(pipe);
+			} else {
+				push(msg);
+			}
+		} else {
+			msg->dst = this;
+			engine->receive(msg);
 		}
 	}
 	
-	void listen(Basic* dst) {
-		assert(dst != this);
-		listener = dst;
+	void connect(Engine* engine_, Router* target_ = Router::instance) {
+		engine = engine_;
+		router = target_;
+		if(router) {
+			Router::connect_t msg(this);
+			send(&msg, router);
+		}
+	}
+	
+	void listen(Basic* target) {
+		assert(target != this);
+		listener = target;
 	}
 	
 	void close() {
-		if(target) {
-			Pipe::close_t msg(this);
-			send(&msg, target);
+		if(router) {
+			Router::finish_t msg(this);
+			send(&msg, router);
+		}
+		for(Basic* pipe : pipes) {
+			Pipe::finish_t msg;
+			send(&msg, pipe);
 		}
 		Message* left = 0;
 		while(queue.pop(left)) {
@@ -63,30 +89,31 @@ public:
 		return engine;
 	}
 	
-	// thread safe
-	virtual void receive(Message* msg) {
-		assert(engine);
-		if(msg->gate == engine) {
-			if(msg->isack) {
-				msg->destroy();
-			} else {
-				push(msg);
-			}
-		} else {
-			msg->dst = this;
-			engine->receive(msg);
+	bool attach(Pipe* pipe) {
+		Pipe::attach_t request;
+		request.args = this;
+		send(&request, pipe);
+		if(request.res) {
+			pipes.push_back(pipe);
 		}
+		return request.res;
+	}
+	
+	void close(Pipe* pipe) {
+		Pipe::finish_t msg;
+		send(&msg, pipe);
+		pipes.remove(pipe);
 	}
 	
 	Address subscribe(Address addr) {
 		Router::open_t msg(vnl::make_pair(mac, addr));
-		send(&msg, target);
+		send(&msg, router);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
 		Router::close_t msg(vnl::make_pair(mac, addr));
-		send(&msg, target);
+		send(&msg, router);
 	}
 	
 	void send(Message* msg, Basic* dst) {
@@ -113,12 +140,12 @@ public:
 	
 	void send(Packet* pkt, Address dst) {
 		pkt->dst_addr = dst;
-		send(pkt, target);
+		send(pkt, router);
 	}
 	
 	void send_async(Packet* pkt, Address dst) {
 		pkt->dst_addr = dst;
-		send_async(pkt, target);
+		send_async(pkt, router);
 	}
 	
 	Message* poll() {
@@ -137,13 +164,12 @@ public:
 	}
 	
 	void push(Message* msg) {
-		queue.push(msg);
-		if(listener) {
-			notify_t* msg = engine->buffer.create<notify_t>();
+		if(listener && queue.empty()) {
+			notify_t* msg = notify_buffer.create();
 			msg->data = this;
 			send_async(msg, listener);
-			listener = 0;
 		}
+		queue.push(msg);
 	}
 	
 	bool pop(Message*& msg) {
@@ -156,9 +182,11 @@ public:
 	
 private:
 	Engine* engine;
-	Basic* target;
+	Router* router;
 	Basic* listener;
+	List<Basic*> pipes;
 	Queue<Message*> queue;
+	MessagePool<notify_t> notify_buffer;
 	uint32_t next_seq;
 	
 	friend class Engine;

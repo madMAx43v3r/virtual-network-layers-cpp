@@ -49,14 +49,14 @@ bool Router::handle(Message* msg) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
-	} else if(msg->msg_id == Pipe::connect_t::MID) {
-		Basic* src = ((Pipe::connect_t*)msg)->args;
+	} else if(msg->msg_id == connect_t::MID) {
+		connect_t* request = (connect_t*)msg;
+		Node* src = request->data;
 		if(src) {
 			lookup[src->get_mac()] = src;
-			((Pipe::connect_t*)msg)->res = true;
 		}
-	} else if(msg->msg_id == Pipe::close_t::MID) {
-		Basic* src = ((Pipe::close_t*)msg)->data;
+	} else if(msg->msg_id == finish_t::MID) {
+		Node* src = ((finish_t*)msg)->data;
 		if(src) {
 			lookup.erase(src->get_mac());
 		}
@@ -119,7 +119,7 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 
 void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
-	Packet* msg = buffer.create<Packet>();
+	Packet* msg = buffer.create();
 	msg->dst = dst;
 	msg->copy_from(org);
 	Reactor::send_async(msg, dst);
