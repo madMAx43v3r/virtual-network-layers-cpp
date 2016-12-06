@@ -15,15 +15,9 @@ namespace vnl {
 
 class TcpClient : public TcpClientBase {
 public:
-	TcpClient(const vnl::String& topic, vnl::String endpoint = "", int port = 0)
-		:	TcpClientBase(local_domain_name, topic), connected(false)
+	TcpClient(const vnl::String& domain, const vnl::String& topic)
+		:	TcpClientBase(domain, topic), connected(false)
 	{
-		if(endpoint.size()) {
-			this->endpoint = endpoint;
-		}
-		if(port) {
-			this->port = port;
-		}
 	}
 	
 protected:

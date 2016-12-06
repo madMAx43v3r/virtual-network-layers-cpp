@@ -24,7 +24,7 @@ public:
 		:	_in(&_buf), _out(&_buf), _exception(0),
 		 	req_num(0), timeout(1000000), do_fail(false)
 	{
-		src_addr = Address(local_domain, stream.get_mac());
+		src_addr = Address(local_domain_name, stream.get_mac());
 		_data = Page::alloc();
 	}
 	

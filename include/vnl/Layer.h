@@ -15,7 +15,6 @@
 
 namespace vnl {
 
-extern uint64_t local_domain;
 extern const char* local_domain_name;
 
 

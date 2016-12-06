@@ -130,6 +130,12 @@ inline void memcpy(void* dst, const void* src, int size) {
 }
 
 
+inline bool parse_endpoint(const vnl::String* str, vnl::String& endpoint, int& port) {
+	// TODO
+	return false;
+}
+
+
 static int stick_to_core(int core_id) {
    int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
    if (core_id < 0 || core_id >= num_cores) {

@@ -19,7 +19,6 @@
 
 namespace vnl {
 
-uint64_t local_domain = 0;
 const char* local_domain_name = 0;
 
 volatile bool Layer::have_shutdown = false;
@@ -33,7 +32,6 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	:	closed(false)
 {
 	assert(Random64::instance == 0);
-	assert(local_domain == 0);
 	assert(global_pool == 0);
 	assert(have_shutdown == false);
 	assert(num_threads == 0);
@@ -42,7 +40,6 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	
 	Random64::instance = new Random64();
 	local_domain_name = domain_name;
-	local_domain = vnl::hash64(domain_name);
 	global_pool = new GlobalPool();
 	config = new Map<String, String>();
 	
@@ -62,7 +59,7 @@ Layer::~Layer() {
 void Layer::shutdown() {
 	if(!have_shutdown) {
 		ThreadEngine engine;
-		ProcessClient proc = Address(local_domain, "vnl.Process");
+		ProcessClient proc = Address(local_domain_name, "vnl.Process");
 		proc.set_fail(true);
 		proc.connect(&engine);
 		try {

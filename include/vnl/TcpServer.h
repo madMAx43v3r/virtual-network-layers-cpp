@@ -9,7 +9,7 @@
 #define CPP_INCLUDE_VNI_TCPSERVER_H_
 
 #include <vnl/Pipe.h>
-#include <vnl/TcpUplink.h>
+#include <vnl/TcpProxy.h>
 #include <vnl/TcpServerSupport.hxx>
 
 #include <thread>
@@ -17,45 +17,12 @@
 
 namespace vnl {
 
-class TcpProxy : public TcpUplink {
-public:
-	TcpProxy(int fd)
-		:	TcpUplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
-			running(false), fd(fd)
-	{
-	}
-	
-protected:
-	void main() {
-		TcpUplink::main();
-		log(INFO).out << "Client disconnected" << vnl::endl;
-	}
-	
-	int connect() {
-		if(!running) {
-			running = true;
-			return fd;
-		} else {
-			return -1;
-		}
-	}
-	
-private:
-	bool running;
-	int fd;
-	
-};
-
-
 class TcpServer : public vnl::TcpServerBase {
 public:
-	TcpServer(const vnl::String& topic, int port = 0)
-		:	TcpServerBase(local_domain_name, topic),
+	TcpServer(const vnl::String& domain, const vnl::String& topic)
+		:	TcpServerBase(domain, topic),
 			server(-1), do_reset(false)
 	{
-		if(port) {
-			this->port = port;
-		}
 	}
 	
 	typedef MessageType<int, 0xaea64cbf> new_client_t;
@@ -131,7 +98,11 @@ protected:
 			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
 				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
 			}
-			TcpProxy* proxy = new TcpProxy(sock);
+			TcpProxy* proxy = create_proxy(sock);
+			proxy->vnl_max_num_pending = vnl_max_num_pending;
+			proxy->vnl_log_level = vnl_log_level;
+			proxy->send_timeout = send_timeout;
+			proxy->sock = sock;
 			vnl::spawn(proxy);
 			log(INFO).out << "New client on socket " << sock << vnl::endl;
 		} else if(msg->msg_id == error_t::MID) {
@@ -147,6 +118,10 @@ protected:
 	
 	void publish(const vnl::String& domain, const vnl::String& topic) {
 		// TODO
+	}
+	
+	virtual TcpProxy* create_proxy(int sock) {
+		return new TcpProxy(my_domain, vnl::String("vnl.tcp.proxy.") << sock);
 	}
 	
 private:
