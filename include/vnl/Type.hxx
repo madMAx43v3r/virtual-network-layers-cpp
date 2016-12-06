@@ -9,6 +9,7 @@
 #define INCLUDE_VNI_TYPE_HXX_
 
 #include <vnl/Type.h>
+#include <vnl/Enum.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
 #include <vnl/Layer.h>

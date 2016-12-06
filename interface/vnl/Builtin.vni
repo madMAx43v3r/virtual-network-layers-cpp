@@ -6,6 +6,8 @@ interface Interface;
 interface Hash32;
 interface Hash64;
 
+interface String;
+interface Binary;
 interface Pointer;
 
 interface Array;
