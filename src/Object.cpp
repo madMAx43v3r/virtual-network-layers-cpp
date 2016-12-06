@@ -124,18 +124,6 @@ void Object::send_async(Message* msg, Basic* dst) {
 	vnl_stream.send_async(msg, dst);
 }
 
-bool Object::attach(Pipe* pipe) {
-	return vnl_stream.attach(pipe);
-}
-
-void Object::reset(Pipe* pipe) {
-	vnl_stream.reset(pipe);
-}
-
-void Object::close(Pipe* pipe) {
-	vnl_stream.close(pipe);
-}
-
 bool Object::poll(int64_t micros) {
 	int64_t to = micros;
 	int64_t now = currentTimeMicros();
@@ -321,7 +309,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
 	if(pipe) {
-		attach(pipe);
+		pipe->attach(this);
 	}
 	subscribe(my_address);
 	Announce* announce = Announce::create();
@@ -332,6 +320,9 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	main(engine_, init);
 	publish(Exit::create(), local_domain_name, "vnl.exit");
 	vnl_stream.close();
+	if(pipe) {
+		pipe->close();
+	}
 }
 
 

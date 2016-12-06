@@ -22,7 +22,8 @@ namespace vnl {
 class TcpUplink : public vnl::TcpUplinkBase {
 public:
 	TcpUplink(const vnl::String& domain_, const vnl::String& topic_)
-		:	TcpUplinkBase(domain_, topic_), out(&sock), timer(0), next_seq(1), do_reset(false)
+		:	TcpUplinkBase(domain_, topic_),
+		 	out(&sock), timer(0), next_seq(1), pipe(0), do_reset(false)
 	{
 		sub_topic = Address("vnl.downlink", "subscribe");
 	}
@@ -48,7 +49,7 @@ protected:
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic);
 			}
-			attach(&pipe);		// first attach pipe, then start thread
+			pipe = Pipe::open();
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -57,10 +58,10 @@ protected:
 					break;
 				}
 			}
-			reset(&pipe);		// stop read_loop() from sending us messages
-			poll(0);			// handle remaining messages
+			pipe->close();			// stop read_loop() from sending us messages
+			poll(0);				// handle remaining messages
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit in any case
-			thread.join();		// join with read_loop()
+			thread.join();			// join with read_loop()
 			sock.close();
 		}
 		drop_all();
@@ -170,6 +171,7 @@ private:
 	
 private:
 	void read_loop() {
+		pipe->attach(this);
 		ThreadEngine engine;
 		Stream stream;
 		stream.connect(&engine);
@@ -198,12 +200,13 @@ private:
 			if(error) {
 				if(vnl_dorun) {
 					error_t msg(in.error());
-					stream.send(&msg, &pipe);
+					stream.send(&msg, pipe);
 				}
 				break;
 			}
 		}
 		engine.flush();
+		pipe->close();
 	}
 	
 	bool read_packet(Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
@@ -216,7 +219,7 @@ private:
 					if(topic) {
 						subscribe_t* msg = subscribe_buffer.create();
 						msg->data = *topic;
-						stream.send_async(msg, &pipe);
+						stream.send_async(msg, pipe);
 					}
 					sample->destroy();
 				} else {
@@ -248,7 +251,7 @@ private:
 		if(count == 0) {
 			forward_t* msg = forward_buffer.create();
 			msg->data = pkt->src_addr;
-			stream.send_async(msg, &pipe);
+			stream.send_async(msg, pipe);
 		}
 		count++;
 	}
@@ -267,7 +270,7 @@ private:
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
 	uint32_t next_seq;
-	Pipe pipe;
+	Pipe* pipe;
 	bool do_reset;
 	
 	Map<Address, int> fwd_table;

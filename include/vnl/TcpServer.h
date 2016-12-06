@@ -21,7 +21,7 @@ class TcpServer : public vnl::TcpServerBase {
 public:
 	TcpServer(const vnl::String& domain, const vnl::String& topic)
 		:	TcpServerBase(domain, topic),
-			server(-1), do_reset(false)
+			server(-1), do_reset(false), pipe(0)
 	{
 	}
 	
@@ -60,7 +60,7 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Running on port=" << port << vnl::endl;
-			attach(&pipe);
+			pipe = Pipe::open();
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -69,7 +69,7 @@ protected:
 					break;
 				}
 			}
-			reset(&pipe);
+			pipe->close();
 			poll(0);
 			::shutdown(server, SHUT_RDWR);
 			thread.join();
@@ -126,6 +126,7 @@ protected:
 	
 private:
 	void accept_loop() {
+		pipe->attach(this);
 		ThreadEngine engine;
 		Stream stream;
 		stream.connect(&engine);
@@ -134,20 +135,21 @@ private:
 			if(sock < 0) {
 				if(vnl_dorun) {
 					error_t msg(errno);
-					stream.send(&msg, &pipe);
+					stream.send(&msg, pipe);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			stream.send(&msg, &pipe);
+			stream.send(&msg, pipe);
 		}
+		pipe->close();
 	}
 	
 private:
 	int server;
 	bool do_reset;
 	
-	Pipe pipe;
+	Pipe* pipe;
 	
 };
 

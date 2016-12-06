@@ -52,7 +52,7 @@ protected:
 		mutex.unlock();
 	}
 	
-private:
+protected:
 	std::mutex mutex;
 	
 };

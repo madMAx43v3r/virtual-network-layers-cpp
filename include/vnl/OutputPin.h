@@ -21,8 +21,11 @@ public:
 	OutputPin() : enabled(false), engine(0) {}
 	
 	~OutputPin() {
-		if(enabled) {
-			close();
+		if(engine) {
+			engine->flush();
+		}
+		for(Pipe* pipe : links) {
+			pipe->close();
 		}
 	}
 	
@@ -45,7 +48,7 @@ public:
 	// NOT thread safe
 	Pipe* attach() {
 		assert(enabled == false);
-		Pipe* pipe = pipe_pool.create();
+		Pipe* pipe = Pipe::open();
 		links.push_back(pipe);
 		return pipe;
 	}
@@ -70,26 +73,10 @@ public:
 		}
 	}
 	
-protected:
-	void close() {
-		assert(enabled == true);
-		MessagePool<Pipe::close_t> buf;
-		for(Pipe* pipe : links) {
-			Pipe::close_t* msg = buf.create();
-			engine->send_async(msg, pipe);
-		}
-		engine->flush();
-		for(Pipe* pipe : links) {
-			pipe_pool.destroy(pipe);
-		}
-		links.clear();
-	}
-	
 private:
 	bool enabled;
 	Engine* engine;
 	MessagePool<pin_data_t> buffer;
-	Pool<Pipe> pipe_pool;
 	List<Pipe*> links;
 	
 };

@@ -11,5 +11,6 @@ ADD_LIBRARY(vnl STATIC
 	src/Object.cpp
 	src/Router.cpp
 	src/Type.cpp
+	src/Pipe.cpp
 )
 

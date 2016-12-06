@@ -9,7 +9,7 @@
 #define INCLUDE_PHY_ROUTER_H_
 
 #include <vnl/Util.h>
-#include <vnl/Pipe.h>
+#include <vnl/Reactor.h>
 #include <vnl/Packet.h>
 #include <vnl/Map.h>
 #include <vnl/Array.h>

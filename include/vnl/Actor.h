@@ -14,8 +14,6 @@
 #include <vnl/Basic.h>
 #include <vnl/Message.h>
 #include <vnl/Pipe.h>
-#include <vnl/InputPin.h>
-#include <vnl/OutputPin.h>
 
 
 namespace vnl {
@@ -52,25 +50,6 @@ public:
 		while(!acked) {
 			cond.wait(ulock);
 		}
-	}
-	
-	void open(Pipe* pipe) {
-		Pipe::open_t msg;
-		send(&msg, pipe);
-	}
-	
-	void wait_on(Pipe* pipe) {
-		Pipe::wait_t msg;
-		send(&msg, pipe);
-	}
-	
-	void close(Pipe* pipe) {
-		Pipe::close_t msg;
-		send(&msg, pipe);
-	}
-	
-	void connect(InputPin& input, OutputPin& output) {
-		
 	}
 	
 private:

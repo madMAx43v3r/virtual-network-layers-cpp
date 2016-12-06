@@ -11,7 +11,6 @@
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Pool.h>
-#include <vnl/Pipe.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
 #include <vnl/Sample.h>
@@ -76,10 +75,6 @@ protected:
 	virtual void main() {
 		run();
 	}
-	
-	bool attach(Pipe* pipe);
-	void reset(Pipe* pipe);
-	void close(Pipe* pipe);
 	
 	Object* fork(Object* object);
 	

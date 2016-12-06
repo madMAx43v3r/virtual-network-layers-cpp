@@ -20,6 +20,12 @@ class InputPin : public Basic {
 public:
 	InputPin() : enabled(false) {}
 	
+	~InputPin() {
+		for(Pipe* pipe : links) {
+			pipe->close();
+		}
+	}
+	
 	bool operator==(InputPin& other) const {
 		return this == &other;
 	}
@@ -36,7 +42,7 @@ public:
 	// NOT thread safe
 	void attach(Pipe* pipe) {
 		assert(enabled == false);
-		pending.push_back(pipe);
+		links.push_back(pipe);
 	}
 	
 	// NOT thread safe
@@ -44,10 +50,9 @@ public:
 		assert(enabled == false);
 		stream.connect(engine, 0);
 		stream.listen(target);
-		for(Pipe* pipe : pending) {
-			stream.attach(pipe);
+		for(Pipe* pipe : links) {
+			pipe->attach(this);
 		}
-		pending.clear();
 		enabled = true;
 	}
 	
@@ -60,7 +65,7 @@ public:
 private:
 	bool enabled;
 	Stream stream;
-	List<Pipe*> pending;
+	List<Pipe*> links;
 	
 };
 

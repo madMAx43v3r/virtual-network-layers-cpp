@@ -8,7 +8,6 @@
 #ifndef INCLUDE_PHY_STREAM_H_
 #define INCLUDE_PHY_STREAM_H_
 
-#include <vnl/Pipe.h>
 #include <vnl/Engine.h>
 #include <vnl/Queue.h>
 #include <vnl/Router.h>
@@ -38,14 +37,6 @@ public:
 		if(msg->gate == engine) {
 			if(msg->isack) {
 				msg->destroy();
-			} else if(msg->msg_id == Pipe::connect_t::MID) {
-				Pipe* pipe = ((Pipe::connect_t*)msg)->data;
-				msg->ack();
-				attach(pipe);
-			} else if(msg->msg_id == Pipe::close_t::MID) {
-				Pipe* pipe = ((Pipe::close_t*)msg)->data;
-				msg->ack();
-				pipes.remove(pipe);
 			} else {
 				push(msg);
 			}
@@ -74,10 +65,6 @@ public:
 			Router::finish_t msg(this);
 			send(&msg, router);
 		}
-		for(Basic* pipe : pipes) {
-			Pipe::reset_t msg(this);
-			send(&msg, pipe);
-		}
 		Message* left = 0;
 		while(queue.pop(left)) {
 			left->ack();
@@ -87,27 +74,6 @@ public:
 	
 	Engine* get_engine() const {
 		return engine;
-	}
-	
-	bool attach(Pipe* pipe) {
-		Pipe::attach_t request;
-		request.args = this;
-		send(&request, pipe);
-		if(request.res) {
-			pipes.push_back(pipe);
-		}
-		return request.res;
-	}
-	
-	void reset(Pipe* pipe) {
-		Pipe::reset_t msg(this);
-		send(&msg, pipe);
-		pipes.remove(pipe);
-	}
-	
-	void close(Pipe* pipe) {
-		Pipe::close_t msg;
-		send(&msg, pipe);
 	}
 	
 	Address subscribe(Address addr) {
@@ -189,7 +155,6 @@ private:
 	Engine* engine;
 	Router* router;
 	Basic* listener;
-	List<Basic*> pipes;
 	Queue<Message*> queue;
 	MessagePool<notify_t> notify_buffer;
 	uint32_t next_seq;
