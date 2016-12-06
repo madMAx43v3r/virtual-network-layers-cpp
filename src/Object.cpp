@@ -175,6 +175,8 @@ bool Object::handle(Message* msg) {
 	} else if(msg->msg_id == Stream::notify_t::MID) {
 		Stream::notify_t* notify = (Stream::notify_t*)msg;
 		return handle(notify);
+	} else if(msg->msg_id == exit_t::MID) {
+		exit();
 	}
 	return false;
 }
@@ -207,6 +209,7 @@ bool Object::handle(Packet* pkt) {
 	}
 	last_seq = pkt->seq_num;
 	
+	vnl_proxy = pkt->proxy;
 	if(pkt->pkt_id == Sample::PID) {
 		Sample* sample = (Sample*)pkt->payload;
 		if(handle(sample)) {

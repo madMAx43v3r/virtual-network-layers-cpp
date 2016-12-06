@@ -24,13 +24,15 @@ class Object : public ObjectBase, public Basic {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
-			vnl_dorun(false), vnl_engine(0),
+			vnl_dorun(false), vnl_engine(0), vnl_proxy(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
 			vnl_log_writer(this)
 	{
 	}
+	
+	typedef SignalType<0x6a7fcd62> exit_t;
 	
 	// thread safe
 	virtual void receive(Message* msg) {
@@ -74,6 +76,10 @@ protected:
 	
 	virtual void main() {
 		run();
+	}
+	
+	uint64_t get_proxy() const {
+		return vnl_proxy;
 	}
 	
 	Object* fork(Object* object);
@@ -134,6 +140,7 @@ private:
 private:
 	Stream vnl_stream;
 	Engine* vnl_engine;
+	uint64_t vnl_proxy;
 	
 	List<Timer> vnl_timers;
 	Map<uint64_t, int64_t> vnl_sources;

@@ -29,11 +29,6 @@ public:
 	typedef MessageType<int, 0x0252a160> error_t;
 	
 protected:
-	struct client_t {
-		uint64_t mac;
-		Pipe* proxy;
-	};
-	
 	void main() {
 		pipe = Pipe::create(this);
 		while(vnl_dorun) {
@@ -108,22 +103,22 @@ protected:
 			proxy->send_timeout = send_timeout;
 			proxy->sock = sock;
 			proxy->server = pipe;
-			client_t& client = clients[proxy->get_mac()];
+			proxy_t& client = clients[proxy->get_mac()];
 			client.mac = proxy->get_mac();
-			client.proxy = Pipe::create();
-			vnl::spawn(proxy, client.proxy);
+			client.pipe = Pipe::create();
+			vnl::spawn(proxy, client.pipe);
 			for(const Topic& topic : export_topics) {
 				TcpProxy::subscribe_t msg(topic);
-				send(&msg, client.proxy);
+				send(&msg, client.pipe);
 			}
 			log(INFO).out << "New client on socket " << sock << vnl::endl;
-			on_new_client(client);
+			on_new_client(client.mac, client.pipe);
 		} else if(msg->msg_id == TcpProxy::del_client_t::MID) {
 			uint64_t mac = ((TcpProxy::del_client_t*)msg)->data;
-			client_t* client = clients.find(mac);
+			proxy_t* client = clients.find(mac);
 			if(client) {
-				on_del_client(*client);
-				client->proxy->close();
+				on_del_client(client->mac, client->pipe);
+				client->pipe->close();
 				clients.erase(mac);
 			}
 		} else if(msg->msg_id == error_t::MID) {
@@ -143,7 +138,7 @@ protected:
 	void publish(const vnl::Topic& topic) {
 		for(const auto& entry : clients) {
 			TcpProxy::publish_t msg(topic);
-			send(&msg, entry.second.proxy);
+			send(&msg, entry.second.pipe);
 		}
 	}
 	
@@ -157,12 +152,12 @@ protected:
 	void subscribe(const vnl::Topic& topic) {
 		for(const auto& entry : clients) {
 			TcpProxy::subscribe_t msg(topic);
-			send(&msg, entry.second.proxy);
+			send(&msg, entry.second.pipe);
 		}
 	}
 	
-	virtual void on_new_client(const client_t& client) {}
-	virtual void on_del_client(const client_t& client) {}
+	virtual void on_new_client(uint64_t mac, Pipe* pipe) {}
+	virtual void on_del_client(uint64_t mac, Pipe* pipe) {}
 	
 private:
 	void accept_loop() {
@@ -186,8 +181,13 @@ private:
 		engine.flush();
 	}
 	
+	struct proxy_t {
+		uint64_t mac;
+		Pipe* pipe;
+	};
+	
 protected:
-	Map<uint64_t, client_t> clients;
+	Map<uint64_t, proxy_t> clients;
 	
 private:
 	int server;
