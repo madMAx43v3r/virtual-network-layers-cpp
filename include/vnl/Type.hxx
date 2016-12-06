@@ -397,8 +397,43 @@ bool read_config(String domain, String topic, String name, T& ref) {
 	return false;
 }
 
+inline bool read_from_file(vnl::Value& value, const char* filename) {
+	vnl::io::File file = ::fopen(filename, "r");
+	if(file.good()) {
+		vnl::io::TypeInput in(&file);
+		vnl::read(in, value);
+		::fclose(file);
+		return !in.error();
+	}
+	return false;
+}
+
+inline bool read_from_file(vnl::Value& value, const vnl::String& filename) {
+	char buf[1024];
+	filename.to_string(buf, sizeof(buf));
+	return read_from_file(value, buf);
+}
+
+inline bool write_to_file(const vnl::Value& value, const char* filename) {
+	vnl::io::File file = ::fopen(filename, "w");
+	if(file.good()) {
+		vnl::io::TypeOutput out(&file);
+		vnl::write(out, value);
+		out.flush();
+		::fclose(file);
+		return !out.error();
+	}
+	return false;
+}
+
+inline bool write_to_file(const vnl::Value& value, const vnl::String& filename) {
+	char buf[1024];
+	filename.to_string(buf, sizeof(buf));
+	return write_to_file(value, buf);
+}
 
 
-} // vni
+
+} // vnl
 
 #endif /* INCLUDE_VNI_TYPE_HXX_ */
