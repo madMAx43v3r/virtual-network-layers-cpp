@@ -309,7 +309,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
 	if(pipe) {
-		pipe->attach(this);
+		pipe->open(this);
 	}
 	subscribe(my_address);
 	Announce* announce = Announce::create();

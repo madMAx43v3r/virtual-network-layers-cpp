@@ -78,6 +78,10 @@ void Layer::close() {
 		usleep(10*1000);
 	}
 	
+	if(Pipe::get_num_open() > 0) {
+		std::cout << "WARNING: " << Pipe::get_num_open() << " pipes left open at exit!" << std::endl;
+	}
+	
 	delete Router::instance;
 	delete Random64::instance;
 	delete global_pool;

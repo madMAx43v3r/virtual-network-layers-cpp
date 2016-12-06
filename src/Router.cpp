@@ -22,7 +22,7 @@ bool Router::handle(Message* msg) {
 		Packet* pkt = (Packet*)msg;
 		Basic* src = msg->src;
 		for(int i = 0; i < pkt->num_hops; ++i) {
-			if(pkt->route[i] == (uint32_t)mac) {
+			if(pkt->route[i] == (uint32_t)vnl_mac) {
 				num_drop++;
 				num_cycle++;
 				msg->ack();
@@ -30,7 +30,7 @@ bool Router::handle(Message* msg) {
 			}
 		}
 		if(pkt->num_hops < VNL_MAX_ROUTE_LENGTH) {
-			pkt->route[pkt->num_hops++] = mac;
+			pkt->route[pkt->num_hops++] = vnl_mac;
 		} else {
 			num_drop++;
 			pkt->ack();

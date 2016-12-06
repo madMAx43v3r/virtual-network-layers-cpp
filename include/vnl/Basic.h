@@ -34,15 +34,15 @@ public:
 class Node : public Basic {
 public:
 	Node() : _impl(0) {
-		mac = vnl::rand();
+		vnl_mac = vnl::rand();
 	}
 	
-	uint64_t get_mac() const { return mac; }
+	uint64_t get_mac() const { return vnl_mac; }
 	
 	void* _impl;
 	
 protected:
-	uint64_t mac;
+	uint64_t vnl_mac;
 	
 };
 

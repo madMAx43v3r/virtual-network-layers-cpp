@@ -37,6 +37,7 @@ protected:
 	
 	void main() {
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
+		pipe = Pipe::create(this);
 		while(vnl_dorun) {
 			are_connected = false;
 			sock.fd = connect();
@@ -49,8 +50,8 @@ protected:
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic);
 			}
-			pipe = Pipe::open();
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
+			thread.detach();
 			while(poll(-1)) {
 				if(do_reset) {
 					do_reset = false;
@@ -58,13 +59,11 @@ protected:
 					break;
 				}
 			}
-			pipe->close();			// stop read_loop() from sending us messages
-			poll(0);				// handle remaining messages
-			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit in any case
-			thread.join();			// join with read_loop()
+			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
 			sock.close();
 		}
 		drop_all();
+		pipe->close();
 	}
 	
 	bool handle(Message* msg) {
@@ -100,15 +99,12 @@ protected:
 	}
 	
 	void publish(const vnl::String& domain, const vnl::String& topic) {
-		vnl::Topic desc;
-		desc.domain = domain;
-		desc.name = topic;
-		publish(desc);
+		Object::subscribe(domain, topic);
+		log(INFO).out << "Publishing " << domain << ":" << topic << vnl::endl;
 	}
 	
 	void publish(const vnl::Topic& topic) {
-		Object::subscribe(topic.domain, topic.name);
-		log(INFO).out << "Publishing " << topic.domain << ":" << topic.name << vnl::endl;
+		publish(topic.domain, topic.name);
 	}
 	
 	void subscribe(const vnl::String& domain, const vnl::String& topic) {
@@ -171,12 +167,12 @@ private:
 	
 private:
 	void read_loop() {
-		pipe->attach(this);
 		ThreadEngine engine;
 		Stream stream;
 		stream.connect(&engine);
 		vnl::io::TypeInput in(&sock);
 		in.reset();
+		pipe->attach();
 		while(vnl_dorun) {
 			while(true) {
 				Message* msg = stream.poll(0);
@@ -205,14 +201,15 @@ private:
 				break;
 			}
 		}
+		pipe->detach();
 		engine.flush();
-		pipe->close();
 	}
 	
 	bool read_packet(Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
 		if(hash == Sample::PID) {
 			Sample* sample = sample_buffer.create();
 			sample->deserialize(in, 0);
+			sample->proxy = get_mac();
 			if(!in.error()) {
 				if(sample->dst_addr == sub_topic) {
 					Topic* topic = dynamic_cast<Topic*>(sample->data);
@@ -233,6 +230,7 @@ private:
 		} else if(hash == Frame::PID) {
 			Frame* frame = frame_buffer.create();
 			frame->deserialize(in, 0);
+			frame->proxy = get_mac();
 			if(!in.error()) {
 				forward(stream, frame);
 				stream.send_async(frame, frame->dst_addr);

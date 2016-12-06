@@ -10,6 +10,7 @@
 
 namespace vnl {
 
+int Pipe::num_open = 0;
 Pool<Pipe> Pipe::pool;
 std::mutex Pipe::sync;
 

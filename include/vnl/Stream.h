@@ -77,13 +77,13 @@ public:
 	}
 	
 	Address subscribe(Address addr) {
-		Router::open_t msg(vnl::make_pair(mac, addr));
+		Router::open_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, router);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
-		Router::close_t msg(vnl::make_pair(mac, addr));
+		Router::close_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, router);
 	}
 	
@@ -99,13 +99,13 @@ public:
 	
 	void send(Packet* pkt, Basic* dst) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = mac;
+		pkt->src_mac = vnl_mac;
 		send((Message*)pkt, dst);
 	}
 	
 	void send_async(Packet* pkt, Basic* dst) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = mac;
+		pkt->src_mac = vnl_mac;
 		send_async((Message*)pkt, dst);
 	}
 	
