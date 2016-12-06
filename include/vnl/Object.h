@@ -78,6 +78,7 @@ protected:
 	}
 	
 	bool attach(Pipe* pipe);
+	void reset(Pipe* pipe);
 	void close(Pipe* pipe);
 	
 	Object* fork(Object* object);

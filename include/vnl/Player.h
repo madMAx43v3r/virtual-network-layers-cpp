@@ -20,15 +20,17 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const char* domain_, const char* topic_ = "Player", Basic* target = vnl::Router::instance)
+	Player(const vnl::String& domain_, const vnl::String& topic_, vnl::Router* router = 0)
 		:	PlayerBase(domain_, topic_),
-		 	target(target), in(&file), timer(0), begin_pos(0)
+		 	router(router), in(&file), timer(0), begin_pos(0)
 	{
 		type_blacklist["vnl.Announce"] = true;
 		type_blacklist["vnl.LogMsg"] = true;
 		type_blacklist["vnl.Shutdown"] = true;
 		type_blacklist["vnl.Exit"] = true;
 	}
+	
+	vnl::Pipe pipe;
 	
 	vnl::Map<Address, Address> addr_map;
 	vnl::Map<vnl::Hash32, bool> type_blacklist;
@@ -43,6 +45,7 @@ protected:
 		}
 		run();
 		close();
+		Super::close(&pipe);
 	}
 	
 	void open(const vnl::String& file) {
@@ -202,7 +205,11 @@ protected:
 				msg->dst_addr = dst_addr;
 				msg->header = next.header.release();
 				msg->data = value;
-				send_async(msg, target);
+				if(router) {
+					send_async(msg, router);
+				} else {
+					send_async(msg, &pipe);
+				}
 			} else {
 				vnl::destroy(value);
 			}
@@ -270,7 +277,7 @@ private:
 	}
 	
 private:
-	Basic* target;
+	vnl::Router* router;
 	vnl::io::File file;
 	vnl::io::TypeInput in;
 	

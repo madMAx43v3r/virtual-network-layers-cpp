@@ -30,7 +30,7 @@ public:
 	typedef RequestType<bool, Basic*, 0xd8577f3e> attach_t;	// like TCP SYN ACK
 	typedef MessageType<Pipe*, 0x7ddae559> close_t;			// like TCP FIN
 	typedef SignalType<0x1a740a38> wait_t;					// like TCP wait for FIN ACK
-	typedef SignalType<0x528852ed> finish_t;				// like TCP FIN ACK
+	typedef MessageType<Basic*, 0x528852ed> reset_t;		// like TCP connection reset
 	
 protected:
 	bool handle(Message* msg) {
@@ -57,9 +57,12 @@ protected:
 			if(target) {
 				((close_t*)msg)->data = this;
 				forward(msg);
+				notify_all();
+				target = 0;
 				return true;
 			}
-		} else if(msg->msg_id == finish_t::MID) {
+		} else if(msg->msg_id == reset_t::MID) {
+			assert(((reset_t*)msg)->data == target);
 			notify_all();
 			target = 0;
 		} else if(target) {

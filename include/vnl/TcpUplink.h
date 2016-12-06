@@ -57,7 +57,7 @@ protected:
 					break;
 				}
 			}
-			close(&pipe);		// stop read_loop() from sending us messages
+			reset(&pipe);		// stop read_loop() from sending us messages
 			poll(0);			// handle remaining messages
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit in any case
 			thread.join();		// join with read_loop()
@@ -124,6 +124,7 @@ protected:
 		table[Address(topic.domain, topic.name)] = topic;
 	}
 	
+private:
 	void write_out() {
 		int64_t begin = vnl::currentTimeMicros();
 		Packet* pkt = 0;
@@ -167,7 +168,7 @@ protected:
 		log(INFO).out << "Subscribed to " << topic.domain << ":" << topic.name << vnl::endl;
 	}
 	
-protected:
+private:
 	void read_loop() {
 		ThreadEngine engine;
 		Stream stream;

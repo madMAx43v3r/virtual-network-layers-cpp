@@ -45,7 +45,7 @@ public:
 			} else if(msg->msg_id == Pipe::close_t::MID) {
 				Pipe* pipe = ((Pipe::close_t*)msg)->data;
 				msg->ack();
-				close(pipe);
+				pipes.remove(pipe);
 			} else {
 				push(msg);
 			}
@@ -75,7 +75,7 @@ public:
 			send(&msg, router);
 		}
 		for(Basic* pipe : pipes) {
-			Pipe::finish_t msg;
+			Pipe::reset_t msg(this);
 			send(&msg, pipe);
 		}
 		Message* left = 0;
@@ -99,10 +99,15 @@ public:
 		return request.res;
 	}
 	
-	void close(Pipe* pipe) {
-		Pipe::finish_t msg;
+	void reset(Pipe* pipe) {
+		Pipe::reset_t msg(this);
 		send(&msg, pipe);
 		pipes.remove(pipe);
+	}
+	
+	void close(Pipe* pipe) {
+		Pipe::close_t msg;
+		send(&msg, pipe);
 	}
 	
 	Address subscribe(Address addr) {

@@ -25,6 +25,9 @@ public:
 	
 protected:
 	void main() {
+		for(const Topic& topic : export_topics) {
+			subscribe(topic);
+		}
 		Super::main();
 		log(INFO).out << "Client disconnected" << vnl::endl;
 	}

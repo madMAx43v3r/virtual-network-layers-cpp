@@ -128,6 +128,10 @@ bool Object::attach(Pipe* pipe) {
 	return vnl_stream.attach(pipe);
 }
 
+void Object::reset(Pipe* pipe) {
+	vnl_stream.reset(pipe);
+}
+
 void Object::close(Pipe* pipe) {
 	vnl_stream.close(pipe);
 }

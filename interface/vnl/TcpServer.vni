@@ -20,4 +20,6 @@ object TcpServer {
 
 object TcpProxy extends TcpUplink {
 	
+	Array<Topic> export_topics;
+	
 }

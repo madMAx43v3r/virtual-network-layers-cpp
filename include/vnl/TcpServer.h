@@ -69,7 +69,7 @@ protected:
 					break;
 				}
 			}
-			close(&pipe);
+			reset(&pipe);
 			poll(0);
 			::shutdown(server, SHUT_RDWR);
 			thread.join();
@@ -126,18 +126,20 @@ protected:
 	
 private:
 	void accept_loop() {
-		Actor actor;
+		ThreadEngine engine;
+		Stream stream;
+		stream.connect(&engine);
 		while(vnl_dorun) {
 			int sock = ::accept(server, 0, 0);
 			if(sock < 0) {
 				if(vnl_dorun) {
 					error_t msg(errno);
-					actor.send(&msg, &pipe);
+					stream.send(&msg, &pipe);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			actor.send(&msg, &pipe);
+			stream.send(&msg, &pipe);
 		}
 	}
 	
