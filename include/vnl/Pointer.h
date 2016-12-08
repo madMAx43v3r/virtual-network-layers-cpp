@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_VNI_POINTER_H_
 
 #include <vnl/io.h>
+#include <vnl/Type.hxx>
 
 
 namespace vnl {
