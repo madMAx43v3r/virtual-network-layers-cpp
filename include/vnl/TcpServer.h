@@ -62,7 +62,6 @@ protected:
 			}
 			log(INFO).out << "Running on port=" << port << vnl::endl;
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
-			thread.detach();
 			while(poll(-1)) {
 				if(do_reset) {
 					do_reset = false;
@@ -71,8 +70,12 @@ protected:
 				}
 			}
 			::shutdown(server, SHUT_RDWR);
+			thread.join();
 			::close(server);
 			server = -1;
+		}
+		for(auto& entry : clients) {
+			entry.second.pipe->close();
 		}
 		pipe->close();
 	}

@@ -51,7 +51,6 @@ protected:
 				write_subscribe(topic);
 			}
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
-			thread.detach();
 			while(poll(-1)) {
 				if(do_reset) {
 					do_reset = false;
@@ -60,6 +59,7 @@ protected:
 				}
 			}
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
+			thread.join();
 			sock.close();
 		}
 		drop_all();
