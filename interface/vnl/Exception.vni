@@ -16,6 +16,10 @@ class NoSuchFieldException extends IOException {
 	
 }
 
+class NoSuchKeyException extends IOException {
+	
+}
+
 class DuplicateKeyException extends IOException {
 	
 }

@@ -13,6 +13,11 @@ object Table<T> extends Database {
 	void insert(T row);
 	
 	T get(Hash64 id) const;
+	
 	Array<T> get_all(Array<Hash64> ids) const;
+	
+	void update(Hash64 id, Hash32 field_name, Binary value);
+	
+	void remove(Hash64 id);
 	
 }
