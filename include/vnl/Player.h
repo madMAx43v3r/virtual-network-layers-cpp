@@ -217,11 +217,11 @@ protected:
 			if(in.error() == VNL_IO_EOF) {
 				log(INFO).out << "End of file reached." << vnl::endl;
 				seek_begin();
-				if(autoshutdown) {
+				if(autoloop) {
+					play();
+				} else if(autoshutdown) {
 					log(INFO).out << "Triggering shutdown ..." << vnl::endl;
 					publish(vnl::Shutdown::create(), vnl::local_domain_name, "vnl.shutdown");
-				} else if(autoloop) {
-					play();
 				}
 			} else {
 				status.error = true;
