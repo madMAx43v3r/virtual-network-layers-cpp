@@ -118,11 +118,13 @@ protected:
 		}
 	}
 	
+protected:
+	Map<Hash64, T> table;
+	
 	void add_view(View<T>* view) {
 		views.push_back(view);
 	}
 	
-private:
 	T* get_row(Hash64 id) {
 		T* row = table.find(id);
 		if(!row) {
@@ -140,7 +142,6 @@ private:
 	}
 	
 private:
-	Map<Hash64, T> table;
 	Array<View<T>*> views;
 	vnl::io::ByteBuffer buffer;
 	vnl::io::TypeInput in;
@@ -152,7 +153,14 @@ private:
 class index_name_t : public vnl::View<T> { \
 public: \
 	index_name_t() : in(&buffer) {} \
-	const T* get(const K& key) const { \
+	const T& get(const K& key) const { \
+		const T* const* ptr = index.find(key); \
+		if(!ptr) { \
+			throw vnl::NoSuchKeyException(); \
+		} \
+		return *(*ptr); \
+	} \
+	const T* find(const K& key) const { \
 		const T* const* ptr = index.find(key); \
 		return ptr ? *ptr : 0; \
 	} \
@@ -165,6 +173,7 @@ public: \
 		index[row.field_name] = &row; \
 		if(our_field < 0) { \
 			our_field = row.field_index(#field_name); \
+			assert(our_field >= 0); \
 		} \
 	} \
 	void check_update(const T& row, int field, const vnl::Binary& value) { \

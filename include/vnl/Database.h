@@ -10,7 +10,7 @@
 
 #include <vnl/io.h>
 #include <vnl/DatabaseSupport.hxx>
-#include <vnl/Exception.hxx>
+#include <vnl/IOException.hxx>
 
 
 namespace vnl {
@@ -32,9 +32,7 @@ protected:
 			return;
 		}
 		log(INFO).out << "Reading database ..." << vnl::endl;
-		::fseek(file, 0, SEEK_SET);
 		read_all();
-		::fseek(file, 0, SEEK_END);
 		log(INFO).out << "Finished reading database." << vnl::endl;
 		run();
 		::fflush(file);
@@ -62,10 +60,17 @@ protected:
 	
 private:
 	void read_all() {
+		::fseek(file, 0, SEEK_SET);
+		int64_t last_pos = 0;
 		vnl::io::TypeInput in(&file);
-		while(!in.error()) {
+		while(true) {
+			last_pos = ::ftell(file);
 			int size = 0;
 			int id = in.getEntry(size);
+			if(in.error()) {
+				::fseek(file, 0, SEEK_END);
+				break;
+			}
 			if(id == VNL_IO_CALL) {
 				uint32_t hash;
 				in.getHash(hash);
@@ -74,6 +79,12 @@ private:
 					if(!res) {
 						in.skip(id, size, hash);
 						log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
+						if(ignore_errors) {
+							::fseek(file, last_pos, SEEK_SET);
+							break;
+						} else {
+							throw vnl::IOException();
+						}
 					}
 				} catch (const vnl::Exception& ex) {
 					if(ignore_errors) {

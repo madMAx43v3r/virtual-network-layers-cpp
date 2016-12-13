@@ -388,6 +388,22 @@ inline void from_string(const vnl::String& str, double& val) { val = atof(str); 
  * Generic util functions
  */
 template<typename T>
+Binary to_binary(const T& value) {
+	Binary bin;
+	bin.data = Page::alloc();
+	vnl::io::ByteBuffer buf(bin.data);
+	vnl::io::TypeOutput out(&buf);
+	vnl::write(out, value);
+	out.flush();
+	bin.size = buf.position();
+	return bin;
+}
+
+inline Binary to_binary(const char* str) {
+	return to_binary<vnl::String>(str);
+}
+
+template<typename T>
 bool read_config(String domain, String topic, String name, T& ref) {
 	const String* value = Layer::get_config(domain, topic, name);
 	if(value) {

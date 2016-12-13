@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_VNI_BINARY_H_
 
 #include <vnl/Memory.h>
+#include <vnl/String.h>
 
 
 namespace vnl {
@@ -41,16 +42,6 @@ public:
 				}
 			}
 		}
-	}
-	
-	template<typename T>
-	Binary(const T& value) {
-		data = Page::alloc();
-		vnl::io::ByteBuffer buf(data);
-		vnl::io::TypeOutput out(&buf);
-		vnl::write(out, value);
-		out.flush();
-		size = buf.position();
 	}
 	
 	~Binary() {
