@@ -75,6 +75,14 @@ public:
 		// default: nothing
 	}
 	
+	virtual void get_field(int _index, vnl::io::TypeOutput& _out) const {
+		_out.putNull();
+	}
+	
+	virtual void set_field(int _index, vnl::io::TypeInput& _in) {
+		_in.skip();
+	}
+	
 protected:
 	virtual bool vni_call(vnl::io::TypeInput& in, uint32_t hash, int num_args) {
 		return false;
