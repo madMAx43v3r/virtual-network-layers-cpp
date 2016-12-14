@@ -58,5 +58,40 @@ void read(vnl::io::TypeInput& in, Value* obj) {
 	}
 }
 
+bool read_from_file(vnl::Value& value, const char* filename) {
+	vnl::io::File file = ::fopen(filename, "r");
+	if(file.good()) {
+		vnl::io::TypeInput in(&file);
+		vnl::read(in, value);
+		::fclose(file);
+		return !in.error();
+	}
+	return false;
+}
+
+bool read_from_file(vnl::Value& value, const vnl::String& filename) {
+	char buf[1024];
+	filename.to_string(buf, sizeof(buf));
+	return read_from_file(value, buf);
+}
+
+bool write_to_file(const vnl::Value& value, const char* filename) {
+	vnl::io::File file = ::fopen(filename, "w");
+	if(file.good()) {
+		vnl::io::TypeOutput out(&file);
+		vnl::write(out, value);
+		out.flush();
+		::fclose(file);
+		return !out.error();
+	}
+	return false;
+}
+
+bool write_to_file(const vnl::Value& value, const vnl::String& filename) {
+	char buf[1024];
+	filename.to_string(buf, sizeof(buf));
+	return write_to_file(value, buf);
+}
+
 
 } // vnl

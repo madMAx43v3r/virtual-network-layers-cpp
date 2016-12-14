@@ -35,6 +35,6 @@ protected:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_ENUM_H_ */

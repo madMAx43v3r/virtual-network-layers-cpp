@@ -15,7 +15,7 @@
 namespace vnl {
 
 template<typename T>
-class Pointer : public vnl::io::Serializable {
+class Pointer : public vnl::Interface {
 public:
 	Pointer() : ptr(0) {}
 	
@@ -83,6 +83,14 @@ public:
 		}
 	}
 	
+	uint32_t vni_hash() const {
+		return 0x5815b636;
+	}
+	
+	const char* type_name() const {
+		return "vnl.Pointer";
+	}
+	
 	void to_string_ex(vnl::String& str) const {
 		str << "{\"T\": \"";
 		if(ptr) {
@@ -122,27 +130,6 @@ private:
 	T* ptr;
 	
 };
-
-
-template<typename T>
-void read(vnl::io::TypeInput& in, Pointer<T>& obj) {
-	obj.deserialize(in, 0);
-}
-
-template<typename T>
-void write(vnl::io::TypeOutput& out, const Pointer<T>& obj) {
-	obj.serialize(out);
-}
-
-template<typename T>
-void to_string(vnl::String& str, const Pointer<T>& obj) {
-	obj.to_string_ex(str);
-}
-
-template<typename T>
-void from_string(const vnl::String& str, Pointer<T>& obj) {
-	obj.from_string(str);
-}
 
 
 } // vnl

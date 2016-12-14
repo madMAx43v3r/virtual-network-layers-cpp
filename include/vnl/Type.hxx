@@ -216,6 +216,18 @@ inline void to_string(vnl::String& str, const Binary& obj) {
 	str << "\"\"";
 }
 
+template<class Iter>
+void to_string(vnl::String& str, Iter first, Iter last) {
+	str << "[";
+	for(Iter it = first; it != last; ++it) {
+		if(it != first) {
+			str << ", ";
+		}
+		to_string(str, *it);
+	}
+	str << "]";
+}
+
 template<typename T>
 void to_string(vnl::String& str, const Array<T>& obj) {
 	to_string(str, obj.begin(), obj.end());
@@ -235,18 +247,6 @@ template<typename K, typename V>
 void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
 	str << "{\"key\": "; to_string(str, obj.first);
 	str << ", \"value\": "; to_string(str, obj.second); str << "}";
-}
-
-template<class Iter>
-void to_string(vnl::String& str, Iter first, Iter last) {
-	str << "[";
-	for(Iter it = first; it != last; ++it) {
-		if(it != first) {
-			str << ", ";
-		}
-		to_string(str, *it);
-	}
-	str << "]";
 }
 
 template<typename T, int N>
@@ -413,41 +413,11 @@ bool read_config(String domain, String topic, String name, T& ref) {
 	return false;
 }
 
-inline bool read_from_file(vnl::Value& value, const char* filename) {
-	vnl::io::File file = ::fopen(filename, "r");
-	if(file.good()) {
-		vnl::io::TypeInput in(&file);
-		vnl::read(in, value);
-		::fclose(file);
-		return !in.error();
-	}
-	return false;
-}
+bool read_from_file(vnl::Value& value, const char* filename);
+bool read_from_file(vnl::Value& value, const vnl::String& filename);
 
-inline bool read_from_file(vnl::Value& value, const vnl::String& filename) {
-	char buf[1024];
-	filename.to_string(buf, sizeof(buf));
-	return read_from_file(value, buf);
-}
-
-inline bool write_to_file(const vnl::Value& value, const char* filename) {
-	vnl::io::File file = ::fopen(filename, "w");
-	if(file.good()) {
-		vnl::io::TypeOutput out(&file);
-		vnl::write(out, value);
-		out.flush();
-		::fclose(file);
-		return !out.error();
-	}
-	return false;
-}
-
-inline bool write_to_file(const vnl::Value& value, const vnl::String& filename) {
-	char buf[1024];
-	filename.to_string(buf, sizeof(buf));
-	return write_to_file(value, buf);
-}
-
+bool write_to_file(const vnl::Value& value, const char* filename);
+bool write_to_file(const vnl::Value& value, const vnl::String& filename);
 
 
 } // vnl
