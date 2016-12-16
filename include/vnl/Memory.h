@@ -24,10 +24,6 @@ namespace vnl {
 template<typename TPage>
 class Area {
 public:
-	~Area() {
-		clear();
-	}
-	
 	TPage* alloc() {
 		sync.lock();
 		num_used++;
@@ -122,10 +118,6 @@ public:
 	
 	static void clear() {
 		area.clear();
-	}
-	
-	static Area<Memory<size_> >& global_area() {
-		return area;
 	}
 	
 	void free() {
