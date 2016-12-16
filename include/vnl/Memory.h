@@ -16,18 +16,21 @@
 
 #include <vnl/build/config.h>
 
-#define OUT_OF_MEMORY 0
-
 
 namespace vnl {
 
-template<typename TPage>
-class Area {
+template<int size_>
+class Memory {
 public:
-	TPage* alloc() {
+	static const int size = size_;
+	
+	Memory(const Memory&) = delete;
+	Memory& operator=(const Memory&) = delete;
+	
+	static Memory* alloc() {
 		sync.lock();
 		num_used++;
-		TPage* page = begin;
+		Memory* page = begin;
 		if(page) {
 			begin = page->next;
 		} else {
@@ -35,96 +38,22 @@ public:
 		}
 		sync.unlock();
 		if(!page && can_alloc) {
-			page = new TPage();
+			page = new Memory();
 		}
 		assert(page != OUT_OF_MEMORY);
 		page->next = 0;
 		return page;
 	}
 	
-	void free(TPage* page) {
-		sync.lock();
-		num_used--;
-		page->next = begin;
-		begin = page;
-		sync.unlock();
-	}
-	
-	void pre_alloc(int num_pages) {
-		TPage* first = alloc();
-		TPage* page = first;
-		for(int i = 0; i < num_pages-1; ++i) {
-			page->next = alloc();
-			page = page->next;
-		}
-		first->free_all();
-		can_alloc = false;
-	}
-	
-	void clear() {
-		sync.lock();
-		TPage* page = begin;
-		while(page) {
-			TPage* tmp = page;
-			page = page->next;
-			delete tmp;
-			num_alloc--;
-		}
-		if(num_alloc) {
-			std::cout << "WARNING: " << num_alloc << " pages of size " << TPage::size << " still being used at exit." << std::endl;
-		}
-		begin = 0;
-		sync.unlock();
-	}
-	
-	int num_alloc = 0;
-	int num_used = 0;
-	
-private:
-	std::mutex sync;
-	TPage* begin = 0;
-	bool can_alloc = true;
-	
-};
-
-template<int size_>
-class Memory {
-public:
-	static const int size = size_;
-	
-	Memory() : mem(0), next(0) {
-		mem = (char*)::malloc(size);
-		assert(mem != OUT_OF_MEMORY);
-	}
-	
-	~Memory() {
-		::free(mem);
-	}
-	
-	Memory(const Memory&) = delete;
-	Memory& operator=(const Memory&) = delete;
-	
-	static Memory* alloc() {
-		return area.alloc();
-	}
-	
-	static int num_alloc() {
-		return area.num_alloc;
-	}
-	
-	static int num_used() {
-		return area.num_used;
-	}
-	
-	static void clear() {
-		area.clear();
-	}
-	
 	void free() {
 #ifdef VNL_MEMORY_DEBUG
 		memset(mem, 0, size);
 #endif
-		area.free(this);
+		sync.lock();
+		num_used--;
+		next = begin;
+		begin = this;
+		sync.unlock();
 	}
 	
 	void free_all() {
@@ -157,16 +86,67 @@ public:
 		return *type_addr<T>(offset);
 	}
 	
+	static void prealloc(int num_pages) {
+		Memory* first = alloc();
+		Memory* page = first;
+		for(int i = 0; i < num_pages-1; ++i) {
+			page->next = alloc();
+			page = page->next;
+		}
+		first->free_all();
+		can_alloc = false;
+	}
+	
+	static void cleanup() {
+		sync.lock();
+		Memory* page = begin;
+		while(page) {
+			Memory* tmp = page;
+			page = page->next;
+			delete tmp;
+			num_alloc--;
+		}
+		if(num_alloc) {
+			std::cout << "WARNING: " << num_alloc << " pages of size " << size << " still being used at exit." << std::endl;
+		}
+		begin = 0;
+		sync.unlock();
+	}
+	
 	char* mem;
 	Memory* next;
 	
+	static int num_alloc;
+	static int num_used;
+	
 private:
-	static Area<Memory<size_> > area;
+	Memory() : mem(0), next(0) {
+		mem = (char*)::malloc(size);
+		assert(mem != OUT_OF_MEMORY);
+	}
+	
+	~Memory() {
+		::free(mem);
+	}
+	
+private:
+	static const int OUT_OF_MEMORY = 0;
+	static std::mutex sync;
+	static Memory* begin;
+	static bool can_alloc;
+	
+#ifdef VNL_MEMORY_DEBUG
+	bool vnl_is_free = false;
+#endif
 	
 };
 
 template<int size_> const int Memory<size_>::size;
-template<int size_> Area<Memory<size_> > Memory<size_>::area;
+template<int size_> std::mutex Memory<size_>::sync;
+template<int size_> Memory<size_>* Memory<size_>::begin = 0;
+template<int size_> bool Memory<size_>::can_alloc = true;
+template<int size_> int Memory<size_>::num_alloc = 0;
+template<int size_> int Memory<size_>::num_used = 0;
 
 typedef Memory<VNL_PAGE_SIZE> Page;
 typedef Memory<VNL_BLOCK_SIZE> Block;

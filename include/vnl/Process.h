@@ -44,8 +44,8 @@ protected:
 	void print_stats() {
 		if(!paused) {
 			std::cout << "[" << my_topic << "] System: "
-				<< Page::num_used() << "/" << Page::num_alloc() << " Pages, "
-				<< Block::num_used() << "/" << Block::num_alloc() << " Blocks, "
+				<< Page::num_used << "/" << Page::num_alloc << " Pages, "
+				<< Block::num_used << "/" << Block::num_alloc << " Blocks, "
 				<< Layer::num_threads << " Threads" << std::endl;
 		}
 	}

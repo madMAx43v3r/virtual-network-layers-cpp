@@ -87,8 +87,8 @@ void Layer::close() {
 	delete global_pool;
 	delete config;
 	
-	Page::clear();
-	Block::clear();
+	Page::cleanup();
+	Block::cleanup();
 	closed = true;
 }
 
