@@ -20,6 +20,7 @@
 namespace vnl {
 
 const char* local_domain_name = 0;
+const char* local_config_name = "";
 
 volatile bool Layer::have_shutdown = false;
 std::atomic<int> Layer::num_threads(0);
@@ -44,6 +45,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	config = new Map<String, String>();
 	
 	if(config_dir) {
+		local_config_name = config_dir;
 		parse_config(config_dir);
 	}
 	

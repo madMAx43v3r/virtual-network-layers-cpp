@@ -16,6 +16,7 @@
 namespace vnl {
 
 extern const char* local_domain_name;
+extern const char* local_config_name;
 
 
 class Process;
