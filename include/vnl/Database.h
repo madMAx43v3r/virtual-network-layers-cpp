@@ -49,7 +49,7 @@ protected:
 				out.writeBinary(frame->data, frame->size);
 				out.flush();
 				if(out.error()) {
-					log(ERROR).out << "Failed to write: " << out.error() << vnl::endl;
+					log(ERROR).out << "Failed to write, error=" << out.error() << vnl::endl;
 				}
 			}
 			send_async(result, frame->src_addr);
@@ -65,6 +65,7 @@ private:
 		vnl::io::TypeInput in(&file);
 		while(true) {
 			last_pos = ::ftell(file);
+			// TODO: account for data in buffer
 			int size = 0;
 			int id = in.getEntry(size);
 			if(in.error()) {
@@ -76,15 +77,18 @@ private:
 				in.getHash(hash);
 				try {
 					bool res = vni_call(in, hash, size);
-					if(!res) {
-						in.skip(id, size, hash);
-						log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
+					if(in.error()) {
+						log(ERROR).out << "Unexpected read error at position " << last_pos << vnl::endl;
 						if(ignore_errors) {
 							::fseek(file, last_pos, SEEK_SET);
 							break;
 						} else {
 							throw vnl::IOException();
 						}
+					}
+					if(!res) {
+						in.skip(id, size, hash);
+						log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
 					}
 				} catch (const vnl::Exception& ex) {
 					if(ignore_errors) {
