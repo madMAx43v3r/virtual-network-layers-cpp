@@ -89,6 +89,14 @@ private:
 template<typename T>
 class TypedOutputPin : public OutputPin {
 public:
+	void transmit(T* data) {
+		OutputPin::transmit(data);
+	}
+	
+private:
+	void transmit(Value* data) {
+		OutputPin::transmit(data);
+	}
 	
 };
 
