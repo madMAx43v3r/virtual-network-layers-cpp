@@ -35,8 +35,8 @@ public:
 	virtual const char* field_name(int index) const = 0;
 	virtual void get_field(int index, vnl::String& str) const = 0;
 	virtual void set_field(int index, const vnl::String& str) = 0;
-	virtual void get_field(int _index, vnl::io::TypeOutput& _out) const = 0;
-	virtual void set_field(int _index, vnl::io::TypeInput& _in) = 0;
+	virtual void get_field(int index, vnl::io::TypeOutput& out) const = 0;
+	virtual void set_field(int index, vnl::io::TypeInput& in) = 0;
 	
 	virtual void from_string(const vnl::String& str) {
 		/* NOT IMPLEMENTED */
