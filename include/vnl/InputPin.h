@@ -46,26 +46,27 @@ public:
 	}
 	
 	// NOT thread safe
-	void enable(Engine* engine, Basic* target) {
+	void enable(Engine* engine, Basic* listener) {
 		assert(enabled == false);
 		stream.connect(engine, 0);
-		stream.listen(target);
+		stream.listen(listener);
 		for(Pipe* pipe : links) {
-			pipe->attach(this);
+			pipe->open(this);
 		}
 		enabled = true;
-	}
-	
-	// NOT thread safe
-	bool pop(Message*& msg) {
-		assert(enabled == true);
-		return stream.pop(msg);
 	}
 	
 private:
 	bool enabled;
 	Stream stream;
 	List<Pipe*> links;
+	
+};
+
+
+template<typename T>
+class TypedInputPin : public InputPin {
+public:
 	
 };
 

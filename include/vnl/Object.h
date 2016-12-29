@@ -121,7 +121,7 @@ protected:
 	virtual bool handle(Sample* sample);
 	virtual bool handle(Frame* frame);
 	
-	virtual Frame* do_vni_call(Frame* frame);
+	virtual Frame* exec_vni_call(Frame* frame);
 	
 	virtual void handle(const vnl::Shutdown& event);
 	

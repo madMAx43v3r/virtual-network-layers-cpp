@@ -5,8 +5,8 @@
  *      Author: mwittal
  */
 
-#ifndef INCLUDE_ADDRESS_H_
-#define INCLUDE_ADDRESS_H_
+#ifndef INCLUDE_VNL_ADDRESS_H_
+#define INCLUDE_VNL_ADDRESS_H_
 
 #include <stdint.h>
 #include <ostream>
@@ -109,4 +109,4 @@ namespace std {
 	};
 }
 
-#endif /* INCLUDE_ADDRESS_H_ */
+#endif /* INCLUDE_VNL_ADDRESS_H_ */

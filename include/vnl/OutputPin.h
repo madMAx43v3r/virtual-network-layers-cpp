@@ -46,9 +46,9 @@ public:
 	};
 	
 	// NOT thread safe
-	Pipe* attach() {
+	Pipe* create() {
 		assert(enabled == false);
-		Pipe* pipe = Pipe::open();
+		Pipe* pipe = Pipe::create();
 		links.push_back(pipe);
 		return pipe;
 	}
@@ -78,6 +78,13 @@ private:
 	Engine* engine;
 	MessagePool<pin_data_t> buffer;
 	List<Pipe*> links;
+	
+};
+
+
+template<typename T>
+class TypedOutputPin : public OutputPin {
+public:
 	
 };
 

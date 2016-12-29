@@ -13,6 +13,8 @@
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
 #include <vnl/Layer.h>
+#include <vnl/InputPin.h>
+#include <vnl/OutputPin.h>
 
 
 namespace vnl {
@@ -418,6 +420,26 @@ bool read_from_file(vnl::Value& value, const vnl::String& filename);
 
 bool write_to_file(const vnl::Value& value, const char* filename);
 bool write_to_file(const vnl::Value& value, const vnl::String& filename);
+
+
+/*
+ * Input/Output pin functions
+ */
+inline void connect(InputPin& input, OutputPin& output) {
+	input.attach(output.create());
+}
+
+template<typename A, typename B>
+void connect(TypedInputPin<A>& input, TypedOutputPin<B>& output) {
+	A* assign_test = (B*)0;
+	input.attach(output.create());
+}
+
+template<typename A>
+void connect(TypedInputPin<A>& input, OutputPin& output) {
+	A* assign_test = (vnl::Value*)0;
+	input.attach(output.create());
+}
 
 
 } // vnl

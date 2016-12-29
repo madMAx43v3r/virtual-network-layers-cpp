@@ -43,7 +43,7 @@ protected:
 		if(out.error()) {
 			return false;
 		}
-		Frame* result = Super::do_vni_call(frame);
+		Frame* result = Super::exec_vni_call(frame);
 		if(result) {
 			if(frame->type == Frame::CALL && result->type == Frame::RESULT) {
 				out.writeBinary(frame->data, frame->size);

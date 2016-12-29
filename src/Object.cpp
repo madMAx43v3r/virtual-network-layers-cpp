@@ -7,7 +7,6 @@
 
 #include <vnl/Object.h>
 #include <vnl/Pipe.h>
-//#include <vnl/OutputPin.h>
 #include <vnl/Sample.h>
 #include <vnl/Announce.hxx>
 #include <vnl/LogMsg.hxx>
@@ -184,10 +183,10 @@ bool Object::handle(Message* msg) {
 bool Object::handle(Stream::notify_t* msg) {
 	Message* in;
 	while(msg->data->pop(in)) {
-		/*if(in->msg_id == OutputPin::pin_data_t::MID) {
+		if(in->msg_id == OutputPin::pin_data_t::MID) {
 			OutputPin::pin_data_t* pkt = (OutputPin::pin_data_t*)in;
-			handle_switch(pkt->data, msg->data);
-		}*/
+			handle_switch(pkt->data, msg->dst);
+		}
 		in->ack();
 	}
 	return false;
@@ -234,7 +233,7 @@ bool Object::handle(Sample* sample) {
 }
 
 bool Object::handle(Frame* frame) {
-	Frame* result = do_vni_call(frame);
+	Frame* result = exec_vni_call(frame);
 	if(result) {
 		send_async(result, frame->src_addr);
 		return true;
@@ -242,7 +241,7 @@ bool Object::handle(Frame* frame) {
 	return false;
 }
 
-Frame* Object::do_vni_call(Frame* frame) {
+Frame* Object::exec_vni_call(Frame* frame) {
 	Frame* result = vnl_frame_buffer.create();
 	result->type = Frame::RESULT;
 	result->req_num = frame->req_num;

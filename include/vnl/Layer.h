@@ -50,6 +50,6 @@ private:
 
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_LAYER_H_ */

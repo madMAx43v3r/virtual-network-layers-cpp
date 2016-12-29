@@ -9,7 +9,7 @@
 #define INCLUDE_VNI_INTERFACE_H_
 
 #include <vnl/Type.h>
-#include <vnl/Stream.h>
+#include <vnl/InputPin.h>
 
 
 namespace vnl {
@@ -96,7 +96,7 @@ protected:
 		return false;
 	}
 	
-	virtual bool handle_switch(vnl::Value* sample, vnl::Stream* input) {
+	virtual bool handle_switch(vnl::Value* sample, vnl::Basic* input) {
 		return false;
 	}
 	

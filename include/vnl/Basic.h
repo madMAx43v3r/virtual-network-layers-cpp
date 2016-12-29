@@ -1,12 +1,12 @@
 /*
- * Node.h
+ * Basic.h
  *
  *  Created on: Apr 25, 2016
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_NODE_H_
-#define INCLUDE_PHY_NODE_H_
+#ifndef INCLUDE_VNL_BASIC_H_
+#define INCLUDE_VNL_BASIC_H_
 
 #include <vnl/Random.h>
 #include <vnl/Message.h>
@@ -49,4 +49,4 @@ protected:
 
 } // vnl
 
-#endif /* INCLUDE_PHY_NODE_H_ */
+#endif /* INCLUDE_VNL_BASIC_H_ */

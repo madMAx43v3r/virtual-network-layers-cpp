@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_STREAM_H_
-#define INCLUDE_PHY_STREAM_H_
+#ifndef INCLUDE_VNL_STREAM_H_
+#define INCLUDE_VNL_STREAM_H_
 
 #include <vnl/Engine.h>
 #include <vnl/Queue.h>
@@ -41,7 +41,6 @@ public:
 				push(msg);
 			}
 		} else {
-			msg->dst = this;
 			engine->receive(msg);
 		}
 	}
@@ -77,12 +76,14 @@ public:
 	}
 	
 	Address subscribe(Address addr) {
+		assert(router);
 		Router::open_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, router);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
+		assert(router);
 		Router::close_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, router);
 	}
@@ -110,11 +111,13 @@ public:
 	}
 	
 	void send(Packet* pkt, Address dst) {
+		assert(router);
 		pkt->dst_addr = dst;
 		send(pkt, router);
 	}
 	
 	void send_async(Packet* pkt, Address dst) {
+		assert(router);
 		pkt->dst_addr = dst;
 		send_async(pkt, router);
 	}
@@ -164,7 +167,6 @@ private:
 };
 
 
+} // vnl
 
-}
-
-#endif /* INCLUDE_PHY_STREAM_H_ */
+#endif /* INCLUDE_VNL_STREAM_H_ */
