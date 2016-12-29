@@ -62,6 +62,10 @@ public:
 	// NOT thread safe
 	void transmit(Value* data) {
 		assert(enabled == true);
+		if(links.empty()) {
+			vnl::destroy(data);
+			return;
+		}
 		pin_data_t* parent = buffer.create();
 		parent->data = data;
 		for(Pipe* pipe : links) {
