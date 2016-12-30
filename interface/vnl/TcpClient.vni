@@ -10,4 +10,6 @@ object TcpClient extends TcpUplink {
 	int send_buffer_size = 1048576;			// in bytes
 	int receive_buffer_size = 1048576;		// in bytes
 	
+	void reconnect();						// force a new connection
+	
 }

@@ -11,8 +11,9 @@
 #include <vnl/Sample.h>
 #include <vnl/Pipe.h>
 #include <vnl/io/Socket.h>
-#include <vnl/TcpUplinkSupport.hxx>
 #include <vnl/ThreadEngine.h>
+
+#include <vnl/TcpUplinkSupport.hxx>
 
 #include <thread>
 
@@ -81,7 +82,7 @@ protected:
 			if(err != VNL_IO_EOF) {
 				log(ERROR).out << "Invalid input data: error=" << err << vnl::endl;
 			}
-			do_reset = true;
+			reset();
 		}
 		return false;
 	}
@@ -121,6 +122,10 @@ protected:
 		table[Address(topic.domain, topic.name)] = topic;
 	}
 	
+	void reset() {
+		do_reset = true;
+	}
+	
 private:
 	void write_out() {
 		int64_t begin = vnl::currentTimeMicros();
@@ -140,7 +145,7 @@ private:
 		}
 		out.flush();
 		if(out.error()) {
-			do_reset = true;
+			reset();
 		}
 		drop_all(); // drop the rest
 	}
@@ -276,8 +281,6 @@ private:
 };
 
 
-
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_TCPUPLINK_H_ */

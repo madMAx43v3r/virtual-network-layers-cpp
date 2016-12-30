@@ -42,6 +42,10 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 	return &timer;
 }
 
+void Object::add_client(Client& client) {
+	client.connect(vnl_engine);
+}
+
 void Object::add_input(InputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine, this);

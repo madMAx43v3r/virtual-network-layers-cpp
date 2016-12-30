@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef CPP_INCLUDE_VNI_TCPCLIENT_H_
-#define CPP_INCLUDE_VNI_TCPCLIENT_H_
+#ifndef INCLUDE_VNL_TCPCLIENT_H_
+#define INCLUDE_VNL_TCPCLIENT_H_
 
 #include <vnl/TcpClientSupport.hxx>
 
@@ -72,12 +72,16 @@ protected:
 		return sock;
 	}
 	
+	void reconnect() {
+		reset();
+	}
+	
 private:
 	bool connected;
 	
 };
 
 
-}
+} // vnl
 
-#endif /* CPP_INCLUDE_VNI_TCPCLIENT_H_ */
+#endif /* INCLUDE_VNL_TCPCLIENT_H_ */

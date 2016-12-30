@@ -16,6 +16,7 @@
 #include <vnl/String.h>
 #include <vnl/Sample.h>
 #include <vnl/Frame.h>
+#include <vnl/Client.h>
 
 #include <vnl/ObjectSupport.hxx>
 
@@ -84,6 +85,7 @@ protected:
 		return vnl_proxy;
 	}
 	
+	void add_client(Client& client);
 	void add_input(InputPin& pin);
 	void add_output(OutputPin& pin);
 	
