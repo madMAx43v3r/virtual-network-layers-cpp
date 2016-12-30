@@ -43,11 +43,13 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 }
 
 void Object::add_input(InputPin& pin) {
+	assert(vnl_dorun);
 	pin.enable(vnl_engine, this);
 	vnl_input_pins.push_back(&pin);
 }
 
 void Object::add_output(OutputPin& pin) {
+	assert(vnl_dorun);
 	pin.enable(vnl_engine);
 	vnl_output_pins.push_back(&pin);
 }

@@ -72,12 +72,14 @@ protected:
 					log(ERROR).out << "invalid input" << vnl::endl;
 				}
 			} else if(input == "topics" || input == "t") {
-				int64_t now = vnl::currentTimeMicros();
 				Router::get_topic_info_t msg;
 				send(&msg, Router::instance);
+				int64_t now = vnl::currentTimeMicros();
 				for(vnl::info::TopicInfo& info : msg.data) {
 					std::cout << "  " << info.topic.domain << " : " << info.topic.name << " | " << info.send_counter
-							<< " sent | " << info.receive_counter << " received | " << float(now-info.last_time)/1e6 << "s ago" << std::endl;
+							<< " sent | " << info.receive_counter << " received | "
+							<< float(info.last_time-info.first_time)/info.send_counter/1e6 << "s cycle | "
+							<< float(now-info.last_time)/1e6 << "s ago" << std::endl;
 				}
 				std::cout << "Help: press enter to continue" << std::endl;
 				std::getline(std::cin, input);

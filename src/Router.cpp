@@ -48,6 +48,7 @@ bool Router::handle(Message* msg) {
 				vnl::info::TopicInfo& info = topic_info[pkt->dst_addr];
 				if(info.send_counter == 0) {
 					info.topic = sample->header->dst_topic;
+					info.first_time = vnl::currentTimeMicros();
 				}
 				if(!info.publishers.find(pkt->src_mac)) {
 					info.publishers[pkt->src_mac] = sample->header->src_topic;

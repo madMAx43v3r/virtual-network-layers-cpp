@@ -8,6 +8,8 @@ class TopicInfo {
 	
 	long send_counter;
 	long receive_counter;
+	
+	long first_time;
 	long last_time;
 	
 }

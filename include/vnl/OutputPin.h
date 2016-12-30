@@ -30,9 +30,10 @@ public:
 		~pin_data_t() {
 			if(parent) {
 				if(++(parent->acks) == parent->count) {
-					vnl::destroy(parent->data);
 					parent->destroy();
 				}
+			} else {
+				vnl::destroy(data);
 			}
 		}
 		pin_data_t* parent;
