@@ -18,7 +18,7 @@ namespace vnl {
 class Process : public ProcessBase {
 public:
 	Process()
-		:	ProcessBase(local_domain_name, "vnl.Process")
+		:	ProcessBase(local_domain_name, "Process")
 	{
 		name = local_domain_name;
 	}
@@ -81,9 +81,11 @@ protected:
 	}
 	
 	vnl::Array<vnl::String> get_class_names() const {
-		vnl::Array<vnl::String> list;
-		// TODO
-		return list;
+		return vnl::get_class_names();
+	}
+	
+	vnl::Map<vnl::Hash32, vnl::info::Type> get_type_info() const {
+		return vnl::get_type_info();
 	}
 	
 	void pause_log() {

@@ -11,7 +11,7 @@
 #include <vnl/Pipe.h>
 #include <vnl/Pool.h>
 #include <vnl/List.h>
-#include <vnl/Value.hxx>
+#include <vnl/Type.hxx>
 
 
 namespace vnl {

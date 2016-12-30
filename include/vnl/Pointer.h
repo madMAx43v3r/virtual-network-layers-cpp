@@ -83,18 +83,18 @@ public:
 		}
 	}
 	
-	uint32_t vni_hash() const {
+	uint32_t get_vni_hash() const {
 		return 0x5815b636;
 	}
 	
-	const char* type_name() const {
+	const char* get_type_name() const {
 		return "vnl.Pointer";
 	}
 	
 	void to_string_ex(vnl::String& str) const {
 		str << "{\"T\": \"";
 		if(ptr) {
-			str << ptr->type_name();
+			str << ptr->get_type_name();
 		}
 		str << "\", \"V\": ";
 		vnl::to_string(str, ptr);

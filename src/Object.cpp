@@ -5,6 +5,7 @@
  *      Author: mad
  */
 
+#include <vnl/Layer.h>
 #include <vnl/Object.h>
 #include <vnl/Pipe.h>
 #include <vnl/Sample.h>
@@ -281,6 +282,24 @@ Frame* Object::exec_vni_call(Frame* frame) {
 	return result;
 }
 
+Map<String, String> Object::get_config_map() const {
+	Map<String, String> res;
+	for(int i = 0; i < get_num_fields(); ++i) {
+		get_field(i , res[get_field_name(i)]);
+	}
+	return res;
+}
+
+String Object::get_config(const Hash32& name) const {
+	String res;
+	get_field(get_field_index(name), res);
+	return res;
+}
+
+void Object::set_config(const Hash32& name, const String& value) {
+	set_field(get_field_index(name), value);
+}
+
 void Object::handle(const vnl::Shutdown& event) {
 	vnl_dorun = false;
 }
@@ -315,7 +334,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	}
 	subscribe(my_address);
 	Announce* announce = Announce::create();
-	announce->instance.type = type_name();
+	announce->instance.type = get_type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
 	publish(announce, local_domain_name, "vnl.announce");

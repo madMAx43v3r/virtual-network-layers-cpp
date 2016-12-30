@@ -68,10 +68,10 @@ protected:
 			if(running && value) {
 				if(topic) {
 					std::cout << vnl::currentTimeMillis() << " " << topic->domain
-						<< " : " << topic->name << " -> " << value->type_name() << std::endl;
+						<< " : " << topic->name << " -> " << value->get_type_name() << std::endl;
 				} else {
 					std::cout << vnl::currentTimeMillis() << " " << pkt->dst_addr
-						<< " -> " << value->type_name() << std::endl;
+						<< " -> " << value->get_type_name() << std::endl;
 				}
 				if(dump) {
 					std::cout << value->to_string() << std::endl;

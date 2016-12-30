@@ -11,6 +11,14 @@
 
 namespace vnl {
 
+namespace internal {
+	
+	GlobalPool* global_pool_ = 0;
+	Map<String, String>* config_ = 0;
+	
+} // internal
+
+
 Value* read(vnl::io::TypeInput& in) {
 	Value* obj = 0;
 	int size = 0;
@@ -56,6 +64,14 @@ void read(vnl::io::TypeInput& in, Value* obj) {
 	} else {
 		in.skip();
 	}
+}
+
+const String* get_config(const String& domain, const String& topic, const String& name) {
+	static std::mutex mutex;
+	String key;
+	key << domain << ":" << topic << "->" << name;
+	std::lock_guard<std::mutex> lock(mutex);
+	return internal::config_->find(key);
 }
 
 bool read_from_file(vnl::Value& value, const char* filename) {

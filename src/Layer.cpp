@@ -10,6 +10,7 @@
 #include <vnl/Random.h>
 #include <vnl/Pool.h>
 #include <vnl/Process.h>
+#include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
 
 #include <iostream>
@@ -22,27 +23,43 @@ namespace vnl {
 const char* local_domain_name = 0;
 const char* local_config_name = "";
 
+
+namespace internal {
+	
+	Map<Hash32, vnl::info::Type>* type_info_ = 0;
+	
+} // internal
+
+
+Random64* Random64::instance = 0;
+
 volatile bool Layer::have_shutdown = false;
 std::atomic<int> Layer::num_threads(0);
 
-Map<String, String>* Layer::config = 0;
 
-Random64* Random64::instance = 0;
+const vnl::info::Type* get_type_info(Hash32 type_name) {
+	static std::mutex mutex;
+	std::lock_guard<std::mutex> lock(mutex);
+	return internal::type_info_->find(type_name);
+}
+
 
 Layer::Layer(const char* domain_name, const char* config_dir)
 	:	closed(false)
 {
 	assert(Random64::instance == 0);
-	assert(global_pool == 0);
+	assert(Router::instance == 0);
+	assert(internal::global_pool_ == 0);
+	assert(internal::config_ == 0);
+	assert(internal::type_info_ == 0);
 	assert(have_shutdown == false);
 	assert(num_threads == 0);
-	assert(Router::instance == 0);
-	assert(Layer::config == 0);
 	
 	Random64::instance = new Random64();
 	local_domain_name = domain_name;
-	global_pool = new GlobalPool();
-	config = new Map<String, String>();
+	internal::global_pool_ = new GlobalPool();
+	internal::config_ = new Map<String, String>();
+	internal::type_info_ = new Map<Hash32, vnl::info::Type>(vnl::get_type_info());
 	
 	if(config_dir) {
 		local_config_name = config_dir;
@@ -61,7 +78,7 @@ Layer::~Layer() {
 void Layer::shutdown() {
 	if(!have_shutdown) {
 		ThreadEngine engine;
-		ProcessClient proc = Address(local_domain_name, "vnl.Process");
+		ProcessClient proc = Address(local_domain_name, "Process");
 		proc.set_fail(true);
 		proc.connect(&engine);
 		try {
@@ -86,25 +103,14 @@ void Layer::close() {
 	
 	delete Router::instance;
 	delete Random64::instance;
-	delete global_pool;
-	delete config;
+	delete internal::global_pool_;
+	delete internal::config_;
+	delete internal::type_info_;
 	
 	Page::cleanup();
 	Block::cleanup();
 	closed = true;
 }
-
-
-const String* Layer::get_config(const String& domain, const String& topic, const String& name) {
-	static std::mutex mutex;
-	String key;
-	key << domain << ":" << topic << "->" << name;
-	mutex.lock();
-	String* value = config->find(key);
-	mutex.unlock();
-	return value;
-}
-
 
 void Layer::parse_config(const char* root_dir) {
 	char buf[4096];
@@ -156,7 +162,7 @@ void Layer::parse_config(const char* root_dir) {
 								continue;
 							}
 							String key = String(domain->d_name) << ":" << topic->d_name << "->" << name->d_name;
-							String& value = (*config)[key];
+							String& value = (*internal::config_)[key];
 							value.clear();
 							while(true) {
 								int count = sizeof(buf)-1;

@@ -92,7 +92,7 @@ private:
 					}
 				} catch (const vnl::Exception& ex) {
 					if(ignore_errors) {
-						log(WARN).out << "Ignored exception: " << ex.type_name() << vnl::endl;
+						log(WARN).out << "Ignored exception: " << ex.get_type_name() << vnl::endl;
 					} else {
 						ex.raise();
 					}

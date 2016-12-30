@@ -11,7 +11,6 @@
 #include <vnl/Engine.h>
 #include <vnl/Queue.h>
 #include <vnl/Router.h>
-#include <vnl/Layer.h>
 
 
 namespace vnl {

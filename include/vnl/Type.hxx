@@ -12,12 +12,16 @@
 #include <vnl/Enum.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
-#include <vnl/Layer.h>
-#include <vnl/InputPin.h>
-#include <vnl/OutputPin.h>
 
 
 namespace vnl {
+
+namespace internal {
+	
+	extern GlobalPool* global_pool_;
+	extern Map<String, String>* config_;
+	
+} // internal
 
 /*
  * Function to create any Value based on the type hash.
@@ -28,6 +32,28 @@ Value* create(vnl::Hash32 hash);
  * Returns all class names known to this process.
  */
 Array<String> get_class_names();
+
+
+/*
+ * Memory functions
+ */
+template<typename T>
+T* create() {
+	T* obj = internal::global_pool_->create<T>();
+	return obj;
+}
+
+template<typename T>
+T* clone(const T& other) {
+	return new(internal::global_pool_->alloc(sizeof(T))) T(other);
+}
+
+template<typename T>
+void destroy(T* obj) {
+	if(obj) {
+		obj->destroy();
+	}
+}
 
 
 /*
@@ -405,9 +431,11 @@ inline Binary to_binary(const char* str) {
 	return to_binary<vnl::String>(str);
 }
 
+const String* get_config(const String& domain, const String& topic, const String& name);
+
 template<typename T>
 bool read_config(String domain, String topic, String name, T& ref) {
-	const String* value = Layer::get_config(domain, topic, name);
+	const String* value = vnl::get_config(domain, topic, name);
 	if(value) {
 		vnl::from_string(*value, ref);
 		return true;
@@ -420,26 +448,6 @@ bool read_from_file(vnl::Value& value, const vnl::String& filename);
 
 bool write_to_file(const vnl::Value& value, const char* filename);
 bool write_to_file(const vnl::Value& value, const vnl::String& filename);
-
-
-/*
- * Input/Output pin functions
- */
-inline void connect(InputPin& input, OutputPin& output) {
-	input.attach(output.create());
-}
-
-template<typename A, typename B>
-void connect(TypedInputPin<A>& input, TypedOutputPin<B>& output) {
-	A* assign_test = (B*)0;
-	input.attach(output.create());
-}
-
-template<typename A>
-void connect(TypedInputPin<A>& input, OutputPin& output) {
-	A* assign_test = (vnl::Value*)0;
-	input.attach(output.create());
-}
 
 
 } // vnl

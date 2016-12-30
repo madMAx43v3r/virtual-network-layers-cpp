@@ -11,6 +11,7 @@
 #include <thread>
 #include <pthread.h>
 
+#include <vnl/Layer.h>
 #include <vnl/Engine.h>
 #include <vnl/Pipe.h>
 #include <vnl/Actor.h>

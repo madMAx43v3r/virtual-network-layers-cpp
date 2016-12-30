@@ -1,0 +1,38 @@
+package vnl.info;
+
+class Field {
+	
+	String name;
+	String value;
+	String type;
+	
+}
+
+class Parameter {
+	
+	String name;
+	String type;
+	
+}
+
+class Method {
+	
+	String name;
+	String type;
+	List<Parameter> params;
+	
+}
+
+class Type {
+	
+	String name;
+	
+	List<Field> fields;
+	
+}
+
+class Interface extends Type {
+	
+	List<Method> methods;
+	
+}

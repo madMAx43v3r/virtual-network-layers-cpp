@@ -90,7 +90,7 @@ protected:
 	
 	void update(const Hash64& id, const Hash32& field_name, const Binary& value) {
 		T* row = get_row(id);
-		int index = row->field_index(field_name);
+		int index = row->get_field_index(field_name);
 		if(index < 0) {
 			throw NoSuchFieldException();
 		}
@@ -172,7 +172,7 @@ public: \
 	void insert(const T& row) { \
 		index[row.field_name] = &row; \
 		if(our_field < 0) { \
-			our_field = row.field_index(#field_name); \
+			our_field = row.get_field_index(#field_name); \
 			assert(our_field >= 0); \
 		} \
 	} \

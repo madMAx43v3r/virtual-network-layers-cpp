@@ -1,5 +1,5 @@
 /*
- * pool.h
+ * Pool.h
  *
  *  Created on: Mar 6, 2016
  *      Author: mad
@@ -124,28 +124,6 @@ protected:
 	std::mutex sync;
 	
 };
-
-extern GlobalPool* global_pool;
-
-
-template<typename T>
-T* create() {
-	T* obj = vnl::global_pool->create<T>();
-	return obj;
-}
-
-template<typename T>
-T* clone(const T& other) {
-	return new(vnl::global_pool->alloc(sizeof(T))) T(other);
-}
-
-template<typename T>
-void destroy(T* obj) {
-	if(obj) {
-		obj->destroy();
-	}
-}
-
 
 
 } // vnl

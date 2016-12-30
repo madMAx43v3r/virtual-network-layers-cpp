@@ -123,7 +123,11 @@ protected:
 	
 	virtual Frame* exec_vni_call(Frame* frame);
 	
-	virtual void handle(const vnl::Shutdown& event);
+	Map<String, String> get_config_map() const;
+	String get_config(const Hash32& name) const;
+	void set_config(const Hash32& name, const String& value);
+	
+	void handle(const Shutdown& event);
 	
 protected:
 	volatile bool vnl_dorun;

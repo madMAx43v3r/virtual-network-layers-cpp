@@ -185,7 +185,7 @@ protected:
 		vnl::Value* value = next.value.release();
 		if(value) {
 			bool pass = true;
-			if(type_blacklist.find(value->vni_hash())) {
+			if(type_blacklist.find(value->get_vni_hash())) {
 				pass = false;
 			} else if(blacklist.find(Address(next.domain, ""))) {
 				pass = false;

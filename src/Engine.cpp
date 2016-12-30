@@ -21,7 +21,7 @@ void Engine::exec(Object* object, Message* init, Pipe* pipe) {
 	try {
 		object->exec(this, init, pipe);
 	} catch (const vnl::Exception& ex) {
-		std::cout << "ERROR: " << object->my_topic << ": Caught " << ex.type_name() << std::endl;
+		std::cout << "ERROR: " << object->my_topic << ": Caught " << ex.get_type_name() << std::endl;
 	} catch (const std::exception& ex) {
 		std::cout << "ERROR: " << object->my_topic << ": Caught " << ex.what() << std::endl;
 	} catch (...) {
