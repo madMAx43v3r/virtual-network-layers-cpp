@@ -20,7 +20,7 @@ namespace vnl {
 class Terminal : public Object {
 public:
 	Terminal(const String& domain = local_domain_name)
-		:	Object(domain, "vnl.Terminal")
+		:	Object(domain, "Terminal")
 	{
 	}
 	
@@ -154,10 +154,6 @@ private:
 };
 
 
-
-
-
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_TERMINAL_H_ */
