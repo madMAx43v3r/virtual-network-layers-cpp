@@ -9,7 +9,6 @@
 #define INCLUDE_VNI_INTERFACE_H_
 
 #include <vnl/Type.h>
-#include <vnl/InputPin.h>
 
 
 namespace vnl {

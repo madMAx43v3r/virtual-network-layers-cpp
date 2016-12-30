@@ -6,6 +6,7 @@
  */
 
 #include <vnl/Router.h>
+#include <vnl/Sample.h>
 #include <vnl/Layer.h>
 
 namespace vnl {
@@ -41,6 +42,20 @@ bool Router::handle(Message* msg) {
 		if(hook_dst) {
 			forward(pkt, hook_dst);
 		}
+		if(pkt->pkt_id == Sample::PID) {
+			Sample* sample = (Sample*)pkt->payload;
+			if(sample->header) {
+				vnl::info::TopicInfo& info = topic_info[pkt->dst_addr];
+				if(info.send_counter == 0) {
+					info.topic = sample->header->dst_topic;
+				}
+				if(!info.publishers.find(pkt->src_mac)) {
+					info.publishers[pkt->src_mac] = sample->header->src_topic;
+				}
+				info.send_counter++;
+				info.receive_counter += pkt->count;
+			}
+		}
 		if(!pkt->count) {
 			pkt->ack();
 		}
@@ -67,6 +82,8 @@ bool Router::handle(Message* msg) {
 		} else if(data.second) {
 			hook_dst = data.first;
 		}
+	} else if(msg->msg_id == get_topic_info_t::MID) {
+		((get_topic_info_t*)msg)->data = topic_info.values();
 	}
 	return false;
 }

@@ -1,0 +1,12 @@
+package vnl.info;
+
+class TopicInfo {
+	
+	vnl.Topic topic;
+	
+	Map<Hash64, vnl.Topic> publishers;
+	
+	long send_counter;
+	long receive_counter;
+	
+}

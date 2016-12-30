@@ -15,6 +15,8 @@
 #include <vnl/Array.h>
 #include <vnl/Pool.h>
 
+#include <vnl/info/TopicInfo.hxx>
+
 
 namespace vnl {
 
@@ -31,6 +33,8 @@ public:
 	typedef MessageType<vnl::pair<uint64_t, Address>, 0xfbe7dd5a> close_t;
 	
 	typedef MessageType<vnl::pair<Basic*, bool>, 0x1ea66ea3> hook_t;
+	
+	typedef MessageType<vnl::Array<vnl::info::TopicInfo>, 0x477a9769> get_topic_info_t;
 	
 	uint64_t num_drop = 0;
 	uint64_t num_cycle = 0;
@@ -54,6 +58,8 @@ private:
 	Map<Address, Row> table;
 	Map<uint64_t, Basic*> lookup;
 	Basic* hook_dst;
+	
+	Map<Address, vnl::info::TopicInfo> topic_info;
 	
 };
 

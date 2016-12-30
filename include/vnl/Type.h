@@ -9,6 +9,7 @@
 #define INCLUDE_VNI_TYPE_H_
 
 #include <vnl/io.h>
+#include <vnl/Basic.h>
 #include <vnl/Hash.h>
 #include <vnl/Vector.h>
 #include <vnl/String.h>

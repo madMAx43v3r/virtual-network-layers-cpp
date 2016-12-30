@@ -111,8 +111,6 @@ protected:
 	bool sleep(int64_t secs);
 	bool usleep(int64_t micros);
 	
-	void exit();
-	
 	virtual void run();
 	
 	virtual bool handle(Message* msg);
@@ -123,9 +121,11 @@ protected:
 	
 	virtual Frame* exec_vni_call(Frame* frame);
 	
+	void exit();
 	Map<String, String> get_config_map() const;
 	String get_config(const Hash32& name) const;
 	void set_config(const Hash32& name, const String& value);
+	vnl::Array<vnl::Topic> get_subscriptions() const;
 	
 	void handle(const Shutdown& event);
 	
@@ -148,6 +148,7 @@ private:
 	
 	List<Timer> vnl_timers;
 	Map<uint64_t, int64_t> vnl_sources;
+	Map<Address, Topic> vnl_subscriptions;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;

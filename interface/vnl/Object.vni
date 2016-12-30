@@ -18,8 +18,12 @@ object Object {
 	int vnl_max_num_pending = -1;
 	
 	Map<String, String> get_config_map() const;
+	
 	String get_config(Hash32 name) const;
+	
 	void set_config(Hash32 name, String value);
+	
+	Array<vnl.Topic> get_subscriptions() const;
 	
 	void handle(Shutdown event);
 	
