@@ -9,6 +9,7 @@
 #include <vnl/Layer.h>
 #include <vnl/Random.h>
 #include <vnl/Pool.h>
+#include <vnl/Pipe.h>
 #include <vnl/Process.h>
 #include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
@@ -49,6 +50,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 {
 	assert(Random64::instance == 0);
 	assert(Router::instance == 0);
+	assert(Pipe::pool == 0);
 	assert(internal::global_pool_ == 0);
 	assert(internal::config_ == 0);
 	assert(internal::type_info_ == 0);
@@ -56,6 +58,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	assert(num_threads == 0);
 	
 	Random64::instance = new Random64();
+	Pipe::pool = new Pool<Pipe>();
 	local_domain_name = domain_name;
 	internal::global_pool_ = new GlobalPool();
 	internal::config_ = new Map<String, String>();
@@ -102,6 +105,7 @@ void Layer::close() {
 	}
 	
 	delete Router::instance;
+	delete Pipe::pool;
 	delete Random64::instance;
 	delete internal::global_pool_;
 	delete internal::config_;

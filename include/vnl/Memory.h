@@ -46,13 +46,16 @@ public:
 	}
 	
 	void free() {
-#ifdef VNL_MEMORY_DEBUG
 		memset(mem, 0, size);
-#endif
 		sync.lock();
 		num_used--;
+#ifndef VNL_MEMORY_DEBUG
 		next = begin;
 		begin = this;
+#else
+		delete this;
+		num_alloc--;
+#endif
 		sync.unlock();
 	}
 	

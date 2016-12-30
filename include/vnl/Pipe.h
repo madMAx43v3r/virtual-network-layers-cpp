@@ -20,7 +20,7 @@ public:
 	
 	static Pipe* create(Basic* target) {
 		std::lock_guard<std::mutex> lock(sync);
-		Pipe* pipe = pool.create();
+		Pipe* pipe = pool->create();
 		pipe->target = target;
 		num_open++;
 		return pipe;
@@ -29,7 +29,7 @@ public:
 	static Pipe* create() {
 		std::lock_guard<std::mutex> lock(sync);
 		num_open++;
-		return pool.create();
+		return pool->create();
 	}
 	
 	static int get_num_open() {
@@ -77,7 +77,7 @@ private:
 		if(--count == 0) {
 			assert(target == 0);
 			std::lock_guard<std::mutex> lock(sync);
-			pool.destroy(this);
+			pool->destroy(this);
 			num_open--;
 		}
 	}
@@ -87,8 +87,10 @@ private:
 	int count;
 	
 	static int num_open;
-	static Pool<Pipe> pool;
+	static Pool<Pipe>* pool;
 	static std::mutex sync;
+	
+	friend class Layer;
 	
 };
 
