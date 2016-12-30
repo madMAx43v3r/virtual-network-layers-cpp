@@ -26,7 +26,7 @@
 /*
  * Defining this will assert on correct memory usage.
  */
-#define VNL_MEMORY_DEBUG
+//#define VNL_MEMORY_DEBUG
 
 /*
  * Defining this will assert on IO errors.
