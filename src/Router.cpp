@@ -54,6 +54,7 @@ bool Router::handle(Message* msg) {
 				}
 				info.send_counter++;
 				info.receive_counter += pkt->count;
+				info.last_time = vnl::currentTimeMicros();
 			}
 		}
 		if(!pkt->count) {
