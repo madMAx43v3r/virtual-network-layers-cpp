@@ -5,7 +5,6 @@
  *      Author: mad
  */
 
-#include <vnl/Layer.h>
 #include <vnl/Object.h>
 #include <vnl/Pipe.h>
 #include <vnl/Sample.h>
@@ -46,6 +45,16 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 Object* Object::fork(Object* object) {
 	vnl_engine->fork(object);
 	return object;
+}
+
+void Object::add_input(InputPin& pin) {
+	pin.enable(vnl_engine, this);
+	vnl_input_pins.push_back(&pin);
+}
+
+void Object::add_output(OutputPin& pin) {
+	pin.enable(vnl_engine);
+	vnl_output_pins.push_back(&pin);
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
@@ -348,6 +357,12 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	announce->instance.topic = my_topic;
 	publish(announce, local_domain_name, "vnl.announce");
 	main(engine_, init);
+	for(InputPin* pin : vnl_input_pins) {
+		pin->close();
+	}
+	for(OutputPin* pin : vnl_output_pins) {
+		pin->close();
+	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");
 	vnl_stream.close();
 	if(pipe) {

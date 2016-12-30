@@ -18,12 +18,10 @@ namespace vnl {
 
 class InputPin : public Basic {
 public:
-	InputPin() : enabled(false) {}
+	InputPin(const char* name = "Input") : name(name), enabled(false) {}
 	
 	~InputPin() {
-		for(Pipe* pipe : links) {
-			pipe->close();
-		}
+		assert(enabled == false);
 	}
 	
 	bool operator==(InputPin& other) const {
@@ -55,6 +53,18 @@ public:
 		}
 		enabled = true;
 	}
+	
+	// NOT thread safe
+	void close() {
+		for(Pipe* pipe : links) {
+			pipe->close();
+		}
+		stream.close();
+		links.clear();
+		enabled = false;
+	}
+	
+	String name;
 	
 private:
 	bool enabled;

@@ -5,9 +5,10 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_OBJECT_H_
-#define INCLUDE_PHY_OBJECT_H_
+#ifndef INCLUDE_VNL_OBJECT_H_
+#define INCLUDE_VNL_OBJECT_H_
 
+#include <vnl/Layer.h>
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Pool.h>
@@ -15,6 +16,7 @@
 #include <vnl/String.h>
 #include <vnl/Sample.h>
 #include <vnl/Frame.h>
+
 #include <vnl/ObjectSupport.hxx>
 
 
@@ -84,6 +86,9 @@ protected:
 	
 	Object* fork(Object* object);
 	
+	void add_input(InputPin& pin);
+	void add_output(OutputPin& pin);
+	
 	Address subscribe(const String& domain, const String& topic);
 	Address subscribe(Address address);
 	
@@ -147,6 +152,9 @@ private:
 	uint64_t vnl_proxy;
 	
 	List<Timer> vnl_timers;
+	List<InputPin*> vnl_input_pins;
+	List<OutputPin*> vnl_output_pins;
+	
 	Map<uint64_t, int64_t> vnl_sources;
 	Map<Address, Topic> vnl_subscriptions;
 	
@@ -166,4 +174,4 @@ private:
 
 } // vnl
 
-#endif /* INCLUDE_PHY_OBJECT_H_ */
+#endif /* INCLUDE_VNL_OBJECT_H_ */

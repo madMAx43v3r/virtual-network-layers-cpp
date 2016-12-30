@@ -18,15 +18,10 @@ namespace vnl {
 
 class OutputPin {
 public:
-	OutputPin() : enabled(false), engine(0) {}
+	OutputPin(const char* name = "Output") : name(name), enabled(false), engine(0) {}
 	
 	~OutputPin() {
-		if(engine) {
-			engine->flush();
-		}
-		for(Pipe* pipe : links) {
-			pipe->close();
-		}
+		assert(enabled == false);
 	}
 	
 	class pin_data_t : public MessageType<Value*, 0xe8a3ef08> {
@@ -76,6 +71,18 @@ public:
 			parent->count++;
 		}
 	}
+	
+	// NOT thread safe
+	void close() {
+		for(Pipe* pipe : links) {
+			pipe->close();
+		}
+		links.clear();
+		engine = 0;
+		enabled = false;
+	}
+	
+	String name;
 	
 private:
 	bool enabled;
