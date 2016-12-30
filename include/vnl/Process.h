@@ -29,12 +29,12 @@ protected:
 		subscribe(local_domain_name, "vnl.log");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
+		set_timeout(1000*1000*3, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
 		if(do_print_stats) {
 			set_timeout(1000*1000*10, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
 		}
 		init->ack();
 		run();
-		std::cout << "[" << my_topic << "] Shutdown activated" << std::endl;
 		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
 			poll(-1);
@@ -88,6 +88,10 @@ protected:
 		return vnl::get_type_info();
 	}
 	
+	vnl::Array<vnl::info::TopicInfo> get_topic_info() const {
+		return topic_info;
+	}
+	
 	void pause_log() {
 		paused = true;
 	}
@@ -129,8 +133,15 @@ protected:
 		}
 	}
 	
+	void update() {
+		Router::get_topic_info_t msg;
+		send(&msg, Router::instance);
+		topic_info = msg.data;
+	}
+	
 private:
 	Map<Address, Instance> objects;
+	vnl::Array<vnl::info::TopicInfo> topic_info;
 	
 	bool paused = false;
 	bool filtering = false;

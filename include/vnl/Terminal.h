@@ -71,6 +71,13 @@ protected:
 				} else {
 					log(ERROR).out << "invalid input" << vnl::endl;
 				}
+			} else if(input == "topics" || input == "t") {
+				vnl::Array<vnl::info::TopicInfo> topic_info = process.get_topic_info();
+				for(vnl::info::TopicInfo& info : topic_info) {
+					std::cout << "  " << info.topic.domain << " : " << info.topic.name << " | sent=" << info.send_counter << " | received=" << info.receive_counter << std::endl;
+				}
+				std::cout << "Help: press enter to continue" << std::endl;
+				std::getline(std::cin, input);
 			} else if(input.find("grep ") == 0) {
 				std::cout << "Help: press enter to stop" << std::endl;
 				std::string filter = input.substr(5, -1);
@@ -122,7 +129,7 @@ protected:
 	}
 	
 	void print_help() {
-		std::cout << "Help: quit | log | grep <expr> | spy [expr] | dump [expr]" << std::endl;
+		std::cout << "Help: quit | log | topics | grep <expr> | spy [expr] | dump [expr]" << std::endl;
 	}
 	
 	void set_log_level(Engine* engine, Instance& node, int level) {
