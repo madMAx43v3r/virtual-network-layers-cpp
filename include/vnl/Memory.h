@@ -138,10 +138,6 @@ private:
 	static Memory* begin;
 	static bool can_alloc;
 	
-#ifdef VNL_MEMORY_DEBUG
-	bool vnl_is_free = false;
-#endif
-	
 };
 
 template<int size_> const int Memory<size_>::size;
