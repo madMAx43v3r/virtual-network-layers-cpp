@@ -25,7 +25,7 @@ template<typename K, typename V, typename TPage = Memory<VNL_PAGE_SIZE> >
 class Map {
 public:
 	Map() : p_front(0), N(0), count(0) {
-		resize(512);
+		clear();
 	}
 	
 	Map(const Map& other) : p_front(0), N(0), count(0) {
@@ -239,7 +239,7 @@ public:
 	}
 	
 	void clear() {
-		resize(N);
+		resize(32);
 	}
 	
 	int size() const {

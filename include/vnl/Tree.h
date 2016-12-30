@@ -16,7 +16,7 @@ namespace vnl {
 /*
  * This is a tree of pointers with O(log(n)) complexity.
  */
-template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
+template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
 class Tree {
 public:
 	Tree() : p_root(0), depth(0), count(0) {
