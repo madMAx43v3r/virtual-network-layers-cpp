@@ -141,7 +141,7 @@ protected:
 	
 private:
 	Map<Address, Instance> objects;
-	vnl::Array<vnl::info::TopicInfo> topic_info;
+	Array<vnl::info::TopicInfo> topic_info;
 	
 	bool paused = false;
 	bool filtering = false;

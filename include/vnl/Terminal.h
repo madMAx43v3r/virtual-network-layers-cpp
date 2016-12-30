@@ -72,8 +72,9 @@ protected:
 					log(ERROR).out << "invalid input" << vnl::endl;
 				}
 			} else if(input == "topics" || input == "t") {
-				vnl::Array<vnl::info::TopicInfo> topic_info = process.get_topic_info();
-				for(vnl::info::TopicInfo& info : topic_info) {
+				Router::get_topic_info_t msg;
+				send(&msg, Router::instance);
+				for(vnl::info::TopicInfo& info : msg.data) {
 					std::cout << "  " << info.topic.domain << " : " << info.topic.name << " | sent=" << info.send_counter << " | received=" << info.receive_counter << std::endl;
 				}
 				std::cout << "Help: press enter to continue" << std::endl;
