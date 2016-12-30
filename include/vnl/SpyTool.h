@@ -20,7 +20,7 @@ namespace vnl {
 class SpyTool : public SpyToolBase {
 public:
 	SpyTool(const String& domain = local_domain_name)
-		:	SpyToolBase(domain, "vnl.SpyTool"), running(false)
+		:	SpyToolBase(domain, "SpyTool"), running(false)
 	{
 	}
 	

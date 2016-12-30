@@ -18,7 +18,7 @@ namespace vnl {
 class Process : public ProcessBase {
 public:
 	Process()
-		:	ProcessBase(local_domain_name, "Process")
+		:	ProcessBase("vnl", "Process")
 	{
 		name = local_domain_name;
 	}
