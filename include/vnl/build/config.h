@@ -47,14 +47,6 @@
 #define VNL_IO_MAX_SIZE 2147483648
 #endif
 
-/*
- * If we have boost coroutine >= version 1.56
- * Needed for FiberEngine.
- */
-#ifdef VNL_HAVE_BOOST_COROUTINE
-#define VNL_HAVE_FIBER_ENGINE
-#endif
-
 
 
 #endif /* INCLUDE_VNL_BUILD_CONFIG_H_ */

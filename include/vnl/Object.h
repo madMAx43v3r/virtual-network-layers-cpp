@@ -84,8 +84,6 @@ protected:
 		return vnl_proxy;
 	}
 	
-	Object* fork(Object* object);
-	
 	void add_input(InputPin& pin);
 	void add_output(OutputPin& pin);
 	

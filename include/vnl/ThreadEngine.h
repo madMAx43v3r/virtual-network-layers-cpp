@@ -45,10 +45,6 @@ public:
 		exec(object, &msg, pipe);
 	}
 	
-	virtual void fork(Object* object) {
-		spawn(object);
-	}
-	
 	virtual bool poll(Stream* stream, int64_t micros) {
 		assert(stream);
 		assert(stream->get_engine() == this);

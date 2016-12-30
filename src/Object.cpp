@@ -42,11 +42,6 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 	return &timer;
 }
 
-Object* Object::fork(Object* object) {
-	vnl_engine->fork(object);
-	return object;
-}
-
 void Object::add_input(InputPin& pin) {
 	pin.enable(vnl_engine, this);
 	vnl_input_pins.push_back(&pin);

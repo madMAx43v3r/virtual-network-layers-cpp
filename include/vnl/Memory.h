@@ -70,7 +70,7 @@ public:
 	
 	template<typename T>
 	static T* alloc_ex() {
-		assert(sizeof(T) == sizeof(Memory));
+		Memory* assign_test = (T*)0;
 		return (T*)alloc();
 	}
 	

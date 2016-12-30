@@ -32,9 +32,6 @@ class FiberEngine;
 // running module in new thread
 Address spawn(Object* object, Pipe* pipe = 0);
 
-// running module in a fiber if possible, otherwise uses spawn
-Address fork(Object* object);
-
 
 class Engine : public Basic {
 public:
@@ -74,8 +71,6 @@ public:
 		msg->dst = dst;
 		send_impl(msg, true);
 	}
-	
-	virtual void fork(Object* object) = 0;
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
