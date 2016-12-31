@@ -355,13 +355,19 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	if(pipe) {
 		pipe->open(this);
 	}
+	
 	subscribe(my_address);
+	subscribe(Address(my_address.domain(), vnl_stream.get_mac()));
+	
 	Announce* announce = Announce::create();
 	announce->instance.type = get_type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
+	announce->instance.src_mac = get_mac();
 	publish(announce, local_domain_name, "vnl.announce");
+	
 	main(engine_, init);
+	
 	for(InputPin* pin : vnl_input_pins) {
 		pin->close();
 	}
@@ -369,6 +375,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 		pin->close();
 	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");
+	
 	vnl_stream.close();
 	if(pipe) {
 		pipe->close();

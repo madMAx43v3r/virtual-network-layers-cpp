@@ -3,6 +3,7 @@ package vnl;
 class LogMsg {
 	
 	int level;
+	Hash64 src_mac;
 	String domain;
 	String topic;
 	String msg;

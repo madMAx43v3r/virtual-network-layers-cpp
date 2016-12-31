@@ -199,6 +199,7 @@ void GlobalLogWriter::write(const String& str) {
 	vnl::LogMsg* msg = vnl::LogMsg::create();
 	msg->domain = node->my_domain;
 	msg->topic = node->my_topic;
+	msg->src_mac = node->get_mac();
 	msg->level = level;
 	msg->msg = str;
 	node->publish(msg, local_domain_name, "vnl.log");

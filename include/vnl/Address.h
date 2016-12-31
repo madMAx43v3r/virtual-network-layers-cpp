@@ -94,7 +94,7 @@ inline bool operator==(const Address& A, const Address& B) {
 }
 
 inline bool operator!=(const Address& A, const Address& B) {
-	return A.A != B.A && A.B != B.B;
+	return A.A != B.A || A.B != B.B;
 }
 
 
