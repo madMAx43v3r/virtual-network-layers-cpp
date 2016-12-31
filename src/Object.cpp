@@ -297,6 +297,10 @@ Frame* Object::exec_vni_call(Frame* frame) {
 	return result;
 }
 
+String Object::get_private_domain() const {
+	return my_private_domain;
+}
+
 Map<String, String> Object::get_config_map() const {
 	Map<String, String> res;
 	for(int i = 0; i < get_num_fields(); ++i) {

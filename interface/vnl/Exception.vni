@@ -8,6 +8,10 @@ class IOException extends Exception {
 	
 }
 
+class TimeoutException extends IOException {
+	
+}
+
 class NoSuchMethodException extends IOException {
 	
 }

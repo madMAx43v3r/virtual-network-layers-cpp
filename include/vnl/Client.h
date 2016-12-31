@@ -8,12 +8,13 @@
 #ifndef INCLUDE_VNI_CLIENT_H_
 #define INCLUDE_VNI_CLIENT_H_
 
-#include <vnl/IOException.hxx>
-#include <vnl/Topic.hxx>
 #include <vnl/Frame.h>
 #include <vnl/Stream.h>
 #include <vnl/Router.h>
 #include <vnl/Layer.h>
+
+#include <vnl/TimeoutException.hxx>
+#include <vnl/Topic.hxx>
 
 
 namespace vnl {
@@ -113,6 +114,8 @@ protected:
 					}
 				}
 				msg->ack();
+			} else if(do_fail) {
+				throw TimeoutException();
 			}
 			if(ret || do_fail) {
 				break;

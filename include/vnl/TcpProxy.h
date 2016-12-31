@@ -33,7 +33,6 @@ protected:
 	void main() {
 		server->attach();
 		Super::main();
-		log(INFO).out << "Client disconnected" << vnl::endl;
 		del_client_t msg(get_mac());
 		send(&msg, server);
 		server->detach();
@@ -44,7 +43,7 @@ protected:
 			const Topic& topic = ((publish_t*)msg)->data;
 			Object::subscribe(topic.domain, topic.name);
 		} else if(msg->msg_id == subscribe_t::MID) {
-			subscribe(((subscribe_t*)msg)->data);
+			subscribe(((subscribe_t*)msg)->data.domain, ((subscribe_t*)msg)->data.name);
 		}
 		return Super::handle(msg);
 	}

@@ -17,6 +17,8 @@ object Object {
 	 */
 	int vnl_max_num_pending = -1;
 	
+	String get_private_domain() const;
+	
 	Map<String, String> get_config_map() const;
 	
 	String get_config(Hash32 name) const;

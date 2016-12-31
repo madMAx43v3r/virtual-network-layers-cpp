@@ -26,7 +26,7 @@ public:
 	
 protected:
 	void main(Engine* engine) {
-		process.set_address("vnl", "Process");
+		process.set_address(vnl::local_domain_name, "Process");
 		process.connect(engine);
 		std::string input;
 		while(poll(0)) {

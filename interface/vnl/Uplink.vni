@@ -2,10 +2,11 @@ package vnl;
 
 interface Uplink {
 	
-	void publish(Topic topic);
 	void publish(String domain, String topic);
+	void unpublish(String domain, String topic);
 	
-	void subscribe(Topic topic);
 	void subscribe(String domain, String topic);
+	void unsubscribe(String domain, String topic);
+	void unsubscribe_all();
 	
 }

@@ -30,7 +30,6 @@ public:
 	
 protected:
 	void main() {
-		pipe = Pipe::create(this);
 		while(vnl_dorun) {
 			if(server >= 0) {
 				::close(server);
@@ -61,15 +60,19 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Running on port=" << port << vnl::endl;
+			
+			do_reset = false;
+			pipe = Pipe::create(this);
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
-					do_reset = false;
 					usleep(error_interval);
 					break;
 				}
 			}
+			pipe->close();
 			::shutdown(server, SHUT_RDWR);
+			poll(0);
 			thread.join();
 			::close(server);
 			server = -1;
@@ -77,7 +80,6 @@ protected:
 		for(auto& entry : clients) {
 			entry.second.pipe->close();
 		}
-		pipe->close();
 	}
 	
 	bool handle(Message* msg) {
@@ -132,31 +134,33 @@ protected:
 	}
 	
 	void publish(const vnl::String& domain, const vnl::String& topic) {
-		vnl::Topic tmp;
-		tmp.domain = domain;
-		tmp.name = topic;
-		publish(tmp);
-	}
-	
-	void publish(const vnl::Topic& topic) {
 		for(const auto& entry : clients) {
-			TcpProxy::publish_t msg(topic);
+			TcpProxy::publish_t msg;
+			msg.data.domain = domain;
+			msg.data.name = topic;
 			send(&msg, entry.second.pipe);
 		}
+	}
+	
+	void unpublish(const vnl::String& domain, const vnl::String& topic) {
+		// TODO
 	}
 	
 	void subscribe(const vnl::String& domain, const vnl::String& topic) {
-		vnl::Topic desc;
-		desc.domain = domain;
-		desc.name = topic;
-		subscribe(desc);
-	}
-	
-	void subscribe(const vnl::Topic& topic) {
 		for(const auto& entry : clients) {
-			TcpProxy::subscribe_t msg(topic);
+			TcpProxy::subscribe_t msg;
+			msg.data.domain = domain;
+			msg.data.name = topic;
 			send(&msg, entry.second.pipe);
 		}
+	}
+	
+	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
+		// TODO
+	}
+	
+	void unsubscribe_all() {
+		// TODO
 	}
 	
 	virtual void on_new_client(uint64_t mac, Pipe* pipe) {}

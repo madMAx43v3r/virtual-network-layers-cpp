@@ -14,6 +14,7 @@
 #include <vnl/ThreadEngine.h>
 
 #include <vnl/TcpUplinkSupport.hxx>
+#include <vnl/info/RemoteInfo.hxx>
 
 #include <thread>
 
@@ -26,10 +27,9 @@ public:
 		:	TcpUplinkBase(domain_, topic_),
 		 	out(&sock), timer(0), next_seq(1), pipe(0), do_reset(false)
 	{
-		sub_topic = Address("vnl.downlink", "subscribe");
+		remote_domain = "vnl.remote";
 	}
 	
-	typedef MessageType<Topic, 0x2b70291f> subscribe_t;
 	typedef MessageType<Address, 0xc94ccb93> forward_t;
 	typedef MessageType<int, 0x283a6425> error_t;
 	
@@ -38,7 +38,6 @@ protected:
 	
 	void main() {
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
-		pipe = Pipe::create(this);
 		while(vnl_dorun) {
 			are_connected = false;
 			sock.fd = connect();
@@ -48,38 +47,43 @@ protected:
 			}
 			are_connected = true;
 			out.reset();
+			write_announce();
 			for(Topic& topic : table.values()) {
-				write_subscribe(topic);
+				write_subscribe(topic.domain, topic.name);
 			}
+			do_reset = false;
+			pipe = Pipe::create(this);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
-					do_reset = false;
-					usleep(error_interval);
 					break;
 				}
 			}
+			pipe->close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
+			poll(0);
 			thread.join();
 			sock.close();
+			if(do_reset) {
+				usleep(error_interval);
+			}
 		}
 		drop_all();
-		pipe->close();
 	}
 	
 	bool handle(Message* msg) {
 		if(Super::handle(msg)) {
 			return true;
 		}
-		if(msg->msg_id == subscribe_t::MID) {
-			publish(((subscribe_t*)msg)->data);
-		} else if(msg->msg_id == forward_t::MID) {
+		if(msg->msg_id == forward_t::MID) {
 			Address& addr = ((forward_t*)msg)->data;
 			Object::subscribe(addr);
 			log(DEBUG).out << "Forwarding " << addr << vnl::endl;
 		} else if(msg->msg_id == error_t::MID) {
 			int err = ((error_t*)msg)->data;
-			if(err != VNL_IO_EOF) {
+			if(err == VNL_IO_EOF) {
+				log(INFO).out << "Connection reset." << vnl::endl;
+			} else {
 				log(ERROR).out << "Invalid input data: error=" << err << vnl::endl;
 			}
 			reset();
@@ -88,12 +92,16 @@ protected:
 	}
 	
 	bool handle(Packet* pkt) {
-		if(Super::handle(pkt)) {
+		if(pkt->dst_addr != my_address && pkt->dst_addr.domain() != remote_domain) {
+			if(sock.good()) {
+				queue.push(pkt);
+				timer->reset();
+			} else {
+				pkt->ack();
+			}
 			return true;
 		}
-		if(sock.good()) {
-			queue.push(pkt);
-			timer->reset();
+		if(Super::handle(pkt)) {
 			return true;
 		}
 		return false;
@@ -104,26 +112,55 @@ protected:
 		log(INFO).out << "Publishing " << domain << ":" << topic << vnl::endl;
 	}
 	
-	void publish(const vnl::Topic& topic) {
-		publish(topic.domain, topic.name);
+	void unpublish(const vnl::String& domain, const vnl::String& topic) {
+		Object::unsubscribe(domain, topic);
+		log(INFO).out << "Unpublishing " << domain << ":" << topic << vnl::endl;
 	}
 	
 	void subscribe(const vnl::String& domain, const vnl::String& topic) {
-		vnl::Topic desc;
-		desc.domain = domain;
-		desc.name = topic;
-		subscribe(desc);
+		if(sock.good()) {
+			write_subscribe(domain, topic);
+		}
+		vnl::Topic& data = table[Address(domain, topic)];
+		data.domain = domain;
+		data.name = topic;
 	}
 	
-	void subscribe(const vnl::Topic& topic) {
+	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
 		if(sock.good()) {
-			write_subscribe(topic);
+			write_subscribe(domain, topic, true);
 		}
-		table[Address(topic.domain, topic.name)] = topic;
+		table.erase(Address(domain, topic));
+	}
+	
+	void unsubscribe_all() {
+		if(sock.good()) {
+			for(Topic& topic : table.values()) {
+				write_subscribe(topic.domain, topic.name, true);
+			}
+		}
+		table.clear();
+	}
+	
+	vnl::info::RemoteInfo get_remote_info() const {
+		return remote_info;
 	}
 	
 	void reset() {
 		do_reset = true;
+	}
+	
+	void handle(const vnl::info::RemoteInfo& remote) {
+		remote_info = remote;
+		Object::publish(remote.clone(), my_private_domain, "remote_info");
+	}
+	
+	void handle(const vnl::Topic& topic, const vnl::Packet& packet) {
+		if(packet.dst_addr.topic() == "subscribe") {
+			publish(topic.domain, topic.name);
+		} else if(packet.dst_addr.topic() == "unsubscribe") {
+			unpublish(topic.domain, topic.name);
+		}
 	}
 	
 private:
@@ -158,16 +195,37 @@ private:
 		}
 	}
 	
-	void write_subscribe(const vnl::Topic& topic) {
+	void write_announce() {
 		Sample sample;
 		sample.seq_num = next_seq++;
 		sample.src_mac = get_mac();
 		sample.src_addr = my_address;
-		sample.dst_addr = sub_topic;
-		sample.data = topic.clone();
+		sample.dst_addr = Address(remote_domain, "announce");
+		vnl::info::RemoteInfo* info = vnl::info::RemoteInfo::create();
+		info->domain_name = vnl::local_domain_name;
+		info->config_name = vnl::local_config_name;
+		sample.data = info;
 		sample.serialize(out);
 		out.flush();
-		log(INFO).out << "Subscribed to " << topic.domain << ":" << topic.name << vnl::endl;
+	}
+	
+	void write_subscribe(const vnl::String& domain, const vnl::String& topic, bool do_negate = false) {
+		Sample sample;
+		sample.seq_num = next_seq++;
+		sample.src_mac = get_mac();
+		sample.src_addr = my_address;
+		sample.dst_addr = Address(remote_domain, do_negate ? "unsubscribe" : "subscribe");
+		vnl::Topic* data = vnl::Topic::create();
+		data->domain = domain;
+		data->name = topic;
+		sample.data = data;
+		sample.serialize(out);
+		out.flush();
+		if(do_negate) {
+			log(INFO).out << "Unsubscribed from " << domain << ":" << topic << vnl::endl;
+		} else {
+			log(INFO).out << "Subscribed to " << domain << ":" << topic << vnl::endl;
+		}
 	}
 	
 private:
@@ -216,37 +274,31 @@ private:
 			sample->deserialize(in, 0);
 			sample->proxy = get_mac();
 			if(!in.error()) {
-				if(sample->dst_addr == sub_topic) {
-					Topic* topic = dynamic_cast<Topic*>(sample->data);
-					if(topic) {
-						subscribe_t* msg = subscribe_buffer.create();
-						msg->data = *topic;
-						stream.send_async(msg, pipe);
-					}
-					sample->destroy();
+				if(sample->dst_addr.domain() == remote_domain) {
+					stream.send_async(sample, pipe);
 				} else {
 					forward(stream, sample);
 					stream.send_async(sample, sample->dst_addr);
 				}
-			} else {
-				sample->destroy();
-				return false;
+				return true;
 			}
+			sample->destroy();
 		} else if(hash == Frame::PID) {
 			Frame* frame = frame_buffer.create();
 			frame->deserialize(in, 0);
 			frame->proxy = get_mac();
 			if(!in.error()) {
-				forward(stream, frame);
-				stream.send_async(frame, frame->dst_addr);
-			} else {
-				frame->destroy();
-				return false;
+				if(frame->dst_addr.domain() == remote_domain) {
+					stream.send_async(frame, pipe);
+				} else {
+					forward(stream, frame);
+					stream.send_async(frame, frame->dst_addr);
+				}
+				return true;
 			}
-		} else {
-			return false;
+			frame->destroy();
 		}
-		return true;
+		return false;
 	}
 	
 	void forward(Stream& stream, vnl::Packet* pkt) {
@@ -262,11 +314,12 @@ private:
 private:
 	MessagePool<Sample> sample_buffer;
 	MessagePool<Frame> frame_buffer;
-	MessagePool<subscribe_t> subscribe_buffer;
 	MessagePool<forward_t> forward_buffer;
 	
 private:
-	Address sub_topic;
+	Hash64 remote_domain;
+	vnl::info::RemoteInfo remote_info;
+	
 	vnl::io::Socket sock;
 	vnl::io::TypeOutput out;
 	Timer* timer;

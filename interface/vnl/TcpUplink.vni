@@ -13,6 +13,10 @@ object TcpUplink implements Uplink {
 	bool are_connected = false;
 	long num_drop = 0;			// how many packets have been dropped so far
 	
+	vnl.info.RemoteInfo get_remote_info() const;
 	void reset();
+	
+	void handle(vnl.info.RemoteInfo sample);
+	void handle(vnl.Topic sample);
 	
 }

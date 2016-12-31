@@ -2,7 +2,7 @@ package vnl;
 
 object TcpClient extends TcpUplink {
 	
-	String endpoint;
+	String endpoint = "localhost";
 	int port = 8916;
 	
 	bool autoclose = false;					// if client should exit on close

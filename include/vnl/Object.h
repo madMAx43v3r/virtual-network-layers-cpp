@@ -33,6 +33,7 @@ public:
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
 			vnl_log_writer(this)
 	{
+		my_private_domain << my_domain << "." << my_topic;
 	}
 	
 	typedef SignalType<0x6a7fcd62> exit_t;
@@ -127,6 +128,7 @@ protected:
 	virtual Frame* exec_vni_call(Frame* frame);
 	
 	void exit();
+	String get_private_domain() const;
 	Map<String, String> get_config_map() const;
 	String get_config(const Hash32& name) const;
 	void set_config(const Hash32& name, const String& value);
@@ -140,6 +142,7 @@ protected:
 	MessagePool<Frame> vnl_frame_buffer;
 	
 	Address my_address;
+	String my_private_domain;
 	String my_domain;
 	String my_topic;
 	

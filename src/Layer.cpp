@@ -81,7 +81,7 @@ Layer::~Layer() {
 void Layer::shutdown() {
 	if(!have_shutdown) {
 		ThreadEngine engine;
-		ProcessClient proc = Address("vnl", "Process");
+		ProcessClient proc = Address(vnl::local_domain_name, "Process");
 		proc.set_fail(true);
 		proc.connect(&engine);
 		try {
