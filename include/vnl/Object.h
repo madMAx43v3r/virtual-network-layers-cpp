@@ -150,7 +150,6 @@ protected:
 	Map<String, String> get_config_map() const;
 	String get_config(const Hash32& name) const;
 	void set_config(const Hash32& name, const String& value);
-	vnl::Array<vnl::Topic> get_subscriptions() const;
 	
 	void handle(const Shutdown& event);
 	
@@ -178,7 +177,6 @@ private:
 	List<OutputPin*> vnl_output_pins;
 	
 	Map<uint64_t, int64_t> vnl_sources;
-	Map<Address, Topic> vnl_subscriptions;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;

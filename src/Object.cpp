@@ -66,11 +66,7 @@ void Object::add_output(OutputPin& pin) {
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
-	Address address(domain, topic);
-	vnl::Topic& value = vnl_subscriptions[address];
-	value.domain = domain;
-	value.name = topic;
-	return subscribe(address);
+	return subscribe(Address(domain, topic));
 }
 
 Address Object::subscribe(Address address) {
@@ -83,7 +79,6 @@ void Object::unsubscribe(Hash64 domain, Hash64 topic) {
 
 void Object::unsubscribe(Address address) {
 	vnl_stream.unsubscribe(address);
-	vnl_subscriptions.erase(address);
 }
 
 void Object::publish(Value* data, const String& domain, const String& topic) {
@@ -327,10 +322,6 @@ String Object::get_config(const Hash32& name) const {
 
 void Object::set_config(const Hash32& name, const String& value) {
 	set_field(get_field_index(name), value);
-}
-
-vnl::Array<vnl::Topic> Object::get_subscriptions() const {
-	return vnl_subscriptions.values();
 }
 
 void Object::handle(const vnl::Shutdown& event) {
