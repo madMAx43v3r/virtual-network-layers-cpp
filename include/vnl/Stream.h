@@ -17,7 +17,7 @@ namespace vnl {
 
 class Stream : public Node {
 public:
-	Stream() : engine(0), router(0), listener(0), next_seq(1) {}
+	Stream() : engine(0), target(0), listener(0), next_seq(1) {}
 	
 	Stream(const Stream&) = delete;
 	Stream& operator=(const Stream&) = delete;
@@ -44,12 +44,12 @@ public:
 		}
 	}
 	
-	void connect(Engine* engine_, Router* target_ = Router::instance) {
+	void connect(Engine* engine_, Basic* target_ = Router::instance) {
 		engine = engine_;
-		router = target_;
-		if(router) {
+		target = target_;
+		if(target) {
 			Router::connect_t msg(this);
-			send(&msg, router);
+			send(&msg, target);
 		}
 	}
 	
@@ -59,9 +59,9 @@ public:
 	}
 	
 	void close() {
-		if(router) {
+		if(target) {
 			Router::finish_t msg(this);
-			send(&msg, router);
+			send(&msg, target);
 		}
 		Message* left = 0;
 		while(queue.pop(left)) {
@@ -75,16 +75,16 @@ public:
 	}
 	
 	Address subscribe(Address addr) {
-		assert(router);
+		assert(target);
 		Router::open_t msg(vnl::make_pair(vnl_mac, addr));
-		send(&msg, router);
+		send(&msg, target);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
-		assert(router);
+		assert(target);
 		Router::close_t msg(vnl::make_pair(vnl_mac, addr));
-		send(&msg, router);
+		send(&msg, target);
 	}
 	
 	void send(Message* msg, Basic* dst) {
@@ -110,15 +110,15 @@ public:
 	}
 	
 	void send(Packet* pkt, Address dst) {
-		assert(router);
+		assert(target);
 		pkt->dst_addr = dst;
-		send(pkt, router);
+		send(pkt, target);
 	}
 	
 	void send_async(Packet* pkt, Address dst) {
-		assert(router);
+		assert(target);
 		pkt->dst_addr = dst;
-		send_async(pkt, router);
+		send_async(pkt, target);
 	}
 	
 	Message* poll() {
@@ -155,7 +155,7 @@ public:
 	
 private:
 	Engine* engine;
-	Router* router;
+	Basic* target;
 	Basic* listener;
 	Queue<Message*> queue;
 	MessagePool<notify_t> notify_buffer;

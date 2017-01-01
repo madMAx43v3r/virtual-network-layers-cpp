@@ -103,7 +103,7 @@ protected:
 	}
 	
 	void add_client(Client& client);
-	void add_input(Stream& stream);
+	void add_input(Stream& stream, Basic* target = 0);
 	void add_input(InputPin& pin);
 	void add_output(OutputPin& pin);
 	

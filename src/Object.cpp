@@ -47,9 +47,9 @@ void Object::add_client(Client& client) {
 	client.connect(vnl_engine);
 }
 
-void Object::add_input(Stream& stream) {
+void Object::add_input(Stream& stream, Basic* target) {
 	assert(vnl_dorun);
-	stream.connect(vnl_engine);
+	stream.connect(vnl_engine, target ? target : Router::instance);
 	stream.listen(this);
 }
 
