@@ -36,8 +36,9 @@ public:
 protected:
 	virtual int connect() = 0;
 	
-	void main() {
+	void main(Engine* engine, Message* init) {
 		add_input(tunnel);
+		init->ack();
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
 			are_connected = false;

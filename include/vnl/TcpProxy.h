@@ -31,9 +31,9 @@ public:
 	typedef MessageType<uint64_t, 0xdaef2275> del_client_t;
 	
 protected:
-	void main() {
+	void main(Engine* engine, Message* init) {
 		server->attach();
-		Super::main();
+		Super::main(engine, init);
 		del_client_t msg(get_mac());
 		send(&msg, server);
 		server->detach();
