@@ -42,14 +42,14 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 	return &timer;
 }
 
-void Object::add_client(Client& client) {
+void Object::add_client(Client& client, Router* target) {
 	assert(vnl_dorun);
-	client.connect(vnl_engine);
+	client.connect(vnl_engine, target);
 }
 
-void Object::add_input(Stream& stream, Basic* target) {
+void Object::add_input(Stream& stream, Router* target) {
 	assert(vnl_dorun);
-	stream.connect(vnl_engine, target ? target : Router::instance);
+	stream.connect(vnl_engine, target);
 	stream.listen(this);
 }
 

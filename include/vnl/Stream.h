@@ -44,9 +44,9 @@ public:
 		}
 	}
 	
-	void connect(Engine* engine_, Basic* target_ = Router::instance) {
+	void connect(Engine* engine_, Router* target_ = 0) {
 		engine = engine_;
-		target = target_;
+		target = target_ ? target_ : Router::instance;
 		if(target) {
 			Router::connect_t msg(this);
 			send(&msg, target);
@@ -155,7 +155,7 @@ public:
 	
 private:
 	Engine* engine;
-	Basic* target;
+	Router* target;
 	Basic* listener;
 	Queue<Message*> queue;
 	MessagePool<notify_t> notify_buffer;

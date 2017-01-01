@@ -55,8 +55,8 @@ public:
 		return dst_addr;
 	}
 	
-	void connect(vnl::Engine* engine, Basic* target = Router::instance) {
-		stream.connect(engine, target);
+	void connect(vnl::Engine* engine, Router* target = 0) {
+		stream.connect(engine, target ? target : Router::instance);
 		stream.subscribe(src_addr);
 	}
 	

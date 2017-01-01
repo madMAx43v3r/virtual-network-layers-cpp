@@ -102,8 +102,8 @@ protected:
 		return vnl_channel;
 	}
 	
-	void add_client(Client& client);
-	void add_input(Stream& stream, Basic* target = 0);
+	void add_client(Client& client, Router* target = 0);
+	void add_input(Stream& stream, Router* target = 0);
 	void add_input(InputPin& pin);
 	void add_output(OutputPin& pin);
 	
