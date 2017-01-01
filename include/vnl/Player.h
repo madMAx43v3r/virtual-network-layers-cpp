@@ -238,7 +238,7 @@ protected:
 		for(Topic& topic : topic_blacklist) {
 			blacklist[Address(topic.domain, topic.name)] = true;
 		}
-		publish(status.clone(), my_domain, "PlayerStatus");
+		publish(status.clone(), my_private_domain, "player_status");
 	}
 	
 	vnl::info::PlayerStatus get_status() const {
