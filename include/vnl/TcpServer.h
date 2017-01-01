@@ -62,7 +62,8 @@ protected:
 			log(INFO).out << "Running on port=" << port << vnl::endl;
 			
 			do_reset = false;
-			pipe = Pipe::create(this);
+			add_input(downlink);
+			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -71,8 +72,8 @@ protected:
 				}
 			}
 			pipe->close();
+			downlink.close();
 			::shutdown(server, SHUT_RDWR);
-			poll(0);
 			thread.join();
 			::close(server);
 			server = -1;
@@ -201,6 +202,7 @@ private:
 	bool do_reset;
 	
 	Pipe* pipe;
+	Stream downlink;
 	
 };
 

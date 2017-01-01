@@ -53,7 +53,8 @@ protected:
 				write_subscribe(topic.domain, topic.name);
 			}
 			do_reset = false;
-			pipe = Pipe::create(this);
+			add_input(downlink);
+			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
@@ -61,8 +62,8 @@ protected:
 				}
 			}
 			pipe->close();
+			downlink.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
-			poll(0);
 			thread.join();
 			sock.close();
 			if(do_reset) {
@@ -325,6 +326,7 @@ private:
 	vnl::io::TypeOutput out;
 	Timer* timer;
 	Stream tunnel;
+	Stream downlink;
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
 	uint32_t next_seq;
