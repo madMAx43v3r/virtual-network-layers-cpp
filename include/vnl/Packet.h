@@ -49,7 +49,7 @@ public:
 		payload = org->payload;
 		num_hops = org->num_hops;
 		memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
-		proxy = org->proxy != 0 ? org->proxy : org->src_mac;
+		proxy = org->proxy;
 	}
 	
 	int16_t get_header_size() const {

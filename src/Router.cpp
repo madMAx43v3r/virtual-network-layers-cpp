@@ -56,7 +56,7 @@ bool Router::handle(Message* msg) {
 		route(pkt, src, spy_list);
 		
 		if(current_info) {
-			current_info->publishers[pkt->src_mac]++;
+			current_info->publishers[pkt->proxy ? pkt->proxy : pkt->src_mac]++;
 			current_info->send_counter++;
 			current_info->receive_counter += pkt->count;
 			current_info->last_time = vnl::currentTimeMicros();

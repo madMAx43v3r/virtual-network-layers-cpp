@@ -41,13 +41,11 @@ protected:
 		init->ack();
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
-			are_connected = false;
 			sock.fd = connect();
 			if(!sock.good()) {
 				exit();
 				break;
 			}
-			are_connected = true;
 			out.reset();
 			write_announce();
 			for(Topic& topic : table.values()) {
@@ -57,11 +55,13 @@ protected:
 			add_input(downlink);
 			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
+			are_connected = true;
 			while(poll(-1)) {
 				if(do_reset) {
 					break;
 				}
 			}
+			are_connected = false;
 			pipe->close();
 			downlink.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
