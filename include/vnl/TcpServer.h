@@ -102,7 +102,7 @@ protected:
 			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
 				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
 			}
-			TcpProxy* proxy = new TcpProxy(my_domain, vnl::String("TcpProxy.") << sock);
+			TcpProxy* proxy = new TcpProxy(my_domain, vnl::String("TcpProxy.") << sock, my_private_domain);
 			proxy->vnl_max_num_pending = vnl_max_num_pending;
 			proxy->vnl_log_level = vnl_log_level;
 			proxy->send_timeout = send_timeout;

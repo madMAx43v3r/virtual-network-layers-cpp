@@ -16,10 +16,11 @@ namespace vnl {
 
 class TcpProxy : public TcpProxyBase {
 public:
-	TcpProxy(const vnl::String& domain_, const vnl::String& topic_)
+	TcpProxy(const vnl::String& domain_, const vnl::String& topic_, const vnl::String& server_domain)
 		:	TcpProxyBase(domain_, topic_),
 			running(false), sock(-1), server(0)
 	{
+		my_private_domain = server_domain;
 	}
 	
 	int sock;

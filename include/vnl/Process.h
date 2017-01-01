@@ -8,9 +8,11 @@
 #ifndef INCLUDE_VNL_PROCESS_H_
 #define INCLUDE_VNL_PROCESS_H_
 
-#include <vnl/ProcessSupport.hxx>
 #include <vnl/Map.h>
 #include <vnl/Layer.h>
+
+#include <vnl/ProcessSupport.hxx>
+#include <vnl/info/TopicInfoList.hxx>
 
 
 namespace vnl {
@@ -29,7 +31,7 @@ protected:
 		subscribe(local_domain_name, "vnl.log");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
-		set_timeout(1000*1000*3, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
+		set_timeout(1000*1000*1, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
 		if(do_print_stats) {
 			set_timeout(1000*1000*10, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
 		}
@@ -88,7 +90,7 @@ protected:
 		return vnl::get_type_info();
 	}
 	
-	vnl::Array<vnl::info::TopicInfo> get_topic_info() const {
+	vnl::info::TopicInfoList get_topic_info() const {
 		return topic_info;
 	}
 	
@@ -136,12 +138,14 @@ protected:
 	void update() {
 		Router::get_topic_info_t msg;
 		send(&msg, Router::instance);
-		topic_info = msg.data;
+		topic_info.time = vnl::currentTimeMicros();
+		topic_info.topics = msg.data;
+		publish(topic_info.clone(), my_private_domain, "topic_info");
 	}
 	
 private:
 	Map<Address, Instance> objects;
-	Array<vnl::info::TopicInfo> topic_info;
+	vnl::info::TopicInfoList topic_info;
 	
 	bool paused = false;
 	bool filtering = false;

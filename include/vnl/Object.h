@@ -61,6 +61,12 @@ public:
 	}
 	
 	// NOT thread safe
+	String get_my_private_domain() const {
+		assert(vnl_dorun == false);
+		return my_private_domain;
+	}
+	
+	// NOT thread safe
 	String get_my_topic() const {
 		assert(vnl_dorun == false);
 		return my_topic;

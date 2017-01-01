@@ -13,3 +13,10 @@ class TopicInfo {
 	long last_time;
 	
 }
+
+class TopicInfoList {
+	
+	long time;
+	Array<TopicInfo> topics;
+	
+}
