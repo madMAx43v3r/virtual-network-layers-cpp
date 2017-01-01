@@ -307,9 +307,8 @@ private:
 	void forward(Stream& stream, vnl::Packet* pkt) {
 		int& count = fwd_table[pkt->src_addr];
 		if(count == 0) {
-			forward_t* msg = forward_buffer.create();
-			msg->data = pkt->src_addr;
-			stream.send_async(msg, pipe);
+			forward_t msg(pkt->src_addr);
+			stream.send(&msg, pipe);
 		}
 		count++;
 	}
@@ -317,7 +316,6 @@ private:
 private:
 	MessagePool<Sample> sample_buffer;
 	MessagePool<Frame> frame_buffer;
-	MessagePool<forward_t> forward_buffer;
 	
 private:
 	Hash64 remote_domain;
