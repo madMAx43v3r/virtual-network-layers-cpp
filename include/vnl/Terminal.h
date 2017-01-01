@@ -78,7 +78,7 @@ protected:
 				for(vnl::info::TopicInfo& info : msg.data) {
 					std::cout << "  " << info.topic.domain << " : " << info.topic.name << " | " << info.send_counter
 							<< " sent | " << info.receive_counter << " received | "
-							<< float(info.last_time-info.first_time)/info.send_counter/1e6 << "s cycle | "
+							<< float(info.last_time-info.first_time)/(1-info.send_counter)/1e6 << "s cycle | "
 							<< float(now-info.last_time)/1e6 << "s ago" << std::endl;
 				}
 				std::cout << "Help: press enter to continue" << std::endl;

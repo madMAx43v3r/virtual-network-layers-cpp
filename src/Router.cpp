@@ -47,10 +47,6 @@ bool Router::handle(Message* msg) {
 					info.topic = sample->header->dst_topic;
 					info.first_time = vnl::currentTimeMicros();
 				}
-				info.publishers[pkt->src_mac]++;
-				info.send_counter++;
-				info.receive_counter += pkt->count;
-				info.last_time = vnl::currentTimeMicros();
 				current_info = &info;
 			}
 		}
@@ -59,10 +55,16 @@ bool Router::handle(Message* msg) {
 		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
 		route(pkt, src, spy_list);
 		
+		if(current_info) {
+			current_info->publishers[pkt->src_mac]++;
+			current_info->send_counter++;
+			current_info->receive_counter += pkt->count;
+			current_info->last_time = vnl::currentTimeMicros();
+			current_info = 0;
+		}
 		if(!pkt->count) {
 			pkt->ack();
 		}
-		current_info = 0;
 		return true;
 	} else if(msg->msg_id == open_t::MID) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
