@@ -37,6 +37,7 @@ protected:
 	virtual int connect() = 0;
 	
 	void main() {
+		add_input(tunnel);
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
 			are_connected = false;
@@ -77,7 +78,7 @@ protected:
 		}
 		if(msg->msg_id == forward_t::MID) {
 			Address& addr = ((forward_t*)msg)->data;
-			Object::subscribe(addr);
+			tunnel.subscribe(addr);
 			log(DEBUG).out << "Forwarding " << addr << vnl::endl;
 		} else if(msg->msg_id == error_t::MID) {
 			int err = ((error_t*)msg)->data;
@@ -92,7 +93,7 @@ protected:
 	}
 	
 	bool handle(Packet* pkt) {
-		if(pkt->dst_addr != my_address && pkt->dst_addr.domain() != remote_domain) {
+		if(get_channel() == &tunnel) {
 			if(sock.good()) {
 				queue.push(pkt);
 				timer->reset();
@@ -108,12 +109,12 @@ protected:
 	}
 	
 	void publish(const vnl::String& domain, const vnl::String& topic) {
-		Object::subscribe(domain, topic);
+		tunnel.subscribe(Address(domain, topic));
 		log(INFO).out << "Publishing " << domain << ":" << topic << vnl::endl;
 	}
 	
 	void unpublish(const vnl::String& domain, const vnl::String& topic) {
-		Object::unsubscribe(domain, topic);
+		tunnel.unsubscribe(Address(domain, topic));
 		log(INFO).out << "Unpublishing " << domain << ":" << topic << vnl::endl;
 	}
 	
@@ -323,6 +324,7 @@ private:
 	vnl::io::Socket sock;
 	vnl::io::TypeOutput out;
 	Timer* timer;
+	Stream tunnel;
 	vnl::Queue<Packet*> queue;
 	vnl::Map<Address, Topic> table;
 	uint32_t next_seq;

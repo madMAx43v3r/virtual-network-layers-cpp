@@ -36,6 +36,7 @@ public:
 	Packet()
 		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0), proxy(0)
 	{
+		memset(route, 0, sizeof(route));
 	}
 	
 	void copy_from(Packet* org) {

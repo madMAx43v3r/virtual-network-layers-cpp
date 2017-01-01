@@ -27,7 +27,7 @@ class Object : public ObjectBase, public Basic {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
-			vnl_dorun(false), vnl_engine(0), vnl_proxy(0),
+			vnl_dorun(false), vnl_engine(0), vnl_proxy(0), vnl_channel(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
@@ -82,11 +82,22 @@ protected:
 		run();
 	}
 	
+	/*
+	 * Returns the proxy mac through which the current packet came in.
+	 */
 	uint64_t get_proxy() const {
 		return vnl_proxy;
 	}
 	
+	/*
+	 * Returns the input channel through which the current message came in.
+	 */
+	Basic* get_channel() const {
+		return vnl_channel;
+	}
+	
 	void add_client(Client& client);
+	void add_input(Stream& stream);
 	void add_input(InputPin& pin);
 	void add_output(OutputPin& pin);
 	
@@ -121,6 +132,7 @@ protected:
 	
 	virtual bool handle(Message* msg);
 	virtual bool handle(Stream::notify_t* msg);
+	virtual bool handle(OutputPin::pin_data_t* msg);
 	virtual bool handle(Packet* pkt);
 	virtual bool handle(Sample* sample);
 	virtual bool handle(Frame* frame);
@@ -153,6 +165,7 @@ private:
 	Stream vnl_stream;
 	Engine* vnl_engine;
 	uint64_t vnl_proxy;
+	Basic* vnl_channel;
 	
 	List<Timer> vnl_timers;
 	List<InputPin*> vnl_input_pins;

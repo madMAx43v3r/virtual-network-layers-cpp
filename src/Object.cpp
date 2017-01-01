@@ -43,7 +43,14 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 }
 
 void Object::add_client(Client& client) {
+	assert(vnl_dorun);
 	client.connect(vnl_engine);
+}
+
+void Object::add_input(Stream& stream) {
+	assert(vnl_dorun);
+	stream.connect(vnl_engine);
+	stream.listen(this);
 }
 
 void Object::add_input(InputPin& pin) {
@@ -187,23 +194,33 @@ bool Object::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
 		return handle(pkt);
+	} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
+		return handle((OutputPin::pin_data_t*)msg);
 	} else if(msg->msg_id == Stream::notify_t::MID) {
-		Stream::notify_t* notify = (Stream::notify_t*)msg;
-		return handle(notify);
+		return handle((Stream::notify_t*)msg);
 	} else if(msg->msg_id == exit_t::MID) {
 		exit();
 	}
 	return false;
 }
 
-bool Object::handle(Stream::notify_t* msg) {
-	Message* in;
-	while(msg->data->pop(in)) {
-		if(in->msg_id == OutputPin::pin_data_t::MID) {
-			OutputPin::pin_data_t* pkt = (OutputPin::pin_data_t*)in;
-			handle_switch(pkt->data, msg->dst);
+bool Object::handle(Stream::notify_t* notify) {
+	Message* msg;
+	while(notify->data->pop(msg)) {
+		Basic* tmp_channel = vnl_channel;
+		vnl_channel = notify->data;
+		if(!handle(msg)) {
+			msg->ack();
 		}
-		in->ack();
+		vnl_channel = tmp_channel;
+	}
+	return false;
+}
+
+bool Object::handle(OutputPin::pin_data_t* msg) {
+	if(msg->data && handle_switch(msg->data, msg->dst)) {
+		msg->ack();
+		return true;
 	}
 	return false;
 }
@@ -224,6 +241,7 @@ bool Object::handle(Packet* pkt) {
 	}
 	last_seq = pkt->seq_num;
 	
+	uint64_t tmp_proxy = vnl_proxy;
 	vnl_proxy = pkt->proxy;
 	if(pkt->pkt_id == Sample::PID) {
 		Sample* sample = (Sample*)pkt->payload;
@@ -238,6 +256,7 @@ bool Object::handle(Packet* pkt) {
 			return true;
 		}
 	}
+	vnl_proxy = tmp_proxy;
 	return false;
 }
 
@@ -355,9 +374,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	if(pipe) {
 		pipe->open(this);
 	}
-	
 	subscribe(my_address);
-	subscribe(Address(my_address.domain(), vnl_stream.get_mac()));
 	
 	Announce* announce = Announce::create();
 	announce->instance.type = get_type_name();
