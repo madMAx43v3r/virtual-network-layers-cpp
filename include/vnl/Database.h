@@ -53,7 +53,6 @@ protected:
 				}
 			}
 			send_async(result, frame->src_addr);
-			return true;
 		}
 		return false;
 	}

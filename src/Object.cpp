@@ -192,8 +192,7 @@ bool Object::poll(int64_t micros) {
 
 bool Object::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
-		Packet* pkt = (Packet*)msg;
-		return handle(pkt);
+		return handle((Packet*)msg);
 	} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
 		return handle((OutputPin::pin_data_t*)msg);
 	} else if(msg->msg_id == Stream::notify_t::MID) {
@@ -243,26 +242,19 @@ bool Object::handle(Packet* pkt) {
 	
 	uint64_t tmp_proxy = vnl_proxy;
 	vnl_proxy = pkt->proxy;
+	bool res = false;
 	if(pkt->pkt_id == Sample::PID) {
-		Sample* sample = (Sample*)pkt->payload;
-		if(handle(sample)) {
-			pkt->ack();
-			return true;
-		}
+		res = handle((Sample*)pkt->payload);
 	} else if(pkt->pkt_id == Frame::PID) {
-		Frame* frame = (Frame*)pkt->payload;
-		if(handle(frame)) {
-			pkt->ack();
-			return true;
-		}
+		res = handle((Frame*)pkt->payload);
 	}
 	vnl_proxy = tmp_proxy;
-	return false;
+	return res;
 }
 
 bool Object::handle(Sample* sample) {
 	if(sample->data) {
-		return handle_switch(sample->data, sample);
+		handle_switch(sample->data, sample);
 	}
 	return false;
 }
@@ -271,7 +263,6 @@ bool Object::handle(Frame* frame) {
 	Frame* result = exec_vni_call(frame);
 	if(result) {
 		send_async(result, frame->src_addr);
-		return true;
 	}
 	return false;
 }

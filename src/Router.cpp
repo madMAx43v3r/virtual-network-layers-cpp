@@ -14,8 +14,9 @@ namespace vnl {
 Router* Router::instance = 0;
 
 Router::Router()
-	:	hook_dst(0)
+	:	current_info(0)
 {
+	spy_list = &table[Address()];
 }
 
 bool Router::handle(Message* msg) {
@@ -37,12 +38,8 @@ bool Router::handle(Message* msg) {
 			pkt->ack();
 			return true;
 		}
-		route(pkt, src, table.find(pkt->dst_addr));
-		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
-		if(hook_dst) {
-			forward(pkt, hook_dst);
-		}
-		if(pkt->pkt_id == Sample::PID) {
+		
+		if(enable_topic_info && pkt->pkt_id == Sample::PID) {
 			Sample* sample = (Sample*)pkt->payload;
 			if(sample->header) {
 				vnl::info::TopicInfo& info = topic_info[pkt->dst_addr];
@@ -50,17 +47,22 @@ bool Router::handle(Message* msg) {
 					info.topic = sample->header->dst_topic;
 					info.first_time = vnl::currentTimeMicros();
 				}
-				if(!info.publishers.find(pkt->src_mac)) {
-					info.publishers[pkt->src_mac] = sample->header->src_topic;
-				}
+				info.publishers[pkt->src_mac]++;
 				info.send_counter++;
 				info.receive_counter += pkt->count;
 				info.last_time = vnl::currentTimeMicros();
+				current_info = &info;
 			}
 		}
+		
+		route(pkt, src, table.find(pkt->dst_addr));
+		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
+		route(pkt, src, spy_list);
+		
 		if(!pkt->count) {
 			pkt->ack();
 		}
+		current_info = 0;
 		return true;
 	} else if(msg->msg_id == open_t::MID) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
@@ -76,13 +78,6 @@ bool Router::handle(Message* msg) {
 		Node* src = ((finish_t*)msg)->data;
 		if(src) {
 			lookup.erase(src->get_mac());
-		}
-	} else if(msg->msg_id == hook_t::MID) {
-		vnl::pair<Basic*, bool>& data = ((hook_t*)msg)->data;
-		if(!data.second && hook_dst == data.first) {
-			hook_dst = 0;
-		} else if(data.second) {
-			hook_dst = data.first;
 		}
 	} else if(msg->msg_id == get_topic_info_t::MID) {
 		((get_topic_info_t*)msg)->data = topic_info.values();
@@ -127,6 +122,9 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 				if(target) {
 					if(*target != src) {
 						forward(pkt, *target);
+						if(enable_topic_info && current_info) {
+							current_info->subscribers[dst]++;
+						}
 					}
 				} else {
 					dst = 0;
@@ -154,7 +152,4 @@ void Router::callback(Message* msg) {
 }
 
 
-
-}
-
-
+} // vnl

@@ -26,51 +26,41 @@ public:
 	
 protected:
 	void main(vnl::Engine* engine) {
-		input.connect(engine, 0);
-		input.listen(this);
-		Router::hook_t enable(vnl::make_pair<Basic*>(&input, true));
-		send(&enable, Router::instance);
+		add_input(input);
 		run();
 		stop();
 	}
 	
-	bool handle(Stream::notify_t* msg) {
-		if(msg->data == &input) {
-			Message* in;
-			while(input.pop(in)) {
-				if(in->msg_id == Packet::MID) {
-					Packet* pkt = (Packet*)in;
-					if(pkt->pkt_id == Sample::PID) {
-						Sample* sample = (Sample*)pkt->payload;
-						if(vnl_dorun && sample) {
-							process(sample, pkt);
-						}
+	bool handle(Packet* pkt) {
+		if(get_channel() == &input) {
+			if(pkt->pkt_id == Sample::PID) {
+				Sample* sample = (Sample*)pkt->payload;
+				if(sample->header && !topics.find(sample->dst_addr)) {
+					log(DEBUG).out << "New topic: " << sample->header->dst_topic.to_string() << vnl::endl;
+					topics[sample->dst_addr] = sample->header->dst_topic;
+					if(running) {
+						update();
 					}
 				}
-				in->ack();
+				if(vnl_dorun && running) {
+					process(sample);
+				}
 			}
 			return false;
 		}
-		return Super::handle(msg);
+		return Super::handle(pkt);
 	}
 	
-	void process(Sample* sample, Packet* pkt) {
-		if(sample->header && !topics.find(pkt->dst_addr)) {
-			log(DEBUG).out << "New topic: " << sample->header->dst_topic.to_string() << vnl::endl;
-			topics[pkt->dst_addr] = sample->header->dst_topic;
-			if(running) {
-				update();
-			}
-		}
-		if(select.find(pkt->dst_addr) || pkt->dst_addr.topic() == filter || filter.empty()) {
+	void process(Sample* sample) {
+		if(select.find(sample->dst_addr) || sample->dst_addr.topic() == filter || filter.empty()) {
 			Value* value = sample->data;
-			Topic* topic = topics.find(pkt->dst_addr);
-			if(running && value) {
+			Topic* topic = topics.find(sample->dst_addr);
+			if(value) {
 				if(topic) {
 					std::cout << vnl::currentTimeMillis() << " " << topic->domain
 						<< " : " << topic->name << " -> " << value->get_type_name() << std::endl;
 				} else {
-					std::cout << vnl::currentTimeMillis() << " " << pkt->dst_addr
+					std::cout << vnl::currentTimeMillis() << " " << sample->dst_addr
 						<< " -> " << value->get_type_name() << std::endl;
 				}
 				if(dump) {
@@ -103,6 +93,7 @@ protected:
 	void set_filter(const vnl::String& expr) {
 		filter = expr;
 		running = true;
+		input.subscribe(Address());
 		update();
 	}
 	
@@ -110,8 +101,7 @@ protected:
 		if(running) {
 			running = false;
 			select.clear();
-			Router::hook_t disable(vnl::make_pair<Basic*>(&input, false));
-			send(&disable, Router::instance);
+			input.unsubscribe(Address());
 		}
 	}
 	

@@ -4,7 +4,8 @@ class TopicInfo {
 	
 	vnl.Topic topic;
 	
-	Map<Hash64, vnl.Topic> publishers;
+	Map<Hash64, long> publishers;
+	Map<Hash64, long> subscribers;
 	
 	long send_counter;
 	long receive_counter;
