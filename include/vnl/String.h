@@ -79,6 +79,10 @@ public:
 		(*this) << str;
 	}
 	
+	String(const char* str, ssize_t n) : Array() {
+		this->write(str, n);
+	}
+
 	String(const std::string& str) : Array() {
 		(*this) << str;
 	}
