@@ -375,10 +375,10 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");
 	
-	vnl_stream.close();
 	if(pipe) {
 		pipe->close();
 	}
+	vnl_stream.close();
 }
 
 

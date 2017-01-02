@@ -32,6 +32,7 @@ public:
 	virtual ~Client() {
 		_data->free_all();
 		vnl::destroy(_exception);
+		stream.close();
 	}
 	
 	Client& operator=(const Address& addr) {

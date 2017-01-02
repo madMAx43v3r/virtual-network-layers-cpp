@@ -71,6 +71,7 @@ protected:
 				usleep(error_interval);
 			}
 		}
+		tunnel.close();
 		drop_all();
 	}
 	
@@ -268,6 +269,7 @@ private:
 			}
 		}
 		pipe->detach();
+		stream.close();
 		engine.flush();
 	}
 	

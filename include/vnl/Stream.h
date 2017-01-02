@@ -25,9 +25,7 @@ public:
 	typedef MessageType<Stream*, 0x70513a1c> notify_t;
 	
 	~Stream() {
-		if(engine) {
-			close();
-		}
+		assert(engine == 0);
 	}
 	
 	// thread safe
@@ -63,11 +61,16 @@ public:
 			Router::finish_t msg(this);
 			send(&msg, target);
 		}
+		if(!engine) {
+			assert(queue.empty());
+		}
 		Message* left = 0;
 		while(queue.pop(left)) {
 			left->ack();
 		}
 		engine = 0;
+		target = 0;
+		listener = 0;
 	}
 	
 	Engine* get_engine() const {

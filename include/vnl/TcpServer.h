@@ -186,6 +186,7 @@ private:
 			stream.send(&msg, pipe);
 		}
 		pipe->detach();
+		stream.close();
 		engine.flush();
 	}
 	
