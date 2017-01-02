@@ -5,8 +5,7 @@
  *      Author: mad
  */
 
-#include "../include/vnl/BinaryValue.h"
-
+#include <vnl/BinaryValue.h>
 #include <vnl/Type.hxx>
 
 
@@ -24,7 +23,7 @@ BinaryValue* BinaryValue::clone() const {
 
 void BinaryValue::destroy() {
 	this->BinaryValue::~BinaryValue();
-	return vnl::global_pool->push_back(this, sizeof(BinaryValue));
+	return vnl::internal::global_pool_->push_back(this, sizeof(BinaryValue));
 }
 
 void BinaryValue::serialize(vnl::io::TypeOutput& out) const {

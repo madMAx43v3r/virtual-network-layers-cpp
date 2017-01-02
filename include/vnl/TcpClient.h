@@ -5,8 +5,8 @@
  *      Author: mad
  */
 
-#ifndef CPP_INCLUDE_VNI_TCPCLIENT_H_
-#define CPP_INCLUDE_VNI_TCPCLIENT_H_
+#ifndef INCLUDE_VNL_TCPCLIENT_H_
+#define INCLUDE_VNL_TCPCLIENT_H_
 
 #include <vnl/TcpClientSupport.hxx>
 
@@ -15,15 +15,9 @@ namespace vnl {
 
 class TcpClient : public TcpClientBase {
 public:
-	TcpClient(const vnl::String& topic, vnl::String endpoint = "", int port = 0)
-		:	TcpClientBase(local_domain_name, topic), connected(false)
+	TcpClient(const vnl::String& domain, const vnl::String& topic)
+		:	TcpClientBase(domain, topic), connected(false)
 	{
-		if(endpoint.size()) {
-			this->endpoint = endpoint;
-		}
-		if(port) {
-			this->port = port;
-		}
 	}
 	
 protected:
@@ -35,7 +29,7 @@ protected:
 				::close(sock);
 				usleep(error_interval);
 			}
-			if(!dorun) {
+			if(!vnl_dorun) {
 				sock = -1;
 				break;
 			}
@@ -78,12 +72,17 @@ protected:
 		return sock;
 	}
 	
+	void reconnect() {
+		unsubscribe_all();
+		reset();
+	}
+	
 private:
 	bool connected;
 	
 };
 
 
-}
+} // vnl
 
-#endif /* CPP_INCLUDE_VNI_TCPCLIENT_H_ */
+#endif /* INCLUDE_VNL_TCPCLIENT_H_ */

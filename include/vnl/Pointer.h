@@ -8,13 +8,14 @@
 #ifndef CPP_INCLUDE_VNI_POINTER_H_
 #define CPP_INCLUDE_VNI_POINTER_H_
 
-#include <vnl/PointerSupport.hxx>
+#include <vnl/io.h>
+#include <vnl/Type.hxx>
 
 
 namespace vnl {
 
-template<class T>
-class Pointer : public PointerBase<T> {
+template<typename T>
+class Pointer : public vnl::Interface {
 public:
 	Pointer() : ptr(0) {}
 	
@@ -82,10 +83,18 @@ public:
 		}
 	}
 	
+	uint32_t get_vni_hash() const {
+		return 0x5815b636;
+	}
+	
+	const char* get_type_name() const {
+		return "vnl.Pointer";
+	}
+	
 	void to_string_ex(vnl::String& str) const {
 		str << "{\"T\": \"";
 		if(ptr) {
-			str << ptr->type_name();
+			str << ptr->get_type_name();
 		}
 		str << "\", \"V\": ";
 		vnl::to_string(str, ptr);
@@ -123,6 +132,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_POINTER_H_ */

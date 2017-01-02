@@ -9,13 +9,19 @@
 #define INCLUDE_VNI_TYPE_HXX_
 
 #include <vnl/Type.h>
+#include <vnl/Enum.h>
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
-#include <vnl/BinaryValue.h>
-#include <vnl/Layer.h>
 
 
 namespace vnl {
+
+namespace internal {
+	
+	extern GlobalPool* global_pool_;
+	extern Map<String, String>* config_;
+	
+} // internal
 
 /*
  * Function to create any Value based on the type hash.
@@ -29,6 +35,28 @@ Array<String> get_class_names();
 
 
 /*
+ * Memory functions
+ */
+template<typename T>
+T* create() {
+	T* obj = internal::global_pool_->create<T>();
+	return obj;
+}
+
+template<typename T>
+T* clone(const T& other) {
+	return new(internal::global_pool_->alloc(sizeof(T))) T(other);
+}
+
+template<typename T>
+void destroy(T* obj) {
+	if(obj) {
+		obj->destroy();
+	}
+}
+
+
+/*
  * Generic reader functions
  */
 inline void read(vnl::io::TypeInput& in, bool& val) { in.getValue(val); }
@@ -39,52 +67,9 @@ inline void read(vnl::io::TypeInput& in, int64_t& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
 
-inline Value* read(vnl::io::TypeInput& in) {
-	Value* obj = 0;
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_CLASS: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj = vnl::create(hash);
-			if(!obj) {
-				BinaryValue* bin = BinaryValue::create();
-				bin->hash = hash;
-				obj = bin;
-			}
-			obj->deserialize(in, size);
-			break;
-		}
-		default: in.skip(id, size);
-	}
-	return obj;
-}
-
-inline void read(vnl::io::TypeInput& in, Value& obj) {
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_STRUCT:
-			obj.deserialize(in, size);
-			break;
-		case VNL_IO_CLASS: {
-			uint32_t hash = 0;
-			in.getHash(hash);
-			obj.deserialize(in, size);
-			break;
-		}
-		default: in.skip(id, size);
-	}
-}
-
-inline void read(vnl::io::TypeInput& in, Value* obj) {
-	if(obj) {
-		read(in, *obj);
-	} else {
-		in.skip();
-	}
-}
+Value* read(vnl::io::TypeInput& in);
+void read(vnl::io::TypeInput& in, Value& obj);
+void read(vnl::io::TypeInput& in, Value* obj);
 
 inline void read(vnl::io::TypeInput& in, Interface& obj) {
 	obj.deserialize(in, 0);
@@ -99,7 +84,7 @@ inline void read(vnl::io::TypeInput& in, Binary& obj) {
 }
 
 template<typename T>
-inline void read(vnl::io::TypeInput& in, Array<T>& obj) {
+void read(vnl::io::TypeInput& in, Array<T>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -112,7 +97,7 @@ inline void read(vnl::io::TypeInput& in, Array<T>& obj) {
 }
 
 template<typename T>
-inline void read(vnl::io::TypeInput& in, List<T>& obj) {
+void read(vnl::io::TypeInput& in, List<T>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -125,7 +110,7 @@ inline void read(vnl::io::TypeInput& in, List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
+void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY && size % 2 == 0) {
@@ -191,7 +176,7 @@ inline void write(vnl::io::TypeOutput& out, const Binary& obj) {
 }
 
 template<typename T>
-inline void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
+void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
 	for(typename vnl::Array<T>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -201,7 +186,7 @@ inline void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
 }
 
 template<typename T>
-inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
+void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
 	for(typename vnl::List<T>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -211,7 +196,7 @@ inline void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
+void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size()*2);
 	for(typename vnl::Map<K,V>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
@@ -259,27 +244,6 @@ inline void to_string(vnl::String& str, const Binary& obj) {
 	str << "\"\"";
 }
 
-template<typename T>
-inline void to_string(vnl::String& str, const Array<T>& obj) {
-	to_string(str, obj.begin(), obj.end());
-}
-
-template<typename T>
-inline void to_string(vnl::String& str, const List<T>& obj) {
-	to_string(str, obj.begin(), obj.end());
-}
-
-template<typename K, typename V>
-inline void to_string(vnl::String& str, const Map<K,V>& obj) {
-	to_string(str, obj.begin(), obj.end());
-}
-
-template<typename K, typename V>
-inline void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
-	str << "{\"key\": "; to_string(str, obj.first);
-	str << ", \"value\": "; to_string(str, obj.second); str << "}";
-}
-
 template<class Iter>
 void to_string(vnl::String& str, Iter first, Iter last) {
 	str << "[";
@@ -290,6 +254,27 @@ void to_string(vnl::String& str, Iter first, Iter last) {
 		to_string(str, *it);
 	}
 	str << "]";
+}
+
+template<typename T>
+void to_string(vnl::String& str, const Array<T>& obj) {
+	to_string(str, obj.begin(), obj.end());
+}
+
+template<typename T>
+void to_string(vnl::String& str, const List<T>& obj) {
+	to_string(str, obj.begin(), obj.end());
+}
+
+template<typename K, typename V>
+void to_string(vnl::String& str, const Map<K,V>& obj) {
+	to_string(str, obj.begin(), obj.end());
+}
+
+template<typename K, typename V>
+void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
+	str << "{\"key\": "; to_string(str, obj.first);
+	str << ", \"value\": "; to_string(str, obj.second); str << "}";
 }
 
 template<typename T, int N>
@@ -347,7 +332,7 @@ inline void from_string(const vnl::String& str, Binary& obj) {
 }
 
 template<typename T>
-inline void from_string(const vnl::String& str, Array<T>& obj) {
+void from_string(const vnl::String& str, Array<T>& obj) {
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -363,7 +348,7 @@ inline void from_string(const vnl::String& str, Array<T>& obj) {
 }
 
 template<typename T>
-inline void from_string(const vnl::String& str, List<T>& obj) {
+void from_string(const vnl::String& str, List<T>& obj) {
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -379,7 +364,7 @@ inline void from_string(const vnl::String& str, List<T>& obj) {
 }
 
 template<typename K, typename V>
-inline void from_string(const vnl::String& str, Map<K,V>& obj) {
+void from_string(const vnl::String& str, Map<K,V>& obj) {
 	// TODO
 	assert(false);
 }
@@ -427,13 +412,30 @@ inline void from_string(const vnl::String& str, float& val) { val = atof(str); }
 inline void from_string(const vnl::String& str, double& val) { val = atof(str); }
 
 
-
 /*
  * Generic util functions
  */
 template<typename T>
+Binary to_binary(const T& value) {
+	Binary bin;
+	bin.data = Page::alloc();
+	vnl::io::ByteBuffer buf(bin.data);
+	vnl::io::TypeOutput out(&buf);
+	vnl::write(out, value);
+	out.flush();
+	bin.size = buf.position();
+	return bin;
+}
+
+inline Binary to_binary(const char* str) {
+	return to_binary<vnl::String>(str);
+}
+
+const String* get_config(const String& domain, const String& topic, const String& name);
+
+template<typename T>
 bool read_config(String domain, String topic, String name, T& ref) {
-	const String* value = Layer::get_config(domain, topic, name);
+	const String* value = vnl::get_config(domain, topic, name);
 	if(value) {
 		vnl::from_string(*value, ref);
 		return true;
@@ -441,8 +443,13 @@ bool read_config(String domain, String topic, String name, T& ref) {
 	return false;
 }
 
+bool read_from_file(vnl::Value& value, const char* filename);
+bool read_from_file(vnl::Value& value, const vnl::String& filename);
+
+bool write_to_file(const vnl::Value& value, const char* filename);
+bool write_to_file(const vnl::Value& value, const vnl::String& filename);
 
 
-} // vni
+} // vnl
 
 #endif /* INCLUDE_VNI_TYPE_HXX_ */

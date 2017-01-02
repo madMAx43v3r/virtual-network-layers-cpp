@@ -1,0 +1,23 @@
+package vnl.info;
+
+class TopicInfo {
+	
+	vnl.Topic topic;
+	
+	Map<Hash64, long> publishers;
+	Map<Hash64, long> subscribers;
+	
+	long send_counter;
+	long receive_counter;
+	
+	long first_time;
+	long last_time;
+	
+}
+
+class TopicInfoList {
+	
+	long time;
+	Array<TopicInfo> topics;
+	
+}

@@ -39,7 +39,7 @@ public:
 	Basic* dst = 0;
 	bool isack = false;
 	
-	GenericPool* buffer = 0;
+	MessageBuffer* buffer = 0;
 	int msg_size = 0;
 	
 	Basic* gate = 0;

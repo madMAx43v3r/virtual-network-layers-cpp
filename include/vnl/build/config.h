@@ -26,7 +26,7 @@
 /*
  * Defining this will assert on correct memory usage.
  */
-#define VNL_MEMORY_DEBUG
+//#define VNL_MEMORY_DEBUG
 
 /*
  * Defining this will assert on IO errors.
@@ -45,14 +45,6 @@
  */
 #ifndef VNL_IO_MAX_SIZE
 #define VNL_IO_MAX_SIZE 2147483648
-#endif
-
-/*
- * If we have boost coroutine >= version 1.56
- * Needed for FiberEngine.
- */
-#ifdef VNL_HAVE_BOOST_COROUTINE
-#define VNL_HAVE_FIBER_ENGINE
 #endif
 
 

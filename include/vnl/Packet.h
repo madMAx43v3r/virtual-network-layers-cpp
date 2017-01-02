@@ -31,10 +31,12 @@ public:
 	
 	int16_t num_hops;
 	uint32_t route[VNL_MAX_ROUTE_LENGTH];
+	uint64_t proxy;
 	
 	Packet()
-		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0)
+		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0), proxy(0)
 	{
+		memset(route, 0, sizeof(route));
 	}
 	
 	void copy_from(Packet* org) {
@@ -47,6 +49,7 @@ public:
 		payload = org->payload;
 		num_hops = org->num_hops;
 		memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
+		proxy = org->proxy;
 	}
 	
 	int16_t get_header_size() const {
@@ -105,8 +108,8 @@ protected:
 	
 private:
 	Packet* parent = 0;
-	int32_t count = 0;
-	int32_t acks = 0;
+	int count = 0;
+	int acks = 0;
 	
 	friend class Router;
 	friend class Client;

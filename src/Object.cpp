@@ -13,29 +13,26 @@
 #include <vnl/Topic.hxx>
 #include <vnl/Shutdown.hxx>
 #include <vnl/Exit.hxx>
+#include <vnl/NoSuchMethodException.hxx>
 
 
 namespace vnl {
 
-void Object::serialize(vnl::io::TypeOutput& out) const {
-	out.putNull();
-}
-
 void Object::exit() {
-	dorun = false;
+	vnl_dorun = false;
 }
 
 StringWriter Object::log(int level) {
 	StringOutput* out = 0;
 	if(level <= vnl_log_level) {
-		log_writer.level = level;
-		out = &log_writer;
+		vnl_log_writer.level = level;
+		out = &vnl_log_writer;
 	}
 	return StringWriter(out);
 }
 
 Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, int type) {
-	Timer& timer = *timers.push_back();
+	Timer& timer = *vnl_timers.push_back();
 	timer.interval = micros;
 	timer.func = func;
 	timer.type = type;
@@ -45,9 +42,27 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 	return &timer;
 }
 
-Object* Object::fork(Object* object) {
-	engine->fork(object);
-	return object;
+void Object::add_client(Client& client, Router* target) {
+	assert(vnl_dorun);
+	client.connect(vnl_engine, target);
+}
+
+void Object::add_input(Stream& stream, Router* target) {
+	assert(vnl_dorun);
+	stream.connect(vnl_engine, target);
+	stream.listen(this);
+}
+
+void Object::add_input(InputPin& pin) {
+	assert(vnl_dorun);
+	pin.enable(vnl_engine, this);
+	vnl_input_pins.push_back(&pin);
+}
+
+void Object::add_output(OutputPin& pin) {
+	assert(vnl_dorun);
+	pin.enable(vnl_engine);
+	vnl_output_pins.push_back(&pin);
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
@@ -55,7 +70,7 @@ Address Object::subscribe(const String& domain, const String& topic) {
 }
 
 Address Object::subscribe(Address address) {
-	return stream.subscribe(address);
+	return vnl_stream.subscribe(address);
 }
 
 void Object::unsubscribe(Hash64 domain, Hash64 topic) {
@@ -63,18 +78,18 @@ void Object::unsubscribe(Hash64 domain, Hash64 topic) {
 }
 
 void Object::unsubscribe(Address address) {
-	stream.unsubscribe(address);
+	vnl_stream.unsubscribe(address);
 }
 
 void Object::publish(Value* data, const String& domain, const String& topic) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = mac;
+	header->src_mac = vnl_stream.get_mac();
 	header->src_topic.domain = my_domain;
 	header->src_topic.name = my_topic;
 	header->dst_topic.domain = domain;
 	header->dst_topic.name = topic;
-	Sample* pkt = buffer.create<Sample>();
+	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
 	send_async(pkt, Address(domain, topic));
@@ -83,8 +98,8 @@ void Object::publish(Value* data, const String& domain, const String& topic) {
 void Object::publish(Value* data, Address topic) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = mac;
-	Sample* pkt = buffer.create<Sample>();
+	header->src_mac = vnl_stream.get_mac();
+	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
 	send_async(pkt, topic);
@@ -94,52 +109,42 @@ void Object::send(Packet* packet, Address dst) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	stream.send(packet, dst);
+	vnl_stream.send(packet, dst);
 }
 
 void Object::send_async(Packet* packet, Address dst) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst);
 }
 
 void Object::send(Packet* packet, Basic* dst) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	stream.send(packet, dst);
+	vnl_stream.send(packet, dst);
 }
 
 void Object::send_async(Packet* packet, Basic* dst) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst);
 }
 
 void Object::send(Message* msg, Basic* dst) {
-	stream.send(msg, dst);
+	vnl_stream.send(msg, dst);
 }
 
 void Object::send_async(Message* msg, Basic* dst) {
-	stream.send_async(msg, dst);
-}
-
-void Object::attach(Pipe* pipe) {
-	pipes.push_back(pipe);
-	pipe->ack(this);
-}
-
-void Object::close(Pipe* pipe) {
-	pipes.remove(pipe);
-	pipe->fin();
+	vnl_stream.send_async(msg, dst);
 }
 
 bool Object::poll(int64_t micros) {
 	int64_t to = micros;
 	int64_t now = currentTimeMicros();
-	for(Timer& timer : timers) {
+	for(Timer& timer : vnl_timers) {
 		if(timer.active) {
 			int64_t diff = timer.deadline - now;
 			if(diff <= 0) {
@@ -168,7 +173,7 @@ bool Object::poll(int64_t micros) {
 		}
 	}
 	while(true) {
-		Message* msg = stream.poll(to);
+		Message* msg = vnl_stream.poll(to);
 		if(!msg) {
 			break;
 		}
@@ -177,16 +182,37 @@ bool Object::poll(int64_t micros) {
 		}
 		to = 0;
 	}
-	return dorun;
+	return vnl_dorun;
 }
 
 bool Object::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
-		Packet* pkt = (Packet*)msg;
-		return handle(pkt);
-	} else if(msg->msg_id == Pipe::close_t::MID) {
-		Basic* pipe = ((Pipe::close_t*)msg)->data;
-		pipes.remove(pipe);
+		return handle((Packet*)msg);
+	} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
+		return handle((OutputPin::pin_data_t*)msg);
+	} else if(msg->msg_id == Stream::notify_t::MID) {
+		return handle((Stream::notify_t*)msg);
+	} else if(msg->msg_id == exit_t::MID) {
+		exit();
+	}
+	return false;
+}
+
+bool Object::handle(Stream::notify_t* notify) {
+	Message* msg;
+	while(notify->data->pop(msg)) {
+		Basic* tmp_channel = vnl_channel;
+		vnl_channel = notify->data;
+		if(!handle(msg)) {
+			msg->ack();
+		}
+		vnl_channel = tmp_channel;
+	}
+	return false;
+}
+
+bool Object::handle(OutputPin::pin_data_t* msg) {
+	if(msg->data && handle_switch(msg->data, msg->dst)) {
 		msg->ack();
 		return true;
 	}
@@ -194,13 +220,13 @@ bool Object::handle(Message* msg) {
 }
 
 bool Object::handle(Packet* pkt) {
-	int64_t& last_seq = sources[pkt->src_mac];
+	int64_t& last_seq = vnl_sources[pkt->src_mac];
 	if(last_seq == 0) {
 		log(DEBUG).out << "New source: mac=" << hex(pkt->src_mac) << " num_hops=" << pkt->num_hops << endl;
 	}
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == Frame::PID) {
-			Frame* result = buffer.create<Frame>();
+			Frame* result = vnl_frame_buffer.create();
 			result->req_num = ((Frame*)pkt->payload)->req_num;
 			send_async(result, pkt->src_addr);
 		}
@@ -209,65 +235,97 @@ bool Object::handle(Packet* pkt) {
 	}
 	last_seq = pkt->seq_num;
 	
-	if(pkt->pkt_id == vnl::Sample::PID) {
-		Sample* sample = (Sample*)pkt->payload;
-		if(sample->data) {
-			if(handle_switch(sample->data, pkt)) {
-				pkt->ack();
-				return true;
-			}
-		}
+	uint64_t tmp_proxy = vnl_proxy;
+	vnl_proxy = pkt->proxy;
+	bool res = false;
+	if(pkt->pkt_id == Sample::PID) {
+		res = handle((Sample*)pkt->payload);
 	} else if(pkt->pkt_id == Frame::PID) {
-		Frame* request = (Frame*)pkt->payload;
-		Frame* result = buffer.create<Frame>();
-		result->req_num = request->req_num;
-		buf_in.wrap(request->data, request->size);
-		input.reset();
-		int size = 0;
-		int id = input.getEntry(size);
-		if(id == VNL_IO_INTERFACE) {
-			uint32_t hash = 0;
-			input.getHash(hash);
-			while(!input.error()) {
-				int id = input.getEntry(size);
-				if(id == VNL_IO_CALL) {
-					input.getHash(hash);
-					bool res = vni_call(input, hash, size);
-					if(!res) {
-						input.skip(id, size, hash);
-						log(WARN).out << "VNL_IO_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
-					}
-				} else if(id == VNL_IO_CONST_CALL) {
-					input.getHash(hash);
-					result->data = Page::alloc();
-					buf_out.wrap(result->data);
-					if(!vni_const_call(input, hash, size, output)) {
-						input.skip(id, size, hash);
-						output.putNull();
-						log(WARN).out << "VNL_IO_CONST_CALL failed: hash=" << hex(hash) << " size=" << size << endl;
-					}
-					output.flush();
-				} else if(id == VNL_IO_INTERFACE && size == VNL_IO_END) {
-					break;
-				} else {
-					input.skip(id, size);
-				}
-			}
-			result->size = buf_out.position();
-			buf_out.clear();
-		}
-		if(input.error()) {
-			log(WARN).out << "Invalid Frame received: size=" << request->size << endl;
-		}
-		send_async(result, request->src_addr);
-		pkt->ack();
-		return true;
+		res = handle((Frame*)pkt->payload);
+	}
+	vnl_proxy = tmp_proxy;
+	return res;
+}
+
+bool Object::handle(Sample* sample) {
+	if(sample->data) {
+		handle_switch(sample->data, sample);
 	}
 	return false;
 }
 
+bool Object::handle(Frame* frame) {
+	Frame* result = exec_vni_call(frame);
+	if(result) {
+		send_async(result, frame->src_addr);
+	}
+	return false;
+}
+
+Frame* Object::exec_vni_call(Frame* frame) {
+	Frame* result = vnl_frame_buffer.create();
+	result->type = Frame::RESULT;
+	result->req_num = frame->req_num;
+	result->data = Page::alloc();
+	vnl_buf_out.wrap(result->data);
+	vnl_buf_in.wrap(frame->data, frame->size);
+	vnl_output.reset();
+	vnl_input.reset();
+	try {
+		uint32_t hash;
+		int size = 0;
+		int id = vnl_input.getEntry(size);
+		if(id == VNL_IO_CALL) {
+			vnl_input.getHash(hash);
+			bool res = vni_call(vnl_input, hash, size);
+			if(!res) {
+				throw NoSuchMethodException();
+			}
+		} else if(id == VNL_IO_CONST_CALL) {
+			vnl_input.getHash(hash);
+			if(!vni_const_call(vnl_input, hash, size, vnl_output)) {
+				throw NoSuchMethodException();
+			}
+		} else {
+			throw IOException();
+		}
+		if(vnl_input.error()) {
+			throw IOException();
+		}
+	} catch (const Exception& ex) {
+		result->type = Frame::EXCEPTION;
+		vnl::write(vnl_output, ex);
+	}
+	vnl_output.flush();
+	result->size = vnl_buf_out.position();
+	vnl_buf_out.clear();
+	return result;
+}
+
+String Object::get_private_domain() const {
+	return my_private_domain;
+}
+
+Map<String, String> Object::get_config_map() const {
+	Map<String, String> res;
+	for(int i = 0; i < get_num_fields(); ++i) {
+		get_field(i , res[get_field_name(i)]);
+	}
+	return res;
+}
+
+String Object::get_config(const Hash32& name) const {
+	String res;
+	get_field(get_field_index(name), res);
+	return res;
+}
+
+void Object::set_config(const Hash32& name, const String& value) {
+	set_field(get_field_index(name), value);
+}
+
 void Object::handle(const vnl::Shutdown& event) {
-	dorun = false;
+	vnl_dorun = false;
 }
 
 bool Object::sleep(int64_t secs) {
@@ -277,7 +335,7 @@ bool Object::sleep(int64_t secs) {
 bool Object::usleep(int64_t micros) {
 	int64_t now = currentTimeMicros();
 	int64_t deadline = now + micros;
-	while(dorun && now < deadline) {
+	while(vnl_dorun && now < deadline) {
 		int64_t to = deadline - now;
 		if(!poll(to)) {
 			return false;
@@ -288,58 +346,40 @@ bool Object::usleep(int64_t micros) {
 }
 
 void Object::run() {
-	while(dorun && poll(-1));
+	while(vnl_dorun && poll(-1));
 }
 
 void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
-	dorun = true;
-	engine = engine_;
-	stream.connect(engine_);
+	vnl_dorun = true;
+	vnl_engine = engine_;
+	vnl_stream.connect(engine_);
 	if(pipe) {
-		attach(pipe);
+		pipe->open(this);
 	}
 	subscribe(my_address);
+	
 	Announce* announce = Announce::create();
-	announce->instance.type = type_name();
+	announce->instance.type = get_type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
+	announce->instance.src_mac = get_mac();
 	publish(announce, local_domain_name, "vnl.announce");
+	
 	main(engine_, init);
-	for(Basic* pipe : pipes) {
-		Pipe::close_t msg(this);
-		send(&msg, pipe);
+	
+	for(InputPin* pin : vnl_input_pins) {
+		pin->close();
+	}
+	for(OutputPin* pin : vnl_output_pins) {
+		pin->close();
 	}
 	publish(Exit::create(), local_domain_name, "vnl.exit");
-	stream.close();
-}
-
-vnl::info::Class Object::get_class() const {
-	vnl::info::Class res;
-	res.name = type_name();
-	// TODO
-	return res;
-}
-
-Binary Object::vni_serialize() const {
-	Binary blob;
-	blob.data = Page::alloc();
-	vnl::io::ByteBuffer buf;
-	buf.wrap(blob.data);
-	vnl::io::TypeOutput out(&buf);
-	serialize(out);
-	out.flush();
-	blob.size = buf.position();
-	return blob;
-}
-
-void Object::vni_deserialize(const vnl::Binary& blob) {
-	vnl::io::ByteBuffer buf;
-	vnl::io::TypeInput in(&buf);
-	buf.wrap(blob.data, blob.size);
-	vnl::read(in, *this);
+	
+	vnl_stream.close();
+	if(pipe) {
+		pipe->close();
+	}
 }
 
 
-
-
-}
+} // vnl

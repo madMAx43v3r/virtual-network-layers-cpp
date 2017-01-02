@@ -9,6 +9,7 @@
 #define INCLUDE_VNL_MEMORY_H_
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <mutex>
 #include <iostream>
@@ -41,21 +42,20 @@ public:
 		}
 		assert(page != OUT_OF_MEMORY);
 		page->next = 0;
-#ifdef VNL_MEMORY_DEBUG
-		page->vnl_is_free = false;
-#endif
 		return page;
 	}
 	
 	void free() {
-#ifdef VNL_MEMORY_DEBUG
-		assert(vnl_is_free == false);
-		vnl_is_free = true;
-#endif
+		memset(mem, 0, size);
 		sync.lock();
 		num_used--;
+#ifndef VNL_MEMORY_DEBUG
 		next = begin;
 		begin = this;
+#else
+		delete this;
+		num_alloc--;
+#endif
 		sync.unlock();
 	}
 	
@@ -70,7 +70,7 @@ public:
 	
 	template<typename T>
 	static T* alloc_ex() {
-		assert(sizeof(T) == sizeof(Memory));
+		Memory* assign_test = (T*)0;
 		return (T*)alloc();
 	}
 	
@@ -137,10 +137,6 @@ private:
 	static std::mutex sync;
 	static Memory* begin;
 	static bool can_alloc;
-	
-#ifdef VNL_MEMORY_DEBUG
-	bool vnl_is_free = false;
-#endif
 	
 };
 

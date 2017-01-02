@@ -6,6 +6,7 @@
  */
 
 #include <vnl/Router.h>
+#include <vnl/Sample.h>
 #include <vnl/Layer.h>
 
 namespace vnl {
@@ -13,8 +14,9 @@ namespace vnl {
 Router* Router::instance = 0;
 
 Router::Router()
-	:	hook_dst(0)
+	:	current_info(0)
 {
+	spy_list = &table[Address()];
 }
 
 bool Router::handle(Message* msg) {
@@ -22,7 +24,7 @@ bool Router::handle(Message* msg) {
 		Packet* pkt = (Packet*)msg;
 		Basic* src = msg->src;
 		for(int i = 0; i < pkt->num_hops; ++i) {
-			if(pkt->route[i] == (uint32_t)mac) {
+			if(pkt->route[i] == (uint32_t)vnl_mac) {
 				num_drop++;
 				num_cycle++;
 				msg->ack();
@@ -30,16 +32,35 @@ bool Router::handle(Message* msg) {
 			}
 		}
 		if(pkt->num_hops < VNL_MAX_ROUTE_LENGTH) {
-			pkt->route[pkt->num_hops++] = mac;
+			pkt->route[pkt->num_hops++] = vnl_mac;
 		} else {
 			num_drop++;
 			pkt->ack();
 			return true;
 		}
+		
+		if(enable_topic_info && pkt->pkt_id == Sample::PID) {
+			Sample* sample = (Sample*)pkt->payload;
+			if(sample->header) {
+				vnl::info::TopicInfo& info = topic_info[pkt->dst_addr];
+				if(info.send_counter == 0) {
+					info.topic = sample->header->dst_topic;
+					info.first_time = vnl::currentTimeMicros();
+				}
+				current_info = &info;
+			}
+		}
+		
 		route(pkt, src, table.find(pkt->dst_addr));
 		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
-		if(hook_dst) {
-			forward(pkt, hook_dst);
+		route(pkt, src, spy_list);
+		
+		if(current_info) {
+			current_info->publishers[pkt->proxy ? pkt->proxy : pkt->src_mac]++;
+			current_info->send_counter++;
+			current_info->receive_counter += pkt->count;
+			current_info->last_time = vnl::currentTimeMicros();
+			current_info = 0;
 		}
 		if(!pkt->count) {
 			pkt->ack();
@@ -49,24 +70,19 @@ bool Router::handle(Message* msg) {
 		open(((open_t*)msg)->data.second, ((open_t*)msg)->data.first);
 	} else if(msg->msg_id == close_t::MID) {
 		close(((close_t*)msg)->data.second, ((close_t*)msg)->data.first);
-	} else if(msg->msg_id == Pipe::connect_t::MID) {
-		Basic* src = ((Pipe::connect_t*)msg)->args;
+	} else if(msg->msg_id == connect_t::MID) {
+		connect_t* request = (connect_t*)msg;
+		Node* src = request->data;
 		if(src) {
 			lookup[src->get_mac()] = src;
-			((Pipe::connect_t*)msg)->res = true;
 		}
-	} else if(msg->msg_id == Pipe::close_t::MID) {
-		Basic* src = ((Pipe::close_t*)msg)->data;
+	} else if(msg->msg_id == finish_t::MID) {
+		Node* src = ((finish_t*)msg)->data;
 		if(src) {
 			lookup.erase(src->get_mac());
 		}
-	} else if(msg->msg_id == hook_t::MID) {
-		vnl::pair<Basic*, bool>& data = ((hook_t*)msg)->data;
-		if(!data.second && hook_dst == data.first) {
-			hook_dst = 0;
-		} else if(data.second) {
-			hook_dst = data.first;
-		}
+	} else if(msg->msg_id == get_topic_info_t::MID) {
+		((get_topic_info_t*)msg)->data = topic_info.values();
 	}
 	return false;
 }
@@ -108,6 +124,9 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 				if(target) {
 					if(*target != src) {
 						forward(pkt, *target);
+						if(enable_topic_info && current_info) {
+							current_info->subscribers[dst]++;
+						}
 					}
 				} else {
 					dst = 0;
@@ -119,7 +138,7 @@ void Router::route(Packet* pkt, Basic* src, Row* prow) {
 
 void Router::forward(Packet* org, Basic* dst) {
 	org->count++;
-	Packet* msg = buffer.create<Packet>();
+	Packet* msg = buffer.create();
 	msg->dst = dst;
 	msg->copy_from(org);
 	Reactor::send_async(msg, dst);
@@ -135,7 +154,4 @@ void Router::callback(Message* msg) {
 }
 
 
-
-}
-
-
+} // vnl

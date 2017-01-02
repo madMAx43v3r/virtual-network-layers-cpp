@@ -35,8 +35,8 @@ public:
 	virtual void serialize(vnl::io::TypeOutput& _out) const;
 	virtual void deserialize(vnl::io::TypeInput& _in, int _size);
 	
-	virtual uint32_t vni_hash() const { return VNI_HASH; }
-	virtual const char* type_name() const { return "vnl.BinaryValue"; }
+	virtual uint32_t get_vni_hash() const { return VNI_HASH; }
+	virtual const char* get_type_name() const { return "vnl.BinaryValue"; }
 	
 	virtual int type_size() const { return sizeof(BinaryValue); }
 	

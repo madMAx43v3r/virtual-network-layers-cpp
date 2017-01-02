@@ -5,56 +5,72 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_OBJECT_H_
-#define INCLUDE_PHY_OBJECT_H_
+#ifndef INCLUDE_VNL_OBJECT_H_
+#define INCLUDE_VNL_OBJECT_H_
 
+#include <vnl/Layer.h>
 #include <vnl/Engine.h>
 #include <vnl/Stream.h>
 #include <vnl/Pool.h>
-#include <vnl/Pipe.h>
 #include <vnl/Timer.h>
 #include <vnl/String.h>
+#include <vnl/Sample.h>
 #include <vnl/Frame.h>
-#include <vnl/Algorithm.h>
+#include <vnl/Client.h>
+
 #include <vnl/ObjectSupport.hxx>
 
 
 namespace vnl {
 
-class Object : public Basic, public ObjectBase {
+class Object : public ObjectBase, public Basic {
 public:
 	Object(const vnl::String& domain, const vnl::String& topic)
 		:	ObjectBase(domain, topic),
-			dorun(false), engine(0),
+			vnl_dorun(false), vnl_engine(0), vnl_proxy(0), vnl_channel(0),
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
-			input(&buf_in), output(&buf_out),
-			log_writer(this)
+			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
+			vnl_log_writer(this)
 	{
+		my_private_domain << my_domain << "." << my_topic;
 	}
 	
- 	// thread safe
+	typedef SignalType<0x6a7fcd62> exit_t;
+	
+	// thread safe
 	virtual void receive(Message* msg) {
-		stream.receive(msg);
+		vnl_stream.receive(msg);
+	}
+	
+	// thread safe
+	uint64_t get_mac() {
+		return vnl_stream.get_mac();
 	}
 	
 	// NOT thread safe
 	Address get_my_address() const {
+		assert(vnl_dorun == false);
 		return my_address;
 	}
 	
 	// NOT thread safe
 	String get_my_domain() const {
+		assert(vnl_dorun == false);
 		return my_domain;
 	}
 	
 	// NOT thread safe
-	String get_my_topic() const {
-		return my_topic;
+	String get_my_private_domain() const {
+		assert(vnl_dorun == false);
+		return my_private_domain;
 	}
 	
 	// NOT thread safe
-	virtual void serialize(vnl::io::TypeOutput& out) const;
+	String get_my_topic() const {
+		assert(vnl_dorun == false);
+		return my_topic;
+	}
 	
 protected:
 	virtual ~Object() {}
@@ -72,10 +88,24 @@ protected:
 		run();
 	}
 	
-	void attach(Pipe* pipe);
-	void close(Pipe* pipe);
+	/*
+	 * Returns the proxy mac through which the current packet came in.
+	 */
+	uint64_t get_proxy() const {
+		return vnl_proxy;
+	}
 	
-	Object* fork(Object* object);
+	/*
+	 * Returns the input channel through which the current message came in.
+	 */
+	Basic* get_channel() const {
+		return vnl_channel;
+	}
+	
+	void add_client(Client& client, Router* target = 0);
+	void add_input(Stream& stream, Router* target = 0);
+	void add_input(InputPin& pin);
+	void add_output(OutputPin& pin);
 	
 	Address subscribe(const String& domain, const String& topic);
 	Address subscribe(Address address);
@@ -104,25 +134,32 @@ protected:
 	bool sleep(int64_t secs);
 	bool usleep(int64_t micros);
 	
-	void exit();
-	
 	virtual void run();
 	
 	virtual bool handle(Message* msg);
+	virtual bool handle(Stream::notify_t* msg);
+	virtual bool handle(OutputPin::pin_data_t* msg);
 	virtual bool handle(Packet* pkt);
+	virtual bool handle(Sample* sample);
+	virtual bool handle(Frame* frame);
 	
-	virtual void handle(const vnl::Shutdown& event);
+	virtual Frame* exec_vni_call(Frame* frame);
 	
-	vnl::info::Class get_class() const;
+	void exit();
+	String get_private_domain() const;
+	Map<String, String> get_config_map() const;
+	String get_config(const Hash32& name) const;
+	void set_config(const Hash32& name, const String& value);
 	
-	Binary vni_serialize() const;
-	void vni_deserialize(const vnl::Binary& blob);
+	void handle(const Shutdown& event);
 	
 protected:
-	volatile bool dorun;
-	MessagePool buffer;
+	volatile bool vnl_dorun;
+	MessagePool<Sample> vnl_sample_buffer;
+	MessagePool<Frame> vnl_frame_buffer;
 	
 	Address my_address;
+	String my_private_domain;
 	String my_domain;
 	String my_topic;
 	
@@ -130,20 +167,23 @@ private:
 	void exec(Engine* engine, Message* msg, Pipe* pipe);
 	
 private:
-	Stream stream;
-	Engine* engine;
+	Stream vnl_stream;
+	Engine* vnl_engine;
+	uint64_t vnl_proxy;
+	Basic* vnl_channel;
 	
-	List<Timer> timers;
-	List<Basic*> pipes;
+	List<Timer> vnl_timers;
+	List<InputPin*> vnl_input_pins;
+	List<OutputPin*> vnl_output_pins;
 	
-	Map<uint64_t, int64_t> sources;
+	Map<uint64_t, int64_t> vnl_sources;
 	
-	vnl::io::ByteBuffer buf_in;
-	vnl::io::ByteBuffer buf_out;
-	vnl::io::TypeInput input;
-	vnl::io::TypeOutput output;
+	vnl::io::ByteBuffer vnl_buf_in;
+	vnl::io::ByteBuffer vnl_buf_out;
+	vnl::io::TypeInput vnl_input;
+	vnl::io::TypeOutput vnl_output;
 	
-	GlobalLogWriter log_writer;
+	GlobalLogWriter vnl_log_writer;
 	
 	friend class Engine;
 	friend class GlobalLogWriter;
@@ -154,4 +194,4 @@ private:
 
 } // vnl
 
-#endif /* INCLUDE_PHY_OBJECT_H_ */
+#endif /* INCLUDE_VNL_OBJECT_H_ */

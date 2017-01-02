@@ -20,13 +20,13 @@ namespace vnl {
 class Terminal : public Object {
 public:
 	Terminal(const String& domain = local_domain_name)
-		:	Object(domain, "vnl.Terminal")
+		:	Object(domain, "Terminal")
 	{
 	}
 	
 protected:
 	void main(Engine* engine) {
-		process.set_address(my_domain, "vnl.Process");
+		process.set_address(vnl::local_domain_name, "Process");
 		process.connect(engine);
 		std::string input;
 		while(poll(0)) {
@@ -42,8 +42,7 @@ protected:
 				break;
 			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;
-				Array<Instance> list;
-				process.get_objects(list);
+				Array<Instance> list = process.get_objects();
 				int index = 1;
 				for(Instance& desc : list) {
 					std::cout << "[" << index++ << "] " << desc.domain << ":" << desc.topic << std::endl;
@@ -72,6 +71,18 @@ protected:
 				} else {
 					log(ERROR).out << "invalid input" << vnl::endl;
 				}
+			} else if(input == "topics" || input == "t") {
+				Router::get_topic_info_t msg;
+				send(&msg, Router::instance);
+				int64_t now = vnl::currentTimeMicros();
+				for(vnl::info::TopicInfo& info : msg.data) {
+					std::cout << "  " << info.topic.domain << " : " << info.topic.name << " | " << info.send_counter
+							<< " sent | " << info.receive_counter << " received | "
+							<< float(info.last_time-info.first_time)/(1-info.send_counter)/1e6 << "s cycle | "
+							<< float(now-info.last_time)/1e6 << "s ago" << std::endl;
+				}
+				std::cout << "Help: press enter to continue" << std::endl;
+				std::getline(std::cin, input);
 			} else if(input.find("grep ") == 0) {
 				std::cout << "Help: press enter to stop" << std::endl;
 				std::string filter = input.substr(5, -1);
@@ -93,7 +104,6 @@ protected:
 				}
 				std::getline(std::cin, input);
 				tool.exit();
-				resume();
 			} else if(input.find("dump") == 0) {
 				std::cout << "Help: press enter to stop" << std::endl;
 				vnl::SpyToolClient tool;
@@ -108,7 +118,6 @@ protected:
 				}
 				std::getline(std::cin, input);
 				tool.exit();
-				resume();
 			} else {
 				print_help();
 			}
@@ -125,7 +134,7 @@ protected:
 	}
 	
 	void print_help() {
-		std::cout << "Help: quit | log | grep <expr> | spy [expr] | dump [expr]" << std::endl;
+		std::cout << "Help: quit | log | topics | grep <expr> | spy [expr] | dump [expr]" << std::endl;
 	}
 	
 	void set_log_level(Engine* engine, Instance& node, int level) {
@@ -137,7 +146,9 @@ protected:
 		client.set_timeout(100);
 		client.set_address(node.domain, node.topic);
 		client.connect(engine);
-		if(client.set_vnl_log_level(level) != VNL_SUCCESS) {
+		try {
+			client.set_vnl_log_level(level);
+		} catch(...) {
 			log(ERROR).out << "set_log_level() failed for " << node.topic << vnl::endl;
 		}
 	}
@@ -148,10 +159,6 @@ private:
 };
 
 
-
-
-
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_TERMINAL_H_ */

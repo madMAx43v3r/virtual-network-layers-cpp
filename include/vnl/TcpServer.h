@@ -9,7 +9,7 @@
 #define CPP_INCLUDE_VNI_TCPSERVER_H_
 
 #include <vnl/Pipe.h>
-#include <vnl/TcpUplink.h>
+#include <vnl/TcpProxy.h>
 #include <vnl/TcpServerSupport.hxx>
 
 #include <thread>
@@ -17,45 +17,12 @@
 
 namespace vnl {
 
-class TcpProxy : public TcpUplink {
-public:
-	TcpProxy(int fd)
-		:	TcpUplink(local_domain_name, vnl::String() << "vnl.tcp.proxy." << fd),
-			running(false), fd(fd)
-	{
-	}
-	
-protected:
-	void main() {
-		TcpUplink::main();
-		log(INFO).out << "Client disconnected" << vnl::endl;
-	}
-	
-	int connect() {
-		if(!running) {
-			running = true;
-			return fd;
-		} else {
-			return -1;
-		}
-	}
-	
-private:
-	bool running;
-	int fd;
-	
-};
-
-
 class TcpServer : public vnl::TcpServerBase {
 public:
-	TcpServer(const vnl::String& topic, int port = 0)
-		:	TcpServerBase(local_domain_name, topic),
-			server(-1), do_reset(false)
+	TcpServer(const vnl::String& domain, const vnl::String& topic)
+		:	TcpServerBase(domain, topic),
+			server(-1), do_reset(false), pipe(0)
 	{
-		if(port) {
-			this->port = port;
-		}
 	}
 	
 	typedef MessageType<int, 0xaea64cbf> new_client_t;
@@ -63,7 +30,7 @@ public:
 	
 protected:
 	void main() {
-		while(dorun) {
+		while(vnl_dorun) {
 			if(server >= 0) {
 				::close(server);
 				usleep(error_interval);
@@ -93,21 +60,26 @@ protected:
 				continue;
 			}
 			log(INFO).out << "Running on port=" << port << vnl::endl;
-			attach(&pipe);
+			
+			do_reset = false;
+			add_input(downlink);
+			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpServer::accept_loop, this));
 			while(poll(-1)) {
 				if(do_reset) {
-					do_reset = false;
 					usleep(error_interval);
 					break;
 				}
 			}
-			close(&pipe);
-			poll(0);
+			pipe->close();
+			downlink.close();
 			::shutdown(server, SHUT_RDWR);
 			thread.join();
 			::close(server);
 			server = -1;
+		}
+		for(auto& entry : clients) {
+			entry.second.pipe->close();
 		}
 	}
 	
@@ -131,9 +103,30 @@ protected:
 			if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value)) < 0) {
 				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
 			}
-			TcpProxy* proxy = new TcpProxy(sock);
-			vnl::spawn(proxy);
+			TcpProxy* proxy = new TcpProxy(my_domain, vnl::String("TcpProxy.") << sock, my_private_domain);
+			proxy->vnl_max_num_pending = vnl_max_num_pending;
+			proxy->vnl_log_level = vnl_log_level;
+			proxy->send_timeout = send_timeout;
+			proxy->sock = sock;
+			proxy->server = pipe;
+			proxy_t& client = clients[proxy->get_mac()];
+			client.mac = proxy->get_mac();
+			client.pipe = Pipe::create();
+			vnl::spawn(proxy, client.pipe);
+			for(const Topic& topic : export_topics) {
+				TcpProxy::subscribe_t msg(topic);
+				send(&msg, client.pipe);
+			}
 			log(INFO).out << "New client on socket " << sock << vnl::endl;
+			on_new_client(client.mac, client.pipe);
+		} else if(msg->msg_id == TcpProxy::del_client_t::MID) {
+			uint64_t mac = ((TcpProxy::del_client_t*)msg)->data;
+			proxy_t* client = clients.find(mac);
+			if(client) {
+				on_del_client(client->mac, client->pipe);
+				client->pipe->close();
+				clients.erase(mac);
+			}
 		} else if(msg->msg_id == error_t::MID) {
 			log(ERROR).out << "accept() failed, error=" << ((error_t*)msg)->data << vnl::endl;
 			do_reset = true;
@@ -141,44 +134,79 @@ protected:
 		return false;
 	}
 	
-	void publish(const vnl::Topic& topic) {
-		publish(topic.domain, topic.name);
+	void publish(const vnl::String& domain, const vnl::String& topic) {
+		for(const auto& entry : clients) {
+			TcpProxy::publish_t msg;
+			msg.data.domain = domain;
+			msg.data.name = topic;
+			send(&msg, entry.second.pipe);
+		}
 	}
 	
-	void publish(const vnl::String& domain, const vnl::String& topic) {
+	void unpublish(const vnl::String& domain, const vnl::String& topic) {
 		// TODO
 	}
 	
+	void subscribe(const vnl::String& domain, const vnl::String& topic) {
+		for(const auto& entry : clients) {
+			TcpProxy::subscribe_t msg;
+			msg.data.domain = domain;
+			msg.data.name = topic;
+			send(&msg, entry.second.pipe);
+		}
+	}
+	
+	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
+		// TODO
+	}
+	
+	void unsubscribe_all() {
+		// TODO
+	}
+	
+	virtual void on_new_client(uint64_t mac, Pipe* pipe) {}
+	virtual void on_del_client(uint64_t mac, Pipe* pipe) {}
+	
 private:
 	void accept_loop() {
-		Actor actor;
-		while(dorun) {
+		pipe->attach();
+		ThreadEngine engine;
+		Stream stream;
+		stream.connect(&engine);
+		while(vnl_dorun) {
 			int sock = ::accept(server, 0, 0);
 			if(sock < 0) {
-				if(dorun) {
+				if(vnl_dorun) {
 					error_t msg(errno);
-					actor.send(&msg, &pipe);
+					stream.send(&msg, pipe);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			actor.send(&msg, &pipe);
+			stream.send(&msg, pipe);
 		}
+		pipe->detach();
+		engine.flush();
 	}
+	
+	struct proxy_t {
+		uint64_t mac;
+		Pipe* pipe;
+	};
+	
+protected:
+	Map<uint64_t, proxy_t> clients;
 	
 private:
 	int server;
 	bool do_reset;
 	
-	Pipe pipe;
+	Pipe* pipe;
+	Stream downlink;
 	
 };
 
 
-
-
-
-
-}
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_TCPSERVER_H_ */

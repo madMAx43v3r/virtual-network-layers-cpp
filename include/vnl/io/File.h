@@ -64,13 +64,6 @@ public:
 		return true;
 	}
 	
-	void close() {
-		if(fd) {
-			::fclose(fd);
-			fd = 0;
-		}
-	}
-	
 private:
 	FILE* fd;
 	

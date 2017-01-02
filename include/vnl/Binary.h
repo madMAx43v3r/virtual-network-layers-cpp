@@ -9,20 +9,39 @@
 #define CPP_INCLUDE_VNI_BINARY_H_
 
 #include <vnl/Memory.h>
+#include <vnl/String.h>
 
 
 namespace vnl {
 
 class Binary {
 public:
-	vnl::Page* data;
+	Page* data;
 	int size;
 	
-	Binary() : data(0), size(0) {
-	}
+	Binary() : data(0), size(0) {}
 	
 	Binary(const Binary& other) : data(0), size(0) {
 		*this = other;
+	}
+	
+	Binary(const void* in_data, int in_size) : data(0), size(0) {
+		if(in_size > 0) {
+			data = Page::alloc();
+			Page* curr = data;
+			while(true) {
+				int n = in_size > Page::size ? Page::size : in_size;
+				::memcpy(curr->mem, (const char*)in_data + size, n);
+				in_size -= n;
+				size += n;
+				if(in_size > 0) {
+					curr->next = Page::alloc();
+					curr = curr->next;
+				} else {
+					break;
+				}
+			}
+		}
 	}
 	
 	~Binary() {
@@ -31,17 +50,19 @@ public:
 	
 	Binary& operator=(const Binary& other) {
 		clear();
-		data = other.data ? vnl::Page::alloc() : 0;
-		size = other.size;
-		vnl::Page* src = other.data;
-		vnl::Page* dst = data;
-		while(src) {
-			::memcpy(dst->mem, src->mem, vnl::Page::size);
-			if(src->next) {
-				dst->next = vnl::Page::alloc();
+		if(other.data && other.size > 0) {
+			data = Page::alloc();
+			size = other.size;
+			Page* src = other.data;
+			Page* dst = data;
+			while(src) {
+				::memcpy(dst->mem, src->mem, Page::size);
+				if(src->next) {
+					dst->next = Page::alloc();
+				}
+				src = src->next;
+				dst = dst->next;
 			}
-			src = src->next;
-			dst = dst->next;
 		}
 		return *this;
 	}
@@ -57,7 +78,6 @@ public:
 };
 
 
-}
-
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_BINARY_H_ */

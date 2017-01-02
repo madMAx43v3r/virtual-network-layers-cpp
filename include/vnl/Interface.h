@@ -33,7 +33,7 @@ public:
 				uint32_t hash = 0;
 				in.getHash(hash);
 				if(!vni_call(in, hash, size)) {
-					for(uint32_t i = 0; i < size; ++i) {
+					for(int i = 0; i < size; ++i) {
 						in.skip();
 					}
 				}
@@ -54,16 +54,16 @@ public:
 		}
 	}
 	
-	virtual int num_fields() const {
+	virtual int get_num_fields() const {
 		return 0;
 	}
 	
-	virtual int field_index(vnl::Hash32 hash_) const {
+	virtual int get_field_index(vnl::Hash32 hash_) const {
 		return -1;
 	}
 	
-	virtual const char* field_name(int index_) const {
-		return "?";
+	virtual const char* get_field_name(int index_) const {
+		return 0;
 	}
 	
 	virtual void get_field(int index_, vnl::String& str_) const {
@@ -72,6 +72,14 @@ public:
 	
 	virtual void set_field(int index_, const vnl::String& str_) {
 		// default: nothing
+	}
+	
+	virtual void get_field(int _index, vnl::io::TypeOutput& _out) const {
+		_out.putNull();
+	}
+	
+	virtual void set_field(int _index, vnl::io::TypeInput& _in) {
+		_in.skip();
 	}
 	
 protected:
@@ -84,6 +92,10 @@ protected:
 	}
 	
 	virtual bool handle_switch(vnl::Value* sample, vnl::Packet* packet) {
+		return false;
+	}
+	
+	virtual bool handle_switch(vnl::Value* sample, vnl::Basic* input) {
 		return false;
 	}
 	

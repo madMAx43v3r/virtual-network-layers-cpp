@@ -5,19 +5,17 @@
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_STREAM_H_
-#define INCLUDE_PHY_STREAM_H_
+#ifndef INCLUDE_VNL_STREAM_H_
+#define INCLUDE_VNL_STREAM_H_
 
-#include <vnl/Pipe.h>
 #include <vnl/Engine.h>
 #include <vnl/Queue.h>
 #include <vnl/Router.h>
-#include <vnl/Layer.h>
 
 
 namespace vnl {
 
-class Stream : public Basic {
+class Stream : public Node {
 public:
 	Stream() : engine(0), target(0), listener(0), next_seq(1) {}
 	
@@ -32,24 +30,37 @@ public:
 		}
 	}
 	
-	void connect(Engine* engine_, Basic* target_ = Router::instance) {
-		engine = engine_;
-		target = target_;
-		if(target) {
-			Pipe::connect_t msg(this);
-			send(&msg, target);
-			assert(msg.res);
+	// thread safe
+	virtual void receive(Message* msg) {
+		assert(engine);
+		if(msg->gate == engine) {
+			if(msg->isack) {
+				msg->destroy();
+			} else {
+				push(msg);
+			}
+		} else {
+			engine->receive(msg);
 		}
 	}
 	
-	void listen(Basic* dst) {
-		assert(dst != this);
-		listener = dst;
+	void connect(Engine* engine_, Router* target_ = 0) {
+		engine = engine_;
+		target = target_ ? target_ : Router::instance;
+		if(target) {
+			Router::connect_t msg(this);
+			send(&msg, target);
+		}
+	}
+	
+	void listen(Basic* target) {
+		assert(target != this);
+		listener = target;
 	}
 	
 	void close() {
 		if(target) {
-			Pipe::close_t msg(this);
+			Router::finish_t msg(this);
 			send(&msg, target);
 		}
 		Message* left = 0;
@@ -63,29 +74,16 @@ public:
 		return engine;
 	}
 	
-	// thread safe
-	virtual void receive(Message* msg) {
-		assert(engine);
-		if(msg->gate == engine) {
-			if(msg->isack) {
-				msg->destroy();
-			} else {
-				push(msg);
-			}
-		} else {
-			msg->dst = this;
-			engine->receive(msg);
-		}
-	}
-	
 	Address subscribe(Address addr) {
-		Router::open_t msg(vnl::make_pair(mac, addr));
+		assert(target);
+		Router::open_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, target);
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
-		Router::close_t msg(vnl::make_pair(mac, addr));
+		assert(target);
+		Router::close_t msg(vnl::make_pair(vnl_mac, addr));
 		send(&msg, target);
 	}
 	
@@ -101,22 +99,24 @@ public:
 	
 	void send(Packet* pkt, Basic* dst) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = mac;
+		pkt->src_mac = vnl_mac;
 		send((Message*)pkt, dst);
 	}
 	
 	void send_async(Packet* pkt, Basic* dst) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = mac;
+		pkt->src_mac = vnl_mac;
 		send_async((Message*)pkt, dst);
 	}
 	
 	void send(Packet* pkt, Address dst) {
+		assert(target);
 		pkt->dst_addr = dst;
 		send(pkt, target);
 	}
 	
 	void send_async(Packet* pkt, Address dst) {
+		assert(target);
 		pkt->dst_addr = dst;
 		send_async(pkt, target);
 	}
@@ -137,13 +137,12 @@ public:
 	}
 	
 	void push(Message* msg) {
-		queue.push(msg);
-		if(listener) {
-			notify_t* msg = engine->buffer.create<notify_t>();
+		if(listener && queue.empty()) {
+			notify_t* msg = notify_buffer.create();
 			msg->data = this;
 			send_async(msg, listener);
-			listener = 0;
 		}
+		queue.push(msg);
 	}
 	
 	bool pop(Message*& msg) {
@@ -156,9 +155,10 @@ public:
 	
 private:
 	Engine* engine;
-	Basic* target;
+	Router* target;
 	Basic* listener;
 	Queue<Message*> queue;
+	MessagePool<notify_t> notify_buffer;
 	uint32_t next_seq;
 	
 	friend class Engine;
@@ -166,7 +166,6 @@ private:
 };
 
 
+} // vnl
 
-}
-
-#endif /* INCLUDE_PHY_STREAM_H_ */
+#endif /* INCLUDE_VNL_STREAM_H_ */

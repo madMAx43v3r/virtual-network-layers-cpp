@@ -1,7 +1,0 @@
-package vnl.info;
-
-class Object extends Class {
-	
-	List<Method> methods;
-	
-}

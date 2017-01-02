@@ -20,8 +20,8 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_, Basic* target)
-		:	PlayerBase(domain_, "Player"),
+	Player(const vnl::String& domain_, const vnl::String& topic_, vnl::Basic* target = vnl::Router::instance)
+		:	PlayerBase(domain_, topic_),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
 		type_blacklist["vnl.Announce"] = true;
@@ -42,7 +42,7 @@ protected:
 			play();
 		}
 		run();
-		file.close();
+		close();
 	}
 	
 	void open(const vnl::String& file) {
@@ -53,7 +53,7 @@ protected:
 	
 	void reset() {
 		char buf[1024];
-		file.close();
+		close();
 		header = vnl::RecordHeader();
 		status = vnl::info::PlayerStatus();
 		filename.to_string(buf, sizeof(buf));
@@ -185,7 +185,7 @@ protected:
 		vnl::Value* value = next.value.release();
 		if(value) {
 			bool pass = true;
-			if(type_blacklist.find(value->vni_hash())) {
+			if(type_blacklist.find(value->get_vni_hash())) {
 				pass = false;
 			} else if(blacklist.find(Address(next.domain, ""))) {
 				pass = false;
@@ -198,7 +198,7 @@ protected:
 				if(remap) {
 					dst_addr = *remap;
 				}
-				Sample* msg = buffer.create<Sample>();
+				Sample* msg = vnl_sample_buffer.create();
 				msg->dst_addr = dst_addr;
 				msg->header = next.header.release();
 				msg->data = value;
@@ -217,11 +217,11 @@ protected:
 			if(in.error() == VNL_IO_EOF) {
 				log(INFO).out << "End of file reached." << vnl::endl;
 				seek_begin();
-				if(autoshutdown) {
+				if(autoloop) {
+					play();
+				} else if(autoshutdown) {
 					log(INFO).out << "Triggering shutdown ..." << vnl::endl;
 					publish(vnl::Shutdown::create(), vnl::local_domain_name, "vnl.shutdown");
-				} else if(autoloop) {
-					play();
 				}
 			} else {
 				status.error = true;
@@ -238,7 +238,7 @@ protected:
 		for(Topic& topic : topic_blacklist) {
 			blacklist[Address(topic.domain, topic.name)] = true;
 		}
-		publish(status.clone(), my_domain, "PlayerStatus");
+		publish(status.clone(), my_private_domain, "player_status");
 	}
 	
 	vnl::info::PlayerStatus get_status() const {
@@ -263,8 +263,14 @@ private:
 		status.current_time = status.begin_time;
 	}
 	
+	void close() {
+		if(file) {
+			::fclose(file);
+		}
+	}
+	
 private:
-	Basic* target;
+	vnl::Basic* target;
 	vnl::io::File file;
 	vnl::io::TypeInput in;
 	

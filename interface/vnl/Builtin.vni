@@ -1,8 +1,14 @@
 package vnl;
 
-interface Hash32;
-interface Hash64;
+enum Enum;
+interface Interface;
 
+interface String;
+interface Binary;
+interface Pointer;
 interface Array;
 interface List;
 interface Map;
+
+extern Hash32;
+extern Hash64;

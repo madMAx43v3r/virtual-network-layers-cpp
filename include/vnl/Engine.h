@@ -32,9 +32,6 @@ class FiberEngine;
 // running module in new thread
 Address spawn(Object* object, Pipe* pipe = 0);
 
-// running module in a fiber if possible, otherwise uses spawn
-Address fork(Object* object);
-
 
 class Engine : public Basic {
 public:
@@ -75,8 +72,6 @@ public:
 		send_impl(msg, true);
 	}
 	
-	virtual void fork(Object* object) = 0;
-	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
@@ -92,8 +87,6 @@ protected:
 private:
 	std::mutex mutex;
 	std::condition_variable cond;
-	
-	MessagePool buffer;
 	
 	Queue<Message*> queue;
 	List<std::function<void(Message*)> > rcv_hooks;

@@ -176,7 +176,9 @@ public:
 	}
 	
 	String& operator<<(const char* str) {
-		write(str, strlen(str));
+		if(str) {
+			write(str, strlen(str));
+		}
 		return *this;
 	}
 	

@@ -11,8 +11,10 @@
 #include <thread>
 #include <pthread.h>
 
+#include <vnl/Layer.h>
 #include <vnl/Engine.h>
 #include <vnl/Pipe.h>
+#include <vnl/Actor.h>
 #include <vnl/Stream.h>
 #include <vnl/Object.h>
 
@@ -33,7 +35,7 @@ public:
 		msg.src = &sync;
 		std::thread thread(&ThreadEngine::entry, object, &msg, pipe);
 		thread.detach();
-		sync.wait();
+		sync.wait_for_ack();
 	}
 	
 	// all below NOT thread safe
@@ -41,10 +43,6 @@ public:
 	virtual void run(Object* object, Pipe* pipe = 0) {
 		Message msg;
 		exec(object, &msg, pipe);
-	}
-	
-	virtual void fork(Object* object) {
-		spawn(object);
 	}
 	
 	virtual bool poll(Stream* stream, int64_t micros) {

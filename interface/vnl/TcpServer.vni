@@ -1,18 +1,22 @@
 package vnl;
 
-object TcpServer {
+object TcpServer implements Uplink {
 	
 	int port = 8916;
 	int error_interval = 1000000;
 	
+	Array<Topic> export_topics;
+	
 	int accept_queue = 10;
+	int send_timeout = -1;				// same as in TcpUplink
 	
 	bool tcp_keepalive = true;
 	bool tcp_nodelay = true;
 	int send_buffer_size = 1048576;
 	int receive_buffer_size = 1048576;
 	
-	void publish(Topic topic);
-	void publish(String domain, String topic);
+}
+
+object TcpProxy extends TcpUplink {
 	
 }

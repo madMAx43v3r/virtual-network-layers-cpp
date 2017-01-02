@@ -8,9 +8,11 @@
 #ifndef INCLUDE_VNL_PROCESS_H_
 #define INCLUDE_VNL_PROCESS_H_
 
-#include <vnl/ProcessSupport.hxx>
 #include <vnl/Map.h>
 #include <vnl/Layer.h>
+
+#include <vnl/ProcessSupport.hxx>
+#include <vnl/info/TopicInfoList.hxx>
 
 
 namespace vnl {
@@ -18,7 +20,7 @@ namespace vnl {
 class Process : public ProcessBase {
 public:
 	Process()
-		:	ProcessBase(local_domain_name, "vnl.Process")
+		:	ProcessBase(vnl::local_domain_name, "Process")
 	{
 		name = local_domain_name;
 	}
@@ -29,12 +31,12 @@ protected:
 		subscribe(local_domain_name, "vnl.log");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
+		set_timeout(1000*1000*1, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
 		if(do_print_stats) {
 			set_timeout(1000*1000*10, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
 		}
 		init->ack();
 		run();
-		std::cout << "[" << my_topic << "] Shutdown activated" << std::endl;
 		set_timeout(1000*1000*3, std::bind(&Process::print_waitlist, this), VNL_TIMER_REPEAT);
 		while(!objects.empty()) {
 			poll(-1);
@@ -81,9 +83,15 @@ protected:
 	}
 	
 	vnl::Array<vnl::String> get_class_names() const {
-		vnl::Array<vnl::String> list;
-		// TODO
-		return list;
+		return vnl::get_class_names();
+	}
+	
+	vnl::Map<vnl::Hash32, vnl::info::Type> get_type_info() const {
+		return vnl::get_type_info();
+	}
+	
+	vnl::info::TopicInfoList get_topic_info() const {
+		return topic_info;
 	}
 	
 	void pause_log() {
@@ -127,8 +135,17 @@ protected:
 		}
 	}
 	
+	void update() {
+		Router::get_topic_info_t msg;
+		send(&msg, Router::instance);
+		topic_info.time = vnl::currentTimeMicros();
+		topic_info.topics = msg.data;
+		publish(topic_info.clone(), my_private_domain, "topic_info");
+	}
+	
 private:
 	Map<Address, Instance> objects;
+	vnl::info::TopicInfoList topic_info;
 	
 	bool paused = false;
 	bool filtering = false;

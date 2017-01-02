@@ -1,0 +1,29 @@
+package vnl;
+
+class Exception {
+	
+}
+
+class IOException extends Exception {
+	
+}
+
+class TimeoutException extends IOException {
+	
+}
+
+class NoSuchMethodException extends IOException {
+	
+}
+
+class NoSuchFieldException extends IOException {
+	
+}
+
+class NoSuchKeyException extends IOException {
+	
+}
+
+class DuplicateKeyException extends IOException {
+	
+}

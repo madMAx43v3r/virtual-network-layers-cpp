@@ -1,15 +1,12 @@
 /*
- * Node.h
+ * Basic.h
  *
  *  Created on: Apr 25, 2016
  *      Author: mad
  */
 
-#ifndef INCLUDE_PHY_NODE_H_
-#define INCLUDE_PHY_NODE_H_
-
-#include <mutex>
-#include <condition_variable>
+#ifndef INCLUDE_VNL_BASIC_H_
+#define INCLUDE_VNL_BASIC_H_
 
 #include <vnl/Random.h>
 #include <vnl/Message.h>
@@ -19,122 +16,37 @@ namespace vnl {
 
 class Basic {
 public:
-	Basic() : _impl(0) {
-		mac = Random64::global_rand();
+	Basic() {}
+	
+	virtual ~Basic() {}
+	
+	// must be thread safe !!!
+	virtual void receive(Message* msg) {
+		msg->ack();
 	}
 	
 	Basic(const Basic&) = delete;
 	Basic& operator=(const Basic&) = delete;
 	
-	virtual ~Basic() {}
+};
+
+
+class Node : public Basic {
+public:
+	Node() : _impl(0) {
+		vnl_mac = vnl::rand();
+	}
 	
-	uint64_t get_mac() const { return mac; }
-	
-	// must be thread safe !!!
-	virtual void receive(Message* msg) = 0;
+	uint64_t get_mac() const { return vnl_mac; }
 	
 	void* _impl;
 	
 protected:
-	uint64_t mac;
+	uint64_t vnl_mac;
 	
 };
 
 
-class Reactor : public Basic {
-public:
-	Reactor() {
-		mac = Random64::global_rand();
-	}
-	
-	virtual void receive(Message* msg) override {
-		msg->gate = this;
-		mutex.lock();
-		if(msg->isack) {
-			callback(msg);
-			msg->destroy();
-		} else {
-			if(!handle(msg)) {
-				msg->ack();
-			}
-		}
-		mutex.unlock();
-	}
-	
-protected:
-	virtual bool handle(Message* msg) = 0;
-	
-	virtual void callback(Message* msg) {}
-	
-	void send_async(Message* msg, Basic* dst) {
-		msg->src = this;
-		dst->receive(msg);
-	}
-	
-	void lock() {
-		mutex.lock();
-	}
-	
-	void unlock() {
-		mutex.unlock();
-	}
-	
-private:
-	std::mutex mutex;
-	
-};
+} // vnl
 
-
-class Actor : public Basic {
-public:
-	Actor() : ulock(mutex) {}
-	
-	virtual void receive(Message* msg) override {
-		if(msg->isack) {
-			std::unique_lock<std::mutex> lock(mutex);
-			acked = true;
-			cond.notify_all();
-		}
-	}
-	
-	void reset() {
-		acked = false;
-	}
-	
-	void send(Message* msg, Basic* dst) {
-		msg->src = this;
-		msg->dst = dst;
-		acked = false;
-		ulock.unlock();
-		dst->receive(msg);
-		ulock.lock();
-		while(!acked) {
-			cond.wait(ulock);
-		}
-	}
-	
-	void wait() {
-		while(!acked) {
-			cond.wait(ulock);
-		}
-	}
-	
-private:
-	std::mutex mutex;
-	std::condition_variable cond;
-	std::unique_lock<std::mutex> ulock;
-	
-	bool acked = false;
-	
-};
-
-
-inline void send(Message* msg, Basic* dst) {
-	Actor actor;
-	actor.send(msg, dst);
-}
-
-
-}
-
-#endif /* INCLUDE_PHY_NODE_H_ */
+#endif /* INCLUDE_VNL_BASIC_H_ */

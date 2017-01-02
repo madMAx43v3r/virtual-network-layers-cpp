@@ -9,7 +9,9 @@
 #include <vnl/Layer.h>
 #include <vnl/Random.h>
 #include <vnl/Pool.h>
+#include <vnl/Pipe.h>
 #include <vnl/Process.h>
+#include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
 
 #include <iostream>
@@ -19,34 +21,51 @@
 
 namespace vnl {
 
-uint64_t local_domain = 0;
 const char* local_domain_name = 0;
+const char* local_config_name = "";
+
+
+namespace internal {
+	
+	Map<Hash32, vnl::info::Type>* type_info_ = 0;
+	
+} // internal
+
+
+Random64* Random64::instance = 0;
 
 volatile bool Layer::have_shutdown = false;
 std::atomic<int> Layer::num_threads(0);
 
-Map<String, String>* Layer::config = 0;
 
-Random64* Random64::instance = 0;
+const vnl::info::Type* get_type_info(Hash32 type_name) {
+	static std::mutex mutex;
+	std::lock_guard<std::mutex> lock(mutex);
+	return internal::type_info_->find(type_name);
+}
+
 
 Layer::Layer(const char* domain_name, const char* config_dir)
 	:	closed(false)
 {
 	assert(Random64::instance == 0);
-	assert(local_domain == 0);
-	assert(global_pool == 0);
+	assert(Router::instance == 0);
+	assert(Pipe::pool == 0);
+	assert(internal::global_pool_ == 0);
+	assert(internal::config_ == 0);
+	assert(internal::type_info_ == 0);
 	assert(have_shutdown == false);
 	assert(num_threads == 0);
-	assert(Router::instance == 0);
-	assert(Layer::config == 0);
 	
 	Random64::instance = new Random64();
+	Pipe::pool = new Pool<Pipe>();
 	local_domain_name = domain_name;
-	local_domain = vnl::hash64(domain_name);
-	global_pool = new GlobalPool();
-	config = new Map<String, String>();
+	internal::global_pool_ = new GlobalPool();
+	internal::config_ = new Map<String, String>();
+	internal::type_info_ = new Map<Hash32, vnl::info::Type>(vnl::get_type_info());
 	
 	if(config_dir) {
+		local_config_name = config_dir;
 		parse_config(config_dir);
 	}
 	
@@ -62,9 +81,12 @@ Layer::~Layer() {
 void Layer::shutdown() {
 	if(!have_shutdown) {
 		ThreadEngine engine;
-		ProcessClient proc = Address(local_domain, "vnl.Process");
+		ProcessClient proc = Address(vnl::local_domain_name, "Process");
+		proc.set_fail(true);
 		proc.connect(&engine);
-		proc.shutdown();
+		try {
+			proc.shutdown();
+		} catch(...) {}
 		engine.flush();
 		have_shutdown = true;
 	}
@@ -78,27 +100,21 @@ void Layer::close() {
 		usleep(10*1000);
 	}
 	
+	if(Pipe::get_num_open() > 0) {
+		std::cout << "WARNING: " << Pipe::get_num_open() << " pipes left open at exit!" << std::endl;
+	}
+	
 	delete Router::instance;
+	delete Pipe::pool;
 	delete Random64::instance;
-	delete global_pool;
-	delete config;
+	delete internal::global_pool_;
+	delete internal::config_;
+	delete internal::type_info_;
 	
 	Page::cleanup();
 	Block::cleanup();
 	closed = true;
 }
-
-
-const String* Layer::get_config(const String& domain, const String& topic, const String& name) {
-	static std::mutex mutex;
-	String key;
-	key << domain << ":" << topic << "->" << name;
-	mutex.lock();
-	String* value = config->find(key);
-	mutex.unlock();
-	return value;
-}
-
 
 void Layer::parse_config(const char* root_dir) {
 	char buf[4096];
@@ -150,7 +166,7 @@ void Layer::parse_config(const char* root_dir) {
 								continue;
 							}
 							String key = String(domain->d_name) << ":" << topic->d_name << "->" << name->d_name;
-							String& value = (*config)[key];
+							String& value = (*internal::config_)[key];
 							value.clear();
 							while(true) {
 								int count = sizeof(buf)-1;
@@ -183,6 +199,7 @@ void GlobalLogWriter::write(const String& str) {
 	vnl::LogMsg* msg = vnl::LogMsg::create();
 	msg->domain = node->my_domain;
 	msg->topic = node->my_topic;
+	msg->src_mac = node->get_mac();
 	msg->level = level;
 	msg->msg = str;
 	node->publish(msg, local_domain_name, "vnl.log");
