@@ -21,6 +21,9 @@ namespace vnl {
 class Hash32 {
 public:
 	Hash32() : value(0) {}
+	Hash32(int16_t hash) : value(0) {}
+	Hash32(int32_t hash) : value(hash) {}
+	Hash32(int64_t hash) : value(hash) {}
 	Hash32(uint16_t hash) : value(0) {}
 	Hash32(uint32_t hash) : value(hash) {}
 	Hash32(uint64_t hash) : value(hash) {}
