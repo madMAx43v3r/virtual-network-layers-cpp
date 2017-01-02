@@ -98,7 +98,7 @@ protected:
 	/*
 	 * Returns the input channel through which the current message came in.
 	 */
-	Basic* get_channel() const {
+	Stream* get_channel() const {
 		return vnl_channel;
 	}
 	
@@ -170,7 +170,7 @@ private:
 	Stream vnl_stream;
 	Engine* vnl_engine;
 	uint64_t vnl_proxy;
-	Basic* vnl_channel;
+	Stream* vnl_channel;
 	
 	List<Timer> vnl_timers;
 	List<InputPin*> vnl_input_pins;

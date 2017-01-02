@@ -201,7 +201,7 @@ bool Object::handle(Message* msg) {
 bool Object::handle(Stream::notify_t* notify) {
 	Message* msg;
 	while(notify->data->pop(msg)) {
-		Basic* tmp_channel = vnl_channel;
+		Stream* tmp_channel = vnl_channel;
 		vnl_channel = notify->data;
 		if(!handle(msg)) {
 			msg->ack();
@@ -220,7 +220,7 @@ bool Object::handle(OutputPin::pin_data_t* msg) {
 }
 
 bool Object::handle(Packet* pkt) {
-	int64_t& last_seq = vnl_sources[pkt->src_mac];
+	int64_t& last_seq = vnl_sources[pkt->src_mac xor vnl_channel->get_mac()];
 	if(last_seq == 0) {
 		log(DEBUG).out << "New source: mac=" << hex(pkt->src_mac) << " num_hops=" << pkt->num_hops << endl;
 	}
@@ -353,6 +353,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	vnl_dorun = true;
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
+	vnl_channel = &vnl_stream;
 	if(pipe) {
 		pipe->open(this);
 	}
