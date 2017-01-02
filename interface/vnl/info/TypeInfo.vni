@@ -30,12 +30,14 @@ class Type {
 	Hash32 hash;
 	String name;
 	
+	bool is_struct;
+	bool is_class;
+	bool is_enum;
+	bool is_interface;
+	bool is_object;
+	
 	List<Field> fields;
-	
-}
-
-class Interface extends Type {
-	
 	List<Method> methods;
+	List<String> symbols;
 	
 }
