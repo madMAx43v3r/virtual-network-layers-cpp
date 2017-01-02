@@ -79,15 +79,25 @@ public:
 	
 	Address subscribe(Address addr) {
 		assert(target);
-		Router::open_t msg(vnl::make_pair(vnl_mac, addr));
-		send(&msg, target);
+		int64_t& count = table[addr];
+		if(count == 0) {
+			Router::open_t msg(vnl::make_pair(vnl_mac, addr));
+			send(&msg, target);
+		}
+		count++;
 		return addr;
 	}
 	
 	void unsubscribe(Address addr) {
 		assert(target);
-		Router::close_t msg(vnl::make_pair(vnl_mac, addr));
-		send(&msg, target);
+		int64_t& count = table[addr];
+		if(count > 0) {
+			count--;
+			if(count == 0) {
+				Router::close_t msg(vnl::make_pair(vnl_mac, addr));
+				send(&msg, target);
+			}
+		}
 	}
 	
 	void send(Message* msg, Basic* dst) {
@@ -161,6 +171,7 @@ private:
 	Router* target;
 	Basic* listener;
 	Queue<Message*> queue;
+	Map<Address, int64_t> table;
 	MessagePool<notify_t> notify_buffer;
 	uint32_t next_seq;
 	
