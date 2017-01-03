@@ -51,6 +51,7 @@ public:
 		memcpy(route, org->route, sizeof(uint32_t)*org->num_hops);
 		proxy = org->proxy;
 		timeout = org->timeout;
+		is_no_drop = org->is_no_drop;
 	}
 	
 	int16_t get_header_size() const {

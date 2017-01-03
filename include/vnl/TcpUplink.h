@@ -46,13 +46,13 @@ protected:
 				break;
 			}
 			out.reset();
+			do_reset = false;
+			add_input(tunnel);
+			add_input(downlink);
 			write_announce();
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic.domain, topic.name);
 			}
-			do_reset = false;
-			add_input(tunnel);
-			add_input(downlink);
 			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			are_connected = true;
@@ -259,7 +259,7 @@ private:
 			if(error) {
 				if(vnl_dorun) {
 					error_t msg(in.error());
-					stream.send(&msg, pipe);
+					stream.send(&msg, pipe, true);
 				}
 				break;
 			}
@@ -276,7 +276,7 @@ private:
 			sample->proxy = get_mac();
 			if(!in.error()) {
 				if(sample->dst_addr.domain() == remote_domain) {
-					stream.send_async(sample, pipe);
+					stream.send_async(sample, pipe, true);
 				} else {
 					forward(stream, sample);
 					stream.send_async(sample, sample->dst_addr);
@@ -290,10 +290,10 @@ private:
 			frame->proxy = get_mac();
 			if(!in.error()) {
 				if(frame->dst_addr.domain() == remote_domain) {
-					stream.send_async(frame, pipe);
+					stream.send_async(frame, pipe, true);
 				} else {
 					forward(stream, frame);
-					stream.send_async(frame, frame->dst_addr);
+					stream.send_async(frame, frame->dst_addr, frame->type == Frame::RESULT);
 				}
 				return true;
 			}
@@ -306,7 +306,7 @@ private:
 		int& count = fwd_table[pkt->src_addr];
 		if(count == 0) {
 			forward_t msg(pkt->src_addr);
-			stream.send(&msg, pipe);
+			stream.send(&msg, pipe, true);
 		}
 		count++;
 	}

@@ -56,7 +56,7 @@ public:
 	}
 	
 	// NOT thread safe
-	void transmit(Value* data) {
+	void transmit(Value* data, bool no_drop = false) {
 		assert(enabled == true);
 		if(links.empty()) {
 			vnl::destroy(data);
@@ -69,6 +69,7 @@ public:
 			msg->parent = parent;
 			msg->data = data;
 			msg->timeout = send_timeout;
+			msg->is_no_drop = no_drop;
 			engine->send_async(msg, pipe);
 			parent->count++;
 		}

@@ -69,7 +69,7 @@ public:
 			int count = queue.size();
 			Message* msg = 0;
 			while(i < count && queue.pop(msg)) {
-				if(!msg->isack && now - msg->rcv_time > msg->timeout) {
+				if(!msg->isack && !msg->is_no_drop && now - msg->rcv_time > msg->timeout) {
 					tmp.push(msg);
 				} else {
 					queue.push(msg);

@@ -115,7 +115,7 @@ protected:
 			vnl::spawn(proxy, client.pipe);
 			for(const Topic& topic : export_topics) {
 				TcpProxy::subscribe_t msg(topic);
-				send(&msg, client.pipe);
+				send(&msg, client.pipe, true);
 			}
 			log(INFO).out << "New client on socket " << sock << vnl::endl;
 			on_new_client(client.mac, client.pipe);
@@ -139,7 +139,7 @@ protected:
 			TcpProxy::publish_t msg;
 			msg.data.domain = domain;
 			msg.data.name = topic;
-			send(&msg, entry.second.pipe);
+			send(&msg, entry.second.pipe, true);
 		}
 	}
 	
@@ -152,7 +152,7 @@ protected:
 			TcpProxy::subscribe_t msg;
 			msg.data.domain = domain;
 			msg.data.name = topic;
-			send(&msg, entry.second.pipe);
+			send(&msg, entry.second.pipe, true);
 		}
 	}
 	
@@ -178,12 +178,12 @@ private:
 			if(sock < 0) {
 				if(vnl_dorun) {
 					error_t msg(errno);
-					stream.send(&msg, pipe);
+					stream.send(&msg, pipe, true);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			stream.send(&msg, pipe);
+			stream.send(&msg, pipe, true);
 		}
 		pipe->detach();
 		stream.close();

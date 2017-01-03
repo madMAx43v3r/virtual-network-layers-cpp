@@ -111,17 +111,17 @@ protected:
 	void unsubscribe(Hash64 domain, Hash64 topic);
 	void unsubscribe(Address address);
 	
-	void publish(Value* data, const String& domain, const String& topic);
-	void publish(Value* data, Address topic);
+	void publish(Value* data, const String& domain, const String& topic, bool no_drop = false);
+	void publish(Value* data, Address topic, bool no_drop = false);
 	
-	void send(Packet* packet, Address dst);
-	void send_async(Packet* packet, Address dst);
+	void send(Packet* packet, Address dst, bool no_drop = false);
+	void send_async(Packet* packet, Address dst, bool no_drop = false);
 	
-	void send(Packet* packet, Basic* dst);
-	void send_async(Packet* packet, Basic* dst);
+	void send(Packet* packet, Basic* dst, bool no_drop = false);
+	void send_async(Packet* packet, Basic* dst, bool no_drop = false);
 	
-	void send(Message* msg, Basic* dst);
-	void send_async(Message* msg, Basic* dst);
+	void send(Message* msg, Basic* dst, bool no_drop = false);
+	void send_async(Message* msg, Basic* dst, bool no_drop = false);
 	
 	StringWriter log(int level);
 	

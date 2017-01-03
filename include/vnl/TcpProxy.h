@@ -35,7 +35,7 @@ protected:
 		server->attach();
 		Super::main(engine, init);
 		del_client_t msg(get_mac());
-		send(&msg, server);
+		send(&msg, server, true);
 		server->detach();
 	}
 	

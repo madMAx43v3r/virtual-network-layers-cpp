@@ -139,7 +139,7 @@ private:
 			msg->destroy();
 			pending--;
 		} else {
-			if(currentTimeMicros() - msg->rcv_time > msg->timeout) {
+			if(!msg->is_no_drop && currentTimeMicros() - msg->rcv_time > msg->timeout) {
 				msg->ack();
 				num_timeout++;
 			} else {

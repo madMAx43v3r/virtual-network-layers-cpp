@@ -48,6 +48,7 @@ public:
 	int64_t rcv_time = 0;
 	int64_t timeout = 1000000;
 	bool is_timeout = false;
+	bool is_no_drop = false;
 	
 };
 

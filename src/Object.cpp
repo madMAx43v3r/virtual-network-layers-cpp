@@ -82,7 +82,7 @@ void Object::unsubscribe(Address address) {
 	vnl_stream.unsubscribe(address);
 }
 
-void Object::publish(Value* data, const String& domain, const String& topic) {
+void Object::publish(Value* data, const String& domain, const String& topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
 	header->src_mac = vnl_stream.get_mac();
@@ -93,53 +93,53 @@ void Object::publish(Value* data, const String& domain, const String& topic) {
 	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
-	send_async(pkt, Address(domain, topic));
+	send_async(pkt, Address(domain, topic), no_drop);
 }
 
-void Object::publish(Value* data, Address topic) {
+void Object::publish(Value* data, Address topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
 	header->src_mac = vnl_stream.get_mac();
 	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
-	send_async(pkt, topic);
+	send_async(pkt, topic, no_drop);
 }
 
-void Object::send(Packet* packet, Address dst) {
+void Object::send(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	vnl_stream.send(packet, dst);
+	vnl_stream.send(packet, dst, no_drop);
 }
 
-void Object::send_async(Packet* packet, Address dst) {
+void Object::send_async(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	vnl_stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst, no_drop);
 }
 
-void Object::send(Packet* packet, Basic* dst) {
+void Object::send(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	vnl_stream.send(packet, dst);
+	vnl_stream.send(packet, dst, no_drop);
 }
 
-void Object::send_async(Packet* packet, Basic* dst) {
+void Object::send_async(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
 		packet->src_addr = my_address;
 	}
-	vnl_stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst, no_drop);
 }
 
-void Object::send(Message* msg, Basic* dst) {
-	vnl_stream.send(msg, dst);
+void Object::send(Message* msg, Basic* dst, bool no_drop) {
+	vnl_stream.send(msg, dst, no_drop);
 }
 
-void Object::send_async(Message* msg, Basic* dst) {
-	vnl_stream.send_async(msg, dst);
+void Object::send_async(Message* msg, Basic* dst, bool no_drop) {
+	vnl_stream.send_async(msg, dst, no_drop);
 }
 
 bool Object::poll(int64_t micros) {
@@ -253,7 +253,7 @@ bool Object::handle(Sample* sample) {
 bool Object::handle(Frame* frame) {
 	Frame* result = exec_vni_call(frame);
 	if(result) {
-		send_async(result, frame->src_addr);
+		send_async(result, frame->src_addr, true);
 	}
 	return false;
 }
@@ -363,7 +363,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	announce->instance.topic = my_topic;
 	announce->instance.src_mac = get_mac();
 	announce->instance.heartbeat_interval = vnl_heartbeat_interval;
-	publish(announce, local_domain_name, "vnl.announce");
+	publish(announce, local_domain_name, "vnl.announce", true);
 	
 	set_timeout(vnl_heartbeat_interval, std::bind(&Object::heartbeat, this), VNL_TIMER_REPEAT);
 	
@@ -378,7 +378,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	for(OutputPin* pin : vnl_output_pins) {
 		pin->close();
 	}
-	publish(Exit::create(), local_domain_name, "vnl.exit");
+	publish(Exit::create(), local_domain_name, "vnl.exit", true);
 	
 	if(pipe) {
 		pipe->close();
@@ -397,7 +397,7 @@ void Object::heartbeat() {
 	msg->info.num_msg_received = vnl_engine->num_received;
 	msg->info.num_msg_dropped = vnl_engine->num_timeout;
 	msg->info.engine = vnl_engine->get_mac();
-	publish(msg, local_domain_name, "vnl.heartbeat");
+	publish(msg, local_domain_name, "vnl.heartbeat", true);
 }
 
 
