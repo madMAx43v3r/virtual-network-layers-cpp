@@ -38,7 +38,7 @@ protected:
 			std::getline(std::cin, input);
 			if(input == "quit" || input == "q") {
 				resume();
-				publish(vnl::Shutdown::create(), local_domain_name, "vnl.shutdown");
+				publish(vnl::Shutdown::create(), local_domain_name, "vnl.shutdown", true);
 				break;
 			} else if(input == "log" || input == "l") {
 				std::cout << "[0] All" << std::endl;
