@@ -60,15 +60,15 @@ protected:
 		}
 	}
 	
-	void handle(const vnl::Announce& event, const vnl::Packet& packet) {
-		Instance& inst = objects[packet.src_mac];
+	void handle(const vnl::Announce& event) {
+		Instance& inst = objects[event.instance.src_mac];
 		inst = event.instance;
 		inst.last_heartbeat = vnl::currentTimeMicros();
 		inst.is_alive = true;
 	}
 	
-	void handle(const vnl::Heartbeat& event, const vnl::Packet& packet) {
-		Instance* inst = objects.find(packet.src_mac);
+	void handle(const vnl::Heartbeat& event) {
+		Instance* inst = objects.find(event.src_mac);
 		if(inst) {
 			inst->heartbeat_interval = event.interval;
 			inst->last_heartbeat = vnl::currentTimeMicros();
@@ -134,15 +134,21 @@ protected:
 	}
 	
 	void output(const vnl::LogMsg& log) {
-		Instance* inst = objects.find(log.src_mac);
-		if(!inst) {
-			return;
+		vnl::String key;
+		if(log.src_mac == get_mac()) {
+			key = my_topic;
+		} else {
+			Instance* inst = objects.find(log.src_mac);
+			if(!inst) {
+				return;
+			}
+			key = inst->topic;
 		}
 		if(!filtering
 			|| log.msg.to_string().find(grep) != std::string::npos
-			|| inst->topic.to_string().find(grep) != std::string::npos)
+			|| key.to_string().find(grep) != std::string::npos)
 		{
-			std::cout << "[" << inst->topic << "] ";
+			std::cout << "[" << key << "] ";
 			switch(log.level) {
 				case ERROR: std::cout << "ERROR: "; break;
 				case WARN: std::cout << "WARNING: "; break;
@@ -188,6 +194,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_PROCESS_H_ */

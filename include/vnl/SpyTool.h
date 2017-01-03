@@ -29,6 +29,7 @@ protected:
 		add_input(input);
 		run();
 		stop();
+		input.close();
 	}
 	
 	bool handle(Packet* pkt) {

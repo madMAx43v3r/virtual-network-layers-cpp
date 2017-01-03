@@ -390,6 +390,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 
 void Object::heartbeat() {
 	Heartbeat* msg = Heartbeat::create();
+	msg->src_mac = get_mac();
 	msg->interval = vnl_heartbeat_interval;
 	publish(msg, local_domain_name, "vnl.heartbeat");
 }

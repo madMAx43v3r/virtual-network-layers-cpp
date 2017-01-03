@@ -12,7 +12,7 @@ object Object {
 	int vnl_log_level = INFO;
 	
 	/*
-	 * Maximum time in micro-seconds that a message can be stuck in the receive queue.
+	 * Maximum time in micro-seconds that a message can be stuck in the destination receive queue.
 	 * After this time the message will be ack'ed without processing it.
 	 */
 	int vnl_msg_timeout = 1000000;
