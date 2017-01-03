@@ -11,5 +11,6 @@ class ObjectInfo {
 	
 	Hash64 engine;
 	Map<Hash64, String> input_channels;
+	Map<Hash64, String> output_channels;
 	
 }

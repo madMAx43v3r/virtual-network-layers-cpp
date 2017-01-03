@@ -16,9 +16,9 @@
 
 namespace vnl {
 
-class OutputPin {
+class OutputPin : public Node {
 public:
-	OutputPin(const char* name = "Output") : name(name), enabled(false), engine(0) {}
+	OutputPin(const char* name = "OutputPin") : name(name), enabled(false), engine(0) {}
 	
 	~OutputPin() {
 		assert(enabled == false);

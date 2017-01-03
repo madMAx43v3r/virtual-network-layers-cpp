@@ -177,6 +177,7 @@ private:
 	
 	Map<uint64_t, int64_t> vnl_sources;
 	Map<Hash64, String> vnl_input_channels;
+	Map<Hash64, String> vnl_output_channels;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;

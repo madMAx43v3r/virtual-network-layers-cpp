@@ -68,6 +68,7 @@ void Object::add_output(OutputPin& pin) {
 	pin.enable(vnl_engine);
 	vnl_output_pins.remove(&pin);
 	vnl_output_pins.push_back(&pin);
+	vnl_output_channels[pin.get_mac()] = pin.name;
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
@@ -403,6 +404,7 @@ void Object::heartbeat() {
 	msg->info.num_msg_dropped = vnl_engine->num_timeout;
 	msg->info.engine = vnl_engine->get_mac();
 	msg->info.input_channels = vnl_input_channels;
+	msg->info.output_channels = vnl_output_channels;
 	publish(msg, local_domain_name, "vnl.heartbeat", true);
 }
 
