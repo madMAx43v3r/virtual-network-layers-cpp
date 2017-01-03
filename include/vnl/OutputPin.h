@@ -68,6 +68,7 @@ public:
 			pin_data_t* msg = buffer.create();
 			msg->parent = parent;
 			msg->data = data;
+			msg->timeout = send_timeout;
 			engine->send_async(msg, pipe);
 			parent->count++;
 		}
@@ -83,6 +84,11 @@ public:
 		enabled = false;
 	}
 	
+	// NOT thread safe
+	void set_timeout(int64_t to_usec) {
+		send_timeout = to_usec;
+	}
+	
 	String name;
 	
 private:
@@ -90,6 +96,7 @@ private:
 	Engine* engine;
 	MessagePool<pin_data_t> buffer;
 	List<Pipe*> links;
+	int64_t send_timeout = 1000000;
 	
 };
 

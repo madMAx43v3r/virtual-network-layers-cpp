@@ -141,6 +141,7 @@ private:
 		} else {
 			if(currentTimeMicros() - msg->rcv_time > msg->timeout) {
 				msg->ack();
+				num_timeout++;
 			} else {
 				msg->dst->receive(msg);
 			}
