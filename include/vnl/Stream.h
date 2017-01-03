@@ -165,7 +165,7 @@ public:
 		if(listener && queue.empty()) {
 			notify_t* msg = notify_buffer.create();
 			msg->data = this;
-			send_async(msg, listener);
+			send_async(msg, listener, true);
 		}
 		queue.push(msg);
 	}
