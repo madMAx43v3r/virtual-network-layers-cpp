@@ -2,8 +2,13 @@ package vnl.info;
 
 class ObjectInfo {
 	
+	long time;
+	long spawn_time;
+	long num_cycles;
 	long num_msg_sent;
 	long num_msg_received;
 	long num_msg_dropped;
+	
+	Hash64 engine;
 	
 }

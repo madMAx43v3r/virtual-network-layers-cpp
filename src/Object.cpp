@@ -346,6 +346,7 @@ void Object::run() {
 }
 
 void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
+	vnl_spawn_time = vnl::currentTimeMicros();
 	vnl_dorun = true;
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
@@ -389,9 +390,13 @@ void Object::heartbeat() {
 	Heartbeat* msg = Heartbeat::create();
 	msg->src_mac = get_mac();
 	msg->interval = vnl_heartbeat_interval;
+	msg->info.time = vnl::currentTimeMicros();
+	msg->info.spawn_time = vnl_spawn_time;
+	msg->info.num_cycles = vnl_engine->num_cycles;
 	msg->info.num_msg_sent = vnl_engine->num_sent;
 	msg->info.num_msg_received = vnl_engine->num_received;
 	msg->info.num_msg_dropped = vnl_engine->num_timeout;
+	msg->info.engine = vnl_engine->get_mac();
 	publish(msg, local_domain_name, "vnl.heartbeat");
 }
 

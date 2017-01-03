@@ -182,6 +182,7 @@ private:
 	vnl::io::TypeInput vnl_input;
 	vnl::io::TypeOutput vnl_output;
 	
+	int64_t vnl_spawn_time;
 	GlobalLogWriter vnl_log_writer;
 	
 	friend class Engine;

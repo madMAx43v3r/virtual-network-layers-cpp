@@ -51,6 +51,7 @@ Message* Engine::collect(int64_t timeout) {
 	if(queue.pop(msg)) {
 		return msg;
 	}
+	num_cycles++;
 	if(timeout != 0) {
 		if(timeout > 0) {
 			cond.wait_for(ulock, std::chrono::microseconds(timeout));
@@ -71,6 +72,7 @@ size_t Engine::collect(int64_t timeout, vnl::Queue<Message*>& inbox) {
 		count++;
 	}
 	if(!count && timeout != 0) {
+		num_cycles++;
 		if(timeout > 0) {
 			cond.wait_for(ulock, std::chrono::microseconds(timeout));
 		} else {
