@@ -134,11 +134,15 @@ protected:
 	}
 	
 	void output(const vnl::LogMsg& log) {
+		Instance* inst = objects.find(log.src_mac);
+		if(!inst) {
+			return;
+		}
 		if(!filtering
 			|| log.msg.to_string().find(grep) != std::string::npos
-			|| log.topic.to_string().find(grep) != std::string::npos)
+			|| inst->topic.to_string().find(grep) != std::string::npos)
 		{
-			std::cout << "[" << log.topic << "] ";
+			std::cout << "[" << inst->topic << "] ";
 			switch(log.level) {
 				case ERROR: std::cout << "ERROR: "; break;
 				case WARN: std::cout << "WARNING: "; break;

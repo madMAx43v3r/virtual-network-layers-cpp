@@ -200,8 +200,6 @@ void Layer::parse_config(const char* root_dir) {
 
 void GlobalLogWriter::write(const String& str) {
 	vnl::LogMsg* msg = vnl::LogMsg::create();
-	msg->domain = node->my_domain;
-	msg->topic = node->my_topic;
 	msg->src_mac = node->get_mac();
 	msg->level = level;
 	msg->msg = str;
