@@ -166,11 +166,13 @@ private:
 		while(queue.pop(pkt)) {
 			pkt->serialize(out);
 			pkt->ack();
+			num_write++;
 			if(out.error()) {
 				break;
 			}
 		}
 		out.flush();
+		num_flush++;
 		if(out.error()) {
 			reset();
 		}
@@ -243,6 +245,7 @@ private:
 				if(!read_packet(stream, in, hash)) {
 					error = true;
 				}
+				num_read++;
 			} else {
 				error = true;
 			}
