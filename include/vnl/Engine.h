@@ -56,6 +56,9 @@ public:
 		if(!msg->isack) {
 			num_received++;
 		}
+		for(auto& func : rcv_hooks) {
+			func(msg);
+		}
 		mutex.unlock();
 	}
 	
@@ -86,6 +89,12 @@ public:
 	}
 	
 	// all below NOT thread safe
+	
+	void add_receive_hook(const std::function<void(Message*)>& func) {
+		mutex.lock();
+		rcv_hooks.push_back(func);
+		mutex.unlock();
+	}
 	
 	void send(Message* msg, Basic* dst) {
 		msg->src = this;
@@ -126,6 +135,7 @@ private:
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
+	List<std::function<void(Message*)> > rcv_hooks;
 	
 	friend class Stream;
 	friend class Object;
