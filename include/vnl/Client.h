@@ -128,7 +128,7 @@ protected:
 					}
 				}
 				msg->ack();
-				msg = stream.poll(0);
+				msg = stream.poll(timeout);
 			}
 			if(result) {
 				break;
