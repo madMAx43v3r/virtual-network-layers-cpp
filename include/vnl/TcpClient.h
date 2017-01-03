@@ -72,11 +72,6 @@ protected:
 		return sock;
 	}
 	
-	void reconnect() {
-		unsubscribe_all();
-		reset();
-	}
-	
 private:
 	bool connected;
 	

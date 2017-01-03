@@ -7,6 +7,5 @@ interface Uplink {
 	
 	void subscribe(String domain, String topic);
 	void unsubscribe(String domain, String topic);
-	void unsubscribe_all();
 	
 }

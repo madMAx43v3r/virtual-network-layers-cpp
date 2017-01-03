@@ -38,6 +38,7 @@ protected:
 	
 	void main(Engine* engine, Message* init) {
 		init->ack();
+		add_input(tunnel);
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
 			sock.fd = connect();
@@ -47,7 +48,6 @@ protected:
 			}
 			out.reset();
 			do_reset = false;
-			add_input(tunnel);
 			add_input(downlink);
 			write_announce();
 			for(Topic& topic : table.values()) {
@@ -64,7 +64,6 @@ protected:
 			are_connected = false;
 			pipe->close();
 			downlink.close();
-			tunnel.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
 			thread.join();
 			sock.close();
@@ -72,6 +71,7 @@ protected:
 				usleep(error_interval);
 			}
 		}
+		tunnel.close();
 		drop_all();
 	}
 	
@@ -137,16 +137,6 @@ protected:
 			write_subscribe(domain, topic, true);
 		}
 		table.erase(Address(domain, topic));
-	}
-	
-	// TODO: make this recursive
-	void unsubscribe_all() {
-		if(sock.good()) {
-			for(Topic& topic : table.values()) {
-				write_subscribe(topic.domain, topic.name, true);
-			}
-		}
-		table.clear();
 	}
 	
 	vnl::info::RemoteInfo get_remote_info() const {

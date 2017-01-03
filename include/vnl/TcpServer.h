@@ -160,10 +160,6 @@ protected:
 		// TODO
 	}
 	
-	void unsubscribe_all() {
-		// TODO
-	}
-	
 	virtual void on_new_client(uint64_t mac, Pipe* pipe) {}
 	virtual void on_del_client(uint64_t mac, Pipe* pipe) {}
 	
