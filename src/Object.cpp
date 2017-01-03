@@ -12,6 +12,7 @@
 #include <vnl/LogMsg.hxx>
 #include <vnl/Topic.hxx>
 #include <vnl/Shutdown.hxx>
+#include <vnl/Heartbeat.hxx>
 #include <vnl/Exit.hxx>
 #include <vnl/NoSuchMethodException.hxx>
 
@@ -192,8 +193,6 @@ bool Object::handle(Message* msg) {
 		return handle((OutputPin::pin_data_t*)msg);
 	} else if(msg->msg_id == Stream::notify_t::MID) {
 		return handle((Stream::notify_t*)msg);
-	} else if(msg->msg_id == exit_t::MID) {
-		exit();
 	}
 	return false;
 }
@@ -353,6 +352,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	vnl_dorun = true;
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
+	vnl_stream.set_timeout(vnl_msg_timeout);
 	vnl_channel = &vnl_stream;
 	if(pipe) {
 		pipe->open(this);
@@ -364,9 +364,15 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
 	announce->instance.src_mac = get_mac();
+	announce->instance.heartbeat_interval = vnl_heartbeat_interval;
 	publish(announce, local_domain_name, "vnl.announce");
 	
+	set_timeout(vnl_heartbeat_interval, std::bind(&Object::heartbeat, this), VNL_TIMER_REPEAT);
+	
 	main(engine_, init);
+	
+	log(INFO).out << "Messages: num_sent=" << vnl_engine->num_sent << ", num_received="
+			<< vnl_engine->num_received << ", num_timeout=" << vnl_engine->num_timeout << vnl::endl;
 	
 	for(InputPin* pin : vnl_input_pins) {
 		pin->close();
@@ -380,6 +386,12 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 		pipe->close();
 	}
 	vnl_stream.close();
+}
+
+void Object::heartbeat() {
+	Heartbeat* msg = Heartbeat::create();
+	msg->interval = vnl_heartbeat_interval;
+	publish(msg, local_domain_name, "vnl.heartbeat");
 }
 
 

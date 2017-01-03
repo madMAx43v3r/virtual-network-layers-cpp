@@ -77,6 +77,10 @@ public:
 		return engine;
 	}
 	
+	void set_timeout(int64_t to_usec) {
+		send_timeout = to_usec;
+	}
+	
 	Address subscribe(Address addr) {
 		assert(target);
 		int64_t& count = table[addr];
@@ -102,11 +106,13 @@ public:
 	
 	void send(Message* msg, Basic* dst) {
 		assert(engine);
+		msg->timeout = send_timeout;
 		engine->send(msg, dst);
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		assert(engine);
+		msg->timeout = send_timeout;
 		engine->send_async(msg, dst);
 	}
 	
@@ -173,6 +179,7 @@ private:
 	Queue<Message*> queue;
 	Map<Address, int64_t> table;
 	MessagePool<notify_t> notify_buffer;
+	int64_t send_timeout = 1000000;
 	uint32_t next_seq;
 	
 	friend class Engine;

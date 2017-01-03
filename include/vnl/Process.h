@@ -29,11 +29,13 @@ protected:
 	void main(vnl::Engine* engine, vnl::Message* init) {
 		subscribe(local_domain_name, "vnl.announce");
 		subscribe(local_domain_name, "vnl.log");
+		subscribe(local_domain_name, "vnl.heartbeat");
 		subscribe(local_domain_name, "vnl.shutdown");
 		subscribe(local_domain_name, "vnl.exit");
-		set_timeout(1000*1000*1, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
+		set_timeout(watchdog_interval, std::bind(&Process::watchdog, this), VNL_TIMER_REPEAT);
+		set_timeout(update_interval, std::bind(&Process::update, this), VNL_TIMER_REPEAT);
 		if(do_print_stats) {
-			set_timeout(1000*1000*10, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
+			set_timeout(stats_interval, std::bind(&Process::print_stats, this), VNL_TIMER_REPEAT);
 		}
 		init->ack();
 		run();
@@ -59,11 +61,23 @@ protected:
 	}
 	
 	void handle(const vnl::Announce& event, const vnl::Packet& packet) {
-		objects[packet.src_addr] = event.instance;
+		Instance& inst = objects[packet.src_mac];
+		inst = event.instance;
+		inst.last_heartbeat = vnl::currentTimeMicros();
+		inst.is_alive = true;
+	}
+	
+	void handle(const vnl::Heartbeat& event, const vnl::Packet& packet) {
+		Instance* inst = objects.find(packet.src_mac);
+		if(inst) {
+			inst->heartbeat_interval = event.interval;
+			inst->last_heartbeat = vnl::currentTimeMicros();
+			inst->is_alive = true;
+		}
 	}
 	
 	void handle(const vnl::Exit& event, const vnl::Packet& packet) {
-		objects.erase(packet.src_addr);
+		objects.erase(packet.src_mac);
 	}
 	
 	void handle(const vnl::LogMsg& event) {
@@ -143,8 +157,23 @@ protected:
 		publish(topic_info.clone(), my_private_domain, "topic_info");
 	}
 	
+	void watchdog() {
+		int64_t now = vnl::currentTimeMicros();
+		for(auto& entry : objects) {
+			Instance& inst = entry.second;
+			if(inst.is_alive && now - inst.last_heartbeat > 2*inst.heartbeat_interval) {
+				inst.is_alive = false;
+				log(WARN).out << "Heartbeat timeout for " << inst.topic << vnl::endl;
+			}
+		}
+		std::lock_guard<std::mutex> lock(Engine::static_mutex);
+		for(Engine* engine : *Engine::instances) {
+			engine->timeout();
+		}
+	}
+	
 private:
-	Map<Address, Instance> objects;
+	Map<uint64_t, Instance> objects;
 	vnl::info::TopicInfoList topic_info;
 	
 	bool paused = false;

@@ -36,8 +36,6 @@ public:
 		my_private_domain << my_domain << "." << my_topic;
 	}
 	
-	typedef SignalType<0x6a7fcd62> exit_t;
-	
 	// thread safe
 	virtual void receive(Message* msg) {
 		vnl_stream.receive(msg);
@@ -165,6 +163,7 @@ protected:
 	
 private:
 	void exec(Engine* engine, Message* msg, Pipe* pipe);
+	void heartbeat();
 	
 private:
 	Stream vnl_stream;

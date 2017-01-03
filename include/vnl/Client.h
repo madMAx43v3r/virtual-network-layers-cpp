@@ -57,7 +57,7 @@ public:
 	}
 	
 	void connect(vnl::Engine* engine, Router* target = 0) {
-		stream.connect(engine, target ? target : Router::instance);
+		stream.connect(engine, target);
 		stream.subscribe(src_addr);
 	}
 	
@@ -87,62 +87,76 @@ protected:
 	Packet* _call(int type) {
 		_out.flush();
 		req_num++;
-		Frame* ret = 0;
+		Packet* packet = 0;
+		Frame* result = 0;
 		while(true) {
 			if(Layer::have_shutdown) {
 				throw IOException();
 			}
-			Frame frame;
-			frame.src_addr = src_addr;
-			frame.type = type;
-			frame.req_num = req_num;
-			frame.data = _data;
-			frame.size = _buf.position();
-			stream.send(&frame, dst_addr);
-			frame.data = 0;
-			if(frame.count == 0 && do_fail) {
-				throw IOException();
+			
+			Frame request;
+			request.src_addr = src_addr;
+			request.type = type;
+			request.req_num = req_num;
+			request.data = _data;
+			request.size = _buf.position();
+			
+			stream.set_timeout(timeout);
+			stream.send(&request, dst_addr);
+			
+			request.data = 0;
+			if(do_fail) {
+				if(request.count == 0) {
+					throw IOException();
+				}
+				if(request.is_timeout) {
+					throw TimeoutException();
+				}
 			}
+			
 			Message* msg = stream.poll(timeout);
-			if(msg) {
+			while(msg) {
 				if(msg->msg_id == vnl::Packet::MID) {
-					if(((Packet*)msg)->pkt_id == vnl::Frame::PID) {
-						Frame* pkt = (Frame*)((Packet*)msg)->payload;
-						if(pkt->req_num == req_num) {
-							ret = pkt;
+					Packet* pkt = (Packet*)msg;
+					if(pkt->pkt_id == vnl::Frame::PID) {
+						Frame* frame = (Frame*)pkt->payload;
+						if(frame->req_num == req_num) {
+							packet = pkt;
+							result = frame;
 							break;
 						}
 					}
 				}
 				msg->ack();
-			} else if(do_fail) {
-				throw TimeoutException();
+				msg = stream.poll(0);
 			}
-			if(ret || do_fail) {
+			if(result) {
 				break;
 			}
-		}
-		if(ret) {
-			_buf.wrap(ret->data, ret->size);
-			_in.reset();
-			if(ret->type == Frame::EXCEPTION) {
-				ret->ack();
-				vnl::Value* value = vnl::read(_in);
-				if(value) {
-					vnl::destroy(_exception);
-					_exception = dynamic_cast<vnl::Exception*>(value);
-					if(_exception) {
-						_exception->raise();
-					}
-					vnl::destroy(value);
-				}
-				throw IOException();
-			} else if(ret->type != Frame::RESULT) {
-				ret->ack();
-				throw IOException();
+			if(do_fail) {
+				throw TimeoutException();
 			}
 		}
-		return ret;
+		_buf.wrap(result->data, result->size);
+		_in.reset();
+		if(result->type == Frame::EXCEPTION) {
+			packet->ack();
+			vnl::Value* value = vnl::read(_in);
+			if(value) {
+				vnl::destroy(_exception);
+				_exception = dynamic_cast<vnl::Exception*>(value);
+				if(_exception) {
+					_exception->raise();
+				}
+				vnl::destroy(value);
+			}
+			throw IOException();
+		}
+		if(result->type != Frame::RESULT) {
+			packet->ack();
+			throw IOException();
+		}
+		return packet;
 	}
 	
 private:

@@ -1,0 +1,7 @@
+package vnl;
+
+class Heartbeat {
+	
+	int interval;
+	
+}

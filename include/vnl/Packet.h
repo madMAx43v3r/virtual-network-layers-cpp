@@ -113,6 +113,7 @@ private:
 	
 	friend class Router;
 	friend class Client;
+	friend class Message;
 	
 };
 

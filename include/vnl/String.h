@@ -96,15 +96,16 @@ public:
 	}
 	
 	bool operator<(const String& other) const {
-		// TODO
-		assert(false);
-		return false;
-	}
-	
-	bool operator>(const String& other) const {
-		// TODO
-		assert(false);
-		return false;
+		const_iterator cmp = other.begin();
+		for(const_iterator it = begin(); it != end(); ++it, ++cmp) {
+			if(cmp == other.end()) {
+				return false;
+			}
+			if(*it < *cmp) {
+				return true;
+			}
+		}
+		return cmp != other.end();
 	}
 	
 	bool operator==(const std::string& other) const {

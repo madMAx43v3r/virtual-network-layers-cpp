@@ -45,6 +45,10 @@ public:
 	Basic* gate = 0;
 	void* _impl = 0;
 	
+	int64_t rcv_time = 0;
+	int64_t timeout = 1000000;
+	bool is_timeout = false;
+	
 };
 
 

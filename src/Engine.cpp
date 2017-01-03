@@ -16,8 +16,12 @@
 
 namespace vnl {
 
+List<Engine*>* Engine::instances = 0;
+std::mutex Engine::static_mutex;
+
 void Engine::exec(Object* object, Message* init, Pipe* pipe) {
 	assert(object->vnl_dorun == false);
+	
 	try {
 		object->exec(this, init, pipe);
 	} catch (const vnl::Exception& ex) {
@@ -27,8 +31,10 @@ void Engine::exec(Object* object, Message* init, Pipe* pipe) {
 	} catch (...) {
 		std::cout << "ERROR: " << object->my_topic << ": Caught unknown exeption!" << std::endl;
 	}
+	
 	flush();
 	delete object;
+	
 	while(true) {
 		Message* msg = collect(0);
 		if(msg) {

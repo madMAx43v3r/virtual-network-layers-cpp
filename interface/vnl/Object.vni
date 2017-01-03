@@ -12,10 +12,12 @@ object Object {
 	int vnl_log_level = INFO;
 	
 	/*
-	 * Maximum number of pending messages (-1 = infinite)
-	 * If limit is reached sending will block until below limit again.
+	 * Maximum time in micro-seconds that a message can be stuck in the receive queue.
+	 * After this time the message will be ack'ed without processing it.
 	 */
-	int vnl_max_num_pending = -1;
+	int vnl_msg_timeout = 1000000;
+	
+	int vnl_heartbeat_interval = 1000000;
 	
 	String get_private_domain() const;
 	

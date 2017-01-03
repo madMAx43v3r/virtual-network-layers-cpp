@@ -35,27 +35,47 @@ Address spawn(Object* object, Pipe* pipe = 0);
 
 class Engine : public Basic {
 public:
-	Engine() {}
+	Engine() {
+		std::lock_guard<std::mutex> lock(static_mutex);
+		instances->push_back(this);
+	}
 	
-	virtual ~Engine() {}
+	virtual ~Engine() {
+		std::lock_guard<std::mutex> lock(static_mutex);
+		instances->remove(this);
+	}
 	
 	// thread safe
 	virtual void receive(Message* msg) {
-		assert(msg->dst);
+		assert(msg->dst || msg->isack);
 		msg->gate = this;
+		msg->rcv_time = vnl::currentTimeMicros();
 		mutex.lock();
 		queue.push(msg);
 		cond.notify_all();
-		for(auto& func : rcv_hooks) {
-			func(msg);
+		if(!msg->isack) {
+			num_received++;
 		}
 		mutex.unlock();
 	}
 	
-	void add_receive_hook(const std::function<void(Message*)>& func) {
-		mutex.lock();
-		rcv_hooks.push_back(func);
-		mutex.unlock();
+	// thread safe
+	void timeout() {
+		std::lock_guard<std::mutex> lock(mutex);
+		int64_t now = vnl::currentTimeMicros();
+		int i = 0;
+		int count = queue.size();
+		Message* msg = 0;
+		while(i < count && queue.pop(msg)) {
+			if(!msg->isack && now - msg->rcv_time > msg->timeout) {
+				msg->is_timeout = true;
+				msg->ack();
+				num_timeout++;
+			} else {
+				queue.push(msg);
+			}
+			i++;
+		}
 	}
 	
 	// all below NOT thread safe
@@ -64,17 +84,26 @@ public:
 		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, false);
+		num_sent++;
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, true);
+		num_sent++;
 	}
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
+	
+	int64_t num_sent = 0;
+	int64_t num_received = 0;
+	int64_t num_timeout = 0;
+	
+	static List<Engine*>* instances;
+	static std::mutex static_mutex;
 	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe);
@@ -89,7 +118,6 @@ private:
 	std::condition_variable cond;
 	
 	Queue<Message*> queue;
-	List<std::function<void(Message*)> > rcv_hooks;
 	
 	friend class Stream;
 	friend class Object;

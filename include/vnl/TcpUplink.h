@@ -237,6 +237,7 @@ private:
 		ThreadEngine engine;
 		Stream stream;
 		stream.connect(&engine);
+		stream.set_timeout(vnl_msg_timeout);
 		vnl::io::TypeInput in(&sock);
 		in.reset();
 		pipe->attach();
