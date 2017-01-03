@@ -52,17 +52,21 @@ void Object::add_input(Stream& stream, Router* target) {
 	assert(vnl_dorun);
 	stream.connect(vnl_engine, target);
 	stream.listen(this);
+	vnl_input_channels[stream.get_mac()] = "Stream";
 }
 
 void Object::add_input(InputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine, this);
+	vnl_input_pins.remove(&pin);
 	vnl_input_pins.push_back(&pin);
+	vnl_input_channels[pin.get_mac()] = pin.name;
 }
 
 void Object::add_output(OutputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine);
+	vnl_output_pins.remove(&pin);
 	vnl_output_pins.push_back(&pin);
 }
 
@@ -352,6 +356,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 	vnl_stream.connect(engine_);
 	vnl_stream.set_timeout(vnl_msg_timeout);
 	vnl_channel = &vnl_stream;
+	vnl_input_channels[vnl_stream.get_mac()] = "Main";
 	if(pipe) {
 		pipe->open(this);
 	}
@@ -397,6 +402,7 @@ void Object::heartbeat() {
 	msg->info.num_msg_received = vnl_engine->num_received;
 	msg->info.num_msg_dropped = vnl_engine->num_timeout;
 	msg->info.engine = vnl_engine->get_mac();
+	msg->info.input_channels = vnl_input_channels;
 	publish(msg, local_domain_name, "vnl.heartbeat", true);
 }
 

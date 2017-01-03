@@ -31,7 +31,7 @@ public:
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
-			vnl_log_writer(this)
+			vnl_spawn_time(0), vnl_log_writer(this)
 	{
 		my_private_domain << my_domain << "." << my_topic;
 	}
@@ -176,6 +176,7 @@ private:
 	List<OutputPin*> vnl_output_pins;
 	
 	Map<uint64_t, int64_t> vnl_sources;
+	Map<Hash64, String> vnl_input_channels;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;

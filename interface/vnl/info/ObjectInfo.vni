@@ -10,5 +10,6 @@ class ObjectInfo {
 	long num_msg_dropped;
 	
 	Hash64 engine;
+	Map<Hash64, String> input_channels;
 	
 }
