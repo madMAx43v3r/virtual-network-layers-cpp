@@ -128,7 +128,7 @@ protected:
 	void shutdown() {
 		log(INFO).out << "Received shutdown signal." << vnl::endl;
 		for(Instance inst : objects.values()) {
-			publish(vnl::Shutdown::create(), inst.domain, inst.topic);
+			publish(vnl::Shutdown::create(), inst.domain, inst.topic, true);
 		}
 		exit();
 	}
@@ -164,7 +164,7 @@ protected:
 		send(&msg, Router::instance);
 		topic_info.time = vnl::currentTimeMicros();
 		topic_info.topics = msg.data;
-		publish(topic_info.clone(), my_private_domain, "topic_info");
+		publish(topic_info.clone(), my_private_domain, "topic_info", true);
 	}
 	
 	void watchdog() {
