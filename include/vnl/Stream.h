@@ -186,7 +186,7 @@ private:
 	Map<Address, int64_t> table;
 	MessagePool<notify_t> notify_buffer;
 	int64_t send_timeout = 1000000;
-	uint32_t next_seq;
+	int64_t next_seq;
 	
 	friend class Engine;
 	
