@@ -220,9 +220,6 @@ bool Object::handle(OutputPin::pin_data_t* msg) {
 
 bool Object::handle(Packet* pkt) {
 	int64_t& last_seq = vnl_sources[pkt->src_mac xor vnl_channel->get_mac()];
-	if(last_seq == 0) {
-		log(DEBUG).out << "New source: mac=" << hex(pkt->src_mac) << " num_hops=" << pkt->num_hops << endl;
-	}
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == Frame::PID) {
 			Frame* result = vnl_frame_buffer.create();

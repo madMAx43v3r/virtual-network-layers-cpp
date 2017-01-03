@@ -169,19 +169,12 @@ protected:
 	
 private:
 	void write_out() {
-		int64_t begin = vnl::currentTimeMicros();
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
 			pkt->serialize(out);
 			pkt->ack();
 			if(out.error()) {
 				break;
-			}
-			if(send_timeout >= 0) {
-				int64_t now = vnl::currentTimeMicros();
-				if(now - begin > send_timeout) {
-					break;
-				}
 			}
 		}
 		out.flush();

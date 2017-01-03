@@ -107,7 +107,6 @@ protected:
 			proxy->vnl_msg_timeout = vnl_msg_timeout;
 			proxy->vnl_heartbeat_interval = vnl_heartbeat_interval;
 			proxy->vnl_log_level = vnl_log_level;
-			proxy->send_timeout = send_timeout;
 			proxy->sock = sock;
 			proxy->server = pipe;
 			proxy_t& client = clients[proxy->get_mac()];
