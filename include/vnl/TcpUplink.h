@@ -121,6 +121,7 @@ protected:
 		log(INFO).out << "Unpublishing " << domain << ":" << topic << vnl::endl;
 	}
 	
+	// TODO: make this recursive
 	void subscribe(const vnl::String& domain, const vnl::String& topic) {
 		if(sock.good()) {
 			write_subscribe(domain, topic);
@@ -130,6 +131,7 @@ protected:
 		data.name = topic;
 	}
 	
+	// TODO: make this recursive
 	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
 		if(sock.good()) {
 			write_subscribe(domain, topic, true);
@@ -137,6 +139,7 @@ protected:
 		table.erase(Address(domain, topic));
 	}
 	
+	// TODO: make this recursive
 	void unsubscribe_all() {
 		if(sock.good()) {
 			for(Topic& topic : table.values()) {
@@ -187,7 +190,6 @@ private:
 	void drop_all() {
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
-			num_drop++;
 			pkt->ack();
 		}
 	}

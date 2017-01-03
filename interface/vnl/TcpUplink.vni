@@ -5,7 +5,6 @@ object TcpUplink implements Uplink {
 	int error_interval = 1000000;			// how long to wait after an error (ms)
 	
 	bool are_connected = false;
-	long num_drop = 0;			// how many packets have been dropped so far
 	
 	vnl.info.RemoteInfo get_remote_info() const;
 	void reset();
