@@ -5,4 +5,6 @@ class Heartbeat {
 	Hash64 src_mac;
 	int interval;
 	
+	vnl.info.ObjectInfo info;
+	
 }

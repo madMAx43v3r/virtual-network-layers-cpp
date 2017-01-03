@@ -1,0 +1,9 @@
+package vnl.info;
+
+class ObjectInfo {
+	
+	long num_msg_sent;
+	long num_msg_received;
+	long num_msg_dropped;
+	
+}
