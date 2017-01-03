@@ -61,20 +61,27 @@ public:
 	
 	// thread safe
 	void timeout() {
-		std::lock_guard<std::mutex> lock(mutex);
-		int64_t now = vnl::currentTimeMicros();
-		int i = 0;
-		int count = queue.size();
-		Message* msg = 0;
-		while(i < count && queue.pop(msg)) {
-			if(!msg->isack && now - msg->rcv_time > msg->timeout) {
-				msg->is_timeout = true;
-				msg->ack();
-				num_timeout++;
-			} else {
-				queue.push(msg);
+		Queue<Message*> tmp;
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			int64_t now = vnl::currentTimeMicros();
+			int i = 0;
+			int count = queue.size();
+			Message* msg = 0;
+			while(i < count && queue.pop(msg)) {
+				if(!msg->isack && now - msg->rcv_time > msg->timeout) {
+					tmp.push(msg);
+				} else {
+					queue.push(msg);
+				}
+				i++;
 			}
-			i++;
+		}
+		Message* msg = 0;
+		while(tmp.pop(msg)) {
+			msg->is_timeout = true;
+			msg->ack();
+			num_timeout++;
 		}
 	}
 	
