@@ -37,7 +37,6 @@ protected:
 	virtual int connect() = 0;
 	
 	void main(Engine* engine, Message* init) {
-		add_input(tunnel);
 		init->ack();
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
@@ -52,6 +51,7 @@ protected:
 				write_subscribe(topic.domain, topic.name);
 			}
 			do_reset = false;
+			add_input(tunnel);
 			add_input(downlink);
 			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
@@ -64,6 +64,7 @@ protected:
 			are_connected = false;
 			pipe->close();
 			downlink.close();
+			tunnel.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
 			thread.join();
 			sock.close();
@@ -71,7 +72,6 @@ protected:
 				usleep(error_interval);
 			}
 		}
-		tunnel.close();
 		drop_all();
 	}
 	
