@@ -139,7 +139,11 @@ private:
 			msg->destroy();
 			pending--;
 		} else {
-			msg->dst->receive(msg);
+			if(currentTimeMicros() - msg->rcv_time > msg->timeout) {
+				msg->ack();
+			} else {
+				msg->dst->receive(msg);
+			}
 		}
 	}
 	
