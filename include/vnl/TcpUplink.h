@@ -182,6 +182,7 @@ private:
 			reset();
 		}
 		drop_all(); // drop the rest
+		num_bytes_write = out.get_num_write();
 	}
 	
 	void drop_all() {
@@ -250,7 +251,6 @@ private:
 				if(!read_packet(stream, in, hash)) {
 					error = true;
 				}
-				num_read++;
 			} else {
 				error = true;
 			}
@@ -261,6 +261,7 @@ private:
 				}
 				break;
 			}
+			num_bytes_read = in.get_num_read();
 		}
 		pipe->detach();
 		stream.close();
