@@ -128,7 +128,7 @@ protected:
 	void shutdown() {
 		log(INFO).out << "Received shutdown signal." << vnl::endl;
 		for(Instance inst : objects.values()) {
-			publish(vnl::Shutdown::create(), inst.domain, inst.topic, true);
+			publish(vnl::Shutdown::create(), Address(inst.domain, inst.src_mac), true);
 		}
 		exit();
 	}
