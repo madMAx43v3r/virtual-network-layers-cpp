@@ -192,7 +192,11 @@ bool Object::handle(Message* msg) {
 	vnl_input_nodes[msg->src_mac]++;
 	vnl_input_channels[vnl_channel->get_mac()]++;
 	if(msg->msg_id == Packet::MID) {
-		return handle((Packet*)msg);
+		Packet* pkt = (Packet*)msg;
+		if(pkt->proxy) {
+			vnl_input_nodes[pkt->proxy]++;
+		}
+		return handle(pkt);
 	}
 	if(msg->msg_id == OutputPin::pin_data_t::MID) {
 		return handle((OutputPin::pin_data_t*)msg);
