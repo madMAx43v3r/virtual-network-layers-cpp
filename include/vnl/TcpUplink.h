@@ -116,6 +116,11 @@ protected:
 		log(INFO).out << "Publishing " << domain << ":" << topic << vnl::endl;
 	}
 	
+	void publish(const vnl::Address& addr) {
+		tunnel.subscribe(addr);
+		log(INFO).out << "Publishing " << addr << vnl::endl;
+	}
+	
 	void unpublish(const vnl::String& domain, const vnl::String& topic) {
 		tunnel.unsubscribe(Address(domain, topic));
 		log(INFO).out << "Unpublishing " << domain << ":" << topic << vnl::endl;

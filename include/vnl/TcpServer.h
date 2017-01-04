@@ -143,6 +143,10 @@ protected:
 		}
 	}
 	
+	void publish(const vnl::Address& addr) {
+		// TODO
+	}
+	
 	void unpublish(const vnl::String& domain, const vnl::String& topic) {
 		// TODO
 	}

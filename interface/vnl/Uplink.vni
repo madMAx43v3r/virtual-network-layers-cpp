@@ -3,6 +3,7 @@ package vnl;
 interface Uplink {
 	
 	void publish(String domain, String topic);
+	void publish(Address addr);
 	void unpublish(String domain, String topic);
 	
 	void subscribe(String domain, String topic);
