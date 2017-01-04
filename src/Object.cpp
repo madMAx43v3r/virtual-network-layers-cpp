@@ -53,6 +53,7 @@ void Object::add_input(Stream& stream, Router* target) {
 	assert(vnl_dorun);
 	stream.connect(vnl_engine, target);
 	stream.listen(this);
+	vnl_output_channels[stream.get_mac()] = "Stream";
 }
 
 void Object::add_input(InputPin& pin) {
