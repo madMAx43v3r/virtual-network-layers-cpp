@@ -66,6 +66,7 @@ public:
 		parent->data = data;
 		for(Pipe* pipe : links) {
 			pin_data_t* msg = buffer.create();
+			msg->src_mac = vnl_mac;
 			msg->parent = parent;
 			msg->data = data;
 			msg->timeout = send_timeout;

@@ -24,7 +24,6 @@ public:
 	
 	uint32_t pkt_id;
 	int64_t seq_num;
-	uint64_t src_mac;
 	Address src_addr;
 	Address dst_addr;
 	Packet* payload;
@@ -34,7 +33,7 @@ public:
 	uint64_t proxy;
 	
 	Packet()
-		:	Message(MID), pkt_id(0), seq_num(0), src_mac(0), num_hops(0), payload(0), proxy(0)
+		:	Message(MID), pkt_id(0), seq_num(0), num_hops(0), payload(0), proxy(0)
 	{
 		memset(route, 0, sizeof(route));
 	}

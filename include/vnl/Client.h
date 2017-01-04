@@ -40,6 +40,10 @@ public:
 		return *this;
 	}
 	
+	uint64_t get_mac() const {
+		return stream.get_mac();
+	}
+	
 	void set_address(Hash64 domain, Hash64 topic) {
 		dst_addr = vnl::Address(domain, topic);
 	}

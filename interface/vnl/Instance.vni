@@ -2,10 +2,10 @@ package vnl;
 
 class Instance {
 	
+	Hash64 src_mac;
 	String type;
 	String domain;
 	String topic;
-	Hash64 src_mac;
 	
 	int heartbeat_interval;
 	long last_heartbeat;

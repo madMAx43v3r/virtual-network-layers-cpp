@@ -19,6 +19,7 @@
 #include <vnl/Client.h>
 
 #include <vnl/ObjectSupport.hxx>
+#include <vnl/info/ClientInfo.hxx>
 
 
 namespace vnl {
@@ -42,7 +43,7 @@ public:
 	}
 	
 	// thread safe
-	uint64_t get_mac() {
+	uint64_t get_mac() const {
 		return vnl_stream.get_mac();
 	}
 	
@@ -172,12 +173,14 @@ private:
 	Stream* vnl_channel;
 	
 	List<Timer> vnl_timers;
-	List<InputPin*> vnl_input_pins;
-	List<OutputPin*> vnl_output_pins;
 	
-	Map<uint64_t, int64_t> vnl_sources;
-	Map<Hash64, String> vnl_input_channels;
+	Map<Hash64, int64_t> vnl_sources;
+	Map<Hash64, int64_t> vnl_input_nodes;
+	Map<Hash64, int64_t> vnl_input_channels;
 	Map<Hash64, String> vnl_output_channels;
+	Map<Hash64, InputPin*> vnl_input_pins;
+	Map<Hash64, OutputPin*> vnl_output_pins;
+	Map<Hash64, vnl::info::ClientInfo> vnl_clients;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;

@@ -33,7 +33,7 @@ class FiberEngine;
 Address spawn(Object* object, Pipe* pipe = 0);
 
 
-class Engine : public Node {
+class Engine : public Basic {
 public:
 	Engine() {
 		std::lock_guard<std::mutex> lock(static_mutex);

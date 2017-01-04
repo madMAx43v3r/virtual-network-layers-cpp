@@ -110,6 +110,7 @@ public:
 	
 	void send(Message* msg, Basic* dst, bool no_drop = false) {
 		assert(engine);
+		msg->src_mac = vnl_mac;
 		msg->timeout = send_timeout;
 		msg->is_no_drop = no_drop;
 		engine->send(msg, dst);
@@ -117,6 +118,7 @@ public:
 	
 	void send_async(Message* msg, Basic* dst, bool no_drop = false) {
 		assert(engine);
+		msg->src_mac = vnl_mac;
 		msg->timeout = send_timeout;
 		msg->is_no_drop = no_drop;
 		engine->send_async(msg, dst);
@@ -124,13 +126,11 @@ public:
 	
 	void send(Packet* pkt, Basic* dst, bool no_drop = false) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = vnl_mac;
 		send((Message*)pkt, dst, no_drop);
 	}
 	
 	void send_async(Packet* pkt, Basic* dst, bool no_drop = false) {
 		pkt->seq_num = next_seq++;
-		pkt->src_mac = vnl_mac;
 		send_async((Message*)pkt, dst, no_drop);
 	}
 	

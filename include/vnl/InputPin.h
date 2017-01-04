@@ -38,7 +38,7 @@ public:
 	}
 	
 	// thread safe
-	uint64_t get_mac() {
+	uint64_t get_mac() const {
 		return stream.get_mac();
 	}
 	

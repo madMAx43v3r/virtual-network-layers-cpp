@@ -1,16 +1,31 @@
 package vnl.info;
 
+class ClientInfo {
+	
+	long num_requests;
+	long num_errors;
+	
+}
+
 class ObjectInfo {
 	
 	long time;
 	long spawn_time;
+	
 	long num_cycles;
 	long num_msg_sent;
 	long num_msg_received;
 	long num_msg_dropped;
 	
-	Hash64 engine;
-	Map<Hash64, String> input_channels;
+	Map<Hash64, long> sources;
+	Map<Hash64, long> input_nodes;
+	
+	Map<Hash64, long> input_channels;
 	Map<Hash64, String> output_channels;
+	
+	Map<Hash64, String> input_pins;
+	Map<Hash64, String> output_pins;
+	
+	Map<Hash64, ClientInfo> clients;
 	
 }
