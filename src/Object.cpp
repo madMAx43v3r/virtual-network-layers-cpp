@@ -370,7 +370,7 @@ void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
 		pipe->open(this);
 	}
 	subscribe(my_address);
-	subscribe(Address(my_address.domain(), get_mac()));
+	subscribe(my_private_address);
 	
 	Announce* announce = Announce::create();
 	announce->instance.type = get_type_name();

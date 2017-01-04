@@ -34,6 +34,7 @@ public:
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
 			vnl_spawn_time(0), vnl_log_writer(this)
 	{
+		my_private_address = Address(my_address.domain(), vnl_stream.get_mac());
 		my_private_domain << my_domain << "." << my_topic;
 	}
 	
@@ -51,6 +52,12 @@ public:
 	Address get_my_address() const {
 		assert(vnl_dorun == false);
 		return my_address;
+	}
+	
+	// NOT thread safe
+	Address get_my_private_address() const {
+		assert(vnl_dorun == false);
+		return my_private_address;
 	}
 	
 	// NOT thread safe
@@ -158,6 +165,7 @@ protected:
 	MessagePool<Frame> vnl_frame_buffer;
 	
 	Address my_address;
+	Address my_private_address;
 	String my_private_domain;
 	String my_domain;
 	String my_topic;

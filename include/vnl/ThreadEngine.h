@@ -169,7 +169,7 @@ private:
 
 
 inline Address spawn(Object* object, Pipe* pipe) {
-	Address addr = object->get_my_address();
+	Address addr = object->get_my_private_address();
 	ThreadEngine::spawn(object, pipe);
 	return addr;
 }
