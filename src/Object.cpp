@@ -265,6 +265,7 @@ bool Object::handle(Frame* frame) {
 		send_async(result, frame->src_addr, true);
 	}
 	vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
+	info.proxy = frame->proxy;
 	info.num_requests++;
 	info.num_errors += !result || result->type == Frame::EXCEPTION;
 	return false;

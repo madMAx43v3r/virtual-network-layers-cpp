@@ -2,6 +2,7 @@ package vnl.info;
 
 class ClientInfo {
 	
+	Hash64 proxy;
 	long num_requests;
 	long num_errors;
 	
