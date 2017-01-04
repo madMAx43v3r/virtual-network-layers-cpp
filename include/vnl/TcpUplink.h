@@ -230,7 +230,6 @@ private:
 		ThreadEngine engine;
 		Stream stream;
 		stream.connect(&engine);
-		stream.set_timeout(vnl_msg_timeout);
 		vnl::io::TypeInput in(&sock);
 		in.reset();
 		pipe->attach();
@@ -248,7 +247,7 @@ private:
 			if(!in.error() && id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
 				uint32_t hash = 0;
 				in.getHash(hash);
-				if(!read_packet(stream, in, hash)) {
+				if(!read_packet(&engine, stream, in, hash)) {
 					error = true;
 				}
 			} else {
@@ -268,17 +267,16 @@ private:
 		engine.flush();
 	}
 	
-	bool read_packet(Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
+	bool read_packet(Engine* engine, Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
 		if(hash == Sample::PID) {
 			Sample* sample = sample_buffer.create();
 			sample->deserialize(in, 0);
-			sample->proxy = get_mac();
 			if(!in.error()) {
 				if(sample->dst_addr.domain() == remote_domain) {
-					stream.send_async(sample, pipe, true);
+					read_send_async(engine, sample, pipe, true);
 				} else {
 					forward(stream, sample);
-					stream.send_async(sample, sample->dst_addr);
+					read_send_async(engine, sample, Router::instance);
 				}
 				return true;
 			}
@@ -286,19 +284,25 @@ private:
 		} else if(hash == Frame::PID) {
 			Frame* frame = frame_buffer.create();
 			frame->deserialize(in, 0);
-			frame->proxy = get_mac();
 			if(!in.error()) {
 				if(frame->dst_addr.domain() == remote_domain) {
-					stream.send_async(frame, pipe, true);
+					read_send_async(engine, frame, pipe, true);
 				} else {
 					forward(stream, frame);
-					stream.send_async(frame, frame->dst_addr, frame->type == Frame::RESULT);
+					read_send_async(engine, frame, Router::instance, frame->type == Frame::RESULT);
 				}
 				return true;
 			}
 			frame->destroy();
 		}
 		return false;
+	}
+	
+	void read_send_async(Engine* engine, Packet* pkt, Basic* dst, bool no_drop = false) {
+		pkt->timeout = vnl_msg_timeout;
+		pkt->is_no_drop = no_drop;
+		pkt->proxy = get_mac();
+		engine->send_async(pkt, dst);
 	}
 	
 	void forward(Stream& stream, vnl::Packet* pkt) {
