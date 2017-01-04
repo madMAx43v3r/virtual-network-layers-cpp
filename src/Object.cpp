@@ -88,7 +88,7 @@ void Object::unsubscribe(Address address) {
 void Object::publish(Value* data, const String& domain, const String& topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = vnl_stream.get_mac();
+	header->src_mac = get_mac();
 	header->src_topic.domain = my_domain;
 	header->src_topic.name = my_topic;
 	header->dst_topic.domain = domain;
@@ -102,7 +102,7 @@ void Object::publish(Value* data, const String& domain, const String& topic, boo
 void Object::publish(Value* data, Address topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = vnl_stream.get_mac();
+	header->src_mac = get_mac();
 	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
@@ -111,28 +111,28 @@ void Object::publish(Value* data, Address topic, bool no_drop) {
 
 void Object::send(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
 	vnl_stream.send(packet, dst, no_drop);
 }
 
 void Object::send_async(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
 	vnl_stream.send_async(packet, dst, no_drop);
 }
 
 void Object::send(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
 	vnl_stream.send(packet, dst, no_drop);
 }
 
 void Object::send_async(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
 	vnl_stream.send_async(packet, dst, no_drop);
 }
@@ -287,8 +287,7 @@ Frame* Object::exec_vni_call(Frame* frame) {
 		int id = vnl_input.getEntry(size);
 		if(id == VNL_IO_CALL) {
 			vnl_input.getHash(hash);
-			bool res = vni_call(vnl_input, hash, size);
-			if(!res) {
+			if(!vni_call(vnl_input, hash, size)) {
 				throw NoSuchMethodException();
 			}
 		} else if(id == VNL_IO_CONST_CALL) {
