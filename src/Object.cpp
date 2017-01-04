@@ -65,6 +65,7 @@ void Object::add_output(OutputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine);
 	vnl_output_pins[pin.get_mac()] = &pin;
+	vnl_output_channels[pin.get_mac()] = "OutputPin";
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
