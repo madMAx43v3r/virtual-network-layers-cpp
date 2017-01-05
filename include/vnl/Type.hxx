@@ -333,6 +333,7 @@ inline void from_string(const vnl::String& str, Binary& obj) {
 
 template<typename T>
 void from_string(const vnl::String& str, Array<T>& obj) {
+	obj.clear();
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -349,6 +350,7 @@ void from_string(const vnl::String& str, Array<T>& obj) {
 
 template<typename T>
 void from_string(const vnl::String& str, List<T>& obj) {
+	obj.clear();
 	int i = 0;
 	vnl::String buf;
 	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -365,6 +367,7 @@ void from_string(const vnl::String& str, List<T>& obj) {
 
 template<typename K, typename V>
 void from_string(const vnl::String& str, Map<K,V>& obj) {
+	obj.clear();
 	// TODO
 	assert(false);
 }
