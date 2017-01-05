@@ -12,11 +12,14 @@ class ObjectInfo {
 	
 	long time;
 	long spawn_time;
+	long idle_time;
 	
 	long num_cycles;
 	long num_msg_sent;
 	long num_msg_received;
 	long num_msg_dropped;
+	long send_latency_sum;
+	long receive_latency_sum;
 	
 	Map<Hash64, long> sources;
 	Map<Hash64, long> input_nodes;

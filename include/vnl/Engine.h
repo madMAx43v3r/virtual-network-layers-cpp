@@ -41,6 +41,7 @@ public:
 	}
 	
 	virtual ~Engine() {
+		assert(queue.empty());
 		std::lock_guard<std::mutex> lock(static_mutex);
 		instances->remove(this);
 	}
@@ -118,6 +119,9 @@ public:
 	int64_t num_received = 0;
 	int64_t num_timeout = 0;
 	int64_t num_cycles = 0;
+	int64_t send_latency_sum = 0;
+	int64_t receive_latency_sum = 0;
+	int64_t idle_time = 0;
 	
 	static List<Engine*>* instances;
 	static std::mutex static_mutex;
@@ -126,7 +130,6 @@ protected:
 	void exec(Object* object, Message* init, Pipe* pipe);
 	
 	Message* collect(int64_t timeout);
-	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
 	virtual void send_impl(Message* msg, bool async) = 0;
 	

@@ -413,6 +413,9 @@ void Object::heartbeat() {
 	msg->info.num_msg_sent = vnl_engine->num_sent;
 	msg->info.num_msg_received = vnl_engine->num_received;
 	msg->info.num_msg_dropped = vnl_engine->num_timeout;
+	msg->info.send_latency_sum = vnl_engine->send_latency_sum;
+	msg->info.receive_latency_sum = vnl_engine->receive_latency_sum;
+	msg->info.idle_time = vnl_engine->idle_time;
 	msg->info.sources = vnl_sources;
 	msg->info.input_nodes = vnl_input_nodes;
 	msg->info.input_channels = vnl_input_channels;

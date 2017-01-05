@@ -135,10 +135,13 @@ private:
 	}
 	
 	void handle(Message* msg) {
+		int64_t now = currentTimeMicros();
 		if(msg->isack) {
+			send_latency_sum += now - msg->rcv_time;
 			msg->destroy();
 			pending--;
 		} else {
+			receive_latency_sum += now - msg->rcv_time;
 			if(!msg->is_no_drop && currentTimeMicros() - msg->rcv_time > msg->timeout) {
 				msg->ack();
 				num_timeout++;
