@@ -8,10 +8,9 @@
 #ifndef INCLUDE_VNL_ADDRESS_H_
 #define INCLUDE_VNL_ADDRESS_H_
 
-#include <stdint.h>
 #include <ostream>
 
-#include <vnl/Hash.h>
+#include <vnl/Hash64.h>
 #include <vnl/io.h>
 
 
@@ -43,16 +42,6 @@ public:
 	
 	bool is_null() {
 		return A == 0 && B == 0;
-	}
-	
-	void serialize(vnl::io::TypeOutput& out) const {
-		out.writeLong(A);
-		out.writeLong(B);
-	}
-	
-	void deserialize(vnl::io::TypeInput& in, int size) {
-		in.readLong(A);
-		in.readLong(B);
 	}
 	
 	friend vnl::String& operator<<(vnl::String& stream, const Address& addr) {
@@ -112,14 +101,5 @@ inline void from_string(const vnl::String& str, Address& val) {
 
 
 } // vnl
-
-namespace std {
-	template<>
-	struct hash<vnl::Address> {
-		size_t operator()(const vnl::Address& x) const {
-			return x.A xor x.B;
-		}
-	};
-}
 
 #endif /* INCLUDE_VNL_ADDRESS_H_ */

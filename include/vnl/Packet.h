@@ -63,8 +63,10 @@ public:
 		out.writeShort(get_header_size());
 		out.writeLong(seq_num);
 		out.writeLong(src_mac);
-		src_addr.serialize(out);
-		dst_addr.serialize(out);
+		out.writeLong(src_addr.A);
+		out.writeLong(src_addr.B);
+		out.writeLong(dst_addr.A);
+		out.writeLong(dst_addr.B);
 		out.writeShort(num_hops);
 		for(int i = 0; i < num_hops && !out.error(); ++i) {
 			out.writeInt(route[i]);
@@ -79,8 +81,10 @@ public:
 		in.readShort(header_len);
 		in.readLong(seq_num);
 		in.readLong(src_mac);
-		src_addr.deserialize(in, 0);
-		dst_addr.deserialize(in, 0);
+		in.readLong(src_addr.A);
+		in.readLong(src_addr.B);
+		in.readLong(dst_addr.A);
+		in.readLong(dst_addr.B);
 		in.readShort(num_hops);
 		num_hops = std::min(num_hops, (int16_t)VNL_MAX_ROUTE_LENGTH);
 		for(int i = 0; i < num_hops && !in.error(); ++i) {

@@ -19,7 +19,7 @@
 
 namespace vnl {
 
-class Client : public vnl::io::Serializable {
+class Client {
 public:
 	Client()
 		:	_in(&_buf), _out(&_buf), _exception(0),
@@ -71,14 +71,6 @@ public:
 	
 	void set_fail(bool fail) {
 		do_fail = fail;
-	}
-	
-	virtual void serialize(vnl::io::TypeOutput& out) const {
-		dst_addr.serialize(out);
-	}
-	
-	virtual void deserialize(vnl::io::TypeInput& in, int size) {
-		dst_addr.deserialize(in, size);
 	}
 	
 protected:

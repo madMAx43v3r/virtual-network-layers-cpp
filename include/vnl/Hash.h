@@ -10,16 +10,47 @@
 
 #include <vnl/Hash32.h>
 #include <vnl/Hash64.h>
+#include <vnl/Address.h>
+#include <vnl/String.h>
 
-namespace std {
+
+namespace vnl {
 	
-	template<>
-	struct hash<vnl::String> {
-		size_t operator()(const vnl::String& str) const {
-			return vnl::hash64(str);
+	inline uint64_t hash(const int8_t& val) { return val; }
+	inline uint64_t hash(const int16_t& val) { return val; }
+	inline uint64_t hash(const int32_t& val) { return val; }
+	inline uint64_t hash(const int64_t& val) { return val; }
+	
+	inline uint64_t hash(const uint8_t& val) { return val; }
+	inline uint64_t hash(const uint16_t& val) { return val; }
+	inline uint64_t hash(const uint32_t& val) { return val; }
+	inline uint64_t hash(const uint64_t& val) { return val; }
+	
+	inline uint64_t hash(const Hash32& val) {
+		return val.value;
+	}
+	
+	inline uint64_t hash(const Hash64& val) {
+		return val.value;
+	}
+	
+	inline uint64_t hash(const Address& val) {
+		return val.A xor val.B;
+	}
+	
+	inline uint64_t hash(const String& val) {
+		return hash64(val);
+	}
+	
+	template<typename T>
+	uint64_t hash(const T* p_val) {
+		if(p_val) {
+			return hash(*p_val);
 		}
-	};
+		return 0;
+	}
 	
-}
+	
+} // vnl
 
 #endif /* INCLUDE_VNL_HASH_H_ */

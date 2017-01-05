@@ -8,9 +8,6 @@
 #ifndef INCLUDE_VNL_HASH32_H_
 #define INCLUDE_VNL_HASH32_H_
 
-#include <string>
-#include <algorithm>
-
 #include <vnl/io.h>
 #include <vnl/Util.h>
 #include <vnl/String.h>
@@ -93,16 +90,5 @@ inline void from_string(const vnl::String& str, vnl::Hash32& val) {
 
 
 } // vnl
-
-namespace std {
-
-	template<>
-	struct hash<vnl::Hash32> {
-		size_t operator()(const vnl::Hash32& x) const {
-			return x;
-		}
-	};
-	
-}
 
 #endif /* INCLUDE_VNL_HASH32_H_ */
