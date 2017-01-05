@@ -10,6 +10,7 @@
 
 #include <vnl/Hash.h>
 #include <vnl/Tree.h>
+#include <vnl/Operators.h>
 
 
 namespace vnl {
@@ -319,7 +320,7 @@ protected:
 			if(!row) {
 				break;
 			}
-			if(row->pair.first == key) {
+			if(vnl::equals(row->pair.first, key)) {
 				value = &row->pair;
 				return true;
 			}
@@ -335,7 +336,7 @@ protected:
 			if(!row) {
 				break;
 			}
-			if(row->pair.first == key) {
+			if(vnl::equals(row->pair.first, key)) {
 				value = &row->pair;
 				return true;
 			}
