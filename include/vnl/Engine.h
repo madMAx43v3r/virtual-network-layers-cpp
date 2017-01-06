@@ -50,11 +50,11 @@ public:
 	virtual void receive(Message* msg) {
 		assert(msg->dst || msg->isack);
 		msg->gate = this;
-		msg->rcv_time = vnl::currentTimeMicros();
 		mutex.lock();
 		queue.push(msg);
 		cond.notify_all();
 		if(!msg->isack) {
+			msg->rcv_time = vnl::currentTimeMicros();
 			num_received++;
 		}
 		for(auto& func : rcv_hooks) {
