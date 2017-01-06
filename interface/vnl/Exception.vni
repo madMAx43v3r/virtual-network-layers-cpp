@@ -8,6 +8,18 @@ class MemoryException extends Exception {
 	
 }
 
+class StackOverflow extends Exception {
+	
+}
+
+class SegmentationFault extends Exception {
+	
+}
+
+class IllegalInstruction extends Exception {
+	
+}
+
 class IOException extends Exception {
 	
 }

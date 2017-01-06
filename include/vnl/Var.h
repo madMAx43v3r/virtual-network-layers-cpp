@@ -31,10 +31,10 @@ public:
 	Var(const int16_t& v) : type(INT) { long_ = v; }
 	Var(const int32_t& v) : type(INT) { long_ = v; }
 	Var(const int64_t& v) : type(INT) { long_ = v; }
-	Var(const uint8_t& v) : type(INT) { long_ = v; }
-	Var(const uint16_t& v) : type(INT) { long_ = v; }
-	Var(const uint32_t& v) : type(INT) { long_ = v; }
-	Var(const uint64_t& v) : type(INT) { long_ = v; }
+	Var(const uint8_t& v) : type(INT) { mem_ = v; }
+	Var(const uint16_t& v) : type(INT) { mem_ = v; }
+	Var(const uint32_t& v) : type(INT) { mem_ = v; }
+	Var(const uint64_t& v) : type(INT) { mem_ = v; }
 	Var(const float& v) : type(REAL) { double_ = v; }
 	Var(const double& v) : type(REAL) { double_ = v; }
 	Var(const char* v) : type(NIL) { *this = String(v); }
@@ -103,28 +103,28 @@ public:
 	Var& operator=(uint8_t v) {
 		clear();
 		type = INT;
-		long_ = v;
+		mem_ = v;
 		return *this;
 	}
 	
 	Var& operator=(uint16_t v) {
 		clear();
 		type = INT;
-		long_ = v;
+		mem_ = v;
 		return *this;
 	}
 	
 	Var& operator=(uint32_t v) {
 		clear();
 		type = INT;
-		long_ = v;
+		mem_ = v;
 		return *this;
 	}
 	
 	Var& operator=(uint64_t v) {
 		clear();
 		type = INT;
-		long_ = v;
+		mem_ = v;
 		return *this;
 	}
 	
@@ -523,6 +523,24 @@ public:
 	void to(float& v) const { to_scalar(v); }
 	void to(double& v) const { to_scalar(v); }
 	
+	void to(Hash32& v) const {
+		switch(type) {
+			case INT: 		v = mem_; break;
+			case STRING: 	if(string_) { v = Hash32(*string_); } else { v = 0; } break;
+			case PVAR: 		if(var_) { var_->to(v); } else { v = 0; } break;
+			default: 		v = 0;
+		}
+	}
+	
+	void to(Hash64& v) const {
+		switch(type) {
+			case INT: 		v = mem_; break;
+			case STRING: 	if(string_) { v = Hash64(*string_); } else { v = 0; } break;
+			case PVAR: 		if(var_) { var_->to(v); } else { v = 0; } break;
+			default: 		v = 0;
+		}
+	}
+	
 	void to(String& v) const {
 		v.clear();
 		switch(type) {
@@ -605,6 +623,8 @@ public:
 	operator uint64_t() const { uint64_t v; to(v); return v; }
 	operator float() const { float v; to(v); return v; }
 	operator double() const { double v; to(v); return v; }
+	operator Hash32() const { Hash32 v; to(v); return v; }
+	operator Hash64() const { Hash64 v; to(v); return v; }
 	
 	void clear() {
 		switch(type) {
