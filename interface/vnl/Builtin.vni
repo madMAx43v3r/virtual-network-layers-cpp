@@ -13,3 +13,4 @@ interface Map;
 extern Hash32;
 extern Hash64;
 extern Address;
+extern Var;

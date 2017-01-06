@@ -22,6 +22,8 @@
 
 namespace vnl {
 
+class Var;
+
 class Type : public vnl::io::Serializable {
 public:
 	Type() {}
@@ -38,6 +40,8 @@ public:
 	virtual void set_field(int index, const vnl::String& str) = 0;
 	virtual void get_field(int index, vnl::io::TypeOutput& out) const = 0;
 	virtual void set_field(int index, vnl::io::TypeInput& in) = 0;
+	virtual void get_field(int index, vnl::Var& var) const = 0;
+	virtual void set_field(int index, const vnl::Var& var) = 0;
 	
 	virtual void from_string(const vnl::String& str) {
 		/* NOT IMPLEMENTED */

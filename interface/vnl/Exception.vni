@@ -4,11 +4,19 @@ class Exception {
 	
 }
 
+class MemoryException extends Exception {
+	
+}
+
 class IOException extends Exception {
 	
 }
 
 class TimeoutException extends IOException {
+	
+}
+
+class TypeMismatchException extends IOException {
 	
 }
 

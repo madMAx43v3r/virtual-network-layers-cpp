@@ -108,6 +108,10 @@ public:
 		return cmp != other.end();
 	}
 	
+	bool operator<=(const String& other) const {
+		return *this < other || *this == other;
+	}
+	
 	bool operator==(const std::string& other) const {
 		return (*this) == other.c_str();
 	}

@@ -6,6 +6,7 @@
  */
 
 #include <vnl/Type.hxx>
+#include <vnl/Var.h>
 #include <vnl/BinaryValue.h>
 
 
@@ -18,6 +19,13 @@ namespace internal {
 	
 } // internal
 
+void Interface::get_field(int index, vnl::Var& var) const {
+	var.clear();
+}
+
+void Interface::set_field(int index, const vnl::Var& var) {
+	// nothing
+}
 
 Value* read(vnl::io::TypeInput& in) {
 	Value* obj = 0;

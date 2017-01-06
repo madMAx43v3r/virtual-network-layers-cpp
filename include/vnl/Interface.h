@@ -82,6 +82,9 @@ public:
 		_in.skip();
 	}
 	
+	virtual void get_field(int index, vnl::Var& var) const;
+	virtual void set_field(int index, const vnl::Var& var);
+	
 protected:
 	virtual bool vni_call(vnl::io::TypeInput& in, uint32_t hash, int num_args) {
 		return false;
