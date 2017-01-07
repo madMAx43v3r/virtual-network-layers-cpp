@@ -171,7 +171,7 @@ public:
 			ptr->second = val;
 		} else {
 			if(count >= N) {
-				expand(N*4);
+				expand(N*2);
 				return insert(key, val);
 			}
 			if(p_front) {
