@@ -74,7 +74,7 @@ protected:
 			pipe->close();
 			downlink.close();
 			::shutdown(server, SHUT_RDWR);
-			thread.join();
+			thread.detach();
 			::close(server);
 			server = -1;
 		}

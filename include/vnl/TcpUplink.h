@@ -65,7 +65,7 @@ protected:
 			pipe->close();
 			downlink.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
-			thread.join();
+			thread.detach();
 			sock.close();
 			if(do_reset) {
 				usleep(error_interval);
