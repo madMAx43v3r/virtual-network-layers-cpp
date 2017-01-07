@@ -15,6 +15,9 @@
 
 
 namespace vnl {
+
+	class Var;
+	uint64_t hash(const Var& obj);
 	
 	inline uint64_t hash(const int8_t& val) { return val; }
 	inline uint64_t hash(const int16_t& val) { return val; }
@@ -25,6 +28,9 @@ namespace vnl {
 	inline uint64_t hash(const uint16_t& val) { return val; }
 	inline uint64_t hash(const uint32_t& val) { return val; }
 	inline uint64_t hash(const uint64_t& val) { return val; }
+	
+	inline uint64_t hash(const float& val) { return *((const uint32_t*)&val); }
+	inline uint64_t hash(const double& val) { return *((const uint64_t*)&val); }
 	
 	inline uint64_t hash(const Hash32& val) {
 		return val.value;

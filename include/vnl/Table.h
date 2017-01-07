@@ -34,7 +34,7 @@ public:
 	/*
 	 * Called before the field is updated. Should throw.
 	 */
-	virtual void check_update(const T& row, int field, const Binary& value) = 0;
+	virtual void check_update(const T& row, int field, const Var& value) = 0;
 	
 	/*
 	 * Called after the field is updated. Cannot throw.
@@ -88,7 +88,7 @@ protected:
 		}
 	}
 	
-	void update(const Hash64& id, const Hash32& field_name, const Binary& value) {
+	void update(const Hash64& id, const Hash32& field_name, const Var& value) {
 		T* row = get_row(id);
 		int index = row->get_field_index(field_name);
 		if(index < 0) {
@@ -97,9 +97,7 @@ protected:
 		for(View<T>* view : views) {
 			view->check_update(*row, index, value);
 		}
-		buffer.wrap(value.data, value.size);
-		in.reset();
-		row->set_field(index, in);
+		row->set_field(index, value);
 		if(in.error()) {
 			throw IOException();
 		}
@@ -176,17 +174,12 @@ public: \
 			assert(our_field >= 0); \
 		} \
 	} \
-	void check_update(const T& row, int field, const vnl::Binary& value) { \
+	void check_update(const T& row, int field, const vnl::Var& value) { \
 		if(field != our_field) { \
 			return; \
 		} \
-		buffer.wrap(value.data, value.size); \
-		in.reset(); \
 		K new_key; \
-		vnl::read(in, new_key); \
-		if(in.error()) { \
-			throw vnl::IOException(); \
-		} \
+		value.to(new_key); \
 		if(index.find(&new_key)) { \
 			throw vnl::DuplicateKeyException(); \
 		} \

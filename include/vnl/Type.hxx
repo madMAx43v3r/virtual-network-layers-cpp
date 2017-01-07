@@ -113,13 +113,12 @@ template<typename K, typename V>
 void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
-	if(id == VNL_IO_ARRAY && size % 2 == 0) {
-		for(int i = 0; i < size && !in.error(); i += 2) {
+	if(id == VNL_IO_MAP) {
+		for(int i = 0; i < size && !in.error(); ++i) {
 			K key;
-			V value;
 			vnl::read(in, key);
+			V& value = obj[key];
 			vnl::read(in, value);
-			obj[key] = value;
 		}
 	} else {
 		in.skip(id, size);
@@ -197,7 +196,7 @@ void write(vnl::io::TypeOutput& out, const List<T>& obj) {
 
 template<typename K, typename V>
 void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
-	out.putEntry(VNL_IO_ARRAY, obj.size()*2);
+	out.putEntry(VNL_IO_MAP, obj.size());
 	for(typename vnl::Map<K,V>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
 	{

@@ -16,7 +16,7 @@ object Table<T> extends Database {
 	
 	Array<T> get_all(Array<Hash64> ids) const;
 	
-	void update(Hash64 id, Hash32 field_name, Binary value);
+	void update(Hash64 id, Hash32 field_name, Var value);
 	
 	void remove(Hash64 id);
 	
