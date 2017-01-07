@@ -68,8 +68,7 @@ public:
 		if(!engine) {
 			assert(queue.empty());
 		}
-		Message* left = 0;
-		while(queue.pop(left)) {
+		while(Message* left = poll(0)) {
 			left->ack();
 		}
 		engine = 0;
