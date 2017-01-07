@@ -97,7 +97,7 @@ protected:
 			request.data = _data;
 			request.size = _buf.position();
 			
-			stream.set_timeout(timeout);
+			stream.set_timeout(timeout/2);
 			stream.send(&request, dst_addr);
 			
 			request.data = 0;
