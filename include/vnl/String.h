@@ -326,6 +326,22 @@ public:
 		return list;
 	}
 
+	static int stoi(const String& str, size_t* idx=nullptr, int base=10) {
+		return (std::stoi(str.to_string(), idx, base));
+	}
+
+	static long stol(const String& str, size_t* idx=nullptr, int base=10) {
+		return (std::stol(str.to_string(), idx, base));
+	}
+
+	static float stof(const String& str, size_t* idx=nullptr) {
+		return (std::stof(str.to_string(), idx));
+	}
+
+	static double stod(const String& str, size_t* idx=nullptr) {
+		return (std::stod(str.to_string(), idx));
+	}
+
 };
 
 
