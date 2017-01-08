@@ -16,6 +16,7 @@ enum {
 	VNL_IO_REAL 		= 0x3,
 	VNL_IO_BINARY 		= 0x4,
 	VNL_IO_STRING 		= 0x5,
+	VNL_IO_MAP 			= 0x6,
 	VNL_IO_CALL 		= 0x8,
 	VNL_IO_CONST_CALL 	= 0x9,
 	VNL_IO_ARRAY 		= 0xA,

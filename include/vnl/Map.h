@@ -8,10 +8,9 @@
 #ifndef INCLUDE_PHY_MAP_H_
 #define INCLUDE_PHY_MAP_H_
 
-#include <vnl/Util.h>
+#include <vnl/Hash.h>
 #include <vnl/Tree.h>
-
-#include <utility>
+#include <vnl/Operators.h>
 
 
 namespace vnl {
@@ -172,7 +171,7 @@ public:
 			ptr->second = val;
 		} else {
 			if(count >= N) {
-				expand(N*4);
+				expand(N*2);
 				return insert(key, val);
 			}
 			if(p_front) {
@@ -314,14 +313,14 @@ protected:
 	}
 	
 	bool find(const K& key, entry_t**& p_row, vnl::pair<K,V>*& value) {
-		int index = std::hash<K>{}(key) % N;
+		int index = vnl::hash(key) % N;
 		p_row = &table[index];
 		while(true) {
 			entry_t* row = *p_row;
 			if(!row) {
 				break;
 			}
-			if(row->pair.first == key) {
+			if(vnl::equals(row->pair.first, key)) {
 				value = &row->pair;
 				return true;
 			}
@@ -331,13 +330,13 @@ protected:
 	}
 	
 	bool const_find(const K& key, const vnl::pair<K,V>*& value) const {
-		int index = std::hash<K>{}(key) % N;
+		int index = vnl::hash(key) % N;
 		entry_t* row = table[index];
 		while(true) {
 			if(!row) {
 				break;
 			}
-			if(row->pair.first == key) {
+			if(vnl::equals(row->pair.first, key)) {
 				value = &row->pair;
 				return true;
 			}

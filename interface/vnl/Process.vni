@@ -4,10 +4,15 @@ object Process {
 	
 	String name;
 	
+	int watchdog_interval = 100000;
+	int update_interval   = 1000000;
+	int stats_interval    = 10000000;
+	
 	bool do_print_stats = true;
 	
 	void handle(LogMsg event);
 	void handle(Announce event);
+	void handle(Heartbeat event);
 	void handle(Shutdown event);
 	void handle(Exit event);
 	

@@ -1,14 +1,14 @@
 package vnl;
 
-class Instance {
+class Heartbeat {
 	
 	Hash64 src_mac;
 	String type;
 	String domain;
 	String topic;
 	
-	int heartbeat_interval;
-	long last_heartbeat;
-	bool is_alive;
+	int interval;
+	
+	vnl.info.ObjectInfo info;
 	
 }

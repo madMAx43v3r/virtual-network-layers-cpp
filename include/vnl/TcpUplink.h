@@ -37,8 +37,8 @@ protected:
 	virtual int connect() = 0;
 	
 	void main(Engine* engine, Message* init) {
-		add_input(tunnel);
 		init->ack();
+		add_input(tunnel);
 		timer = set_timeout(0, std::bind(&TcpUplink::write_out, this), VNL_TIMER_MANUAL);
 		while(vnl_dorun) {
 			sock.fd = connect();
@@ -47,12 +47,12 @@ protected:
 				break;
 			}
 			out.reset();
+			do_reset = false;
+			add_input(downlink);
 			write_announce();
 			for(Topic& topic : table.values()) {
 				write_subscribe(topic.domain, topic.name);
 			}
-			do_reset = false;
-			add_input(downlink);
 			pipe = Pipe::create(&downlink);
 			std::thread thread(std::bind(&TcpUplink::read_loop, this));
 			are_connected = true;
@@ -65,12 +65,13 @@ protected:
 			pipe->close();
 			downlink.close();
 			::shutdown(sock.fd, SHUT_RDWR);		// make read_loop() exit
-			thread.join();
+			thread.detach();
 			sock.close();
 			if(do_reset) {
 				usleep(error_interval);
 			}
 		}
+		tunnel.close();
 		drop_all();
 	}
 	
@@ -115,11 +116,17 @@ protected:
 		log(INFO).out << "Publishing " << domain << ":" << topic << vnl::endl;
 	}
 	
+	void publish(const vnl::Address& addr) {
+		tunnel.subscribe(addr);
+		log(INFO).out << "Publishing " << addr << vnl::endl;
+	}
+	
 	void unpublish(const vnl::String& domain, const vnl::String& topic) {
 		tunnel.unsubscribe(Address(domain, topic));
 		log(INFO).out << "Unpublishing " << domain << ":" << topic << vnl::endl;
 	}
 	
+	// TODO: make this recursive
 	void subscribe(const vnl::String& domain, const vnl::String& topic) {
 		if(sock.good()) {
 			write_subscribe(domain, topic);
@@ -129,20 +136,12 @@ protected:
 		data.name = topic;
 	}
 	
+	// TODO: make this recursive
 	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
 		if(sock.good()) {
 			write_subscribe(domain, topic, true);
 		}
 		table.erase(Address(domain, topic));
-	}
-	
-	void unsubscribe_all() {
-		if(sock.good()) {
-			for(Topic& topic : table.values()) {
-				write_subscribe(topic.domain, topic.name, true);
-			}
-		}
-		table.clear();
 	}
 	
 	vnl::info::RemoteInfo get_remote_info() const {
@@ -168,32 +167,27 @@ protected:
 	
 private:
 	void write_out() {
-		int64_t begin = vnl::currentTimeMicros();
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
 			pkt->serialize(out);
 			pkt->ack();
+			num_write++;
 			if(out.error()) {
 				break;
 			}
-			if(send_timeout >= 0) {
-				int64_t now = vnl::currentTimeMicros();
-				if(now - begin > send_timeout) {
-					break;
-				}
-			}
 		}
 		out.flush();
+		num_flush++;
 		if(out.error()) {
 			reset();
 		}
 		drop_all(); // drop the rest
+		num_bytes_write = out.get_num_write();
 	}
 	
 	void drop_all() {
 		Packet* pkt = 0;
 		while(queue.pop(pkt)) {
-			num_drop++;
 			pkt->ack();
 		}
 	}
@@ -208,6 +202,7 @@ private:
 		info->domain_name = vnl::local_domain_name;
 		info->config_name = vnl::local_config_name;
 		sample.data = info;
+		sample.is_no_drop = true;
 		sample.serialize(out);
 		out.flush();
 	}
@@ -222,6 +217,7 @@ private:
 		data->domain = domain;
 		data->name = topic;
 		sample.data = data;
+		sample.is_no_drop = true;
 		sample.serialize(out);
 		out.flush();
 		if(do_negate) {
@@ -253,7 +249,7 @@ private:
 			if(!in.error() && id == VNL_IO_INTERFACE && size == VNL_IO_BEGIN) {
 				uint32_t hash = 0;
 				in.getHash(hash);
-				if(!read_packet(stream, in, hash)) {
+				if(!read_packet(&engine, stream, in, hash)) {
 					error = true;
 				}
 			} else {
@@ -262,26 +258,27 @@ private:
 			if(error) {
 				if(vnl_dorun) {
 					error_t msg(in.error());
-					stream.send(&msg, pipe);
+					stream.send(&msg, pipe, true);
 				}
 				break;
 			}
+			num_bytes_read = in.get_num_read();
 		}
 		pipe->detach();
+		stream.close();
 		engine.flush();
 	}
 	
-	bool read_packet(Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
+	bool read_packet(Engine* engine, Stream& stream, vnl::io::TypeInput& in, uint32_t hash) {
 		if(hash == Sample::PID) {
 			Sample* sample = sample_buffer.create();
 			sample->deserialize(in, 0);
-			sample->proxy = get_mac();
 			if(!in.error()) {
 				if(sample->dst_addr.domain() == remote_domain) {
-					stream.send_async(sample, pipe);
+					read_send_async(engine, sample, pipe);
 				} else {
 					forward(stream, sample);
-					stream.send_async(sample, sample->dst_addr);
+					read_send_async(engine, sample, Router::instance);
 				}
 				return true;
 			}
@@ -289,13 +286,12 @@ private:
 		} else if(hash == Frame::PID) {
 			Frame* frame = frame_buffer.create();
 			frame->deserialize(in, 0);
-			frame->proxy = get_mac();
 			if(!in.error()) {
 				if(frame->dst_addr.domain() == remote_domain) {
-					stream.send_async(frame, pipe);
+					read_send_async(engine, frame, pipe);
 				} else {
 					forward(stream, frame);
-					stream.send_async(frame, frame->dst_addr);
+					read_send_async(engine, frame, Router::instance);
 				}
 				return true;
 			}
@@ -304,11 +300,17 @@ private:
 		return false;
 	}
 	
+	void read_send_async(Engine* engine, Packet* pkt, Basic* dst) {
+		pkt->timeout = vnl_msg_timeout;
+		pkt->proxy = get_mac();
+		engine->send_async(pkt, dst);
+	}
+	
 	void forward(Stream& stream, vnl::Packet* pkt) {
 		int& count = fwd_table[pkt->src_addr];
 		if(count == 0) {
 			forward_t msg(pkt->src_addr);
-			stream.send(&msg, pipe);
+			stream.send(&msg, pipe, true);
 		}
 		count++;
 	}

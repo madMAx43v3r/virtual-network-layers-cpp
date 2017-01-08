@@ -8,7 +8,6 @@ object TcpServer implements Uplink {
 	Array<Topic> export_topics;
 	
 	int accept_queue = 10;
-	int send_timeout = -1;				// same as in TcpUplink
 	
 	bool tcp_keepalive = true;
 	bool tcp_nodelay = true;

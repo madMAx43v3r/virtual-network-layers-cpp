@@ -51,6 +51,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	assert(Random64::instance == 0);
 	assert(Router::instance == 0);
 	assert(Pipe::pool == 0);
+	assert(Engine::instances == 0);
 	assert(internal::global_pool_ == 0);
 	assert(internal::config_ == 0);
 	assert(internal::type_info_ == 0);
@@ -59,6 +60,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	
 	Random64::instance = new Random64();
 	Pipe::pool = new Pool<Pipe>();
+	Engine::instances = new List<Engine*>();
 	local_domain_name = domain_name;
 	internal::global_pool_ = new GlobalPool();
 	internal::config_ = new Map<String, String>();
@@ -104,6 +106,7 @@ void Layer::close() {
 		std::cout << "WARNING: " << Pipe::get_num_open() << " pipes left open at exit!" << std::endl;
 	}
 	
+	delete Engine::instances;
 	delete Router::instance;
 	delete Pipe::pool;
 	delete Random64::instance;
@@ -197,8 +200,6 @@ void Layer::parse_config(const char* root_dir) {
 
 void GlobalLogWriter::write(const String& str) {
 	vnl::LogMsg* msg = vnl::LogMsg::create();
-	msg->domain = node->my_domain;
-	msg->topic = node->my_topic;
 	msg->src_mac = node->get_mac();
 	msg->level = level;
 	msg->msg = str;

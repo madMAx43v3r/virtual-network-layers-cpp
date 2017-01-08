@@ -19,6 +19,7 @@
 #include <vnl/Client.h>
 
 #include <vnl/ObjectSupport.hxx>
+#include <vnl/info/ClientInfo.hxx>
 
 
 namespace vnl {
@@ -31,12 +32,11 @@ public:
 			my_domain(domain), my_topic(topic),
 			my_address(domain, topic),
 			vnl_input(&vnl_buf_in), vnl_output(&vnl_buf_out),
-			vnl_log_writer(this)
+			vnl_spawn_time(0), vnl_log_writer(this)
 	{
+		my_private_address = Address(my_address.domain(), vnl_stream.get_mac());
 		my_private_domain << my_domain << "." << my_topic;
 	}
-	
-	typedef SignalType<0x6a7fcd62> exit_t;
 	
 	// thread safe
 	virtual void receive(Message* msg) {
@@ -44,7 +44,7 @@ public:
 	}
 	
 	// thread safe
-	uint64_t get_mac() {
+	uint64_t get_mac() const {
 		return vnl_stream.get_mac();
 	}
 	
@@ -52,6 +52,12 @@ public:
 	Address get_my_address() const {
 		assert(vnl_dorun == false);
 		return my_address;
+	}
+	
+	// NOT thread safe
+	Address get_my_private_address() const {
+		assert(vnl_dorun == false);
+		return my_private_address;
 	}
 	
 	// NOT thread safe
@@ -98,7 +104,7 @@ protected:
 	/*
 	 * Returns the input channel through which the current message came in.
 	 */
-	Basic* get_channel() const {
+	Stream* get_channel() const {
 		return vnl_channel;
 	}
 	
@@ -113,17 +119,17 @@ protected:
 	void unsubscribe(Hash64 domain, Hash64 topic);
 	void unsubscribe(Address address);
 	
-	void publish(Value* data, const String& domain, const String& topic);
-	void publish(Value* data, Address topic);
+	void publish(Value* data, const String& domain, const String& topic, bool no_drop = false);
+	void publish(Value* data, Address topic, bool no_drop = false);
 	
-	void send(Packet* packet, Address dst);
-	void send_async(Packet* packet, Address dst);
+	void send(Packet* packet, Address dst, bool no_drop = false);
+	void send_async(Packet* packet, Address dst, bool no_drop = false);
 	
-	void send(Packet* packet, Basic* dst);
-	void send_async(Packet* packet, Basic* dst);
+	void send(Packet* packet, Basic* dst, bool no_drop = false);
+	void send_async(Packet* packet, Basic* dst, bool no_drop = false);
 	
-	void send(Message* msg, Basic* dst);
-	void send_async(Message* msg, Basic* dst);
+	void send(Message* msg, Basic* dst, bool no_drop = false);
+	void send_async(Message* msg, Basic* dst, bool no_drop = false);
 	
 	StringWriter log(int level);
 	
@@ -159,30 +165,37 @@ protected:
 	MessagePool<Frame> vnl_frame_buffer;
 	
 	Address my_address;
+	Address my_private_address;
 	String my_private_domain;
 	String my_domain;
 	String my_topic;
 	
 private:
 	void exec(Engine* engine, Message* msg, Pipe* pipe);
+	void heartbeat();
 	
 private:
 	Stream vnl_stream;
 	Engine* vnl_engine;
 	uint64_t vnl_proxy;
-	Basic* vnl_channel;
+	Stream* vnl_channel;
 	
 	List<Timer> vnl_timers;
-	List<InputPin*> vnl_input_pins;
-	List<OutputPin*> vnl_output_pins;
 	
-	Map<uint64_t, int64_t> vnl_sources;
+	Map<Hash64, int64_t> vnl_sources;
+	Map<Hash64, int64_t> vnl_input_nodes;
+	Map<Hash64, int64_t> vnl_input_channels;
+	Map<Hash64, String> vnl_output_channels;
+	Map<Hash64, InputPin*> vnl_input_pins;
+	Map<Hash64, OutputPin*> vnl_output_pins;
+	Map<Hash64, vnl::info::ClientInfo> vnl_clients;
 	
 	vnl::io::ByteBuffer vnl_buf_in;
 	vnl::io::ByteBuffer vnl_buf_out;
 	vnl::io::TypeInput vnl_input;
 	vnl::io::TypeOutput vnl_output;
 	
+	int64_t vnl_spawn_time;
 	GlobalLogWriter vnl_log_writer;
 	
 	friend class Engine;

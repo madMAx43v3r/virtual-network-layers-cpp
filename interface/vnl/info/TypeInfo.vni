@@ -1,38 +1,54 @@
 package vnl.info;
 
+class TypeName {
+	
+	Hash32 hash;
+	String name;
+	List<String> generics;
+	
+}
+
 class Field {
 	
+	Hash32 hash;
 	String name;
 	String value;
-	String type;
+	TypeName type;
 	
 }
 
 class Parameter {
 	
 	String name;
-	String type;
+	TypeName type;
 	
 }
 
 class Method {
 	
+	Hash32 hash;
 	String name;
-	String type;
+	TypeName type;
+	bool is_const;
+	
 	List<Parameter> params;
 	
 }
 
 class Type {
 	
+	Hash32 hash;
 	String name;
+	TypeName super;
+	
+	bool is_struct;
+	bool is_class;
+	bool is_enum;
+	bool is_interface;
+	bool is_object;
 	
 	List<Field> fields;
-	
-}
-
-class Interface extends Type {
-	
 	List<Method> methods;
+	List<String> symbols;
 	
 }

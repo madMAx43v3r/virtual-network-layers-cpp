@@ -17,13 +17,14 @@
 #include <vnl/Actor.h>
 #include <vnl/Stream.h>
 #include <vnl/Object.h>
+#include <vnl/Router.h>
 
 
 namespace vnl {
 
 class ThreadEngine : public Engine {
 public:
-	ThreadEngine() : pending(0), max_num_pending(-1) {}
+	ThreadEngine() : pending(0) {}
 	
 	~ThreadEngine() {
 		assert(pending == 0);
@@ -57,13 +58,17 @@ public:
 	}
 	
 	virtual void flush() {
-		wait_for_acks(0);
+		while(pending > 0) {
+			Message* msg = collect(-1);
+			if(msg) {
+				handle(msg);
+			}
+		}
 		assert(pending == 0);
 	}
 	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe) {
-		max_num_pending = object->vnl_max_num_pending;
 		Engine::exec(object, init, pipe);
 	}
 	
@@ -76,8 +81,6 @@ protected:
 		pending++;
 		if(!async && pending > 0) {
 			wait_for_ack(msg);
-		} else {
-			wait_for_acks(max_num_pending);
 		}
 	}
 	
@@ -90,15 +93,6 @@ private:
 				if(msg == snd) {
 					return;
 				}
-			}
-		}
-	}
-	
-	void wait_for_acks(int max_num) {
-		while(pending > max_num && max_num >= 0) {
-			Message* msg = collect(-1);
-			if(msg) {
-				handle(msg);
 			}
 		}
 	}
@@ -141,11 +135,23 @@ private:
 	}
 	
 	void handle(Message* msg) {
+		int64_t now = currentTimeMicros();
 		if(msg->isack) {
+			if(msg->rcv_time) {
+				send_latency_sum += now - msg->rcv_time;
+			}
 			msg->destroy();
 			pending--;
 		} else {
-			msg->dst->receive(msg);
+			if(msg->rcv_time) {
+				receive_latency_sum += now - msg->rcv_time;
+			}
+			if(!msg->is_no_drop && currentTimeMicros() - msg->rcv_time > msg->timeout) {
+				msg->ack();
+				num_timeout++;
+			} else {
+				msg->dst->receive(msg);
+			}
 		}
 	}
 	
@@ -165,13 +171,12 @@ private:
 	
 private:
 	int pending;
-	int max_num_pending;
 	
 };
 
 
 inline Address spawn(Object* object, Pipe* pipe) {
-	Address addr = object->get_my_address();
+	Address addr = object->get_my_private_address();
 	ThreadEngine::spawn(object, pipe);
 	return addr;
 }

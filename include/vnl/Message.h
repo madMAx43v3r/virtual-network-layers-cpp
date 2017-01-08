@@ -35,6 +35,7 @@ public:
 	void destroy();
 	
 	uint32_t msg_id;
+	uint64_t src_mac = 0;
 	Basic* src = 0;
 	Basic* dst = 0;
 	bool isack = false;
@@ -44,6 +45,11 @@ public:
 	
 	Basic* gate = 0;
 	void* _impl = 0;
+	
+	int64_t rcv_time = 0;
+	int64_t timeout = 1000000;
+	bool is_timeout = false;
+	bool is_no_drop = false;
 	
 };
 

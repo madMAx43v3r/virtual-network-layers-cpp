@@ -1,0 +1,20 @@
+package vnl.info;
+
+class MemoryInfo {
+	
+	int size;
+	long num_alloc;
+	long num_used;
+	
+}
+
+class ProcessInfo {
+	
+	String name;
+	
+	MemoryInfo pages;
+	MemoryInfo blocks;
+	
+	Array<Instance> objects;
+	
+}

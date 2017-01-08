@@ -150,6 +150,9 @@ public:
 			case VNL_IO_ARRAY:
 				copy_array(size, dst);
 				break;
+			case VNL_IO_MAP:
+				copy_array(size*2, dst);
+				break;
 			case VNL_IO_STRUCT:
 			case VNL_IO_CLASS:
 				copy_struct(size, dst);

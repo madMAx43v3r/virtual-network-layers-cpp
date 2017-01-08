@@ -35,22 +35,61 @@ Address spawn(Object* object, Pipe* pipe = 0);
 
 class Engine : public Basic {
 public:
-	Engine() {}
+	Engine() {
+		std::lock_guard<std::mutex> lock(static_mutex);
+		instances->push_back(this);
+	}
 	
-	virtual ~Engine() {}
+	virtual ~Engine() {
+		assert(queue.empty());
+		std::lock_guard<std::mutex> lock(static_mutex);
+		instances->remove(this);
+	}
 	
 	// thread safe
 	virtual void receive(Message* msg) {
-		assert(msg->dst);
+		assert(msg->dst || msg->isack);
 		msg->gate = this;
 		mutex.lock();
 		queue.push(msg);
 		cond.notify_all();
+		if(!msg->isack) {
+			msg->rcv_time = vnl::currentTimeMicros();
+			num_received++;
+		}
 		for(auto& func : rcv_hooks) {
 			func(msg);
 		}
 		mutex.unlock();
 	}
+	
+	// thread safe
+	void timeout() {
+		Queue<Message*> tmp;
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			int64_t now = vnl::currentTimeMicros();
+			int i = 0;
+			int count = queue.size();
+			Message* msg = 0;
+			while(i < count && queue.pop(msg)) {
+				if(!msg->isack && !msg->is_no_drop && now - msg->rcv_time > msg->timeout) {
+					tmp.push(msg);
+				} else {
+					queue.push(msg);
+				}
+				i++;
+			}
+		}
+		Message* msg = 0;
+		while(tmp.pop(msg)) {
+			msg->is_timeout = true;
+			msg->ack();
+			num_timeout++;
+		}
+	}
+	
+	// all below NOT thread safe
 	
 	void add_receive_hook(const std::function<void(Message*)>& func) {
 		mutex.lock();
@@ -58,29 +97,39 @@ public:
 		mutex.unlock();
 	}
 	
-	// all below NOT thread safe
-	
 	void send(Message* msg, Basic* dst) {
 		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, false);
+		num_sent++;
 	}
 	
 	void send_async(Message* msg, Basic* dst) {
 		msg->src = this;
 		msg->dst = dst;
 		send_impl(msg, true);
+		num_sent++;
 	}
 	
 	virtual bool poll(Stream* stream, int64_t micros) = 0;
 	
 	virtual void flush() = 0;
 	
+	int64_t num_sent = 0;
+	int64_t num_received = 0;
+	int64_t num_timeout = 0;
+	int64_t num_cycles = 0;
+	int64_t send_latency_sum = 0;
+	int64_t receive_latency_sum = 0;
+	int64_t idle_time = 0;
+	
+	static List<Engine*>* instances;
+	static std::mutex static_mutex;
+	
 protected:
 	void exec(Object* object, Message* init, Pipe* pipe);
 	
 	Message* collect(int64_t timeout);
-	size_t collect(int64_t timeout, vnl::Queue<Message*>& inbox);
 	
 	virtual void send_impl(Message* msg, bool async) = 0;
 	

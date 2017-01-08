@@ -71,11 +71,12 @@ public:
 		value = vnl_ntohd(tmp);
 	}
 	
-	void readBinary(Page*& buf, int len) {
+	void readBinary(Page*& first, int len) {
+		if(!first) {
+			first = vnl::Page::alloc();
+		}
+		Page* buf = first;
 		while(len > 0) {
-			if(!buf) {
-				buf = vnl::Page::alloc();
-			}
 			int32_t n = std::min(len, Page::size);
 			read(buf->mem, n);
 			len -= n;

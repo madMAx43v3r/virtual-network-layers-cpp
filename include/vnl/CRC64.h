@@ -61,6 +61,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_CRC64_H_ */

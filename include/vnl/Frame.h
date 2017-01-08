@@ -32,10 +32,10 @@ public:
 		}
 	}
 	
-	int8_t type;
 	int64_t req_num;
 	vnl::Page* data;
 	int size;
+	int8_t type;
 	
 protected:
 	virtual void write(vnl::io::TypeOutput& out) const {

@@ -18,7 +18,7 @@ namespace vnl {
 
 class InputPin : public Basic {
 public:
-	InputPin(const char* name = "Input") : name(name), enabled(false) {}
+	InputPin(const char* name = "InputPin") : name(name), enabled(false) {}
 	
 	~InputPin() {
 		assert(enabled == false);
@@ -35,6 +35,11 @@ public:
 	// thread safe
 	virtual void receive(Message* msg) {
 		stream.receive(msg);
+	}
+	
+	// thread safe
+	uint64_t get_mac() const {
+		return stream.get_mac();
 	}
 	
 	// NOT thread safe

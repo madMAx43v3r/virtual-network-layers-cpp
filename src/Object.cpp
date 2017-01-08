@@ -12,6 +12,7 @@
 #include <vnl/LogMsg.hxx>
 #include <vnl/Topic.hxx>
 #include <vnl/Shutdown.hxx>
+#include <vnl/Heartbeat.hxx>
 #include <vnl/Exit.hxx>
 #include <vnl/NoSuchMethodException.hxx>
 
@@ -45,24 +46,27 @@ Timer* Object::set_timeout(int64_t micros, const std::function<void()>& func, in
 void Object::add_client(Client& client, Router* target) {
 	assert(vnl_dorun);
 	client.connect(vnl_engine, target);
+	vnl_output_channels[client.get_mac()] = "Client";
 }
 
 void Object::add_input(Stream& stream, Router* target) {
 	assert(vnl_dorun);
 	stream.connect(vnl_engine, target);
 	stream.listen(this);
+	vnl_output_channels[stream.get_mac()] = "Stream";
 }
 
 void Object::add_input(InputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine, this);
-	vnl_input_pins.push_back(&pin);
+	vnl_input_pins[pin.get_mac()] = &pin;
 }
 
 void Object::add_output(OutputPin& pin) {
 	assert(vnl_dorun);
 	pin.enable(vnl_engine);
-	vnl_output_pins.push_back(&pin);
+	vnl_output_pins[pin.get_mac()] = &pin;
+	vnl_output_channels[pin.get_mac()] = "OutputPin";
 }
 
 Address Object::subscribe(const String& domain, const String& topic) {
@@ -81,10 +85,10 @@ void Object::unsubscribe(Address address) {
 	vnl_stream.unsubscribe(address);
 }
 
-void Object::publish(Value* data, const String& domain, const String& topic) {
+void Object::publish(Value* data, const String& domain, const String& topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = vnl_stream.get_mac();
+	header->src_mac = get_mac();
 	header->src_topic.domain = my_domain;
 	header->src_topic.name = my_topic;
 	header->dst_topic.domain = domain;
@@ -92,53 +96,53 @@ void Object::publish(Value* data, const String& domain, const String& topic) {
 	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
-	send_async(pkt, Address(domain, topic));
+	send_async(pkt, Address(domain, topic), no_drop);
 }
 
-void Object::publish(Value* data, Address topic) {
+void Object::publish(Value* data, Address topic, bool no_drop) {
 	Header* header = Header::create();
 	header->send_time = vnl::currentTimeMicros();
-	header->src_mac = vnl_stream.get_mac();
+	header->src_mac = get_mac();
 	Sample* pkt = vnl_sample_buffer.create();
 	pkt->header = header;
 	pkt->data = data;
-	send_async(pkt, topic);
+	send_async(pkt, topic, no_drop);
 }
 
-void Object::send(Packet* packet, Address dst) {
+void Object::send(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
-	vnl_stream.send(packet, dst);
+	vnl_stream.send(packet, dst, no_drop);
 }
 
-void Object::send_async(Packet* packet, Address dst) {
+void Object::send_async(Packet* packet, Address dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
-	vnl_stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst, no_drop);
 }
 
-void Object::send(Packet* packet, Basic* dst) {
+void Object::send(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
-	vnl_stream.send(packet, dst);
+	vnl_stream.send(packet, dst, no_drop);
 }
 
-void Object::send_async(Packet* packet, Basic* dst) {
+void Object::send_async(Packet* packet, Basic* dst, bool no_drop) {
 	if(packet->src_addr.is_null()) {
-		packet->src_addr = my_address;
+		packet->src_addr = my_private_address;
 	}
-	vnl_stream.send_async(packet, dst);
+	vnl_stream.send_async(packet, dst, no_drop);
 }
 
-void Object::send(Message* msg, Basic* dst) {
-	vnl_stream.send(msg, dst);
+void Object::send(Message* msg, Basic* dst, bool no_drop) {
+	vnl_stream.send(msg, dst, no_drop);
 }
 
-void Object::send_async(Message* msg, Basic* dst) {
-	vnl_stream.send_async(msg, dst);
+void Object::send_async(Message* msg, Basic* dst, bool no_drop) {
+	vnl_stream.send_async(msg, dst, no_drop);
 }
 
 bool Object::poll(int64_t micros) {
@@ -186,14 +190,19 @@ bool Object::poll(int64_t micros) {
 }
 
 bool Object::handle(Message* msg) {
+	vnl_input_nodes[msg->src_mac]++;
+	vnl_input_channels[vnl_channel->get_mac()]++;
 	if(msg->msg_id == Packet::MID) {
-		return handle((Packet*)msg);
-	} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
+		Packet* pkt = (Packet*)msg;
+		if(pkt->proxy) {
+			vnl_input_nodes[pkt->proxy]++;
+		}
+		return handle(pkt);
+	}
+	if(msg->msg_id == OutputPin::pin_data_t::MID) {
 		return handle((OutputPin::pin_data_t*)msg);
 	} else if(msg->msg_id == Stream::notify_t::MID) {
 		return handle((Stream::notify_t*)msg);
-	} else if(msg->msg_id == exit_t::MID) {
-		exit();
 	}
 	return false;
 }
@@ -201,7 +210,7 @@ bool Object::handle(Message* msg) {
 bool Object::handle(Stream::notify_t* notify) {
 	Message* msg;
 	while(notify->data->pop(msg)) {
-		Basic* tmp_channel = vnl_channel;
+		Stream* tmp_channel = vnl_channel;
 		vnl_channel = notify->data;
 		if(!handle(msg)) {
 			msg->ack();
@@ -220,10 +229,7 @@ bool Object::handle(OutputPin::pin_data_t* msg) {
 }
 
 bool Object::handle(Packet* pkt) {
-	int64_t& last_seq = vnl_sources[pkt->src_mac];
-	if(last_seq == 0) {
-		log(DEBUG).out << "New source: mac=" << hex(pkt->src_mac) << " num_hops=" << pkt->num_hops << endl;
-	}
+	int64_t& last_seq = vnl_sources[pkt->src_mac xor vnl_channel->get_mac()];
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == Frame::PID) {
 			Frame* result = vnl_frame_buffer.create();
@@ -257,8 +263,12 @@ bool Object::handle(Sample* sample) {
 bool Object::handle(Frame* frame) {
 	Frame* result = exec_vni_call(frame);
 	if(result) {
-		send_async(result, frame->src_addr);
+		send_async(result, frame->src_addr, true);
 	}
+	vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
+	info.proxy = frame->proxy;
+	info.num_requests++;
+	info.num_errors += !result || result->type == Frame::EXCEPTION;
 	return false;
 }
 
@@ -277,8 +287,7 @@ Frame* Object::exec_vni_call(Frame* frame) {
 		int id = vnl_input.getEntry(size);
 		if(id == VNL_IO_CALL) {
 			vnl_input.getHash(hash);
-			bool res = vni_call(vnl_input, hash, size);
-			if(!res) {
+			if(!vni_call(vnl_input, hash, size)) {
 				throw NoSuchMethodException();
 			}
 		} else if(id == VNL_IO_CONST_CALL) {
@@ -350,35 +359,75 @@ void Object::run() {
 }
 
 void Object::exec(Engine* engine_, Message* init, Pipe* pipe) {
+	vnl_spawn_time = vnl::currentTimeMicros();
 	vnl_dorun = true;
 	vnl_engine = engine_;
 	vnl_stream.connect(engine_);
+	vnl_stream.set_timeout(vnl_msg_timeout);
+	vnl_channel = &vnl_stream;
 	if(pipe) {
 		pipe->open(this);
 	}
 	subscribe(my_address);
+	subscribe(my_private_address);
 	
 	Announce* announce = Announce::create();
 	announce->instance.type = get_type_name();
 	announce->instance.domain = my_domain;
 	announce->instance.topic = my_topic;
 	announce->instance.src_mac = get_mac();
-	publish(announce, local_domain_name, "vnl.announce");
+	announce->instance.heartbeat_interval = vnl_heartbeat_interval;
+	publish(announce, local_domain_name, "vnl.announce", true);
+	
+	set_timeout(vnl_heartbeat_interval, std::bind(&Object::heartbeat, this), VNL_TIMER_REPEAT);
 	
 	main(engine_, init);
 	
-	for(InputPin* pin : vnl_input_pins) {
-		pin->close();
-	}
-	for(OutputPin* pin : vnl_output_pins) {
-		pin->close();
-	}
-	publish(Exit::create(), local_domain_name, "vnl.exit");
+	log(DEBUG).out << "Messages: num_sent=" << vnl_engine->num_sent << ", num_received="
+			<< vnl_engine->num_received << ", num_timeout=" << vnl_engine->num_timeout << vnl::endl;
 	
-	vnl_stream.close();
+	for(InputPin* pin : vnl_input_pins.values()) {
+		pin->close();
+	}
+	for(OutputPin* pin : vnl_output_pins.values()) {
+		pin->close();
+	}
+	publish(Exit::create(), local_domain_name, "vnl.exit", true);
+	
 	if(pipe) {
 		pipe->close();
 	}
+	vnl_stream.close();
+}
+
+void Object::heartbeat() {
+	Heartbeat* msg = Heartbeat::create();
+	msg->src_mac = get_mac();
+	msg->type = get_type_name();
+	msg->domain = my_domain;
+	msg->topic = my_topic;
+	msg->interval = vnl_heartbeat_interval;
+	msg->info.time = vnl::currentTimeMicros();
+	msg->info.spawn_time = vnl_spawn_time;
+	msg->info.num_cycles = vnl_engine->num_cycles;
+	msg->info.num_msg_sent = vnl_engine->num_sent;
+	msg->info.num_msg_received = vnl_engine->num_received;
+	msg->info.num_msg_dropped = vnl_engine->num_timeout;
+	msg->info.send_latency_sum = vnl_engine->send_latency_sum;
+	msg->info.receive_latency_sum = vnl_engine->receive_latency_sum;
+	msg->info.idle_time = vnl_engine->idle_time;
+	msg->info.sources = vnl_sources;
+	msg->info.input_nodes = vnl_input_nodes;
+	msg->info.input_channels = vnl_input_channels;
+	msg->info.output_channels = vnl_output_channels;
+	for(const auto& entry : vnl_input_pins) {
+		msg->info.input_pins[entry.first] = entry.second->name;
+	}
+	for(const auto& entry : vnl_output_pins) {
+		msg->info.output_pins[entry.first] = entry.second->name;
+	}
+	msg->info.clients = vnl_clients;
+	publish(msg, local_domain_name, "vnl.heartbeat", true);
 }
 
 

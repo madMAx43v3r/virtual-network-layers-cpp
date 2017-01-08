@@ -74,7 +74,7 @@ protected:
 			pipe->close();
 			downlink.close();
 			::shutdown(server, SHUT_RDWR);
-			thread.join();
+			thread.detach();
 			::close(server);
 			server = -1;
 		}
@@ -104,9 +104,9 @@ protected:
 				log(WARN).out << "setsockopt() for tcp_nodelay failed, error=" << errno << vnl::endl;
 			}
 			TcpProxy* proxy = new TcpProxy(my_domain, vnl::String("TcpProxy.") << sock, my_private_domain);
-			proxy->vnl_max_num_pending = vnl_max_num_pending;
+			proxy->vnl_msg_timeout = vnl_msg_timeout;
+			proxy->vnl_heartbeat_interval = vnl_heartbeat_interval;
 			proxy->vnl_log_level = vnl_log_level;
-			proxy->send_timeout = send_timeout;
 			proxy->sock = sock;
 			proxy->server = pipe;
 			proxy_t& client = clients[proxy->get_mac()];
@@ -115,7 +115,7 @@ protected:
 			vnl::spawn(proxy, client.pipe);
 			for(const Topic& topic : export_topics) {
 				TcpProxy::subscribe_t msg(topic);
-				send(&msg, client.pipe);
+				send(&msg, client.pipe, true);
 			}
 			log(INFO).out << "New client on socket " << sock << vnl::endl;
 			on_new_client(client.mac, client.pipe);
@@ -139,8 +139,12 @@ protected:
 			TcpProxy::publish_t msg;
 			msg.data.domain = domain;
 			msg.data.name = topic;
-			send(&msg, entry.second.pipe);
+			send(&msg, entry.second.pipe, true);
 		}
+	}
+	
+	void publish(const vnl::Address& addr) {
+		// TODO
 	}
 	
 	void unpublish(const vnl::String& domain, const vnl::String& topic) {
@@ -152,15 +156,11 @@ protected:
 			TcpProxy::subscribe_t msg;
 			msg.data.domain = domain;
 			msg.data.name = topic;
-			send(&msg, entry.second.pipe);
+			send(&msg, entry.second.pipe, true);
 		}
 	}
 	
 	void unsubscribe(const vnl::String& domain, const vnl::String& topic) {
-		// TODO
-	}
-	
-	void unsubscribe_all() {
 		// TODO
 	}
 	
@@ -178,14 +178,15 @@ private:
 			if(sock < 0) {
 				if(vnl_dorun) {
 					error_t msg(errno);
-					stream.send(&msg, pipe);
+					stream.send(&msg, pipe, true);
 				}
 				break;
 			}
 			new_client_t msg(sock);
-			stream.send(&msg, pipe);
+			stream.send(&msg, pipe, true);
 		}
 		pipe->detach();
+		stream.close();
 		engine.flush();
 	}
 	

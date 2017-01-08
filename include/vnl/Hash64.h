@@ -8,9 +8,6 @@
 #ifndef INCLUDE_VNL_HASH64_H_
 #define INCLUDE_VNL_HASH64_H_
 
-#include <string>
-#include <algorithm>
-
 #include <vnl/io.h>
 #include <vnl/Util.h>
 #include <vnl/String.h>
@@ -21,6 +18,8 @@ namespace vnl {
 class Hash64 {
 public:
 	Hash64() : value(0) {}
+	Hash64(int32_t hash) : value(0) {}
+	Hash64(int64_t hash) : value(hash) {}
 	Hash64(uint32_t hash) : value(0) {}
 	Hash64(uint64_t hash) : value(hash) {}
 	
@@ -81,16 +80,5 @@ inline void from_string(const vnl::String& str, vnl::Hash64& val) {
 
 
 } // vnl
-
-namespace std {
-
-	template<>
-	struct hash<vnl::Hash64> {
-		size_t operator()(const vnl::Hash64& x) const {
-			return x;
-		}
-	};
-	
-}
 
 #endif /* INCLUDE_VNL_HASH64_H_ */

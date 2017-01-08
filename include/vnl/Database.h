@@ -52,7 +52,7 @@ protected:
 					log(ERROR).out << "Failed to write, error=" << out.error() << vnl::endl;
 				}
 			}
-			send_async(result, frame->src_addr);
+			send_async(result, frame->src_addr, true);
 		}
 		return false;
 	}

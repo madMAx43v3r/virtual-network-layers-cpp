@@ -27,6 +27,7 @@ public:
 			callback(msg);
 			msg->destroy();
 		} else {
+			msg->rcv_time = vnl::currentTimeMicros();
 			if(!handle(msg)) {
 				msg->ack();
 			}

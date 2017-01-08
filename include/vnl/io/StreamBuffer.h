@@ -39,6 +39,7 @@ public:
 					return;
 				}
 				left = limit;
+				num_read += limit;
 			}
 			int n = std::min(len, left);
 			vnl::memcpy(dst, buf->mem + pos, n);
@@ -49,7 +50,12 @@ public:
 		return;
 	}
 	
+	int64_t get_num_read() const {
+		return num_read;
+	}
+	
 	void reset() {
+		num_read = 0;
 		pos = 0;
 		limit = 0;
 		set_error(VNL_SUCCESS);
@@ -66,6 +72,7 @@ public:
 protected:
 	InputStream* in = 0;
 	Page* buf;
+	int64_t num_read = 0;
 	int pos = 0;
 	int limit = 0;
 	
@@ -102,7 +109,12 @@ public:
 		return;
 	}
 	
+	int64_t get_num_write() const {
+		return num_write;
+	}
+	
 	void reset() {
+		num_write = 0;
 		pos = 0;
 		set_error(VNL_SUCCESS);
 	}
@@ -112,6 +124,7 @@ public:
 			if(!out->write(buf->mem, pos)) {
 				return false;
 			}
+			num_write += pos;
 			pos = 0;
 		}
 		return true;
@@ -128,6 +141,7 @@ public:
 protected:
 	OutputStream* out = 0;
 	Page* buf;
+	int64_t num_write = 0;
 	int pos = 0;
 	
 };

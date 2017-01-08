@@ -2,16 +2,15 @@ package vnl;
 
 object TcpUplink implements Uplink {
 	
-	/*
-	 * How long a packet can be in the queue (us) (default = -1/infinite)
-	 * If timeout is reached messages will be dropped.
-	 */
-	int send_timeout = -1;
-	
 	int error_interval = 1000000;			// how long to wait after an error (ms)
 	
 	bool are_connected = false;
-	long num_drop = 0;			// how many packets have been dropped so far
+	
+	long num_read;
+	long num_write;
+	long num_flush;
+	long num_bytes_read;
+	long num_bytes_write;
 	
 	vnl.info.RemoteInfo get_remote_info() const;
 	void reset();

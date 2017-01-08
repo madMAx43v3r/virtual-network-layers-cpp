@@ -34,12 +34,12 @@ public:
 	/*
 	 * Called before the field is updated. Should throw.
 	 */
-	virtual void check_update(const T& row, int field, const Binary& value) = 0;
+	virtual void check_update(const T& row, int field, const Var& value) = 0;
 	
 	/*
-	 * Called before the field is updated. Cannot throw.
+	 * Called after the field is updated. Cannot throw.
 	 */
-	virtual void update(const T& row, int field, const Binary& value) = 0;
+	virtual void update(const T& row, int field) = 0;
 	
 	/*
 	 * Called before the row is deleted. Cannot throw.
@@ -88,7 +88,7 @@ protected:
 		}
 	}
 	
-	void update(const Hash64& id, const Hash32& field_name, const Binary& value) {
+	void update(const Hash64& id, const Hash32& field_name, const Var& value) {
 		T* row = get_row(id);
 		int index = row->get_field_index(field_name);
 		if(index < 0) {
@@ -97,14 +97,12 @@ protected:
 		for(View<T>* view : views) {
 			view->check_update(*row, index, value);
 		}
-		for(View<T>* view : views) {
-			view->update(*row, index, value);
-		}
-		buffer.wrap(value.data, value.size);
-		in.reset();
-		row->set_field(index, in);
+		row->set_field(index, value);
 		if(in.error()) {
 			throw IOException();
+		}
+		for(View<T>* view : views) {
+			view->update(*row, index);
 		}
 	}
 	
@@ -154,58 +152,55 @@ class index_name_t : public vnl::View<T> { \
 public: \
 	index_name_t() : in(&buffer) {} \
 	const T& get(const K& key) const { \
-		const T* const* ptr = index.find(key); \
+		const T* const* ptr = index.find(&key); \
 		if(!ptr) { \
 			throw vnl::NoSuchKeyException(); \
 		} \
 		return *(*ptr); \
 	} \
 	const T* find(const K& key) const { \
-		const T* const* ptr = index.find(key); \
+		const T* const* ptr = index.find(&key); \
 		return ptr ? *ptr : 0; \
 	} \
 	void check_insert(const T& row) { \
-		if(index.find(row.field_name)) { \
+		if(index.find(&row.field_name)) { \
 			throw vnl::DuplicateKeyException(); \
 		} \
 	} \
 	void insert(const T& row) { \
-		index[row.field_name] = &row; \
+		index[&row.field_name] = &row; \
 		if(our_field < 0) { \
 			our_field = row.get_field_index(#field_name); \
 			assert(our_field >= 0); \
 		} \
 	} \
-	void check_update(const T& row, int field, const vnl::Binary& value) { \
+	void check_update(const T& row, int field, const vnl::Var& value) { \
 		if(field != our_field) { \
 			return; \
 		} \
-		buffer.wrap(value.data, value.size); \
-		in.reset(); \
-		vnl::read(in, tmp_key); \
-		if(in.error()) { \
-			throw vnl::IOException(); \
-		} \
-		if(index.find(tmp_key)) { \
+		K new_key; \
+		value.to(new_key); \
+		if(index.find(&new_key)) { \
 			throw vnl::DuplicateKeyException(); \
 		} \
+		old_key = row.field_name; \
 	} \
-	void update(const T& row, int field, const vnl::Binary& value) { \
+	void update(const T& row, int field) { \
 		if(field != our_field) { \
 			return; \
 		} \
-		index.erase(row.field_name); \
-		index[tmp_key] = &row; \
+		index.erase(&old_key); \
+		index[&row.field_name] = &row; \
 	} \
 	void remove(const T& row) { \
-		index.erase(row.field_name); \
+		index.erase(&row.field_name); \
 	} \
 private: \
-	vnl::Map<K, const T*> index; \
+	vnl::Map<const K*, const T*> index; \
 	vnl::io::ByteBuffer buffer; \
 	vnl::io::TypeInput in; \
 	int our_field = -1; \
-	K tmp_key; \
+	K old_key; \
 } index_name;
 
 

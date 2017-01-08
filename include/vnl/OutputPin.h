@@ -16,9 +16,9 @@
 
 namespace vnl {
 
-class OutputPin {
+class OutputPin : public Node {
 public:
-	OutputPin(const char* name = "Output") : name(name), enabled(false), engine(0) {}
+	OutputPin(const char* name = "OutputPin") : name(name), enabled(false), engine(0) {}
 	
 	~OutputPin() {
 		assert(enabled == false);
@@ -56,7 +56,7 @@ public:
 	}
 	
 	// NOT thread safe
-	void transmit(Value* data) {
+	void transmit(Value* data, bool no_drop = false) {
 		assert(enabled == true);
 		if(links.empty()) {
 			vnl::destroy(data);
@@ -66,8 +66,11 @@ public:
 		parent->data = data;
 		for(Pipe* pipe : links) {
 			pin_data_t* msg = buffer.create();
+			msg->src_mac = vnl_mac;
 			msg->parent = parent;
 			msg->data = data;
+			msg->timeout = send_timeout;
+			msg->is_no_drop = no_drop;
 			engine->send_async(msg, pipe);
 			parent->count++;
 		}
@@ -83,6 +86,11 @@ public:
 		enabled = false;
 	}
 	
+	// NOT thread safe
+	void set_timeout(int64_t to_usec) {
+		send_timeout = to_usec;
+	}
+	
 	String name;
 	
 private:
@@ -90,6 +98,7 @@ private:
 	Engine* engine;
 	MessagePool<pin_data_t> buffer;
 	List<Pipe*> links;
+	int64_t send_timeout = 1000000;
 	
 };
 
