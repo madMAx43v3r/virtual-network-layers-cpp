@@ -81,8 +81,19 @@ public:
 		new(&ref) T(obj);
 		return ref;
 	}
-	
+
 	T& operator[](int index) {
+		assert(index >= 0 && index < count);
+		int pi = index / M;
+		int ei = index % M;
+		TPage* page = p_front;
+		for(int i = 0; i < pi; ++i) {
+			page = page->next;
+		}
+		return page->template type_at_index<T>(ei);
+	}
+
+	const T& operator[](int index) const {
 		assert(index >= 0 && index < count);
 		int pi = index / M;
 		int ei = index % M;
