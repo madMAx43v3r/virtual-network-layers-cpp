@@ -202,6 +202,7 @@ private:
 		info->domain_name = vnl::local_domain_name;
 		info->config_name = vnl::local_config_name;
 		sample.data = info;
+		sample.is_no_drop = true;
 		sample.serialize(out);
 		out.flush();
 	}
@@ -216,6 +217,7 @@ private:
 		data->domain = domain;
 		data->name = topic;
 		sample.data = data;
+		sample.is_no_drop = true;
 		sample.serialize(out);
 		out.flush();
 		if(do_negate) {
@@ -273,7 +275,7 @@ private:
 			sample->deserialize(in, 0);
 			if(!in.error()) {
 				if(sample->dst_addr.domain() == remote_domain) {
-					read_send_async(engine, sample, pipe, true);
+					read_send_async(engine, sample, pipe);
 				} else {
 					forward(stream, sample);
 					read_send_async(engine, sample, Router::instance);
@@ -286,10 +288,10 @@ private:
 			frame->deserialize(in, 0);
 			if(!in.error()) {
 				if(frame->dst_addr.domain() == remote_domain) {
-					read_send_async(engine, frame, pipe, true);
+					read_send_async(engine, frame, pipe);
 				} else {
 					forward(stream, frame);
-					read_send_async(engine, frame, Router::instance, frame->type == Frame::RESULT);
+					read_send_async(engine, frame, Router::instance);
 				}
 				return true;
 			}
@@ -298,9 +300,8 @@ private:
 		return false;
 	}
 	
-	void read_send_async(Engine* engine, Packet* pkt, Basic* dst, bool no_drop = false) {
+	void read_send_async(Engine* engine, Packet* pkt, Basic* dst) {
 		pkt->timeout = vnl_msg_timeout;
-		pkt->is_no_drop = no_drop;
 		pkt->proxy = get_mac();
 		engine->send_async(pkt, dst);
 	}

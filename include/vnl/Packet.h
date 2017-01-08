@@ -22,6 +22,10 @@ class Packet : public Message, public io::Serializable {
 public:
 	static const uint32_t MID = 0xbd5fe6e6;
 	
+	enum {
+		NO_DROP = 1,
+	};
+	
 	uint32_t pkt_id;
 	int64_t seq_num;
 	Address src_addr;
@@ -54,7 +58,7 @@ public:
 	}
 	
 	int16_t get_header_size() const {
-		return 8+8+16+16+2 + num_hops*4;
+		return 8+8+16+16+2 + num_hops*4 + 1;
 	}
 	
 	virtual void serialize(vnl::io::TypeOutput& out) const {
@@ -71,6 +75,7 @@ public:
 		for(int i = 0; i < num_hops && !out.error(); ++i) {
 			out.writeInt(route[i]);
 		}
+		out.writeChar(is_no_drop ? NO_DROP : 0);
 		assert(payload);
 		payload->write(out);
 		out.putEntry(VNL_IO_INTERFACE, VNL_IO_END);
@@ -92,6 +97,9 @@ public:
 			in.readInt(hash);
 			route[i] = hash;
 		}
+		uint8_t flags = 0;
+		in.readChar(flags);
+		is_no_drop = flags & NO_DROP;
 		int left = header_len - get_header_size();
 		if(left > 0) {
 			in.skip(VNL_IO_BINARY, left);
