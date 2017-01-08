@@ -30,6 +30,8 @@ public:
 	}
 	
 protected:
+	Enum(uint32_t val) : value(val) {}
+
 	vnl::Hash32 value;
 	
 };
