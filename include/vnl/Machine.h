@@ -59,6 +59,12 @@ public:
 		return stack(--sp);
 	}
 	
+	void clear() {
+		for(int i = 0; i < sp; ++i) {
+			pop();
+		}
+	}
+	
 	int call(const Hash32& name) {
 		const Function* func = functions.find(name);
 		if(!func) {
@@ -106,20 +112,29 @@ protected:
 		const code_t& code = *ip;
 		int a = code.arg[0].long_;
 		int b = code.arg[1].long_;
+		int c = code.arg[2].long_;
 		
 		switch(code.op) {
-			case op_code_t::NOOP:	break;
-			case op_code_t::MOV:	stack(a) = stack(b); break;
-			case op_code_t::CMP:	push() = stack(a) == stack(b); break;
-			case op_code_t::ADD:	push() = stack(a) + stack(b); break;
-			case op_code_t::SUB:	push() = stack(a) - stack(b); break;
-			case op_code_t::MUL:	push() = stack(a) * stack(b); break;
-			case op_code_t::DIV:	push() = stack(a) / stack(b); break;
-			case op_code_t::PUSH:	push() = code.arg[0]; break;
-			case op_code_t::POP:	stack(--sp).clear(); break;
-			case op_code_t::LOAD:	push() = stack(a).get_field(code.arg[1]); break;
-			case op_code_t::STORE:	stack(a).set_field(code.arg[1], pop()); break;
-			case op_code_t::JMP:	jump(a); return true;
+			case op_code_t::NOOP:		break;
+			case op_code_t::MOV:		stack(a) = stack(b); break;
+			case op_code_t::REF:		stack(a) = stack(b); break;
+			case op_code_t::CMP:		stack(a) = stack(b) == stack(c); break;
+			case op_code_t::ADD:		stack(a) = stack(b) + stack(c); break;
+			case op_code_t::SUB:		stack(a) = stack(b) - stack(c); break;
+			case op_code_t::MUL:		stack(a) = stack(b) * stack(c); break;
+			case op_code_t::DIV:		stack(a) = stack(b) / stack(c); break;
+			case op_code_t::PUSH:		push() = code.arg[0]; break;
+			case op_code_t::POP:		stack(--sp).clear(); break;
+			case op_code_t::LOAD:		stack(a) = stack(b).get_field(code.arg[2]); break;
+			case op_code_t::STORE:		stack(a).set_field(code.arg[1], stack(c)); break;
+			case op_code_t::PUSH_BACK:	stack(a).push_back(stack(b)); break;
+			case op_code_t::PUSH_FRONT:	stack(a).push_front(stack(b)); break;
+			case op_code_t::POP_BACK:	stack(a) = stack(b).pop_back(); break;
+			case op_code_t::POP_FRONT:	stack(a) = stack(b).pop_front(); break;
+			case op_code_t::SET:		stack(a).set(stack(b), stack(c)); break;
+			case op_code_t::GET:		stack(a) = stack(b).get(stack(c)); break;
+			case op_code_t::ERASE:		stack(a).erase(stack(b)); break;
+			case op_code_t::JMP:		jump(a); return true;
 			case op_code_t::CALL: {
 				const Function* func = functions.find(stack(a));
 				if(!func) {

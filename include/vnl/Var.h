@@ -478,6 +478,24 @@ public:
 		return *this;
 	}
 	
+	Var& operator<<(const Var& v) {
+		return push_back(v);
+	}
+	
+	Var& operator>>(Var& v) {
+		v = pop_front();
+		return *this;
+	}
+	
+	Var& operator[](const Var& v) {
+		if(type != MAP || !map_) {
+			clear();
+			map_ = new Map<Var,Var>();
+			type = MAP;
+		}
+		return (*map_)[v];
+	}
+	
 	Var get_field(const Hash32& name) {
 		Var res;
 		if(type == VALUE && value_) {
@@ -497,6 +515,83 @@ public:
 			}
 		}
 		return *this;
+	}
+	
+	Var& push_back(const Var& v) {
+		if(type == STRING) {
+			if(!string_) {
+				string_ = new String();
+			}
+			switch(v.type) {
+				case BOOL: 		(*string_) << v.bool_; break;
+				case INT: 		(*string_) << v.long_; break;
+				case REAL: 		(*string_) << v.double_; break;
+				case STRING: 	if(v.string_) { (*string_) << (*v.string_); } break;
+				case VALUE:		if(v.value_) { vnl::to_string(*string_, v.value_); } break;
+				case LIST: 		if(v.list_) { vnl::to_string(*string_, v.list_); } break;
+				case MAP: 		if(v.map_) { vnl::to_string(*string_, v.map_); } break;
+				case PVAR: 		if(v.var_) { *this << (*v.var_); } break;
+			}
+		} else {
+			if(type != LIST || !list_) {
+				clear();
+				list_ = new List<Var>();
+				type = LIST;
+			}
+			list_->push_back(v);
+		}
+		return *this;
+	}
+	
+	Var& push_front(const Var& v) {
+		if(type == STRING) {
+			*this = Var(v).push_back(*this);
+		} else {
+			if(type != LIST || !list_) {
+				clear();
+				list_ = new List<Var>();
+				type = LIST;
+			}
+			list_->push_front(v);
+		}
+		return *this;
+	}
+	
+	Var pop_back() {
+		if(type == LIST && list_) {
+			return list_->pop_back();
+		}
+		return Var();
+	}
+	
+	Var pop_front() {
+		if(type == LIST && list_) {
+			return list_->pop_front();
+		}
+		return Var();
+	}
+	
+	Var& set(const Var& key, const Var& v) {
+		if(type != MAP || !map_) {
+			clear();
+			map_ = new Map<Var,Var>();
+			type = MAP;
+		}
+		(*map_)[key] = v;
+		return *this;
+	}
+	
+	Var get(const Var& key) {
+		if(type == MAP && map_) {
+			return (*map_)[key];
+		}
+		return Var();
+	}
+	
+	void erase(const Var& key) {
+		if(type == MAP && map_) {
+			map_->erase(key);
+		}
 	}
 	
 	void to(bool& v) const {
