@@ -11,6 +11,7 @@
 #include <vnl/RecorderSupport.hxx>
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
+#include <vnl/RecordTypeInfo.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
 
@@ -36,10 +37,16 @@ protected:
 		}
 		log(INFO).out << "Recording to file: " << filepath << vnl::endl;
 		header.header_size = header_size;
+		header.have_type_info = do_write_type_info;
 		if(do_write_header) {
 			write_header();
 			::fseek(file, header_size-4, SEEK_SET);
 			out.writeInt(-1);
+			if(do_write_type_info) {
+				RecordTypeInfo type_info;
+				type_info.type_map = vnl::get_type_info();
+				vnl::write(out, type_info);
+			}
 			out.flush();
 		}
 		for(String& domain : domains) {
@@ -95,6 +102,7 @@ private:
 	}
 	
 	void write_header() {
+		out.flush();
 		::fseek(file, 0, SEEK_SET);
 		vnl::write(out, header);
 		out.flush();
@@ -113,7 +121,6 @@ private:
 };
 
 
-
-}
+} // vnl
 
 #endif /* CPP_INCLUDE_VNI_RECORDER_H_ */

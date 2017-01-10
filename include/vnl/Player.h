@@ -11,6 +11,7 @@
 #include <vnl/PlayerSupport.hxx>
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
+#include <vnl/RecordTypeInfo.hxx>
 #include <vnl/info/PlayerStatus.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
@@ -63,6 +64,7 @@ protected:
 			log(ERROR).out << "Unable to open file for reading: " << filename << vnl::endl;
 			return;
 		}
+		
 		in.reset();
 		Pointer<Value> ptr;
 		vnl::read(in, ptr);
@@ -76,10 +78,14 @@ protected:
 				log(INFO).out << "Topic " << topic.domain << ":" << topic.name << vnl::endl;
 			}
 			seek_begin();
+			if(header.have_type_info) {
+				log(INFO).out << "Have RecordTypeInfo: " << type_info.type_map.size() << " types" << vnl::endl;
+			}
 		} else {
 			begin_pos = 0;
 			do_scan();
 		}
+		
 		status.filename = filename;
 		status.playing = false;
 		status.error = false;
@@ -249,6 +255,10 @@ protected:
 		return header.topics;
 	}
 	
+	Map<Hash32, vnl::info::Type> get_type_info() const {
+		return type_info.type_map;
+	}
+	
 private:
 	void seek_begin() {
 		if(!file.good()) {
@@ -259,6 +269,9 @@ private:
 			return;
 		}
 		in.reset();
+		if(header.have_type_info) {
+			vnl::read(in, type_info);
+		}
 		vnl::read(in, next);
 		status.current_time = status.begin_time;
 	}
@@ -276,6 +289,7 @@ private:
 	
 	vnl::Timer* timer;
 	vnl::info::PlayerStatus status;
+	RecordTypeInfo type_info;
 	RecordHeader header;
 	vnl::RecordValue next;
 	int begin_pos;
@@ -285,7 +299,6 @@ private:
 };
 
 
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_PLAYER_H_ */
