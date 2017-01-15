@@ -57,12 +57,12 @@ public:
 		return *ptr;
 	}
 	
-	T& operator->() {
-		return *ptr;
+	T* operator->() {
+		return ptr;
 	}
 	
-	const T& operator->() const {
-		return *ptr;
+	const T* operator->() const {
+		return ptr;
 	}
 	
 	T* value() {
