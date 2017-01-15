@@ -32,6 +32,10 @@ public:
 		append(other);
 	}
 
+	Array(const T array[], int n) : p_front(0), p_back(0), pos(0), count(0) {
+		append(array, n);
+	}
+
 	~Array() {
 		clear();
 	}
@@ -43,7 +47,7 @@ public:
 		}
 		return *this;
 	}
-	
+
 	bool operator!=(const Array& other) const {
 		return !(*this == other);
 	}
@@ -67,6 +71,12 @@ public:
 		}
 	}
 	
+	void append(const T array[], int n) {
+		for(int i=0; i<n; i++) {
+			push_back(array[i]);
+		}
+	}
+
 	T& push_back() {
 		return push_back(T());
 	}
