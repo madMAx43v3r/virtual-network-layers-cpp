@@ -299,6 +299,27 @@ public:
 		return -1;
 	}
 
+	ssize_t find(const vnl::String& str, size_t pos=0, ssize_t n=-1) const {
+		ssize_t i = 0;
+		for(String::const_iterator it=begin(); it!=end() && (n < 0 || i < pos+n); ++it, ++i) {
+			if(i >= pos) {
+				String::const_iterator it2 = it;
+				ssize_t j = i;
+				for(String::const_iterator itstr=str.begin(); itstr!=str.end() && it2!=end() && (n < 0 || j < pos+n); ++itstr, ++it2, ++j) {
+					if(*it2 != *itstr) {
+						j = -1;
+						break;
+					}
+				}
+				if(j >= 0) {
+					return i;
+				}
+			}
+			i++;
+		}
+		return -1;
+	}
+
 	String substr(size_t pos=0, ssize_t len=-1) const {
 		String::const_iterator itbeg = end();
 		String::const_iterator itend = end();
