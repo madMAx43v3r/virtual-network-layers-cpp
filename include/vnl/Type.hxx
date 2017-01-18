@@ -21,6 +21,8 @@ namespace internal {
 	extern GlobalPool* global_pool_;
 	extern Map<String, String>* config_;
 	
+	void parse_value(String::const_iterator& it, const String::const_iterator& end, String& out);
+	
 } // internal
 
 /*
@@ -234,25 +236,31 @@ inline void to_string(vnl::String& str, const Interface& obj) {
 }
 
 inline void to_string(vnl::String& str, const String& obj) {
-	// TODO: escape
-	str << "\"" << obj << "\"";
+	str.push_back('"');
+	for(String::const_iterator it = obj.begin(); it != obj.end(); ++it) {
+		char c = *it;
+		if(c == '"') {
+			str.push_back('\\');
+		}
+		str.push_back(c);
+	}
+	str.push_back('"');
 }
 
 inline void to_string(vnl::String& str, const Binary& obj) {
-	// TODO
 	str << "\"\"";
 }
 
 template<class Iter>
 void to_string(vnl::String& str, Iter first, Iter last) {
-	str << "[";
+	str.push_back('[');
 	for(Iter it = first; it != last; ++it) {
 		if(it != first) {
 			str << ", ";
 		}
 		to_string(str, *it);
 	}
-	str << "]";
+	str.push_back(']');
 }
 
 template<typename T>
@@ -272,20 +280,20 @@ void to_string(vnl::String& str, const Map<K,V>& obj) {
 
 template<typename K, typename V>
 void to_string(vnl::String& str, const vnl::pair<K,V>& obj) {
-	str << "{\"key\": "; to_string(str, obj.first);
-	str << ", \"value\": "; to_string(str, obj.second); str << "}";
+	str.push_back('['); to_string(str, obj.first);
+	str << ", "; to_string(str, obj.second); str.push_back(']');
 }
 
 template<typename T, int N>
-void to_string(vnl::String& str, const vnl::Vector<T, N>& vec) {
-	str << "[";
+void to_string(vnl::String& str, const vnl::Vector<T,N>& vec) {
+	str.push_back('[');
 	for(int i = 0; i < vec.size(); ++i) {
 		if(i > 0) {
 			str << ", ";
 		}
 		to_string(str, vec[i]);
 	}
-	str << "]";
+	str.push_back(']');
 }
 
 inline void to_string(vnl::String& str, const bool& val) { str << (val ? "true" : "false"); }
@@ -322,27 +330,47 @@ inline void from_string(const vnl::String& str, Interface& obj) {
 }
 
 inline void from_string(const vnl::String& str, String& obj) {
-	obj = str;
+	obj.clear();
+	int stack = 0;
+	bool escape = false;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == '\\' && !escape) {
+			escape = true;
+		} else if(c == '"' && !escape) {
+			if(stack == 0) {
+				stack = 1;
+			} else {
+				break;
+			}
+		} else {
+			obj.push_back(c);
+			escape = false;
+		}
+	}
 }
 
 inline void from_string(const vnl::String& str, Binary& obj) {
-	// TODO
-	assert(false);
+	// nothing
 }
 
 template<typename T>
 void from_string(const vnl::String& str, Array<T>& obj) {
 	obj.clear();
-	int i = 0;
-	vnl::String buf;
-	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+	String buf;
+	int stack = 0;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
 		char c = *it;
-		if(c == ']' || c == ',') {
+		if(c == '[') {
+			stack++;
+		} else if(c == ']') {
+			break;
+		} else if(stack && c != ',') {
+			internal::parse_value(it, str.end(), buf);
 			from_string(buf, obj.push_back());
-			buf.clear();
-			i++;
-		} else if(c != '[') {
-			buf.push_back(c);
+			if(it == str.end()) {
+				break;
+			}
 		}
 	}
 }
@@ -350,16 +378,48 @@ void from_string(const vnl::String& str, Array<T>& obj) {
 template<typename T>
 void from_string(const vnl::String& str, List<T>& obj) {
 	obj.clear();
-	int i = 0;
-	vnl::String buf;
-	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+	String buf;
+	int stack = 0;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
 		char c = *it;
-		if(c == ']' || c == ',') {
+		if(c == '[') {
+			stack++;
+		} else if(c == ']') {
+			break;
+		} else if(stack && c != ',') {
+			internal::parse_value(it, str.end(), buf);
 			from_string(buf, *obj.push_back());
-			buf.clear();
-			i++;
-		} else if(c != '[') {
-			buf.push_back(c);
+			if(it == str.end()) {
+				break;
+			}
+		}
+	}
+}
+
+template<typename K, typename V>
+void from_string(const vnl::String& str, vnl::pair<K,V>& obj) {
+	String buf;
+	int stack = 0;
+	int state = 0;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == '[') {
+			stack++;
+		} else if(c == ']') {
+			break;
+		} else if(c == ',') {
+			stack++;
+		} else if(stack > state) {
+			internal::parse_value(it, str.end(), buf);
+			if(stack == 1) {
+				from_string(buf, obj.first);
+				state++;
+			} else {
+				from_string(buf, obj.second);
+			}
+			if(it == str.end()) {
+				break;
+			}
 		}
 	}
 }
@@ -367,22 +427,44 @@ void from_string(const vnl::String& str, List<T>& obj) {
 template<typename K, typename V>
 void from_string(const vnl::String& str, Map<K,V>& obj) {
 	obj.clear();
-	// TODO
-	assert(false);
+	String buf;
+	int stack = 0;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = *it;
+		if(c == '[') {
+			stack++;
+		} else if(c == ']') {
+			break;
+		} else if(stack && c != ',') {
+			internal::parse_value(it, str.end(), buf);
+			vnl::pair<K,V> entry;
+			from_string(buf, entry);
+			obj[entry.first] = entry.second;
+			if(it == str.end()) {
+				break;
+			}
+		}
+	}
 }
 
 template<typename T, int N>
-void from_string(const vnl::String& str, vnl::Vector<T, N>& vec) {
+void from_string(const vnl::String& str, vnl::Vector<T,N>& vec) {
 	int i = 0;
-	vnl::String buf;
-	for(vnl::String::const_iterator it = str.begin(); it != str.end(); ++it) {
+	String buf;
+	int stack = 0;
+	for(String::const_iterator it = str.begin(); it != str.end(); ++it) {
 		char c = *it;
-		if(c == ']' || c == ',') {
+		if(c == '[') {
+			stack++;
+		} else if(c == ']') {
+			break;
+		} else if(stack && c != ',') {
+			internal::parse_value(it, str.end(), buf);
 			from_string(buf, vec[i]);
-			buf.clear();
 			i++;
-		} else if(c != '[') {
-			buf.push_back(c);
+			if(it == str.end()) {
+				break;
+			}
 		}
 	}
 }
@@ -444,6 +526,9 @@ bool read_config(String domain, String topic, String name, T& ref) {
 	}
 	return false;
 }
+
+template<>
+bool read_config<String>(String domain, String topic, String name, String& ref);
 
 bool read_from_file(vnl::Value& value, const char* filename);
 bool read_from_file(vnl::Value& value, const vnl::String& filename);

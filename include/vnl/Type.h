@@ -43,23 +43,8 @@ public:
 	virtual void get_field(int index, vnl::Var& var) const = 0;
 	virtual void set_field(int index, const vnl::Var& var) = 0;
 	
-	virtual void from_string(const vnl::String& str) {
-		/* NOT IMPLEMENTED */
-		assert(false);
-	}
-	
-	virtual void to_string_ex(vnl::String& str) const {
-		str << "{";
-		int N = get_num_fields();
-		for(int i = 0; i < N; ++i) {
-			if(i > 0) {
-				str << ", ";
-			}
-			str << "\"" << get_field_name(i) << "\": ";
-			get_field(i, str);
-		}
-		str << "}";
-	}
+	virtual void from_string(const vnl::String& str);
+	virtual void to_string_ex(vnl::String& str) const;
 	
 	vnl::String to_string() const {
 		vnl::String str;

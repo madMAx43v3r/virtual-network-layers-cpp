@@ -19,6 +19,49 @@ namespace internal {
 	
 } // internal
 
+void Type::from_string(const vnl::String& str) {
+	String field;
+	String buf;
+	String::const_iterator it = str.begin();
+	String::const_iterator end = str.end();
+	while(it != end) {
+		char c = *it;
+		if(c == '{' || c == ',') {
+			it++;
+			internal::parse_value(it, end, buf);
+			vnl::from_string(buf, field);
+			while(it != end) {
+				c = *it;
+				it++;
+				if(c == ':') {
+					break;
+				}
+			}
+			internal::parse_value(it, end, buf);
+			set_field(get_field_index(field), buf);
+			if(it == end) {
+				break;
+			}
+		} else if(c == '}') {
+			break;
+		}
+		it++;
+	}
+}
+
+void Type::to_string_ex(vnl::String& str) const {
+	str.push_back('{');
+	int N = get_num_fields();
+	for(int i = 0; i < N; ++i) {
+		if(i > 0) {
+			str << ", ";
+		}
+		str << "\"" << get_field_name(i) << "\": ";
+		get_field(i, str);
+	}
+	str.push_back('}');
+}
+
 void Interface::get_field(int index, vnl::Var& var) const {
 	var.clear();
 }
@@ -74,6 +117,16 @@ void read(vnl::io::TypeInput& in, Value* obj) {
 	}
 }
 
+template<>
+bool read_config<String>(String domain, String topic, String name, String& ref) {
+	const String* value = vnl::get_config(domain, topic, name);
+	if(value) {
+		ref = *value;
+		return true;
+	}
+	return false;
+}
+
 const String* get_config(const String& domain, const String& topic, const String& name) {
 	static std::mutex mutex;
 	String key;
@@ -117,5 +170,49 @@ bool write_to_file(const vnl::Value& value, const vnl::String& filename) {
 	return write_to_file(value, buf);
 }
 
+
+namespace internal {
+
+void parse_value(String::const_iterator& it, const String::const_iterator& end, String& out) {
+	out.clear();
+	int stack = 0;
+	bool string = false;
+	bool escape = false;
+	bool done = false;
+	while(!done && it != end) {
+		char c = *it;
+		if(string) {
+			if(c == '"' && !escape) {
+				string = false;
+				stack--;
+				if(stack == 0) {
+					done = true;
+				}
+			} else if(c == '\\' && !escape) {
+				escape = true;
+				it++;
+				continue;
+			}
+		} else if(c == '"') {
+			string = true;
+			stack++;
+		} else if(c == '{' || c == '[') {
+			stack++;
+		} else if(c == '}' || c == ']') {
+			stack--;
+			if(stack <= 0) {
+				done = true;
+			}
+		} else if(c == ',' && stack == 0) {
+			break;
+		}
+		if(stack > 0 || c != ' ') {
+			out.push_back(c);
+		}
+		it++;
+	}
+}
+
+} // internal
 
 } // vnl
