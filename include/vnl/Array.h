@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <type_traits>
+#include <initializer_list>
 
 #include <vnl/Memory.h>
 
@@ -34,6 +35,14 @@ public:
 
 	Array(const T array[], int n) : p_front(0), p_back(0), pos(0), count(0) {
 		append(array, n);
+	}
+
+	Array(std::initializer_list<T> list) : p_front(0), p_back(0), pos(0), count(0) {
+		if(list.size() > 0) {
+			for(const T* v=list.begin(); v!=list.end(); ++v) {
+				push_back(*v);
+			}
+		}
 	}
 
 	~Array() {
@@ -133,6 +142,14 @@ public:
 		return vec;
 	}
 	
+	ssize_t to_array(T buf[], size_t len) const {
+		int n = (size() < len) ? size() : len;
+		for(size_t i=0; i<n; ++i) {
+			buf[i] = (*this)[i];
+		}
+		return n;
+	}
+
 	void clear() {
 		if(p_front) {
 			if(std::is_class<T>::value) {
