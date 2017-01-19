@@ -42,6 +42,7 @@ void Type::from_string(const vnl::String& str) {
 			if(it == end) {
 				break;
 			}
+			continue;
 		} else if(c == '}') {
 			break;
 		}
@@ -196,6 +197,10 @@ void parse_value(String::const_iterator& it, const String::const_iterator& end, 
 		} else if(c == '"') {
 			string = true;
 			stack++;
+		} else if(c == ',' && stack == 0) {
+			break;
+		} else if(c == '}' && stack == 0) {
+			break;
 		} else if(c == '{' || c == '[') {
 			stack++;
 		} else if(c == '}' || c == ']') {
@@ -203,8 +208,6 @@ void parse_value(String::const_iterator& it, const String::const_iterator& end, 
 			if(stack <= 0) {
 				done = true;
 			}
-		} else if(c == ',' && stack == 0) {
-			break;
 		}
 		if(stack > 0 || c != ' ') {
 			out.push_back(c);
