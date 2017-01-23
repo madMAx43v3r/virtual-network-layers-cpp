@@ -5,103 +5,42 @@
  *      Author: mad
  */
 
-#ifndef ALGORITHM_H_
-#define ALGORITHM_H_
+#ifndef INCLUDE_VNL_ALGORITHM_H_
+#define INCLUDE_VNL_ALGORITHM_H_
+
+#include <vnl/List.h>
 
 
 namespace vnl {
 
 template<class Iter>
-void sort(Iter first, Iter last) {
-	if(first != last) {
-		while(true) {
-			Iter prev = first;
-			Iter curr = first;
-			curr++;
-			bool pass = true;
-			while(curr != last) {
-				if(*curr < *prev) {
-					std::swap(*prev, *curr);
-					pass = false;
-				}
-				prev = curr;
-				curr++;
-			}
-			if(pass) {
+void sort(Iter begin, Iter end, bool asc = true) {
+	List<typename Iter::value_type> list;
+	for(Iter it = begin; it != end; ++it) {
+		bool found = false;
+		// fill list in opposite order (much faster in case input is already sorted)
+		for(auto it2 = list.begin(); it2 != list.end(); ++it2) {
+			if(*it < *it2 != asc) {
+				list.insert(it2, *it);
+				found = true;
 				break;
 			}
 		}
+		if(!found) {
+			list.push_back(*it);
+		}
+	}
+	// now loop over list backwards to get correct order
+	Iter it = begin;
+	auto it2 = list.end();
+	while(it2 != list.begin()) {
+		*(it++) = *(--it2);
 	}
 }
 
 template<class Iter>
-void sort_desc(Iter first, Iter last) {
-	if(first != last) {
-		while(true) {
-			Iter prev = first;
-			Iter curr = first;
-			curr++;
-			bool pass = true;
-			while(curr != last) {
-				if(*curr > *prev) {
-					std::swap(*prev, *curr);
-					pass = false;
-				}
-				prev = curr;
-				curr++;
-			}
-			if(pass) {
-				break;
-			}
-		}
-	}
-}
-
-
-template<class Iter>
-void sort_ptr(Iter first, Iter last) {
-	if(first != last) {
-		while(true) {
-			Iter prev = first;
-			Iter curr = first;
-			curr++;
-			bool pass = true;
-			while(curr != last) {
-				if(**curr < **prev) {
-					std::swap(*prev, *curr);
-					pass = false;
-				}
-				prev = curr;
-				curr++;
-			}
-			if(pass) {
-				break;
-			}
-		}
-	}
-}
-
-template<class Iter>
-void sort_desc_ptr(Iter first, Iter last) {
-	if(first != last) {
-		while(true) {
-			Iter prev = first;
-			Iter curr = first;
-			curr++;
-			bool pass = true;
-			while(curr != last) {
-				if(**curr > **prev) {
-					std::swap(*prev, *curr);
-					pass = false;
-				}
-				prev = curr;
-				curr++;
-			}
-			if(pass) {
-				break;
-			}
-		}
-	}
+void sort_desc(Iter begin, Iter end) {
+	sort(begin, end, false);
 }
 
 
@@ -118,7 +57,6 @@ Iter find(Iter first, Iter last, T obj) {
 }
 
 
+} // vnl
 
-}
-
-#endif /* ALGORITHM_H_ */
+#endif /* INCLUDE_VNL_ALGORITHM_H_ */

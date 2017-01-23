@@ -205,6 +205,9 @@ public:
 		return iterator(this, ptr);
 	}
 	
+	/*
+	 * Erase element pointed to by iter. Returns iterator to next element.
+	 */
 	iterator erase(iterator iter) {
 		count--;
 		entry_t* old = iter.entry;
