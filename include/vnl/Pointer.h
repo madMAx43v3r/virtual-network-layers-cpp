@@ -83,6 +83,10 @@ public:
 		}
 	}
 	
+	void destroy() {
+		vnl::destroy<T>(ptr);
+	}
+	
 	uint32_t get_vni_hash() const {
 		return 0x5815b636;
 	}
@@ -102,8 +106,9 @@ public:
 	}
 	
 	void from_string(const vnl::String& str) {
-		// TODO
-		assert(false);
+		if(ptr) {
+			ptr->from_string(str);
+		}
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {
@@ -119,11 +124,6 @@ public:
 				vnl::destroy(value);
 			}
 		}
-	}
-	
-protected:
-	void destroy() {
-		vnl::destroy<T>(ptr);
 	}
 	
 private:
