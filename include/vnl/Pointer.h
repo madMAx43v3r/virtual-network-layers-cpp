@@ -85,6 +85,7 @@ public:
 	
 	void destroy() {
 		vnl::destroy<T>(ptr);
+		ptr = 0;
 	}
 	
 	uint32_t get_vni_hash() const {
