@@ -47,8 +47,8 @@ public:
 	Var(const Value& v) : type(NIL) { *this = v; }
 	Var(const Hash32& v) : type(NIL) { *this = v; }
 	Var(const Hash64& v) : type(NIL) { *this = v; }
-	Var(const Var* v) : type(CPVAR) { cvar_ = v; if(v) { var_->ref_count++; } }
-	Var(Var* v) : type(PVAR) { var_ = v; if(v) { v->ref_count++; } }
+	Var(const Var* v) : type(CPVAR) { cvar_ = v; if(var_) { var_->ref_count++; } }
+	Var(Var* v) : type(PVAR) { var_ = v; if(var_) { var_->ref_count++; } }
 	
 	template<typename T>
 	Var(const List<T>& v) : type(NIL) { *this = v; }
@@ -58,6 +58,9 @@ public:
 	
 	template<typename K, typename V>
 	Var(const Map<K,V>& v) : type(NIL) { *this = v; }
+	
+	template<typename T>
+	Var(const T& v) : type(NIL) {}
 	
 	Var(const Var& v) : type(NIL) {
 		*this = v;
@@ -768,9 +771,8 @@ public:
 	}
 	
 	template<typename T>
-	Var& to(T& v) {
+	void to(T& v) const {
 		v = T();
-		return *this;
 	}
 	
 	template<typename T>
