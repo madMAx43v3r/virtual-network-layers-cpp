@@ -12,6 +12,7 @@
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
 #include <vnl/RecordTypeInfo.hxx>
+#include <vnl/RecordStorage.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
 
@@ -93,6 +94,19 @@ protected:
 		return Super::handle(packet);
 	}
 	
+	Var get_var(const Hash64& key) const {
+		return storage.find(key);
+	}
+	
+	void put_var(const Hash64& key, const Var& value) {
+		storage[key] = value;
+		RecordStorage rec;
+		rec.key = key;
+		rec.var = &value;
+		vnl::write(out, rec);
+		out.flush();
+	}
+	
 private:
 	void update() {
 		if(do_write_header) {
@@ -114,6 +128,7 @@ private:
 	vnl::io::TypeOutput out;
 	
 	RecordHeader header;
+	Map<Hash64, Var> storage;
 	
 	vnl::Map<uint64_t, String> domain_map;
 	vnl::Map<Address, Topic> topic_map;

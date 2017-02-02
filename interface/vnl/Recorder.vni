@@ -15,7 +15,11 @@ class RecordHeader {
 	
 }
 
-class RecordValue {
+class RecordEntry {
+	
+}
+
+class RecordValue extends RecordEntry {
 	
 	long time;
 	
@@ -27,13 +31,20 @@ class RecordValue {
 	
 }
 
+class RecordStorage extends RecordEntry {
+	
+	Hash64 key;
+	Var var;
+	
+}
+
 class RecordTypeInfo {
 	
 	Map<Hash32, vnl.info.Type> type_map;
 	
 }
 
-object Recorder {
+object Recorder implements Storage {
 	
 	String filename = "rec-";
 	

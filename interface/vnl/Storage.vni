@@ -1,0 +1,9 @@
+package vnl;
+
+interface Storage {
+	
+	void put_var(Hash64 key, Var value);
+	
+	Var get_var(Hash64 key) const;
+	
+}
