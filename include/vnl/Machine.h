@@ -19,7 +19,7 @@ namespace vnl {
 
 class Machine {
 public:
-	Machine(int stack_size = 256)
+	Machine(int stack_size = 1024)
 		:	stack_size(stack_size)
 	{
 		p_stack = new Var[stack_size];
