@@ -71,6 +71,20 @@ void Interface::set_field(int index, const vnl::Var& var) {
 	// nothing
 }
 
+void Enum::serialize(vnl::io::TypeOutput& out) const {
+	vnl::write(out, value);
+}
+
+void Enum::deserialize(vnl::io::TypeInput& in, int size) {
+	vnl::read(in, value);
+}
+
+void Enum::from_string(const vnl::String& str) {
+	vnl::String name;
+	vnl::from_string(str, name);
+	value = name;
+}
+
 Value* read(vnl::io::TypeInput& in) {
 	Value* obj = 0;
 	int size = 0;

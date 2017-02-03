@@ -9,7 +9,7 @@
 #define INCLUDE_VNL_ENUM_H_
 
 #include <vnl/Interface.h>
-#include <vnl/Type.hxx>
+
 
 namespace vnl {
 
@@ -17,17 +17,11 @@ class Enum : public Interface {
 public:
 	Enum() {}
 	
-	virtual void serialize(vnl::io::TypeOutput& out) const {
-		vnl::write(out, value);
-	}
+	void serialize(vnl::io::TypeOutput& out) const;
 	
-	virtual void deserialize(vnl::io::TypeInput& in, int size) {
-		vnl::read(in, value);
-	}
+	void deserialize(vnl::io::TypeInput& in, int size);
 	
-	virtual void from_string(const vnl::String& str) {
-		value = str;
-	}
+	void from_string(const vnl::String& str);
 	
 protected:
 	vnl::Hash32 value;
