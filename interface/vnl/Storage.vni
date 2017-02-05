@@ -23,6 +23,7 @@ object StorageServer implements Storage {
 	
 	String filename;
 	
+	bool readonly = false;
 	int interval = 1000000;
 	
 	List<Address> topics;
