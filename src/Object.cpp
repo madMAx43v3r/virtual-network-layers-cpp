@@ -198,8 +198,7 @@ bool Object::handle(Message* msg) {
 			vnl_input_nodes[pkt->proxy]++;
 		}
 		return handle(pkt);
-	}
-	if(msg->msg_id == OutputPin::pin_data_t::MID) {
+	} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
 		return handle((OutputPin::pin_data_t*)msg);
 	} else if(msg->msg_id == Stream::notify_t::MID) {
 		return handle((Stream::notify_t*)msg);
@@ -255,7 +254,11 @@ bool Object::handle(Packet* pkt) {
 
 bool Object::handle(Sample* sample) {
 	if(sample->data) {
-		handle_switch(sample->data, sample);
+		try {
+			handle_switch(sample->data, sample);
+		} catch(vnl::Exception& ex) {
+			log(ERROR).out << "Caught " << ex.get_type_name() << " in handle(const " << sample->data->get_type_name() << "&)" << vnl::endl;
+		}
 	}
 	return false;
 }
