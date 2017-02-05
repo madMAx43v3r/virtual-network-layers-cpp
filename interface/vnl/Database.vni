@@ -4,6 +4,8 @@ object Database {
 	
 	String filename = "database.dat";
 	
+	int interval = 1000000;
+	
 	bool readonly = false;
 	bool ignore_errors = false;
 	

@@ -26,11 +26,12 @@ protected:
 	void main() {
 		if(!filename.empty()) {
 			open();
-		}
-		if(!readonly) {
-			for(Address& addr : topics) {
-				subscribe(addr);
+			if(file && !readonly) {
+				set_timeout(interval, std::bind(&StorageServer::update, this), VNL_TIMER_REPEAT);
 			}
+		}
+		for(Address& addr : topics) {
+			subscribe(addr);
 		}
 		run();
 		if(file) {
@@ -79,6 +80,10 @@ protected:
 			vnl::write(out, dummy);
 			out.flush();
 		}
+	}
+	
+	void update() {
+		::fflush(file);
 	}
 	
 private:

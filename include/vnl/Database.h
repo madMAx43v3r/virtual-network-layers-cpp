@@ -26,6 +26,9 @@ protected:
 	void main() {
 		if(!filename.empty()) {
 			open();
+			if(file && !readonly) {
+				set_timeout(interval, std::bind(&Database::update, this), VNL_TIMER_REPEAT);
+			}
 		}
 		run();
 		if(file) {
@@ -47,6 +50,10 @@ protected:
 			send_async(result, frame->src_addr, true);
 		}
 		return false;
+	}
+	
+	void update() {
+		::fflush(file);
 	}
 	
 private:
