@@ -165,7 +165,11 @@ bool Object::poll(int64_t micros) {
 						timer.active = false;
 						break;
 				}
-				timer.func();
+				try {
+					timer.func();
+				} catch(vnl::Exception& ex) {
+					log(ERROR).out << "Caught " << ex.get_type_name() << " in timer function!" << vnl::endl;
+				}
 				diff = timer.deadline - now;
 				if(diff < 0) {
 					diff = 0;
@@ -246,7 +250,13 @@ bool Object::handle(Packet* pkt) {
 	if(pkt->pkt_id == Sample::PID) {
 		res = handle((Sample*)pkt->payload);
 	} else if(pkt->pkt_id == Frame::PID) {
-		res = handle((Frame*)pkt->payload);
+		Frame* frame = (Frame*)pkt->payload;
+		if(frame->type == Frame::CALL || frame->type == Frame::CONST_CALL) {
+			res = handle(frame);
+			vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
+			info.proxy = frame->proxy;
+			info.num_requests++;
+		}
 	}
 	vnl_proxy = tmp_proxy;
 	return res;
@@ -268,10 +278,6 @@ bool Object::handle(Frame* frame) {
 	if(result) {
 		send_async(result, frame->src_addr, true);
 	}
-	vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
-	info.proxy = frame->proxy;
-	info.num_requests++;
-	info.num_errors += !result || result->type == Frame::EXCEPTION;
 	return false;
 }
 
