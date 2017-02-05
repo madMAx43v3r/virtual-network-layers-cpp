@@ -41,13 +41,13 @@ protected:
 	
 	void handle(const Entry& sample) {
 		if(!readonly) {
-			write_entry(&sample);
+			put_entry(&sample);
 		}
 	}
 	
 	void put_entry(const Pointer<Entry>& value) {
 		if(!readonly) {
-			write_entry(value.get());
+			put_entry(value.get());
 		}
 	}
 	
@@ -58,7 +58,6 @@ protected:
 			::fseek(file, (*p_ind)[1], SEEK_SET);
 			((vnl::io::TypeInput&)in).reset();
 			vnl::read((vnl::io::TypeInput&)in, res);
-			::fseek(file, 0, SEEK_END);
 		}
 		return res;
 	}
@@ -77,8 +76,7 @@ protected:
 			Entry dummy;
 			dummy.key = key;
 			dummy.version = -1;
-			vnl::write(out, dummy);
-			out.flush();
+			write_entry(&dummy);
 		}
 	}
 	
@@ -87,23 +85,30 @@ protected:
 	}
 	
 private:
-	void write_entry(const Entry* value) {
+	void put_entry(const Entry* value) {
 		Vector<int64_t,2>& ind = index[value->key];
 		if(value->version > ind[0]) {
 			ind[0] = value->version;
-			ind[1] = file_pos + out.get_output_pos();
-			vnl::write(out, value);
-			out.flush();
+			ind[1] = file_begin + out.get_output_pos();
+			write_entry(value);
 		}
+	}
+	
+	void write_entry(const Entry* value) {
+		::fseek(file, file_begin + out.get_output_pos(), SEEK_SET);
+		vnl::write(out, value);
+		out.flush();
 	}
 	
 	void open() {
 		char buf[1024];
 		filename.to_string(buf, sizeof(buf));
 		if(readonly) {
-			file = ::fopen(buf, "r");
+			file = ::fopen(buf, "rb");
 		} else {
-			file = ::fopen(buf, "a+");
+			FILE* tmp = ::fopen(buf, "ab+");
+			::fclose(tmp);
+			file = ::fopen(buf, "rb+");
 		}
 		if(!file.good()) {
 			log(ERROR).out << "Unable to open file: " << filename << vnl::endl;
@@ -128,12 +133,12 @@ private:
 		in.reset();
 		::fseek(file, 0, SEEK_SET);
 		while(true) {
-			file_pos = in.get_input_pos();
+			file_begin = in.get_input_pos();
 			Pointer<Entry> entry;
 			vnl::read(in, entry);
 			if(in.error()) {
 				if(in.error() != VNL_IO_EOF) {
-					log(ERROR).out << "Read error at " << file_pos << vnl::endl;
+					log(ERROR).out << "Read error at " << file_begin << vnl::endl;
 				}
 				break;
 			}
@@ -141,13 +146,12 @@ private:
 				if(entry->version > 0) {
 					Vector<int64_t,2>& ind = index[entry->key];
 					ind[0] = entry->version;
-					ind[1] = file_pos;
+					ind[1] = file_begin;
 				} else {
 					index.erase(entry->key);
 				}
 			}
 		}
-		::fseek(file, file_pos, SEEK_SET);
 		log(INFO).out << "Found " << index.size() << " entries, " << in.get_num_read()/1024 << " kB" << vnl::endl;
 	}
 	
@@ -157,7 +161,7 @@ private:
 	vnl::io::TypeOutput out;
 	
 	Map<Hash64, Vector<int64_t,2> > index;
-	int64_t file_pos = 0;
+	int64_t file_begin = 0;
 	
 };
 

@@ -61,9 +61,11 @@ private:
 		char buf[1024];
 		filename.to_string(buf, sizeof(buf));
 		if(readonly) {
-			file = ::fopen(buf, "r");
+			file = ::fopen(buf, "rb");
 		} else {
-			file = ::fopen(buf, "a+");
+			FILE* tmp = ::fopen(buf, "ab+");
+			::fclose(tmp);
+			file = ::fopen(buf, "rb+");
 		}
 		if(!file) {
 			log(ERROR).out << "Unable to open file: " << filename << vnl::endl;
