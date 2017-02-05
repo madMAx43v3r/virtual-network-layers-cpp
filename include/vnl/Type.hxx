@@ -85,8 +85,8 @@ inline void read(vnl::io::TypeInput& in, Binary& obj) {
 	in.getBinary(obj.data, obj.size);
 }
 
-template<typename T>
-void read(vnl::io::TypeInput& in, Array<T>& obj) {
+template<typename T, typename TPage>
+void read(vnl::io::TypeInput& in, Array<T,TPage>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -98,8 +98,8 @@ void read(vnl::io::TypeInput& in, Array<T>& obj) {
 	}
 }
 
-template<typename T>
-void read(vnl::io::TypeInput& in, List<T>& obj) {
+template<typename T, typename TPage>
+void read(vnl::io::TypeInput& in, List<T,TPage>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_ARRAY) {
@@ -111,8 +111,8 @@ void read(vnl::io::TypeInput& in, List<T>& obj) {
 	}
 }
 
-template<typename K, typename V>
-void read(vnl::io::TypeInput& in, Map<K,V>& obj) {
+template<typename K, typename V, typename TPage>
+void read(vnl::io::TypeInput& in, Map<K,V,TPage>& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	if(id == VNL_IO_MAP) {
@@ -176,30 +176,30 @@ inline void write(vnl::io::TypeOutput& out, const Binary& obj) {
 	out.putBinary(obj.data, obj.size);
 }
 
-template<typename T>
-void write(vnl::io::TypeOutput& out, const Array<T>& obj) {
+template<typename T, typename TPage>
+void write(vnl::io::TypeOutput& out, const Array<T,TPage>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
-	for(typename vnl::Array<T>::const_iterator iter = obj.begin();
+	for(typename vnl::Array<T,TPage>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
 	{
 		vnl::write(out, *iter);
 	}
 }
 
-template<typename T>
-void write(vnl::io::TypeOutput& out, const List<T>& obj) {
+template<typename T, typename TPage>
+void write(vnl::io::TypeOutput& out, const List<T,TPage>& obj) {
 	out.putEntry(VNL_IO_ARRAY, obj.size());
-	for(typename vnl::List<T>::const_iterator iter = obj.begin();
+	for(typename vnl::List<T,TPage>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
 	{
 		vnl::write(out, *iter);
 	}
 }
 
-template<typename K, typename V>
-void write(vnl::io::TypeOutput& out, const Map<K,V>& obj) {
+template<typename K, typename V, typename TPage>
+void write(vnl::io::TypeOutput& out, const Map<K,V,TPage>& obj) {
 	out.putEntry(VNL_IO_MAP, obj.size());
-	for(typename vnl::Map<K,V>::const_iterator iter = obj.begin();
+	for(typename vnl::Map<K,V,TPage>::const_iterator iter = obj.begin();
 			iter != obj.end() && !out.error(); ++iter)
 	{
 		vnl::write(out, iter->first);
@@ -263,18 +263,18 @@ void to_string(vnl::String& str, Iter first, Iter last) {
 	str.push_back(']');
 }
 
-template<typename T>
-void to_string(vnl::String& str, const Array<T>& obj) {
+template<typename T, typename TPage>
+void to_string(vnl::String& str, const Array<T,TPage>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
-template<typename T>
-void to_string(vnl::String& str, const List<T>& obj) {
+template<typename T, typename TPage>
+void to_string(vnl::String& str, const List<T,TPage>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
-template<typename K, typename V>
-void to_string(vnl::String& str, const Map<K,V>& obj) {
+template<typename K, typename V, typename TPage>
+void to_string(vnl::String& str, const Map<K,V,TPage>& obj) {
 	to_string(str, obj.begin(), obj.end());
 }
 
@@ -354,8 +354,8 @@ inline void from_string(const vnl::String& str, Binary& obj) {
 	// nothing
 }
 
-template<typename T>
-void from_string(const vnl::String& str, Array<T>& obj) {
+template<typename T, typename TPage>
+void from_string(const vnl::String& str, Array<T,TPage>& obj) {
 	obj.clear();
 	String buf;
 	int stack = 0;
@@ -375,8 +375,8 @@ void from_string(const vnl::String& str, Array<T>& obj) {
 	}
 }
 
-template<typename T>
-void from_string(const vnl::String& str, List<T>& obj) {
+template<typename T, typename TPage>
+void from_string(const vnl::String& str, List<T,TPage>& obj) {
 	obj.clear();
 	String buf;
 	int stack = 0;
@@ -424,8 +424,8 @@ void from_string(const vnl::String& str, vnl::pair<K,V>& obj) {
 	}
 }
 
-template<typename K, typename V>
-void from_string(const vnl::String& str, Map<K,V>& obj) {
+template<typename K, typename V, typename TPage>
+void from_string(const vnl::String& str, Map<K,V,TPage>& obj) {
 	obj.clear();
 	String buf;
 	int stack = 0;
