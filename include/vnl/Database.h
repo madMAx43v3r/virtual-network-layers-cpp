@@ -63,8 +63,7 @@ private:
 		int64_t last_pos = 0;
 		vnl::io::TypeInput in(&file);
 		while(true) {
-			last_pos = ::ftell(file);
-			// TODO: account for data in buffer
+			last_pos = in.get_input_pos();
 			int size = 0;
 			int id = in.getEntry(size);
 			if(in.error()) {

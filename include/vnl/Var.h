@@ -22,8 +22,6 @@
 
 namespace vnl {
 
-class VarIterator;
-
 class Var {
 public:
 	enum {
@@ -927,22 +925,12 @@ protected:
 		Value* value_;
 		List<Var>* list_;
 		Map<Var,Var>* map_;
-		VarIterator* iter_;
 		const Var* cvar_;
 		Var* var_;
 	};
 	
 	int type;
 	int ref_count = 0;
-	
-};
-
-
-class VarIterator {
-public:
-	int index;
-	Var key;
-	Var it;
 	
 };
 

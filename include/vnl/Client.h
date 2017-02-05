@@ -105,9 +105,6 @@ protected:
 				if(request.count == 0) {
 					throw IOException();
 				}
-				if(request.is_timeout) {
-					throw TimeoutException();
-				}
 			}
 			
 			int left = request.count;

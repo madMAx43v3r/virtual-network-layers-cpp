@@ -69,6 +69,10 @@ public:
 		return ptr;
 	}
 	
+	const T* value() const {
+		return ptr;
+	}
+	
 	T* release() {
 		T* ret = ptr;
 		ptr = 0;
