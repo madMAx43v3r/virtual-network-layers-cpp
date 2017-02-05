@@ -9,9 +9,11 @@ class Entry {
 
 interface Storage {
 	
-	void put_entry(Pointer<Entry> value);
+	void put_entry(Entry* value);
 	
-	Pointer<Entry> get_entry(Hash64 key) const;
+	Entry* get_entry(Hash64 key) const;
+	
+	Array<Entry*> get_entries(Array<Hash64> keys) const;
 	
 	void delete_entry(Hash64 key);
 	

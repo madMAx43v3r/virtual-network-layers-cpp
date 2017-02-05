@@ -82,6 +82,14 @@ protected:
 		return res;
 	}
 	
+	Array<Pointer<Entry> > get_entries(const Array<Hash64>& keys) const {
+		Array<Pointer<Entry> > res;
+		for(Hash64 key : keys) {
+			res.push_back(get_entry(key));
+		}
+		return res;
+	}
+	
 	void delete_entry(const Hash64& key) {
 		index.erase(key);
 		Entry dummy;
