@@ -4,6 +4,7 @@ object Database {
 	
 	String filename = "database.dat";
 	
+	bool readonly = false;
 	bool ignore_errors = false;
 	
 }
