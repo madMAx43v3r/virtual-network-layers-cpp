@@ -65,11 +65,11 @@ public:
 		return ptr;
 	}
 	
-	T* value() {
+	T* get() {
 		return ptr;
 	}
 	
-	const T* value() const {
+	const T* get() const {
 		return ptr;
 	}
 	

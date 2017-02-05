@@ -68,7 +68,7 @@ protected:
 		in.reset();
 		Pointer<Value> ptr;
 		vnl::read(in, ptr);
-		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.value());
+		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.get());
 		if(p_header) {
 			header = *p_header;
 			status.end_time = header.end_time;

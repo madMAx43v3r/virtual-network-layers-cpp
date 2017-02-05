@@ -45,15 +45,15 @@ void sort_desc(Iter begin, Iter end) {
 
 
 template<class Iter, class T>
-Iter find(Iter first, Iter last, T obj) {
-	Iter iter = first;
-	while(iter != last) {
+Iter find(Iter begin, Iter end, T obj) {
+	Iter iter = begin;
+	while(iter != end) {
 		if(*iter == obj) {
 			return iter;
 		}
 		iter++;
 	}
-	return last;
+	return end;
 }
 
 

@@ -9,6 +9,7 @@
 #define INCLUDE_VNL_IO_FILE_H_
 
 #include <stdio.h>
+#include <sys/file.h>
 
 #include <vnl/io/Stream.h>
 
@@ -17,29 +18,37 @@ namespace vnl { namespace io {
 
 class File : public InputStream, public OutputStream {
 public:
-	File() : fd(0) {}
+	File() : file(0) {}
 	
-	File(FILE* fd) : fd(fd) {}
+	File(FILE* fd) : file(fd) {}
 	
 	operator FILE*() const {
-		return fd;
+		return file;
+	}
+	
+	operator bool() const {
+		return good();
 	}
 	
 	bool good() const {
-		return fd != 0;
+		return file != 0;
 	}
 	
-	File& operator=(FILE* file) {
-		fd = file;
+	int get_fd() const {
+		return ::fileno(file);
+	}
+	
+	File& operator=(FILE* file_) {
+		file = file_;
 		return *this;
 	}
 	
 	virtual int read(void* dst, int len) {
-		if(!fd) {
+		if(!file) {
 			InputStream::set_error(VNL_ERROR);
 			return -1;
 		}
-		int res = ::fread(dst, 1, len, fd);
+		int res = ::fread(dst, 1, len, file);
 		if(res <= 0) {
 			InputStream::set_error(VNL_IO_EOF);
 		}
@@ -47,12 +56,12 @@ public:
 	}
 	
 	virtual bool write(const void* src, int len) {
-		if(!fd) {
+		if(!file) {
 			InputStream::set_error(VNL_ERROR);
 			return -1;
 		}
 		while(len > 0) {
-			int res = ::fwrite(src, 1, len, fd);
+			int res = ::fwrite(src, 1, len, file);
 			if(res > 0) {
 				len -= res;
 				src = (char*)src + res;
@@ -65,7 +74,7 @@ public:
 	}
 	
 private:
-	FILE* fd;
+	FILE* file;
 	
 };
 

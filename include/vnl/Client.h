@@ -175,7 +175,6 @@ private:
 };
 
 
-
 } // vnl
 
 #endif /* INCLUDE_VNI_CLIENT_H_ */
