@@ -15,10 +15,10 @@ namespace vnl {
 
 /*
  * This is a doubly linked list for use on small data types.
- * Maximum element size is VNL_BLOCK_SIZE-16 bytes.
+ * Maximum element size is VNL_PAGE_SIZE-16 bytes.
  * Iterators are valid as long as clear() is not called.
  */
-template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
+template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class List {
 public:
 	List() : p_front(0), p_back(0), count(0) {
