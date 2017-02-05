@@ -17,15 +17,19 @@ class InputStream {
 public:
 	virtual ~InputStream() {}
 	
-	int error() {
+	int error() const {
 		return err;
 	}
 	
 	void set_error(int err_) {
 		err = err_;
 #ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS || err == VNL_IO_EOF);
+		assert(err == VNL_SUCCESS || err == VNL_IO_EOF);
 #endif
+	}
+	
+	void reset() {
+		err = VNL_SUCCESS;
 	}
 	
 	// read some bytes
@@ -41,15 +45,19 @@ class OutputStream {
 public:
 	virtual ~OutputStream() {}
 	
-	int error() {
+	int error() const {
 		return err;
 	}
 	
 	void set_error(int err_) {
 		err = err_;
 #ifdef VNL_IO_DEBUG
-		assert(err == VNL_IO_SUCCESS || err == VNL_IO_EOF);
+		assert(err == VNL_SUCCESS || err == VNL_IO_EOF);
 #endif
+	}
+	
+	void reset() {
+		err = VNL_SUCCESS;
 	}
 	
 	// write all bytes

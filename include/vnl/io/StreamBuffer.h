@@ -54,11 +54,15 @@ public:
 		return num_read;
 	}
 	
+	int64_t get_input_pos() const {
+		return num_read - limit + pos;
+	}
+	
 	void reset() {
 		num_read = 0;
 		pos = 0;
 		limit = 0;
-		set_error(VNL_SUCCESS);
+		in->reset();
 	}
 	
 	int error() const {
@@ -113,10 +117,14 @@ public:
 		return num_write;
 	}
 	
+	int64_t get_output_pos() const {
+		return num_write + pos;
+	}
+	
 	void reset() {
 		num_write = 0;
 		pos = 0;
-		set_error(VNL_SUCCESS);
+		out->reset();
 	}
 	
 	bool flush() {
@@ -147,6 +155,7 @@ protected:
 };
 
 
-}}
+} // io
+} // vnl
 
 #endif /* INCLUDE_IO_STREAMBUFFER_H_ */

@@ -1,9 +1,30 @@
 package vnl;
 
+class Entry {
+	
+	Hash64 key;
+	long version;
+	
+}
+
 interface Storage {
 	
-	void put_var(Hash64 key, Var value);
+	void put_entry(Pointer<Entry> value);
 	
-	Var get_var(Hash64 key) const;
+	Pointer<Entry> get_entry(Hash64 key) const;
+	
+	void delete_entry(Hash64 key);
+	
+}
+
+object StorageServer implements Storage {
+	
+	String filename;
+	
+	int interval = 1000000;
+	
+	List<Address> topics;
+	
+	void handle(Entry sample);
 	
 }
