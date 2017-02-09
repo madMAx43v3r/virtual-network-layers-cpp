@@ -21,7 +21,7 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_, const vnl::String& topic_, vnl::Basic* target = vnl::Router::instance)
+	Player(const vnl::String& domain_ = vnl::local_domain_name, const vnl::String& topic_ = "Player", vnl::Basic* target = vnl::Router::instance)
 		:	PlayerBase(domain_, topic_),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{

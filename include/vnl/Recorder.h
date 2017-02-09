@@ -21,8 +21,8 @@ namespace vnl {
 
 class Recorder : public vnl::RecorderBase {
 public:
-	Recorder(const vnl::String& domain_)
-		:	RecorderBase(domain_, "Recorder"), out(&file)
+	Recorder(const vnl::String& domain_ = vnl::local_domain_name, const vnl::String& topic_ = "Recorder")
+		:	RecorderBase(domain_, topic_), out(&file)
 	{
 	}
 	
