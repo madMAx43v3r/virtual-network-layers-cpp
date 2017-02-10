@@ -1,5 +1,9 @@
+cmake_minimum_required(VERSION 2.4)
+project(virtual-network-layers-cpp)
 
-include_directories(include/)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+
+include_directories(include/ generated/include/)
 
 ADD_LIBRARY(vnl STATIC
 	src/BinaryValue.cpp
@@ -12,4 +16,6 @@ ADD_LIBRARY(vnl STATIC
 	src/Type.cpp
 	src/Pipe.cpp
 )
+
+target_include_directories(vnl PUBLIC include/)
 
