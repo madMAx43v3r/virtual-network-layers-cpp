@@ -16,6 +16,14 @@ class SegmentationFault extends Exception {
 	
 }
 
+class NullPointerException extends Exception {
+	
+}
+
+class OutOfMemoryException extends Exception {
+	
+}
+
 class IllegalInstruction extends Exception {
 	
 }

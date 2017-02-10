@@ -13,6 +13,7 @@
 #include <vnl/Process.h>
 #include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
+#include <vnl/OutOfMemoryException.hxx>
 
 #include <iostream>
 #include <mutex>
@@ -42,6 +43,10 @@ const vnl::info::Type* get_type_info(Hash32 type_name) {
 	static std::mutex mutex;
 	std::lock_guard<std::mutex> lock(mutex);
 	return internal::type_info_->find(type_name);
+}
+
+void raise_out_of_memory() {
+	throw OutOfMemoryException();
 }
 
 

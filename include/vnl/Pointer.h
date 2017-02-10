@@ -10,6 +10,7 @@
 
 #include <vnl/io.h>
 #include <vnl/Type.hxx>
+#include <vnl/NullPointerException.hxx>
 
 
 namespace vnl {
@@ -50,18 +51,30 @@ public:
 	}
 	
 	T& operator*() {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return *ptr;
 	}
 	
 	const T& operator*() const {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return *ptr;
 	}
 	
 	T* operator->() {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return ptr;
 	}
 	
 	const T* operator->() const {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return ptr;
 	}
 	
@@ -80,11 +93,10 @@ public:
 	}
 	
 	T* clone() const {
-		if(ptr) {
-			return ptr->clone();
-		} else {
-			return 0;
+		if(!ptr) {
+			throw NullPointerException();
 		}
+		return ptr->clone();
 	}
 	
 	void destroy() {

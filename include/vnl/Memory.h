@@ -19,6 +19,8 @@
 
 namespace vnl {
 
+void raise_out_of_memory();
+
 template<int size_>
 class Memory {
 public:
@@ -40,7 +42,9 @@ public:
 		if(!page && can_alloc) {
 			page = new Memory();
 		}
-		assert(page != OUT_OF_MEMORY);
+		if(!page) {
+			raise_out_of_memory();
+		}
 		page->next = 0;
 		return page;
 	}
@@ -125,7 +129,9 @@ public:
 private:
 	Memory() : mem(0), next(0) {
 		mem = (char*)::malloc(size);
-		assert(mem != OUT_OF_MEMORY);
+		if(!mem) {
+			raise_out_of_memory();
+		}
 	}
 	
 	~Memory() {
