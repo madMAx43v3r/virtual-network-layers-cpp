@@ -26,7 +26,9 @@ public:
 	TopicInfoList();
 	
 	static TopicInfoList* create();
+	static TopicInfoList* create(vnl::Hash32 hash);
 	virtual TopicInfoList* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

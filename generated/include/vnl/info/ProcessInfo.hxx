@@ -30,7 +30,9 @@ public:
 	ProcessInfo();
 	
 	static ProcessInfo* create();
+	static ProcessInfo* create(vnl::Hash32 hash);
 	virtual ProcessInfo* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

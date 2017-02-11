@@ -21,7 +21,9 @@ public:
 	NullPointerException();
 	
 	static NullPointerException* create();
+	static NullPointerException* create(vnl::Hash32 hash);
 	virtual NullPointerException* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

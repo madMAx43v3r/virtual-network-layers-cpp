@@ -30,7 +30,9 @@ public:
 	RecordHeader();
 	
 	static RecordHeader* create();
+	static RecordHeader* create(vnl::Hash32 hash);
 	virtual RecordHeader* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

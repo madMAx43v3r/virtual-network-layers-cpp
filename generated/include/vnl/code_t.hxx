@@ -24,7 +24,9 @@ public:
 	code_t();
 	
 	static code_t* create();
+	static code_t* create(vnl::Hash32 hash);
 	virtual code_t* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

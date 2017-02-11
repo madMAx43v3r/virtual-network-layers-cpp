@@ -20,7 +20,9 @@ public:
 	Value();
 	
 	static Value* create();
+	static Value* create(vnl::Hash32 hash);
 	virtual Value* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

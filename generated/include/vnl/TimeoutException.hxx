@@ -21,7 +21,9 @@ public:
 	TimeoutException();
 	
 	static TimeoutException* create();
+	static TimeoutException* create(vnl::Hash32 hash);
 	virtual TimeoutException* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();

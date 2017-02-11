@@ -26,7 +26,9 @@ public:
 	LogMsg();
 	
 	static LogMsg* create();
+	static LogMsg* create(vnl::Hash32 hash);
 	virtual LogMsg* clone() const;
+	virtual bool is_assignable(vnl::Hash32 hash);
 	virtual bool assign(const vnl::Value& _value);
 	virtual void raise() const { throw *this; }
 	virtual void destroy();
