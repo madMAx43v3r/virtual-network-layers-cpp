@@ -85,6 +85,10 @@ void Enum::from_string(const vnl::String& str) {
 	value = name;
 }
 
+Value* create(vnl::Hash32 hash) {
+	return Value::create(hash);
+}
+
 Value* read(vnl::io::TypeInput& in) {
 	Value* obj = 0;
 	int size = 0;
@@ -117,7 +121,11 @@ void read(vnl::io::TypeInput& in, Value& obj) {
 		case VNL_IO_CLASS: {
 			uint32_t hash = 0;
 			in.getHash(hash);
-			obj.deserialize(in, size);
+			if(obj.is_assignable(hash)) {
+				obj.deserialize(in, size);
+			} else {
+				in.skip(id, size, hash);
+			}
 			break;
 		}
 		default: in.skip(id, size);

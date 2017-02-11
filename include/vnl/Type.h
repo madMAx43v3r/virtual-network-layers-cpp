@@ -33,6 +33,7 @@ public:
 	virtual uint32_t get_vni_hash() const = 0;
 	virtual const char* get_type_name() const = 0;
 	
+	virtual int get_type_size() const = 0;
 	virtual int get_num_fields() const = 0;
 	virtual int get_field_index(vnl::Hash32 hash) const = 0;
 	virtual const char* get_field_name(int index) const = 0;
