@@ -23,7 +23,9 @@ public:
 	Pointer(T* obj) : ptr(obj) {}
 	
 	Pointer(const Pointer& other) : ptr(0) {
-		ptr = other.clone();
+		if(other.ptr) {
+			ptr = other.clone();
+		}
 	}
 	
 	virtual ~Pointer() {
@@ -38,7 +40,9 @@ public:
 	
 	Pointer& operator=(const Pointer& other) {
 		destroy();
-		ptr = other.clone();
+		if(other.ptr) {
+			ptr = other.clone();
+		}
 		return *this;
 	}
 	
