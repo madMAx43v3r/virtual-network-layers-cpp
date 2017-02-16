@@ -80,12 +80,15 @@ inline void write(vnl::io::TypeOutput& out, const vnl::Hash32& val) {
 }
 
 inline void to_string(vnl::String& str, const vnl::Hash32& val) {
-	str << vnl::hex(val);
+	str << val.value;
 }
 
 inline void from_string(const vnl::String& str, vnl::Hash32& val) {
-	/* TODO */
-	assert(false);
+	if(!str.empty() && str.front() == '"') {
+		// TODO
+	} else {
+		val.value = vnl::atoull(str);
+	}
 }
 
 

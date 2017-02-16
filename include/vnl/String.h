@@ -17,26 +17,58 @@
 
 namespace vnl {
 
-class ToString {
-public:
-	char buf[128];
-	int len = 0;
-};
+class String;
 
-class str : public ToString {
+template<int N>
+class FixedString {
 public:
-	str(const char src[]) {
+	char buf[N];
+	int len = 0;
+	FixedString() {}
+	FixedString(const String& str) {
+		*this = str;
+	}
+	FixedString(const char* src) {
+		*this = src;
+	}
+	FixedString& operator=(const String& str);
+	FixedString& operator=(const char* src) {
 		len = strlen(src);
-		if(len > sizeof(buf)) {
-			len = sizeof(buf);
-		}
+		if(len > N) { len = N; }
 		strncpy(buf, src, len);
+		buf[N-1] = 0;
+		return *this;
 	}
 };
 
-static str endl("\n");
+static FixedString<128> endl("\n");
 
-class dec : public ToString {
+inline int32_t atol(const vnl::String& str) {
+	FixedString<128> tmp = str;
+	return ::strtol(tmp.buf, 0, 10);
+}
+
+inline int64_t atoll(const vnl::String& str) {
+	FixedString<128> tmp = str;
+	return ::strtoll(tmp.buf, 0, 10);
+}
+
+inline uint32_t atoul(const vnl::String& str) {
+	FixedString<128> tmp = str;
+	return ::strtoul(tmp.buf, 0, 10);
+}
+
+inline uint64_t atoull(const vnl::String& str) {
+	FixedString<128> tmp = str;
+	return ::strtoull(tmp.buf, 0, 10);
+}
+
+inline double atof(const vnl::String& str) {
+	FixedString<128> tmp = str;
+	return ::atof(tmp.buf);
+}
+
+class dec : public FixedString<128> {
 public:
 	dec(int32_t i)  { len = snprintf(buf, sizeof(buf), "%d", i); }
 	dec(uint32_t i) { len = snprintf(buf, sizeof(buf), "%u", i); }
@@ -44,7 +76,7 @@ public:
 	dec(uint64_t i) { len = snprintf(buf, sizeof(buf), "%lu", i); }
 };
 
-class hex : public ToString {
+class hex : public FixedString<128> {
 public:
 	hex(int32_t i)  { len = snprintf(buf, sizeof(buf), "0x%x", i); }
 	hex(uint32_t i) { len = snprintf(buf, sizeof(buf), "0x%x", i); }
@@ -52,19 +84,19 @@ public:
 	hex(uint64_t i) { len = snprintf(buf, sizeof(buf), "0x%lx", i); }
 };
 
-class def : public ToString {
+class def : public FixedString<128> {
 public:
 	def(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%.*f", precision, f); }
 	def(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%.*f", precision, f); }
 };
 
-class sci : public ToString {
+class sci : public FixedString<128> {
 public:
 	sci(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%.*e", precision, f); }
 	sci(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%.*e", precision, f); }
 };
 
-class fix : public ToString {
+class fix : public FixedString<128> {
 public:
 	fix(float f, int precision = 6)  { len = snprintf(buf, sizeof(buf), "%0*f", precision, f); }
 	fix(double f, int precision = 6) { len = snprintf(buf, sizeof(buf), "%0*f", precision, f); }
@@ -189,7 +221,8 @@ public:
 		return *this;
 	}
 	
-	String& operator<<(const ToString& str) {
+	template<int N>
+	String& operator<<(const FixedString<N>& str) {
 		write(str.buf, str.len);
 		return *this;
 	}
@@ -202,7 +235,7 @@ public:
 		return res;
 	}
 	
-	void to_string(char* str, int len) const {
+	int to_string(char* str, int len) const {
 		memset(str, 0, len);
 		int i = 0;
 		for(const_iterator it = begin(); it != end(); ++it) {
@@ -212,6 +245,7 @@ public:
 			str[i] = *it;
 			i++;
 		}
+		return i;
 	}
 	
 	void assign(const String& str) {
@@ -259,6 +293,12 @@ public:
 	
 };
 
+template<int N>
+FixedString<N>& FixedString<N>::operator=(const String& str) {
+	len = str.to_string(buf, N);
+	return *this;
+}
+
 
 class StringOutput {
 public:
@@ -284,6 +324,5 @@ public:
 
 
 } // vnl
-
 
 #endif /* INCLUDE_PHY_STRING_H_ */

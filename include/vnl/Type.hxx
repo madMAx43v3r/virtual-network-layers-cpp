@@ -13,6 +13,8 @@
 #include <vnl/Interface.h>
 #include <vnl/Value.hxx>
 
+#include <cstdlib>
+
 
 namespace vnl {
 
@@ -301,6 +303,8 @@ inline void to_string(vnl::String& str, const int8_t& val) { str << vnl::dec(val
 inline void to_string(vnl::String& str, const int16_t& val) { str << vnl::dec(val); }
 inline void to_string(vnl::String& str, const int32_t& val) { str << vnl::dec(val); }
 inline void to_string(vnl::String& str, const int64_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const uint32_t& val) { str << vnl::dec(val); }
+inline void to_string(vnl::String& str, const uint64_t& val) { str << vnl::dec(val); }
 inline void to_string(vnl::String& str, const float& val) { str << vnl::def(val, 6); }
 inline void to_string(vnl::String& str, const double& val) { str << vnl::def(val, 12); }
 
@@ -469,29 +473,13 @@ void from_string(const vnl::String& str, vnl::Vector<T,N>& vec) {
 	}
 }
 
-inline int64_t atoi(const vnl::String& str) {
-	char buf[256];
-	str.to_string(buf, sizeof(buf));
-	return ::atoi(buf);
-}
-
-inline int64_t atol(const vnl::String& str) {
-	char buf[256];
-	str.to_string(buf, sizeof(buf));
-	return ::atol(buf);
-}
-
-inline double atof(const vnl::String& str) {
-	char buf[256];
-	str.to_string(buf, sizeof(buf));
-	return ::atof(buf);
-}
-
 inline void from_string(const vnl::String& str, bool& val) { val = str == "true"; }
-inline void from_string(const vnl::String& str, int8_t& val) { val = atoi(str); }
-inline void from_string(const vnl::String& str, int16_t& val) { val = atoi(str); }
-inline void from_string(const vnl::String& str, int32_t& val) { val = atoi(str); }
-inline void from_string(const vnl::String& str, int64_t& val) { val = atol(str); }
+inline void from_string(const vnl::String& str, int8_t& val) { val = atol(str); }
+inline void from_string(const vnl::String& str, int16_t& val) { val = atol(str); }
+inline void from_string(const vnl::String& str, int32_t& val) { val = atol(str); }
+inline void from_string(const vnl::String& str, int64_t& val) { val = atoll(str); }
+inline void from_string(const vnl::String& str, uint32_t& val) { val = atoul(str); }
+inline void from_string(const vnl::String& str, uint64_t& val) { val = atoull(str); }
 inline void from_string(const vnl::String& str, float& val) { val = atof(str); }
 inline void from_string(const vnl::String& str, double& val) { val = atof(str); }
 
