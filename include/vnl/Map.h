@@ -216,12 +216,14 @@ public:
 		return 0;
 	}
 	
-	void erase(const K& key) {
+	bool erase(const K& key) {
 		entry_t** p_row;
 		vnl::pair<K,V>* ptr;
 		if(find(key, p_row, ptr)) {
 			remove(p_row);
+			return true;
 		}
+		return false;
 	}
 	
 	iterator erase(iterator pos) {
