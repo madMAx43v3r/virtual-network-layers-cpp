@@ -37,6 +37,16 @@ class RecordTypeInfo {
 	
 }
 
+class RecorderStatus {
+	
+	long time;
+	String filename;
+	
+	bool is_recording;
+	bool is_error;
+	
+}
+
 object Recorder {
 	
 	String filename = "rec-";

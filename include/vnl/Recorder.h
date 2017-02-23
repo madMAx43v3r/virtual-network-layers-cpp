@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_VNI_RECORDER_H_
 
 #include <vnl/RecorderSupport.hxx>
+#include <vnl/RecorderStatus.hxx>
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
 #include <vnl/RecordTypeInfo.hxx>
@@ -29,7 +30,7 @@ public:
 protected:
 	void main() {
 		char buf[1024];
-		String filepath = filename << vnl::currentDate("%Y%m%d_%H%M%S") << ".dat";
+		filepath = filename << vnl::currentDate("%Y%m%d_%H%M%S") << ".dat";
 		filepath.to_string(buf, sizeof(buf));
 		file = ::fopen(buf, "w");
 		if(!file.good()) {
@@ -110,6 +111,13 @@ private:
 	void update() {
 		write_header();
 		::fflush(file);
+		
+		RecorderStatus* status = RecorderStatus::create();
+		status->time = vnl::currentTimeMicros();
+		status->filename = filepath;
+		status->is_recording = true;
+		status->is_error = out.error();
+		publish(status, my_private_domain, "recorder_status");
 	}
 	
 	void write_header() {
@@ -122,6 +130,7 @@ private:
 	}
 	
 private:
+	String filepath;
 	vnl::io::File file;
 	vnl::io::TypeOutput out;
 	
