@@ -62,6 +62,8 @@ private:
 		filename.to_string(buf, sizeof(buf));
 		if(readonly) {
 			file = ::fopen(buf, "rb");
+		} else if(truncate) {
+			file = ::fopen(buf, "wb+");
 		} else {
 			FILE* tmp = ::fopen(buf, "ab+");
 			::fclose(tmp);

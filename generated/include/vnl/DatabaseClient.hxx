@@ -49,6 +49,11 @@ public:
 			_out.putHash(0x2d7512a8);
 			vnl::write(_out, _value);
 		}
+		void set_truncate(bool _value) {
+			_out.putEntry(VNL_IO_CALL, 1);
+			_out.putHash(0x1725750d);
+			vnl::write(_out, _value);
+		}
 		void get_filename() {
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
 			_out.putHash(0xb60d3446);
@@ -64,6 +69,10 @@ public:
 		void get_ignore_errors() {
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
 			_out.putHash(0x2d7512a8);
+		}
+		void get_truncate() {
+			_out.putEntry(VNL_IO_CONST_CALL, 0);
+			_out.putHash(0x1725750d);
 		}
 	protected:
 		vnl::io::TypeOutput& _out;
@@ -141,6 +150,20 @@ public:
 		}
 	}
 	
+	void set_truncate(bool truncate) {
+		_buf.wrap(_data);
+		{
+			Writer _wr(_out);
+			_wr.set_truncate(truncate);
+		}
+		vnl::Packet* _pkt = _call(vnl::Frame::CALL);
+		if(_pkt) {
+			_pkt->ack();
+		} else {
+			throw vnl::IOException();
+		}
+	}
+	
 	vnl::String get_filename() {
 		_buf.wrap(_data);
 		{
@@ -197,6 +220,23 @@ public:
 		{
 			Writer _wr(_out);
 			_wr.get_ignore_errors();
+		}
+		vnl::Packet* _pkt = _call(vnl::Frame::CONST_CALL);
+		bool _result;
+		if(_pkt) {
+			vnl::read(_in, _result);
+			_pkt->ack();
+		} else {
+			throw vnl::IOException();
+		}
+		return _result;
+	}
+	
+	bool get_truncate() {
+		_buf.wrap(_data);
+		{
+			Writer _wr(_out);
+			_wr.get_truncate();
 		}
 		vnl::Packet* _pkt = _call(vnl::Frame::CONST_CALL);
 		bool _result;

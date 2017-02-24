@@ -60,14 +60,19 @@ public:
 			_out.putHash(0xb60d3446);
 			vnl::write(_out, _value);
 		}
+		void set_interval(int32_t _value) {
+			_out.putEntry(VNL_IO_CALL, 1);
+			_out.putHash(0xd129c896);
+			vnl::write(_out, _value);
+		}
 		void set_readonly(bool _value) {
 			_out.putEntry(VNL_IO_CALL, 1);
 			_out.putHash(0x972da0ea);
 			vnl::write(_out, _value);
 		}
-		void set_interval(int32_t _value) {
+		void set_truncate(bool _value) {
 			_out.putEntry(VNL_IO_CALL, 1);
-			_out.putHash(0xd129c896);
+			_out.putHash(0x1725750d);
 			vnl::write(_out, _value);
 		}
 		void set_topics(const vnl::List<vnl::Address >& _value) {
@@ -79,13 +84,17 @@ public:
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
 			_out.putHash(0xb60d3446);
 		}
+		void get_interval() {
+			_out.putEntry(VNL_IO_CONST_CALL, 0);
+			_out.putHash(0xd129c896);
+		}
 		void get_readonly() {
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
 			_out.putHash(0x972da0ea);
 		}
-		void get_interval() {
+		void get_truncate() {
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
-			_out.putHash(0xd129c896);
+			_out.putHash(0x1725750d);
 		}
 		void get_topics() {
 			_out.putEntry(VNL_IO_CONST_CALL, 0);
@@ -187,6 +196,20 @@ public:
 		}
 	}
 	
+	void set_interval(int32_t interval) {
+		_buf.wrap(_data);
+		{
+			Writer _wr(_out);
+			_wr.set_interval(interval);
+		}
+		vnl::Packet* _pkt = _call(vnl::Frame::CALL);
+		if(_pkt) {
+			_pkt->ack();
+		} else {
+			throw vnl::IOException();
+		}
+	}
+	
 	void set_readonly(bool readonly) {
 		_buf.wrap(_data);
 		{
@@ -201,11 +224,11 @@ public:
 		}
 	}
 	
-	void set_interval(int32_t interval) {
+	void set_truncate(bool truncate) {
 		_buf.wrap(_data);
 		{
 			Writer _wr(_out);
-			_wr.set_interval(interval);
+			_wr.set_truncate(truncate);
 		}
 		vnl::Packet* _pkt = _call(vnl::Frame::CALL);
 		if(_pkt) {
@@ -246,6 +269,23 @@ public:
 		return _result;
 	}
 	
+	int32_t get_interval() {
+		_buf.wrap(_data);
+		{
+			Writer _wr(_out);
+			_wr.get_interval();
+		}
+		vnl::Packet* _pkt = _call(vnl::Frame::CONST_CALL);
+		int32_t _result;
+		if(_pkt) {
+			vnl::read(_in, _result);
+			_pkt->ack();
+		} else {
+			throw vnl::IOException();
+		}
+		return _result;
+	}
+	
 	bool get_readonly() {
 		_buf.wrap(_data);
 		{
@@ -263,14 +303,14 @@ public:
 		return _result;
 	}
 	
-	int32_t get_interval() {
+	bool get_truncate() {
 		_buf.wrap(_data);
 		{
 			Writer _wr(_out);
-			_wr.get_interval();
+			_wr.get_truncate();
 		}
 		vnl::Packet* _pkt = _call(vnl::Frame::CONST_CALL);
-		int32_t _result;
+		bool _result;
 		if(_pkt) {
 			vnl::read(_in, _result);
 			_pkt->ack();

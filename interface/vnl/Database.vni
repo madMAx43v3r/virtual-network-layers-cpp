@@ -8,6 +8,7 @@ object Database {
 	
 	bool readonly = false;
 	bool ignore_errors = false;
+	bool truncate = false;
 	
 }
 

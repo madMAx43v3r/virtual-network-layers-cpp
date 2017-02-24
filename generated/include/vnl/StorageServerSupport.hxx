@@ -21,14 +21,15 @@ namespace vnl {
 class StorageServerBase : public vnl::Object {
 public:
 	static const uint32_t VNI_HASH = 0x2362f4c1;
-	static const uint32_t NUM_FIELDS = 7;
+	static const uint32_t NUM_FIELDS = 8;
 	
 	typedef vnl::Object Super;
 	
 	
 	vnl::String filename;
-	bool readonly;
 	int32_t interval;
+	bool readonly;
+	bool truncate;
 	vnl::List<vnl::Address > topics;
 	
 	StorageServerBase(const vnl::String& domain_, const vnl::String& topic_);
@@ -66,8 +67,9 @@ protected:
 		_writer.set_vnl_msg_timeout(vnl_msg_timeout);
 		_writer.set_vnl_heartbeat_interval(vnl_heartbeat_interval);
 		_writer.set_filename(filename);
-		_writer.set_readonly(readonly);
 		_writer.set_interval(interval);
+		_writer.set_readonly(readonly);
+		_writer.set_truncate(truncate);
 		_writer.set_topics(topics);
 	}
 	
