@@ -239,7 +239,7 @@ inline void to_string(vnl::String& str, const Interface& obj) {
 
 inline void to_string(vnl::String& str, const String& obj) {
 	str.push_back('"');
-	for(String::const_iterator it = obj.begin(); it != obj.end(); ++it) {
+	for(String::const_iterator it = obj.begin(); it != obj.end() && *it != 0; ++it) {
 		char c = *it;
 		if(c == '"') {
 			str.push_back('\\');
