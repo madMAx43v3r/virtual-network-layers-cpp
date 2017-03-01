@@ -229,7 +229,7 @@ public:
 	
 	std::string to_string() const {
 		std::string res;
-		for(const_iterator it = begin(); it != end(); ++it) {
+		for(const_iterator it = begin(); it != end() && *it != 0; ++it) {
 			res += *it;
 		}
 		return res;
@@ -238,7 +238,7 @@ public:
 	int to_string(char* str, int len) const {
 		memset(str, 0, len);
 		int i = 0;
-		for(const_iterator it = begin(); it != end(); ++it) {
+		for(const_iterator it = begin(); it != end() && *it != 0; ++it) {
 			if(i >= len-1) {
 				break;
 			}
