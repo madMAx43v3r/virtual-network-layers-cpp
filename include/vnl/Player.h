@@ -31,7 +31,6 @@ public:
 		type_blacklist["vnl.Exit"] = true;
 	}
 	
-	vnl::Map<Address, Address> addr_map;
 	vnl::Map<vnl::Hash32, bool> type_blacklist;
 	
 protected:
@@ -168,6 +167,9 @@ protected:
 				break;
 			}
 			vnl::read(in, next);
+			if(dynamic_cast<const vnl::Entry*>(next.value.get())) {
+				send_next();	// publish Entry even when seeking
+			}
 			if(counter++ % 1000 == 0) {
 				update();
 			}
@@ -188,31 +190,7 @@ protected:
 			return;
 		}
 		status.current_time = next.time;
-		vnl::Value* value = next.value.release();
-		if(value) {
-			bool pass = true;
-			if(type_blacklist.find(value->get_vni_hash())) {
-				pass = false;
-			} else if(blacklist.find(Address(next.domain, ""))) {
-				pass = false;
-			} else if(blacklist.find(Address(next.domain, next.topic))) {
-				pass = false;
-			}
-			if(pass) {
-				Address dst_addr(next.domain, next.topic);
-				Address* remap = addr_map.find(dst_addr);
-				if(remap) {
-					dst_addr = *remap;
-				}
-				Sample* msg = vnl_sample_buffer.create();
-				msg->dst_addr = dst_addr;
-				msg->header = next.header.release();
-				msg->data = value;
-				send_async(msg, target);
-			} else {
-				vnl::destroy(value);
-			}
-		}
+		send_next();
 		vnl::read(in, next);
 		if(!in.error()) {
 			int64_t now = vnl::currentTimeMicros() - status.time_offset;
@@ -274,6 +252,22 @@ private:
 		}
 		vnl::read(in, next);
 		status.current_time = status.begin_time;
+	}
+	
+	void send_next() {
+		if(next.value && type_blacklist.find(next.value->get_vni_hash())) {
+			return;
+		} else if(blacklist.find(Address(next.domain, ""))) {
+			return;
+		} else if(blacklist.find(Address(next.domain, next.topic))) {
+			return;
+		}
+		
+		Sample* msg = vnl_sample_buffer.create();
+		msg->dst_addr = Address(next.domain, next.topic);
+		msg->header = next.header.release();
+		msg->data = next.value.release();
+		send_async(msg, target);
 	}
 	
 	void close() {
