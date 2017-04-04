@@ -19,7 +19,7 @@ template<class T>
 class TableBase : public vnl::Database {
 public:
 	static const uint32_t VNI_HASH = 0xbd71f457;
-	static const uint32_t NUM_FIELDS = 8;
+	static const uint32_t NUM_FIELDS = 9;
 	
 	typedef vnl::Database Super;
 	
@@ -60,6 +60,7 @@ protected:
 		_writer.set_filename(filename);
 		_writer.set_interval(interval);
 		_writer.set_readonly(readonly);
+		_writer.set_temporary(temporary);
 		_writer.set_ignore_errors(ignore_errors);
 		_writer.set_truncate(truncate);
 	}
@@ -86,8 +87,9 @@ int TableBase<T>::get_field_index(vnl::Hash32 _hash) const {
 		case 0xb60d3446: return 3;
 		case 0xd129c896: return 4;
 		case 0x972da0ea: return 5;
-		case 0x2d7512a8: return 6;
-		case 0x1725750d: return 7;
+		case 0xcfa52de4: return 6;
+		case 0x2d7512a8: return 7;
+		case 0x1725750d: return 8;
 		default: return -1;
 	}
 }
@@ -101,8 +103,9 @@ const char* TableBase<T>::get_field_name(int _index) const {
 		case 3: return "filename";
 		case 4: return "interval";
 		case 5: return "readonly";
-		case 6: return "ignore_errors";
-		case 7: return "truncate";
+		case 6: return "temporary";
+		case 7: return "ignore_errors";
+		case 8: return "truncate";
 		default: return 0;
 	}
 }
@@ -116,8 +119,9 @@ void TableBase<T>::get_field(int _index, vnl::String& _str) const {
 		case 3: vnl::to_string(_str, filename); break;
 		case 4: vnl::to_string(_str, interval); break;
 		case 5: vnl::to_string(_str, readonly); break;
-		case 6: vnl::to_string(_str, ignore_errors); break;
-		case 7: vnl::to_string(_str, truncate); break;
+		case 6: vnl::to_string(_str, temporary); break;
+		case 7: vnl::to_string(_str, ignore_errors); break;
+		case 8: vnl::to_string(_str, truncate); break;
 	}
 }
 
@@ -130,8 +134,9 @@ void TableBase<T>::set_field(int _index, const vnl::String& _str) {
 		case 3: vnl::from_string(_str, filename); break;
 		case 4: vnl::from_string(_str, interval); break;
 		case 5: vnl::from_string(_str, readonly); break;
-		case 6: vnl::from_string(_str, ignore_errors); break;
-		case 7: vnl::from_string(_str, truncate); break;
+		case 6: vnl::from_string(_str, temporary); break;
+		case 7: vnl::from_string(_str, ignore_errors); break;
+		case 8: vnl::from_string(_str, truncate); break;
 	}
 }
 
@@ -144,8 +149,9 @@ void TableBase<T>::get_field(int _index, vnl::io::TypeOutput& _out) const {
 		case 3: vnl::write(_out, filename); break;
 		case 4: vnl::write(_out, interval); break;
 		case 5: vnl::write(_out, readonly); break;
-		case 6: vnl::write(_out, ignore_errors); break;
-		case 7: vnl::write(_out, truncate); break;
+		case 6: vnl::write(_out, temporary); break;
+		case 7: vnl::write(_out, ignore_errors); break;
+		case 8: vnl::write(_out, truncate); break;
 		default: _out.putNull();
 	}
 }
@@ -159,8 +165,9 @@ void TableBase<T>::set_field(int _index, vnl::io::TypeInput& _in) {
 		case 3: vnl::read(_in, filename); break;
 		case 4: vnl::read(_in, interval); break;
 		case 5: vnl::read(_in, readonly); break;
-		case 6: vnl::read(_in, ignore_errors); break;
-		case 7: vnl::read(_in, truncate); break;
+		case 6: vnl::read(_in, temporary); break;
+		case 7: vnl::read(_in, ignore_errors); break;
+		case 8: vnl::read(_in, truncate); break;
 	}
 }
 
@@ -173,8 +180,9 @@ void TableBase<T>::get_field(int _index, vnl::Var& _var) const {
 		case 3: _var = filename; break;
 		case 4: _var = interval; break;
 		case 5: _var = readonly; break;
-		case 6: _var = ignore_errors; break;
-		case 7: _var = truncate; break;
+		case 6: _var = temporary; break;
+		case 7: _var = ignore_errors; break;
+		case 8: _var = truncate; break;
 		default: _var.clear();
 	}
 }
@@ -188,8 +196,9 @@ void TableBase<T>::set_field(int _index, const vnl::Var& _var) {
 		case 3: _var.to(filename); break;
 		case 4: _var.to(interval); break;
 		case 5: _var.to(readonly); break;
-		case 6: _var.to(ignore_errors); break;
-		case 7: _var.to(truncate); break;
+		case 6: _var.to(temporary); break;
+		case 7: _var.to(ignore_errors); break;
+		case 8: _var.to(truncate); break;
 	}
 }
 

@@ -15,7 +15,7 @@ namespace vnl {
 class DatabaseBase : public vnl::Object {
 public:
 	static const uint32_t VNI_HASH = 0x1a20923;
-	static const uint32_t NUM_FIELDS = 8;
+	static const uint32_t NUM_FIELDS = 9;
 	
 	typedef vnl::Object Super;
 	
@@ -23,6 +23,7 @@ public:
 	vnl::String filename;
 	int32_t interval;
 	bool readonly;
+	bool temporary;
 	bool ignore_errors;
 	bool truncate;
 	
@@ -56,6 +57,7 @@ protected:
 		_writer.set_filename(filename);
 		_writer.set_interval(interval);
 		_writer.set_readonly(readonly);
+		_writer.set_temporary(temporary);
 		_writer.set_ignore_errors(ignore_errors);
 		_writer.set_truncate(truncate);
 	}

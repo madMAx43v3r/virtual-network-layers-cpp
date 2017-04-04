@@ -24,7 +24,7 @@ public:
 	
 protected:
 	void main() {
-		if(!filename.empty()) {
+		if(!filename.empty() && !temporary) {
 			open();
 			if(file && !readonly) {
 				set_timeout(interval, std::bind(&Database::update, this), VNL_TIMER_REPEAT);
