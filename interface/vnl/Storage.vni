@@ -19,6 +19,14 @@ interface Storage {
 	
 }
 
+object StorageBuffer implements Storage {
+	
+	List<Address> topics;
+	
+	void handle(Entry sample);
+	
+}
+
 object StorageServer implements Storage {
 	
 	String filename;
