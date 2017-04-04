@@ -71,8 +71,8 @@ protected:
 	}
 	
 	void delete_entry(const Hash64& key) {
-		index.erase(key);
 		if(!readonly) {
+			index.erase(key);
 			Entry dummy;
 			dummy.key = key;
 			dummy.version = -1;
@@ -86,11 +86,13 @@ protected:
 	
 private:
 	void put_entry(const Entry* value) {
-		Vector<int64_t,2>& ind = index[value->key];
-		if(value->version > ind[0]) {
-			ind[0] = value->version;
-			ind[1] = file_begin + out.get_output_pos();
-			write_entry(value);
+		if(value) {
+			Vector<int64_t,2>& ind = index[value->key];
+			if(value->version > ind[0]) {
+				ind[0] = value->version;
+				ind[1] = file_begin + out.get_output_pos();
+				write_entry(value);
+			}
 		}
 	}
 	
