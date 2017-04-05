@@ -97,10 +97,7 @@ public:
 	}
 	
 	T* clone() const {
-		if(!ptr) {
-			throw NullPointerException();
-		}
-		return ptr->clone();
+		return ptr ? ptr->clone() : 0;
 	}
 	
 	void destroy() {
