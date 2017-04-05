@@ -14,6 +14,7 @@
 #include <vnl/RecordTypeInfo.hxx>
 #include <vnl/info/PlayerStatus.hxx>
 #include <vnl/Sample.h>
+#include <vnl/Entry.hxx>
 #include <vnl/io/File.h>
 
 
@@ -167,6 +168,7 @@ protected:
 				break;
 			}
 			vnl::read(in, next);
+			// TODO: this does not work for BinaryValue
 			if(dynamic_cast<const vnl::Entry*>(next.value.get())) {
 				send_next();	// publish Entry even when seeking
 			}
