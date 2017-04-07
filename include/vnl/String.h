@@ -284,6 +284,14 @@ public:
 		}
 	}
 	
+	void replace(const char c, const char d) {
+		for(iterator it = begin(); it != end(); ++it) {
+			if (*it == c) {
+				*it = d;
+			}
+		}
+	}
+
 	friend std::ostream& operator<<(std::ostream& stream, const String& str) {
 		for(const_iterator it = str.begin(); it != str.end(); ++it) {
 			stream.put(*it);
