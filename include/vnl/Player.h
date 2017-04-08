@@ -12,6 +12,7 @@
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
 #include <vnl/RecordTypeInfo.hxx>
+#include <vnl/RecordConfig.hxx>
 #include <vnl/info/PlayerStatus.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
@@ -76,9 +77,15 @@ protected:
 			for(Topic& topic : header.topics) {
 				log(INFO).out << "Topic " << topic.domain << ":" << topic.name << vnl::endl;
 			}
+			if(header.version > 2) {
+				log(ERROR).out << "Recording version is too new: " << header.version << vnl::endl;
+			}
 			seek_begin();
 			if(header.have_type_info) {
 				log(INFO).out << "Have RecordTypeInfo: " << type_info.type_map.size() << " types" << vnl::endl;
+			}
+			if(header.have_config) {
+				log(INFO).out << "Have RecordConfig: " << config.config_map.size() << " entries" << vnl::endl;
 			}
 		} else {
 			begin_pos = 0;
@@ -247,7 +254,11 @@ private:
 		if(header.have_type_info) {
 			vnl::read(in, type_info);
 		}
-		vnl::read(in, next);
+		if(header.have_config) {
+			vnl::read(in, config);
+		}
+		// read first RecordValue and skip over anything which is not a RecordValue
+		while(!vnl::read(in, next) && !in.error());
 		status.current_time = status.begin_time;
 	}
 	
@@ -274,18 +285,19 @@ private:
 	}
 	
 private:
-	vnl::Basic* target;
+	Basic* target;
 	vnl::io::File file;
 	vnl::io::TypeInput in;
 	
-	vnl::Timer* timer;
+	Timer* timer;
 	vnl::info::PlayerStatus status;
-	RecordTypeInfo type_info;
 	RecordHeader header;
-	vnl::RecordValue next;
+	RecordTypeInfo type_info;
+	RecordConfig config;
+	RecordValue next;
 	int begin_pos;
 	
-	vnl::Map<Address, bool> blacklist;
+	Map<Address, bool> blacklist;
 	
 };
 

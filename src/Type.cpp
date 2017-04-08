@@ -111,18 +111,19 @@ Value* read(vnl::io::TypeInput& in) {
 	return obj;
 }
 
-void read(vnl::io::TypeInput& in, Value& obj) {
+bool read(vnl::io::TypeInput& in, Value& obj) {
 	int size = 0;
 	int id = in.getEntry(size);
 	switch(id) {
 		case VNL_IO_STRUCT:
 			obj.deserialize(in, size);
-			break;
+			return true;
 		case VNL_IO_CLASS: {
 			uint32_t hash = 0;
 			in.getHash(hash);
 			if(obj.is_assignable(hash)) {
 				obj.deserialize(in, size);
+				return true;
 			} else {
 				in.skip(id, size, hash);
 			}
@@ -130,14 +131,16 @@ void read(vnl::io::TypeInput& in, Value& obj) {
 		}
 		default: in.skip(id, size);
 	}
+	return false;
 }
 
-void read(vnl::io::TypeInput& in, Value* obj) {
+bool read(vnl::io::TypeInput& in, Value* obj) {
 	if(obj) {
-		read(in, *obj);
+		return read(in, *obj);
 	} else {
 		in.skip();
 	}
+	return false;
 }
 
 template<>
@@ -151,11 +154,9 @@ bool read_config<String>(String domain, String topic, String name, String& ref) 
 }
 
 const String* get_config(const String& domain, const String& topic, const String& name) {
-	static std::mutex mutex;
 	String key;
 	key << domain << ":" << topic << "->" << name;
-	std::lock_guard<std::mutex> lock(mutex);
-	return internal::config_->find(key);
+	return ((const Map<String, String>*)internal::config_)->find(key);
 }
 
 bool read_from_file(vnl::Value& value, const char* filename) {

@@ -72,8 +72,8 @@ inline void read(vnl::io::TypeInput& in, float& val) { in.getValue(val); }
 inline void read(vnl::io::TypeInput& in, double& val) { in.getValue(val); }
 
 Value* read(vnl::io::TypeInput& in);
-void read(vnl::io::TypeInput& in, Value& obj);
-void read(vnl::io::TypeInput& in, Value* obj);
+bool read(vnl::io::TypeInput& in, Value& obj);
+bool read(vnl::io::TypeInput& in, Value* obj);
 
 inline void read(vnl::io::TypeInput& in, Interface& obj) {
 	obj.deserialize(in, 0);

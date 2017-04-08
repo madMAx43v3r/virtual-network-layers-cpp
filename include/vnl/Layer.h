@@ -39,7 +39,7 @@ namespace internal {
 Map<Hash32, vnl::info::Type> get_type_info();
 
 /*
- * Returns type info, null if not found.
+ * Returns type info for specified type, null if not found.
  */
 const vnl::info::Type* get_type_info(Hash32 type_name);
 

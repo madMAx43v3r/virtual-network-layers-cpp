@@ -2,9 +2,10 @@ package vnl;
 
 class RecordHeader {
 	
-	int version = 1;
+	int version = 2;
 	int header_size;
 	bool have_type_info;
+	bool have_config;
 	
 	long num_samples;
 	
@@ -34,6 +35,12 @@ class RecordValue extends RecordEntry {
 class RecordTypeInfo {
 	
 	Map<Hash32, vnl.info.Type> type_map;
+	
+}
+
+class RecordConfig {
+	
+	Map<String, String> config_map;
 	
 }
 

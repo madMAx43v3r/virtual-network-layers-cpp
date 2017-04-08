@@ -13,6 +13,7 @@
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
 #include <vnl/RecordTypeInfo.hxx>
+#include <vnl/RecordConfig.hxx>
 #include <vnl/Entry.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
@@ -41,6 +42,7 @@ protected:
 		
 		header.header_size = header_size;
 		header.have_type_info = true;
+		header.have_config = true;
 		write_header();
 		::fseek(file, header_size-4, SEEK_SET);
 		out.writeInt(-1);
@@ -48,6 +50,11 @@ protected:
 		RecordTypeInfo type_info;
 		type_info.type_map = vnl::get_type_info();
 		vnl::write(out, type_info);
+		out.flush();
+		
+		RecordConfig config;
+		config.config_map = *vnl::internal::config_;
+		vnl::write(out, config);
 		out.flush();
 		
 		for(const String& domain : domains) {
