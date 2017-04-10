@@ -14,6 +14,8 @@
 #include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
 #include <vnl/OutOfMemoryException.hxx>
+#include <vnl/NullPointerException.hxx>
+#include <vnl/InvalidValueException.hxx>
 
 #include <iostream>
 #include <mutex>
@@ -47,6 +49,20 @@ const vnl::info::Type* get_type_info(Hash32 type_name) {
 
 void raise_out_of_memory() {
 	throw OutOfMemoryException();
+}
+
+void raise_null_pointer() {
+	throw NullPointerException();
+}
+
+void raise_invalid_value() {
+	throw InvalidValueException();
+}
+
+void raise_invalid_value(double value) {
+	InvalidValueException ex;
+	ex.what << value;
+	throw ex;
 }
 
 

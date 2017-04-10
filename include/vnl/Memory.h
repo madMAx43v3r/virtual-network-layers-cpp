@@ -20,6 +20,9 @@
 namespace vnl {
 
 void raise_out_of_memory();
+void raise_null_pointer();
+void raise_invalid_value();
+void raise_invalid_value(double value);
 
 template<int size_>
 class Memory {

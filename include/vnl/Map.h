@@ -60,9 +60,15 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
+			if(!entry) {
+				raise_null_pointer();
+			}
 			return entry->pair;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
+			if(!entry) {
+				raise_null_pointer();
+			}
 			return &entry->pair;
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
@@ -71,10 +77,10 @@ public:
 			std::swap(lhs.entry, rhs.entry);
 		}
 		friend bool operator==(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.index == rhs.index && lhs.entry == rhs.entry;
+			return lhs.table == rhs.table && lhs.index == rhs.index && lhs.entry == rhs.entry;
 		}
 		friend bool operator!=(const iterator_t& lhs, const iterator_t& rhs) {
-			return lhs.index != rhs.index || lhs.entry != rhs.entry;
+			return lhs.table != rhs.table || lhs.index != rhs.index || lhs.entry != rhs.entry;
 		}
 	private:
 		iterator_t(const table_t* table, int index, entry_t* ptr = 0)

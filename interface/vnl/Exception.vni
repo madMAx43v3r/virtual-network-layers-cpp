@@ -1,6 +1,8 @@
 package vnl;
 
 class Exception {
+
+	String what;
 	
 }
 
@@ -21,6 +23,10 @@ class NullPointerException extends Exception {
 }
 
 class OutOfMemoryException extends Exception {
+	
+}
+
+class InvalidValueException extends Exception {
 	
 }
 
