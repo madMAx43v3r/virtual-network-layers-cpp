@@ -227,8 +227,10 @@ public:
 	}
 	
 	iterator erase(iterator pos) {
-		assert(pos.entry);
-		entry_t** p_row = (entry_t**)&(*pos.index);
+		if(!pos.entry) {
+			raise_null_pointer();
+		}
+		entry_t** p_row = &table[pos.index];
 		while(true) {
 			if(*p_row == pos.entry) {
 				remove(p_row);
