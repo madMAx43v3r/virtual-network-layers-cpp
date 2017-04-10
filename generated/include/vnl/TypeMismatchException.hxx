@@ -14,7 +14,7 @@ namespace vnl {
 class TypeMismatchException : public vnl::IOException {
 public:
 	static const uint32_t VNI_HASH = 0x493cc6db;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	

@@ -14,7 +14,7 @@ namespace vnl {
 class IllegalInstruction : public vnl::Exception {
 public:
 	static const uint32_t VNI_HASH = 0xf8fa6b14;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	

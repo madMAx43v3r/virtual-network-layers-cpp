@@ -14,7 +14,7 @@ namespace vnl {
 class TimeoutException : public vnl::IOException {
 public:
 	static const uint32_t VNI_HASH = 0x8c528f1;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	

@@ -14,7 +14,7 @@ namespace vnl {
 class NoSuchKeyException : public vnl::IOException {
 public:
 	static const uint32_t VNI_HASH = 0xd8d131ca;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	

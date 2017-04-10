@@ -14,7 +14,7 @@ namespace vnl {
 class OutOfMemoryException : public vnl::Exception {
 public:
 	static const uint32_t VNI_HASH = 0x61b281b0;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	

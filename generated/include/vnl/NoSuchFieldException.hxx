@@ -14,7 +14,7 @@ namespace vnl {
 class NoSuchFieldException : public vnl::IOException {
 public:
 	static const uint32_t VNI_HASH = 0xd7988e27;
-	static const uint32_t NUM_FIELDS = 0;
+	static const uint32_t NUM_FIELDS = 1;
 	
 	
 	
