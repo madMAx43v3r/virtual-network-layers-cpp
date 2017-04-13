@@ -26,17 +26,18 @@ protected:
 	void main() {
 		if(!filename.empty()) {
 			open();
-			if(file && !readonly) {
-				set_timeout(interval, std::bind(&StorageServer::update, this), VNL_TIMER_REPEAT);
-			}
+		}
+		if(!file) {
+			return;
+		}
+		if(!readonly) {
+			set_timeout(interval, std::bind(&StorageServer::update, this), VNL_TIMER_REPEAT);
 		}
 		for(Address& addr : topics) {
 			subscribe(addr);
 		}
 		run();
-		if(file) {
-			::fclose(file);
-		}
+		::fclose(file);
 	}
 	
 	void handle(const Entry& sample) {
@@ -114,7 +115,7 @@ private:
 			::fclose(tmp);
 			file = ::fopen(buf, "rb+");
 		}
-		if(!file.good()) {
+		if(!file) {
 			log(ERROR).out << "Unable to open file: " << filename << vnl::endl;
 			return;
 		}
