@@ -70,9 +70,7 @@ public:
 	
 	~Layer();
 	
-	void shutdown();
-	
-	void close();
+	static void shutdown();
 	
 	static volatile bool have_shutdown;
 	static std::atomic<int> num_threads;
@@ -81,7 +79,7 @@ protected:
 	static void parse_config(const char* config_dir);
 	
 private:
-	bool closed;
+	static bool is_closed;
 	
 	friend class Process;
 	

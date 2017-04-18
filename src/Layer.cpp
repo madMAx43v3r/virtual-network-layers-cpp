@@ -38,6 +38,7 @@ namespace internal {
 Random64* Random64::instance = 0;
 
 volatile bool Layer::have_shutdown = false;
+bool Layer::is_closed = false;
 std::atomic<int> Layer::num_threads(0);
 
 
@@ -66,9 +67,7 @@ void raise_invalid_value(double value) {
 }
 
 
-Layer::Layer(const char* domain_name, const char* config_dir)
-	:	closed(false)
-{
+Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(Random64::instance == 0);
 	assert(Router::instance == 0);
 	assert(Pipe::pool == 0);
@@ -77,6 +76,7 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 	assert(internal::config_ == 0);
 	assert(internal::type_info_ == 0);
 	assert(have_shutdown == false);
+	assert(is_closed == false);
 	assert(num_threads == 0);
 	
 	Random64::instance = new Random64();
@@ -98,27 +98,6 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 }
 
 Layer::~Layer() {
-	close();
-}
-
-void Layer::shutdown() {
-	if(!have_shutdown) {
-		ThreadEngine engine;
-		ProcessClient proc = Address(vnl::local_domain_name, "Process");
-		proc.set_fail(true);
-		proc.connect(&engine);
-		try {
-			proc.shutdown();
-		} catch(...) {}
-		engine.flush();
-		have_shutdown = true;
-	}
-}
-
-void Layer::close() {
-	if(closed) {
-		return;
-	}
 	while(num_threads.load() > 0) {
 		usleep(10*1000);
 	}
@@ -137,7 +116,18 @@ void Layer::close() {
 	
 	Page::cleanup();
 	Block::cleanup();
-	closed = true;
+}
+
+void Layer::shutdown() {
+	ThreadEngine engine;
+	ProcessClient proc = Address(vnl::local_domain_name, "Process");
+	proc.set_fail(true);
+	proc.connect(&engine);
+	try {
+		proc.shutdown();
+	} catch(...) {}
+	engine.flush();
+	have_shutdown = true;
 }
 
 void Layer::parse_config(const char* root_dir) {
