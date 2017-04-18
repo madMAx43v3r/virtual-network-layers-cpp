@@ -32,7 +32,6 @@ protected:
 		while(poll(0)) {
 			std::getline(std::cin, input);
 			if(std::cin.eof()) {
-				run();
 				break;
 			}
 			pause();
