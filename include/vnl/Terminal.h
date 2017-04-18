@@ -31,6 +31,10 @@ protected:
 		std::string input;
 		while(poll(0)) {
 			std::getline(std::cin, input);
+			if(std::cin.eof()) {
+				run();
+				break;
+			}
 			pause();
 			print_help();
 			std::cout << "Terminal: ";
