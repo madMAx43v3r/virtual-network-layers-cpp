@@ -78,11 +78,6 @@ public:
 protected:
 	static void parse_config(const char* config_dir);
 	
-private:
-	static bool is_closed;
-	
-	friend class Process;
-	
 };
 
 

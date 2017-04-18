@@ -38,7 +38,6 @@ namespace internal {
 Random64* Random64::instance = 0;
 
 volatile bool Layer::have_shutdown = false;
-bool Layer::is_closed = false;
 std::atomic<int> Layer::num_threads(0);
 
 
@@ -76,7 +75,6 @@ Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(internal::config_ == 0);
 	assert(internal::type_info_ == 0);
 	assert(have_shutdown == false);
-	assert(is_closed == false);
 	assert(num_threads == 0);
 	
 	Random64::instance = new Random64();
