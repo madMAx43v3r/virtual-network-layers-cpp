@@ -32,6 +32,12 @@ public:
 		append(other);
 	}
 	
+	Array(const std::initializer_list<T>& list) : p_front(0), p_back(0), pos(0), count(0) {
+		for(T v : list) {
+			(*this).push_back(v);
+		}
+	}
+	
 	~Array() {
 		clear();
 	}
