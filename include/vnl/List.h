@@ -266,6 +266,13 @@ public:
 		}
 		return *iter;
 	}
+	const T& operator[](int index) const {
+		auto iter = begin();
+		for(int i = 0; i < index; ++i) {
+			++iter;
+		}
+		return *iter;
+	}
 	
 	T& front() {
 		if(!count) {
