@@ -72,46 +72,50 @@ protected:
 	}
 	
 	bool handle(vnl::Packet* packet) {
+		if(Super::handle(packet)) {
+			return true;
+		}
+		if(out.error()) {
+			return false;
+		}
 		if(packet->pkt_id == vnl::Sample::PID) {
 			Sample* sample = (Sample*)packet->payload;
-			if(sample->data) {
-				Hash64 domain = packet->dst_addr.domain();
-				if(domain_map.find(domain)) {
-					Entry* p_entry = dynamic_cast<Entry*>(sample->data);
-					int64_t* p_version = 0;
-					if(p_entry) {
-						p_version = storage_map.find(p_entry->key);
+			Hash64 domain = packet->dst_addr.domain();
+			if(!domain_map.find(domain)) {
+				return false;
+			}
+			Entry* p_entry = dynamic_cast<Entry*>(sample->data);
+			if(p_entry) {
+				int64_t* p_version = storage_map.find(p_entry->key);
+				if(p_version) {
+					if(p_entry->version > *p_version) {
+						*p_version = p_entry->version;
+					} else {
+						return false;
 					}
-					if(!p_version || p_entry->version > *p_version) {
-						RecordValue rec;
-						rec.time = vnl::currentTimeMicros();
-						rec.domain = domain;
-						rec.topic = packet->dst_addr.topic();
-						rec.header = sample->header;
-						rec.value = sample->data;
-						vnl::write(out, rec);
-						out.flush();
-						if(!header.num_samples++) {
-							header.begin_time = rec.time;
-						}
-						header.end_time = rec.time;
-						rec.header.release();
-						rec.value.release();
-						if(p_entry) {
-							if(p_version) {
-								*p_version = p_entry->version;
-							} else {
-								storage_map[p_entry->key] = p_entry->version;
-							}
-						}
-						if(sample->header && !topic_map.find(packet->dst_addr)) {
-							topic_map[packet->dst_addr] = sample->header->dst_topic;
-						}
-					}
+				} else {
+					storage_map[p_entry->key] = p_entry->version;
 				}
 			}
+			RecordValue rec;
+			rec.time = vnl::currentTimeMicros();
+			rec.domain = domain;
+			rec.topic = packet->dst_addr.topic();
+			rec.header = sample->header;
+			rec.value = sample->data;
+			vnl::write(out, rec);
+			out.flush();
+			if(!header.num_samples++) {
+				header.begin_time = rec.time;
+			}
+			header.end_time = rec.time;
+			rec.header.release();
+			rec.value.release();
+			if(sample->header && !topic_map.find(packet->dst_addr)) {
+				topic_map[packet->dst_addr] = sample->header->dst_topic;
+			}
 		}
-		return Super::handle(packet);
+		return false;
 	}
 	
 private:
