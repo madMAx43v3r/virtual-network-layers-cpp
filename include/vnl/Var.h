@@ -9,11 +9,14 @@
 #define INCLUDE_VNL_VAR_H_
 
 #include <vnl/String.h>
+#include <vnl/Pointer.h>
+#include <vnl/Enum.h>
 #include <vnl/Array.h>
 #include <vnl/List.h>
 #include <vnl/Map.h>
 
 #include <vnl/Value.hxx>
+#include <vnl/IOException.hxx>
 #include <vnl/MemoryException.hxx>
 
 
@@ -22,7 +25,7 @@ namespace vnl {
 class Var {
 public:
 	enum {
-		NIL, BOOL, INT, REAL, STRING, VALUE, LIST, MAP, PVAR
+		NIL, BOOL, INT, REAL, STRING, VALUE, LIST, MAP, PVAR, CPVAR
 	};
 	
 	Var() : type(NIL) { mem_ = 0; }
@@ -40,7 +43,10 @@ public:
 	Var(const char* v) : type(NIL) { *this = String(v); }
 	Var(const String& v) : type(NIL) { *this = v; }
 	Var(const Value& v) : type(NIL) { *this = v; }
-	Var(Var* v) : type(PVAR) { var_ = v; if(v) { v->ref_count++; } }
+	Var(const Hash32& v) : type(NIL) { *this = v; }
+	Var(const Hash64& v) : type(NIL) { *this = v; }
+	Var(const Var* v) : type(CPVAR) { cvar_ = v; if(var_) { var_->ref_count++; } }
+	Var(Var* v) : type(PVAR) { var_ = v; if(var_) { var_->ref_count++; } }
 	
 	template<typename T>
 	Var(const List<T>& v) : type(NIL) { *this = v; }
@@ -52,7 +58,7 @@ public:
 	Var(const Map<K,V>& v) : type(NIL) { *this = v; }
 	
 	template<typename T>
-	Var(const T& v) : type(NIL) { mem_ = 0; }
+	Var(const T& v) : type(NIL) {}
 	
 	Var(const Var& v) : type(NIL) {
 		*this = v;
@@ -167,6 +173,20 @@ public:
 		return *this;
 	}
 	
+	Var& operator=(const Hash32& v) {
+		clear();
+		type = INT;
+		mem_ = v.value;
+		return *this;
+	}
+	
+	Var& operator=(const Hash64& v) {
+		clear();
+		type = INT;
+		mem_ = v.value;
+		return *this;
+	}
+	
 	template<typename T>
 	Var& operator=(const List<T>& v) {
 		clear();
@@ -210,7 +230,15 @@ public:
 		clear();
 		type = PVAR;
 		var_ = v;
-		if(v) { v->ref_count++; }
+		if(var_) { var_->ref_count++; }
+		return *this;
+	}
+	
+	Var& operator=(const Var* v) {
+		clear();
+		type = CPVAR;
+		cvar_ = v;
+		if(cvar_) { var_->ref_count++; }
 		return *this;
 	}
 	
@@ -223,6 +251,7 @@ public:
 			case LIST: 		if(v.list_) { list_ = new List<Var>(*v.list_); } break;
 			case MAP: 		if(v.map_) { map_ = new Map<Var,Var>(*v.map_); } break;
 			case PVAR: 		if(v.var_) { var_ = v.var_; v.var_->ref_count++; } break;
+			case CPVAR: 	if(v.cvar_) { cvar_ = v.cvar_; v.var_->ref_count++; } break;
 			default: 		mem_ = v.mem_;
 		}
 		type = v.type;
@@ -249,6 +278,12 @@ public:
 						return !v.string_->size();
 					}
 					return string_ == v.string_;
+				case PVAR:
+				case CPVAR:
+					if(cvar_ && v.cvar_) {
+						return *cvar_ == *v.cvar_;
+					}
+					return cvar_ == v.cvar_;
 			}
 			return mem_ == v.mem_;
 		}
@@ -272,6 +307,13 @@ public:
 				case INT: 		return int64_t(double_) == v.long_;
 			}
 			return false;
+		case PVAR:
+		case CPVAR:
+			if(cvar_) {
+				return *cvar_ == v;
+			} else {
+				return v.type == NIL;
+			}
 		}
 		return false;
 	}
@@ -478,6 +520,24 @@ public:
 		return *this;
 	}
 	
+	Var& operator<<(const Var& v) {
+		return push_back(v);
+	}
+	
+	Var& operator>>(Var& v) {
+		v = pop_front();
+		return *this;
+	}
+	
+	Var& operator[](const Var& v) {
+		if(type != MAP || !map_) {
+			clear();
+			map_ = new Map<Var,Var>();
+			type = MAP;
+		}
+		return (*map_)[v];
+	}
+	
 	Var get_field(const Hash32& name) {
 		Var res;
 		if(type == VALUE && value_) {
@@ -499,6 +559,84 @@ public:
 		return *this;
 	}
 	
+	Var& push_back(const Var& v) {
+		if(type == STRING) {
+			if(!string_) {
+				string_ = new String();
+			}
+			switch(v.type) {
+				case BOOL: 		(*string_) << v.bool_; break;
+				case INT: 		(*string_) << v.long_; break;
+				case REAL: 		(*string_) << v.double_; break;
+				case STRING: 	if(v.string_) { (*string_) << (*v.string_); } break;
+				case VALUE:		if(v.value_) { vnl::to_string(*string_, v.value_); } break;
+				case LIST: 		if(v.list_) { vnl::to_string(*string_, v.list_); } break;
+				case MAP: 		if(v.map_) { vnl::to_string(*string_, v.map_); } break;
+				case PVAR: 		if(v.var_) { *this << (*v.var_); } break;
+				case CPVAR:		throw IOException();
+			}
+		} else {
+			if(type != LIST || !list_) {
+				clear();
+				list_ = new List<Var>();
+				type = LIST;
+			}
+			list_->push_back(v);
+		}
+		return *this;
+	}
+	
+	Var& push_front(const Var& v) {
+		if(type == STRING) {
+			*this = Var(v).push_back(*this);
+		} else {
+			if(type != LIST || !list_) {
+				clear();
+				list_ = new List<Var>();
+				type = LIST;
+			}
+			list_->push_front(v);
+		}
+		return *this;
+	}
+	
+	Var pop_back() {
+		if(type == LIST && list_) {
+			return list_->pop_back();
+		}
+		return Var();
+	}
+	
+	Var pop_front() {
+		if(type == LIST && list_) {
+			return list_->pop_front();
+		}
+		return Var();
+	}
+	
+	Var& set(const Var& key, const Var& v) {
+		if(type != MAP || !map_) {
+			clear();
+			map_ = new Map<Var,Var>();
+			type = MAP;
+		}
+		(*map_)[key] = v;
+		return *this;
+	}
+	
+	Var get(const Var& key) {
+		if(type == MAP && map_) {
+			return (*map_)[key];
+		}
+		return Var();
+	}
+	
+	void erase(const Var& key) {
+		if(type == MAP && map_) {
+			map_->erase(key);
+		}
+	}
+	
 	void to(bool& v) const {
 		switch(type) {
 			case BOOL: 		v = bool_; break;
@@ -507,7 +645,8 @@ public:
 			case STRING: 	if(string_) { v = string_->size(); } else { v = false; } break;
 			case LIST: 		if(list_) { v = list_->size(); } else { v = false; } break;
 			case MAP: 		if(map_) { v = map_->size(); } else { v = false; } break;
-			case PVAR: 		if(var_) { var_->to(v); } else { v = false; } break;
+			case CPVAR:
+			case PVAR: 		if(cvar_) { cvar_->to(v); } else { v = false; } break;
 			default: 		v = false;
 		}
 	}
@@ -527,7 +666,8 @@ public:
 		switch(type) {
 			case INT: 		v = mem_; break;
 			case STRING: 	if(string_) { v = Hash32(*string_); } else { v = 0; } break;
-			case PVAR: 		if(var_) { var_->to(v); } else { v = 0; } break;
+			case CPVAR:
+			case PVAR: 		if(cvar_) { cvar_->to(v); } else { v = 0; } break;
 			default: 		v = 0;
 		}
 	}
@@ -536,7 +676,8 @@ public:
 		switch(type) {
 			case INT: 		v = mem_; break;
 			case STRING: 	if(string_) { v = Hash64(*string_); } else { v = 0; } break;
-			case PVAR: 		if(var_) { var_->to(v); } else { v = 0; } break;
+			case CPVAR:
+			case PVAR: 		if(cvar_) { cvar_->to(v); } else { v = 0; } break;
 			default: 		v = 0;
 		}
 	}
@@ -551,7 +692,8 @@ public:
 			case VALUE:		if(value_) { vnl::to_string(v, *value_); } else { v = "{}"; } break;
 			case LIST: 		if(list_) { vnl::to_string(v, *list_); } else { v = "[]"; } break;
 			case MAP: 		if(map_) { vnl::to_string(v, *map_); } else { v = "{}"; } break;
-			case PVAR: 		if(var_) { var_->to(v); } break;
+			case CPVAR:
+			case PVAR: 		if(cvar_) { cvar_->to(v); } break;
 		}
 	}
 	
@@ -559,6 +701,14 @@ public:
 		if(type == VALUE && value_) {
 			v.assign(*value_);
 		}
+	}
+	
+	void to(Enum& v) const {
+		// TODO
+	}
+	
+	void to(Var& v) const {
+		v = *this;
 	}
 	
 	template<typename T>
@@ -583,6 +733,20 @@ public:
 		}
 	}
 	
+	template<typename T, int N>
+	void to(Vector<T, N>& v) const {
+		for(int i = 0; i < N; ++i) {
+			v[i] = T();
+		}
+		if(type == LIST && list_) {
+			int i = 0;
+			for(const Var& elem : *list_) {
+				elem.to(v[i]);
+				i++;
+			}
+		}
+	}
+	
 	template<typename K, typename V>
 	void to(Map<K,V>& v) const {
 		v.clear();
@@ -597,6 +761,14 @@ public:
 	}
 	
 	template<typename T>
+	void to(Pointer<T>& v) const {
+		v.destroy();
+		if(type == VALUE && dynamic_cast<T*>(value_)) {
+			v = (T*)value_->clone();
+		}
+	}
+	
+	template<typename T>
 	void to(T& v) const {
 		v = T();
 	}
@@ -607,7 +779,8 @@ public:
 			case BOOL: 		v = bool_; break;
 			case INT: 		v = long_; break;
 			case REAL: 		v = double_; break;
-			case PVAR: 		if(var_) { var_->to_scalar<T>(v); } else { v = T(); } break;
+			case CPVAR:
+			case PVAR: 		if(cvar_) { cvar_->to_scalar<T>(v); } else { v = T(); } break;
 			default: 		v = T();
 		}
 	}
@@ -632,12 +805,117 @@ public:
 			case VALUE: 	vnl::destroy(value_); break;
 			case LIST: 		delete list_; break;
 			case MAP: 		delete map_; break;
+			case CPVAR:
 			case PVAR: 		if(var_) { var_->ref_count--; } break;
 		}
 		mem_ = 0;
 		type = NIL;
 	}
 	
+	uint64_t hash() const {
+		switch(type) {
+			case Var::BOOL: 	return vnl::hash(bool_);
+			case Var::INT: 		return vnl::hash(long_);
+			case Var::REAL: 	return vnl::hash(double_);
+			case Var::STRING: 	if(string_) { return vnl::hash(string_); } break;
+			case Var::CPVAR:
+			case Var::PVAR: 	if(cvar_) { return vnl::hash(*cvar_); } break;
+		}
+		return 0;
+	}
+	
+	void read(vnl::io::TypeInput& in) {
+		clear();
+		uint32_t hash = 0;
+		int size = 0;
+		int id = in.getEntry(size);
+		switch(id) {
+			case VNL_IO_NULL: break;
+			case VNL_IO_BOOL:
+				*this = Var(size == VNL_IO_TRUE);
+				break;
+			case VNL_IO_INTEGER:
+				type = Var::INT;
+				in.readValue(long_, id, size);
+				break;
+			case VNL_IO_REAL:
+				type = Var::REAL;
+				in.readValue(double_, id, size);
+				break;
+			case VNL_IO_STRING:
+				type = Var::STRING;
+				string_ = new String();
+				in.readString(*string_, size);
+				break;
+			case VNL_IO_ARRAY:
+				type = Var::LIST;
+				list_ = new List<Var>();
+				for(int i = 0; i < size && !in.error(); ++i) {
+					Var& ref = *list_->push_back();
+					vnl::read(in, ref);
+				}
+				break;
+			case VNL_IO_MAP:
+				type = Var::MAP;
+				map_ = new Map<Var,Var>();
+				for(int i = 0; i < size && !in.error(); ++i) {
+					Var key;
+					vnl::read(in, key);
+					Var& val = (*map_)[key];
+					vnl::read(in, val);
+				}
+				break;
+			case VNL_IO_CLASS:
+				in.getHash(hash);
+				type = Var::VALUE;
+				value_ = vnl::create(hash);
+				vnl::read(in, value_);
+				break;
+			default: in.skip(id, size);
+		}
+	}
+	
+	void write(vnl::io::TypeOutput& out) const {
+		switch(type) {
+			case Var::BOOL: 	vnl::write(out, bool_); break;
+			case Var::INT: 		vnl::write(out, long_); break;
+			case Var::REAL: 	vnl::write(out, double_); break;
+			case Var::STRING: 	if(string_) { vnl::write(out, *string_); } else { out.putNull(); } break;
+			case Var::VALUE: 	if(value_) { vnl::write(out, *value_); } else { out.putNull(); } break;
+			case Var::LIST: 	if(list_) { vnl::write(out, *list_); } else { out.putNull(); } break;
+			case Var::MAP: 		if(map_) { vnl::write(out, *map_); } else { out.putNull(); } break;
+			case Var::CPVAR:
+			case Var::PVAR: 	if(cvar_) { vnl::write(out, *cvar_); } else { out.putNull(); } break;
+			default: 			out.putNull();
+		}
+	}
+	
+	void from_string(const vnl::String& str) {
+		*this = str;
+	}
+	
+	void to_string(vnl::String& out) const {
+		switch(type) {
+			case Var::BOOL: 	vnl::to_string(out, bool_); break;
+			case Var::INT: 		vnl::to_string(out, long_); break;
+			case Var::REAL: 	vnl::to_string(out, double_); break;
+			case Var::STRING: 	if(string_) { vnl::to_string(out, *string_); } else { out << "\"\""; } break;
+			case Var::VALUE:	if(value_) { vnl::to_string(out, *value_); } else { out << "{}"; } break;
+			case Var::LIST: 	if(list_) { vnl::to_string(out, *list_); } else { out << "[]"; } break;
+			case Var::MAP: 		if(map_) { vnl::to_string(out, *map_); } else { out << "{}"; } break;
+			case Var::CPVAR:
+			case Var::PVAR: 	if(cvar_) { vnl::to_string(out, *cvar_); } else { out << "{}"; } break;
+			default: 			out << "{}";
+		}
+	}
+	
+	String to_string() const {
+		String str;
+		to_string(str);
+		return str;
+	}
+	
+protected:
 	union {
 		uint64_t mem_;
 		bool bool_;
@@ -647,6 +925,7 @@ public:
 		Value* value_;
 		List<Var>* list_;
 		Map<Var,Var>* map_;
+		const Var* cvar_;
 		Var* var_;
 	};
 	
@@ -657,97 +936,23 @@ public:
 
 
 inline uint64_t hash(const Var& obj) {
-	switch(obj.type) {
-		case Var::BOOL: 	return vnl::hash(obj.bool_);
-		case Var::INT: 		return vnl::hash(obj.long_);
-		case Var::REAL: 	return vnl::hash(obj.double_);
-		case Var::STRING: 	if(obj.string_) { return vnl::hash(obj.string_); } break;
-		case Var::PVAR: 	if(obj.var_) { return vnl::hash(*obj.var_); } break;
-	}
-	return 0;
+	return obj.hash();
 }
 
 inline void read(vnl::io::TypeInput& in, vnl::Var& obj) {
-	obj.clear();
-	uint32_t hash = 0;
-	int size = 0;
-	int id = in.getEntry(size);
-	switch(id) {
-		case VNL_IO_NULL: break;
-		case VNL_IO_BOOL:
-			obj = Var(size == VNL_IO_TRUE);
-			break;
-		case VNL_IO_INTEGER:
-			obj.type = Var::INT;
-			in.readValue(obj.long_, id, size);
-			break;
-		case VNL_IO_REAL:
-			obj.type = Var::REAL;
-			in.readValue(obj.double_, id, size);
-			break;
-		case VNL_IO_STRING:
-			obj.type = Var::STRING;
-			obj.string_ = new String();
-			in.readString(*obj.string_, size);
-			break;
-		case VNL_IO_ARRAY:
-			obj.type = Var::LIST;
-			obj.list_ = new List<Var>();
-			for(int i = 0; i < size && !in.error(); ++i) {
-				Var& ref = *obj.list_->push_back();
-				vnl::read(in, ref);
-			}
-			break;
-		case VNL_IO_MAP:
-			obj.type = Var::MAP;
-			obj.map_ = new Map<Var,Var>();
-			for(int i = 0; i < size && !in.error(); ++i) {
-				Var key;
-				vnl::read(in, key);
-				Var& val = (*obj.map_)[key];
-				vnl::read(in, val);
-			}
-			break;
-		case VNL_IO_CLASS:
-			in.getHash(hash);
-			obj.type = Var::VALUE;
-			obj.value_ = vnl::create(hash);
-			vnl::read(in, obj.value_);
-			break;
-		default: in.skip(id, size);
-	}
+	obj.read(in);
 }
 
 inline void write(vnl::io::TypeOutput& out, const vnl::Var& obj) {
-	switch(obj.type) {
-		case Var::BOOL: 	vnl::write(out, obj.bool_); break;
-		case Var::INT: 		vnl::write(out, obj.long_); break;
-		case Var::REAL: 	vnl::write(out, obj.double_); break;
-		case Var::STRING: 	if(obj.string_) { vnl::write(out, *obj.string_); } else { out.putNull(); } break;
-		case Var::VALUE: 	if(obj.value_) { vnl::write(out, *obj.value_); } else { out.putNull(); } break;
-		case Var::LIST: 	if(obj.list_) { vnl::write(out, *obj.list_); } else { out.putNull(); } break;
-		case Var::MAP: 		if(obj.map_) { vnl::write(out, *obj.map_); } else { out.putNull(); } break;
-		case Var::PVAR: 	if(obj.var_) { vnl::write(out, *obj.var_); } else { out.putNull(); } break;
-		default: 			out.putNull();
-	}
+	obj.write(out);
 }
 
 inline void from_string(const vnl::String& str, vnl::Var& obj) {
-	obj = str;
+	obj.from_string(str);
 }
 
 inline void to_string(vnl::String& out, const vnl::Var& obj) {
-	switch(obj.type) {
-		case Var::BOOL: 	vnl::to_string(out, obj.bool_); break;
-		case Var::INT: 		vnl::to_string(out, obj.long_); break;
-		case Var::REAL: 	vnl::to_string(out, obj.double_); break;
-		case Var::STRING: 	if(obj.string_) { vnl::to_string(out, *obj.string_); } else { out << "\"\""; } break;
-		case Var::VALUE:	if(obj.value_) { vnl::to_string(out, *obj.value_); } else { out << "{}"; } break;
-		case Var::LIST: 	if(obj.list_) { vnl::to_string(out, *obj.list_); } else { out << "[]"; } break;
-		case Var::MAP: 		if(obj.map_) { vnl::to_string(out, *obj.map_); } else { out << "{}"; } break;
-		case Var::PVAR: 	if(obj.var_) { vnl::to_string(out, *obj.var_); } else { out << "{}"; } break;
-		default: 			out << "{}";
-	}
+	obj.to_string(out);
 }
 
 

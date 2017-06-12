@@ -26,5 +26,6 @@ object Player {
 	
 	PlayerStatus get_status() const;
 	Array<Topic> get_topics() const;
+	Map<Hash32, vnl.info.Type> get_type_info() const;
 	
 }

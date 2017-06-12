@@ -39,7 +39,7 @@ namespace internal {
 Map<Hash32, vnl::info::Type> get_type_info();
 
 /*
- * Returns type info, null if not found.
+ * Returns type info for specified type, null if not found.
  */
 const vnl::info::Type* get_type_info(Hash32 type_name);
 
@@ -70,20 +70,13 @@ public:
 	
 	~Layer();
 	
-	void shutdown();
-	
-	void close();
+	static void shutdown();
 	
 	static volatile bool have_shutdown;
 	static std::atomic<int> num_threads;
 	
 protected:
 	static void parse_config(const char* config_dir);
-	
-private:
-	bool closed;
-	
-	friend class Process;
 	
 };
 

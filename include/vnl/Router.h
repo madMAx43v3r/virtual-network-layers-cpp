@@ -47,7 +47,7 @@ protected:
 	void open(const Address& addr, uint64_t src);
 	void close(const Address& addr, uint64_t src);
 	
-	void route(Packet* packet, Basic* src, Row* prow);
+	void route(Packet* packet, Row* prow);
 	void forward(Packet* org, Basic* dst);
 	
 	virtual void callback(Message* msg);

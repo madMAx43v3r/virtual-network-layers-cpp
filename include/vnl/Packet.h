@@ -98,7 +98,9 @@ public:
 			route[i] = hash;
 		}
 		uint8_t flags = 0;
-		in.readChar(flags);
+		if(header_len >= get_header_size()) {
+			in.readChar(flags);
+		}
 		is_no_drop = flags & NO_DROP;
 		int left = header_len - get_header_size();
 		if(left > 0) {

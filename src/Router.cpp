@@ -22,7 +22,6 @@ Router::Router()
 bool Router::handle(Message* msg) {
 	if(msg->msg_id == Packet::MID) {
 		Packet* pkt = (Packet*)msg;
-		Basic* src = msg->src;
 		for(int i = 0; i < pkt->num_hops; ++i) {
 			if(pkt->route[i] == (uint32_t)vnl_mac) {
 				num_drop++;
@@ -51,9 +50,9 @@ bool Router::handle(Message* msg) {
 			}
 		}
 		
-		route(pkt, src, table.find(pkt->dst_addr));
-		route(pkt, src, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
-		route(pkt, src, spy_list);
+		route(pkt, table.find(pkt->dst_addr));
+		route(pkt, table.find(Address(pkt->dst_addr.domain(), (uint64_t)0)));
+		route(pkt, spy_list);
 		
 		if(current_info) {
 			current_info->publishers[pkt->proxy ? pkt->proxy : pkt->src_mac]++;
@@ -116,17 +115,15 @@ void Router::close(const Address& addr, uint64_t src) {
 	}
 }
 
-void Router::route(Packet* pkt, Basic* src, Row* prow) {
+void Router::route(Packet* pkt, Row* prow) {
 	if(prow) {
 		for(uint64_t& dst : *prow) {
-			if(dst) {
+			if(dst && dst != pkt->src_mac) {
 				Basic** target = lookup.find(dst);
 				if(target) {
-					if(*target != src) {
-						forward(pkt, *target);
-						if(enable_topic_info && current_info) {
-							current_info->subscribers[dst]++;
-						}
+					forward(pkt, *target);
+					if(enable_topic_info && current_info) {
+						current_info->subscribers[dst]++;
 					}
 				} else {
 					dst = 0;

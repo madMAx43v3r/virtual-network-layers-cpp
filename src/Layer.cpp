@@ -13,6 +13,9 @@
 #include <vnl/Process.h>
 #include <vnl/Type.hxx>
 #include <vnl/ProcessClient.hxx>
+#include <vnl/OutOfMemoryException.hxx>
+#include <vnl/NullPointerException.hxx>
+#include <vnl/InvalidValueException.hxx>
 
 #include <iostream>
 #include <mutex>
@@ -44,10 +47,26 @@ const vnl::info::Type* get_type_info(Hash32 type_name) {
 	return internal::type_info_->find(type_name);
 }
 
+void raise_out_of_memory() {
+	throw OutOfMemoryException();
+}
 
-Layer::Layer(const char* domain_name, const char* config_dir)
-	:	closed(false)
-{
+void raise_null_pointer() {
+	throw NullPointerException();
+}
+
+void raise_invalid_value() {
+	throw InvalidValueException();
+}
+
+void raise_invalid_value(double value) {
+	InvalidValueException ex;
+	ex.what << value;
+	throw ex;
+}
+
+
+Layer::Layer(const char* domain_name, const char* config_dir) {
 	assert(Random64::instance == 0);
 	assert(Router::instance == 0);
 	assert(Pipe::pool == 0);
@@ -77,27 +96,6 @@ Layer::Layer(const char* domain_name, const char* config_dir)
 }
 
 Layer::~Layer() {
-	close();
-}
-
-void Layer::shutdown() {
-	if(!have_shutdown) {
-		ThreadEngine engine;
-		ProcessClient proc = Address(vnl::local_domain_name, "Process");
-		proc.set_fail(true);
-		proc.connect(&engine);
-		try {
-			proc.shutdown();
-		} catch(...) {}
-		engine.flush();
-		have_shutdown = true;
-	}
-}
-
-void Layer::close() {
-	if(closed) {
-		return;
-	}
 	while(num_threads.load() > 0) {
 		usleep(10*1000);
 	}
@@ -116,7 +114,18 @@ void Layer::close() {
 	
 	Page::cleanup();
 	Block::cleanup();
-	closed = true;
+}
+
+void Layer::shutdown() {
+	ThreadEngine engine;
+	ProcessClient proc = Address(vnl::local_domain_name, "Process");
+	proc.set_fail(true);
+	proc.connect(&engine);
+	try {
+		proc.shutdown();
+	} catch(...) {}
+	engine.flush();
+	have_shutdown = true;
 }
 
 void Layer::parse_config(const char* root_dir) {

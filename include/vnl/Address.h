@@ -91,7 +91,7 @@ inline void write(vnl::io::TypeOutput& out, const Address& val) {
 }
 
 inline void to_string(vnl::String& str, const Address& val) {
-	str << hex(val.A) << ":" << hex(val.B);
+	str << "[" << val.A << ", " << val.B << "]";
 }
 
 inline void from_string(const vnl::String& str, Address& val) {

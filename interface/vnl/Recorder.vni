@@ -1,12 +1,64 @@
 package vnl;
 
+class RecordHeader {
+	
+	int version = 2;
+	int header_size;
+	bool have_type_info;
+	bool have_config;
+	
+	long num_samples;
+	
+	long begin_time;
+	long end_time;
+	
+	Array<Topic> topics;
+	
+}
+
+class RecordEntry {
+	
+}
+
+class RecordValue extends RecordEntry {
+	
+	long time;
+	
+	Hash64 domain;
+	Hash64 topic;
+	
+	Pointer<Header> header;
+	Pointer<Value> value;
+	
+}
+
+class RecordTypeInfo {
+	
+	Map<Hash32, vnl.info.Type> type_map;
+	
+}
+
+class RecordConfig {
+	
+	Map<String, String> config_map;
+	
+}
+
+class RecorderStatus {
+	
+	long time;
+	String filename;
+	
+	bool is_recording;
+	bool is_error;
+	
+}
+
 object Recorder {
 	
 	String filename = "rec-";
 	
 	int interval = 1000000;
-	
-	bool do_write_header = true;
 	int header_size = 262144;
 	
 	Array<String> domains;

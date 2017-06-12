@@ -1,0 +1,43 @@
+package vnl;
+
+class Entry {
+	
+	Hash64 key;
+	long version;
+	
+}
+
+interface Storage {
+	
+	void put_entry(Entry* value);
+	
+	Entry* get_entry(Hash64 key) const;
+	
+	Array<Entry*> get_entries(Array<Hash64> keys) const;
+	
+	void delete_entry(Hash64 key);
+	
+}
+
+object StorageBuffer implements Storage {
+	
+	List<Address> topics;
+	
+	void handle(Entry sample);
+	
+}
+
+object StorageServer implements Storage {
+	
+	String filename;
+	
+	int interval = 1000000;
+	
+	bool readonly = false;
+	bool truncate = false;
+	
+	List<Address> topics;
+	
+	void handle(Entry sample);
+	
+}

@@ -20,6 +20,19 @@ public:
 		}
 	}
 	
+	bool operator!=(const Vector& other) const {
+		return !(*this == other);
+	}
+	
+	bool operator==(const Vector& other) const {
+		for(int i = 0; i < N; ++i) {
+			if(data[i] != other[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	T& operator[](int i) {
 		return data[i];
 	}
@@ -46,6 +59,6 @@ private:
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_VECTOR_H_ */

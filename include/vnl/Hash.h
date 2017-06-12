@@ -11,7 +11,6 @@
 #include <vnl/Hash32.h>
 #include <vnl/Hash64.h>
 #include <vnl/Address.h>
-#include <vnl/String.h>
 
 
 namespace vnl {

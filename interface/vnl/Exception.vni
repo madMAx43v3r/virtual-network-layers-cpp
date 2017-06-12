@@ -1,6 +1,8 @@
 package vnl;
 
 class Exception {
+
+	String what;
 	
 }
 
@@ -13,6 +15,18 @@ class StackOverflow extends Exception {
 }
 
 class SegmentationFault extends Exception {
+	
+}
+
+class NullPointerException extends Exception {
+	
+}
+
+class OutOfMemoryException extends Exception {
+	
+}
+
+class InvalidValueException extends Exception {
 	
 }
 

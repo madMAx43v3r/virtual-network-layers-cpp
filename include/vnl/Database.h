@@ -24,31 +24,26 @@ public:
 	
 protected:
 	void main() {
-		char buf[1024];
-		filename.to_string(buf, sizeof(buf));
-		file = ::fopen(buf, "a+");
-		if(!file.good()) {
-			log(ERROR).out << "Unable to open file: " << filename << vnl::endl;
-			return;
+		if(!filename.empty() && !temporary) {
+			open();
+			if(file && !readonly) {
+				set_timeout(interval, std::bind(&Database::update, this), VNL_TIMER_REPEAT);
+			}
 		}
-		log(INFO).out << "Reading database ..." << vnl::endl;
-		read_all();
-		log(INFO).out << "Finished reading database." << vnl::endl;
 		run();
-		::fflush(file);
-		::fclose(file);
+		if(file) {
+			::fclose(file);
+		}
 	}
 	
 	bool handle(Frame* frame) {
-		if(out.error()) {
-			return false;
-		}
 		Frame* result = Super::exec_vni_call(frame);
 		if(result) {
-			if(frame->type == Frame::CALL && result->type == Frame::RESULT) {
+			if(file && !readonly && frame->type == Frame::CALL && result->type == Frame::RESULT) {
 				out.writeBinary(frame->data, frame->size);
 				out.flush();
 				if(out.error()) {
+					readonly = true;
 					log(ERROR).out << "Failed to write, error=" << out.error() << vnl::endl;
 				}
 			}
@@ -57,34 +52,56 @@ protected:
 		return false;
 	}
 	
+	void update() {
+		::fflush(file);
+	}
+	
 private:
+	void open() {
+		char buf[1024];
+		filename.to_string(buf, sizeof(buf));
+		if(readonly) {
+			file = ::fopen(buf, "rb");
+		} else if(truncate) {
+			file = ::fopen(buf, "wb+");
+		} else {
+			FILE* tmp = ::fopen(buf, "ab+");
+			::fclose(tmp);
+			file = ::fopen(buf, "rb+");
+		}
+		if(!file) {
+			log(ERROR).out << "Unable to open file: " << filename << vnl::endl;
+			return;
+		}
+		if(!readonly) {
+			readonly = true;
+			while(::flock(file.get_fd(), LOCK_EX | LOCK_NB)) {
+				log(ERROR).out << "Failed to lock file: " << filename << vnl::endl;
+				sleep(10);
+				if(!vnl_dorun) {
+					return;
+				}
+			}
+			readonly = false;
+		}
+		log(INFO).out << "Running on file: " << filename << vnl::endl;
+		read_all();
+	}
+	
 	void read_all() {
 		::fseek(file, 0, SEEK_SET);
+		int64_t count = 0;
 		int64_t last_pos = 0;
 		vnl::io::TypeInput in(&file);
 		while(true) {
-			last_pos = ::ftell(file);
-			// TODO: account for data in buffer
+			last_pos = in.get_input_pos();
 			int size = 0;
 			int id = in.getEntry(size);
-			if(in.error()) {
-				::fseek(file, 0, SEEK_END);
-				break;
-			}
 			if(id == VNL_IO_CALL) {
 				uint32_t hash;
 				in.getHash(hash);
 				try {
 					bool res = vni_call(in, hash, size);
-					if(in.error()) {
-						log(ERROR).out << "Unexpected read error at position " << last_pos << vnl::endl;
-						if(ignore_errors) {
-							::fseek(file, last_pos, SEEK_SET);
-							break;
-						} else {
-							throw vnl::IOException();
-						}
-					}
 					if(!res) {
 						in.skip(id, size, hash);
 						log(ERROR).out << "VNI_CALL failed: hash=" << hash << ", num_args=" << size << vnl::endl;
@@ -93,13 +110,28 @@ private:
 					if(ignore_errors) {
 						log(WARN).out << "Ignored exception: " << ex.get_type_name() << vnl::endl;
 					} else {
+						::fclose(file);
 						ex.raise();
 					}
 				}
+				count++;
 			} else {
 				in.skip(id, size);
 			}
+			if(in.error() == VNL_IO_EOF) {
+				::fseek(file, 0, SEEK_END);
+				break;
+			} else if(in.error()) {
+				log(ERROR).out << "Read error at position " << last_pos << vnl::endl;
+				if(ignore_errors) {
+					::fseek(file, last_pos, SEEK_SET);
+					break;
+				} else {
+					throw vnl::IOException();
+				}
+			}
 		}
+		log(INFO).out << "Replayed " << count << " transactions, " << in.get_num_read()/1024 << " kB" << vnl::endl;
 	}
 	
 private:

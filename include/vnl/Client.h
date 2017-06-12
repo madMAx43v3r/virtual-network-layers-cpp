@@ -105,13 +105,12 @@ protected:
 				if(request.count == 0) {
 					throw IOException();
 				}
-				if(request.is_timeout) {
-					throw TimeoutException();
-				}
 			}
 			
+			int left = request.count;
 			Message* msg = stream.poll(timeout);
 			while(msg) {
+				left--;
 				if(msg->msg_id == vnl::Packet::MID) {
 					Packet* pkt = (Packet*)msg;
 					if(pkt->pkt_id == vnl::Frame::PID) {
@@ -119,12 +118,22 @@ protected:
 						if(frame->req_num == req_num) {
 							packet = pkt;
 							result = frame;
-							break;
+							if(result->type == Frame::RESULT || left == 0) {
+								break;
+							}
 						}
 					}
 				}
 				msg->ack();
 				msg = stream.poll(timeout);
+			}
+			while(true) {
+				msg = stream.poll(0);
+				if(msg) {
+					msg->ack();
+				} else {
+					break;
+				}
 			}
 			if(result) {
 				break;
@@ -164,7 +173,6 @@ private:
 	bool do_fail;
 	
 };
-
 
 
 } // vnl

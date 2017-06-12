@@ -4,7 +4,12 @@ object Database {
 	
 	String filename = "database.dat";
 	
+	int interval = 1000000;
+	
+	bool readonly = false;
+	bool temporary = false;
 	bool ignore_errors = false;
+	bool truncate = false;
 	
 }
 

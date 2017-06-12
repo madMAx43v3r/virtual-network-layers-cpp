@@ -11,6 +11,8 @@
 #include <vnl/PlayerSupport.hxx>
 #include <vnl/RecordValue.hxx>
 #include <vnl/RecordHeader.hxx>
+#include <vnl/RecordTypeInfo.hxx>
+#include <vnl/RecordConfig.hxx>
 #include <vnl/info/PlayerStatus.hxx>
 #include <vnl/Sample.h>
 #include <vnl/io/File.h>
@@ -20,7 +22,7 @@ namespace vnl {
 
 class Player : public vnl::PlayerBase {
 public:
-	Player(const vnl::String& domain_, const vnl::String& topic_, vnl::Basic* target = vnl::Router::instance)
+	Player(const vnl::String& domain_ = vnl::local_domain_name, const vnl::String& topic_ = "Player", vnl::Basic* target = vnl::Router::instance)
 		:	PlayerBase(domain_, topic_),
 		 	target(target), in(&file), timer(0), begin_pos(0)
 	{
@@ -30,7 +32,6 @@ public:
 		type_blacklist["vnl.Exit"] = true;
 	}
 	
-	vnl::Map<Address, Address> addr_map;
 	vnl::Map<vnl::Hash32, bool> type_blacklist;
 	
 protected:
@@ -63,10 +64,11 @@ protected:
 			log(ERROR).out << "Unable to open file for reading: " << filename << vnl::endl;
 			return;
 		}
+		
 		in.reset();
 		Pointer<Value> ptr;
 		vnl::read(in, ptr);
-		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.value());
+		RecordHeader* p_header = dynamic_cast<RecordHeader*>(ptr.get());
 		if(p_header) {
 			header = *p_header;
 			status.end_time = header.end_time;
@@ -75,11 +77,21 @@ protected:
 			for(Topic& topic : header.topics) {
 				log(INFO).out << "Topic " << topic.domain << ":" << topic.name << vnl::endl;
 			}
+			if(header.version > 2) {
+				log(ERROR).out << "Recording version is too new: " << header.version << vnl::endl;
+			}
 			seek_begin();
+			if(header.have_type_info) {
+				log(INFO).out << "Have RecordTypeInfo: " << type_info.type_map.size() << " types" << vnl::endl;
+			}
+			if(header.have_config) {
+				log(INFO).out << "Have RecordConfig: " << config.config_map.size() << " entries" << vnl::endl;
+			}
 		} else {
 			begin_pos = 0;
 			do_scan();
 		}
+		
 		status.filename = filename;
 		status.playing = false;
 		status.error = false;
@@ -182,31 +194,7 @@ protected:
 			return;
 		}
 		status.current_time = next.time;
-		vnl::Value* value = next.value.release();
-		if(value) {
-			bool pass = true;
-			if(type_blacklist.find(value->get_vni_hash())) {
-				pass = false;
-			} else if(blacklist.find(Address(next.domain, ""))) {
-				pass = false;
-			} else if(blacklist.find(Address(next.domain, next.topic))) {
-				pass = false;
-			}
-			if(pass) {
-				Address dst_addr(next.domain, next.topic);
-				Address* remap = addr_map.find(dst_addr);
-				if(remap) {
-					dst_addr = *remap;
-				}
-				Sample* msg = vnl_sample_buffer.create();
-				msg->dst_addr = dst_addr;
-				msg->header = next.header.release();
-				msg->data = value;
-				send_async(msg, target);
-			} else {
-				vnl::destroy(value);
-			}
-		}
+		send_next();
 		vnl::read(in, next);
 		if(!in.error()) {
 			int64_t now = vnl::currentTimeMicros() - status.time_offset;
@@ -249,6 +237,10 @@ protected:
 		return header.topics;
 	}
 	
+	Map<Hash32, vnl::info::Type> get_type_info() const {
+		return type_info.type_map;
+	}
+	
 private:
 	void seek_begin() {
 		if(!file.good()) {
@@ -259,8 +251,31 @@ private:
 			return;
 		}
 		in.reset();
-		vnl::read(in, next);
+		if(header.have_type_info) {
+			vnl::read(in, type_info);
+		}
+		if(header.have_config) {
+			vnl::read(in, config);
+		}
+		// read first RecordValue and skip over anything which is not a RecordValue
+		while(!vnl::read(in, next) && !in.error());
 		status.current_time = status.begin_time;
+	}
+	
+	void send_next() {
+		if(next.value && type_blacklist.find(next.value->get_vni_hash())) {
+			return;
+		} else if(blacklist.find(Address(next.domain, ""))) {
+			return;
+		} else if(blacklist.find(Address(next.domain, next.topic))) {
+			return;
+		}
+		
+		Sample* msg = vnl_sample_buffer.create();
+		msg->dst_addr = Address(next.domain, next.topic);
+		msg->header = next.header.release();
+		msg->data = next.value.release();
+		send_async(msg, target);
 	}
 	
 	void close() {
@@ -270,22 +285,23 @@ private:
 	}
 	
 private:
-	vnl::Basic* target;
+	Basic* target;
 	vnl::io::File file;
 	vnl::io::TypeInput in;
 	
-	vnl::Timer* timer;
+	Timer* timer;
 	vnl::info::PlayerStatus status;
 	RecordHeader header;
-	vnl::RecordValue next;
+	RecordTypeInfo type_info;
+	RecordConfig config;
+	RecordValue next;
 	int begin_pos;
 	
-	vnl::Map<Address, bool> blacklist;
+	Map<Address, bool> blacklist;
 	
 };
 
 
-
-}
+} // vnl
 
 #endif /* INCLUDE_VNL_PLAYER_H_ */

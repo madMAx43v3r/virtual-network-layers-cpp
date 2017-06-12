@@ -7,7 +7,9 @@ interface String;
 interface Binary;
 interface Pointer;
 interface Array;
+interface SArray;
 interface List;
+interface SList;
 interface Map;
 
 extern Hash32;

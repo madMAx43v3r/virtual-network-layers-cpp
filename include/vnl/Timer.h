@@ -19,7 +19,7 @@ class Object;
 
 class Timer {
 public:
-	Timer() : type(VNL_TIMER_MANUAL), active(true) {
+	Timer() : type(VNL_TIMER_MANUAL), active(false) {
 		deadline = 0;
 		interval = 0;
 	}

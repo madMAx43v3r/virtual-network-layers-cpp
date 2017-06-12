@@ -15,10 +15,10 @@ namespace vnl {
 
 /*
  * This is a doubly linked list for use on small data types.
- * Maximum element size is VNL_BLOCK_SIZE-16 bytes.
+ * Maximum element size is VNL_PAGE_SIZE-16 bytes.
  * Iterators are valid as long as clear() is not called.
  */
-template<typename T, typename TPage = Memory<VNL_BLOCK_SIZE> >
+template<typename T, typename TPage = Memory<VNL_PAGE_SIZE> >
 class List {
 public:
 	List() : p_front(0), p_back(0), count(0) {
@@ -68,9 +68,15 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::bidirectional_iterator_tag, P>::reference operator*() const {
+			if(!entry) {
+				raise_null_pointer();
+			}
 			return entry->value;
 		}
 		typename std::iterator<std::bidirectional_iterator_tag, P>::pointer operator->() const {
+			if(!entry) {
+				raise_null_pointer();
+			}
 			return &entry->value;
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {
@@ -84,6 +90,9 @@ public:
 		}
 	private:
 		void inc() {
+			if(!entry) {
+				raise_null_pointer();
+			}
 			entry = entry->next;
 		}
 		void dec() {
@@ -140,7 +149,7 @@ public:
 	}
 	
 	bool pop_back(T& obj) {
-		if(empty()) {
+		if(!count) {
 			return false;
 		}
 		obj = p_back->value;
@@ -149,13 +158,16 @@ public:
 	}
 	
 	T pop_back() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		T obj;
 		pop_back(obj);
 		return obj;
 	}
 	
 	bool pop_front(T& obj) {
-		if(empty()) {
+		if(!count) {
 			return false;
 		}
 		obj = p_front->value;
@@ -164,6 +176,9 @@ public:
 	}
 	
 	T pop_front() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		T obj;
 		pop_front(obj);
 		return obj;
@@ -205,9 +220,15 @@ public:
 		return iterator(this, ptr);
 	}
 	
+	/*
+	 * Erase element pointed to by iter. Returns iterator to next element.
+	 */
 	iterator erase(iterator iter) {
 		count--;
 		entry_t* old = iter.entry;
+		if(!old) {
+			raise_null_pointer();
+		}
 		if(p_front == p_back) {
 			clear();
 			return iterator(this, 0);
@@ -245,18 +266,37 @@ public:
 		}
 		return *iter;
 	}
+	const T& operator[](int index) const {
+		auto iter = begin();
+		for(int i = 0; i < index; ++i) {
+			++iter;
+		}
+		return *iter;
+	}
 	
 	T& front() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_front->value;
 	}
 	T& back() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_back->value;
 	}
 	
 	const T& front() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_front->value;
 	}
 	const T& back() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_back->value;
 	}
 	

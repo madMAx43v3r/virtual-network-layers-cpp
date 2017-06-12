@@ -54,6 +54,10 @@ public:
 		}
 	}
 	
+	virtual int get_type_size() const {
+		return 0;
+	}
+	
 	virtual int get_num_fields() const {
 		return 0;
 	}

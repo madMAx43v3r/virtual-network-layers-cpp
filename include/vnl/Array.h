@@ -36,15 +36,13 @@ public:
 	Array(const T array[], int n) : p_front(0), p_back(0), pos(0), count(0) {
 		append(array, n);
 	}
-
-	Array(std::initializer_list<T> list) : p_front(0), p_back(0), pos(0), count(0) {
-		if(list.size() > 0) {
-			for(const T* v=list.begin(); v!=list.end(); ++v) {
-				push_back(*v);
-			}
+	
+	Array(const std::initializer_list<T>& list) : p_front(0), p_back(0), pos(0), count(0) {
+		for(T v : list) {
+			(*this).push_back(v);
 		}
 	}
-
+	
 	~Array() {
 		clear();
 	}
@@ -102,7 +100,9 @@ public:
 	}
 
 	T& operator[](int index) {
-		assert(index >= 0 && index < count);
+		if(index < 0 || index >= count) {
+			raise_invalid_value(index);
+		}
 		int pi = index / M;
 		int ei = index % M;
 		TPage* page = p_front;
@@ -170,16 +170,28 @@ public:
 	}
 	
 	T& front() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return *begin();
 	}
 	T& back() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return (*this)[size()-1];
 	}
 	
 	const T& front() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return *begin();
 	}
 	const T& back() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return (*this)[size()-1];
 	}
 	
@@ -217,9 +229,15 @@ public:
 			return tmp;
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::reference operator*() const {
+			if(pos >= M) {
+				raise_invalid_value(pos);
+			}
 			return page->template type_at_index<P>(pos);
 		}
 		typename std::iterator<std::forward_iterator_tag, P>::pointer operator->() const {
+			if(pos >= M) {
+				raise_invalid_value(pos);
+			}
 			return &page->template type_at_index<P>(pos);
 		}
 		friend void swap(iterator_t& lhs, iterator_t& rhs) {

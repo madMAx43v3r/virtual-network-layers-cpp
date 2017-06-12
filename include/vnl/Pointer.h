@@ -10,6 +10,7 @@
 
 #include <vnl/io.h>
 #include <vnl/Type.hxx>
+#include <vnl/NullPointerException.hxx>
 
 
 namespace vnl {
@@ -22,7 +23,9 @@ public:
 	Pointer(T* obj) : ptr(obj) {}
 	
 	Pointer(const Pointer& other) : ptr(0) {
-		ptr = other.clone();
+		if(other.ptr) {
+			ptr = other.clone();
+		}
 	}
 	
 	virtual ~Pointer() {
@@ -37,7 +40,9 @@ public:
 	
 	Pointer& operator=(const Pointer& other) {
 		destroy();
-		ptr = other.clone();
+		if(other.ptr) {
+			ptr = other.clone();
+		}
 		return *this;
 	}
 	
@@ -50,22 +55,38 @@ public:
 	}
 	
 	T& operator*() {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return *ptr;
 	}
 	
 	const T& operator*() const {
+		if(!ptr) {
+			throw NullPointerException();
+		}
 		return *ptr;
 	}
 	
-	T& operator->() {
-		return *ptr;
+	T* operator->() {
+		if(!ptr) {
+			throw NullPointerException();
+		}
+		return ptr;
 	}
 	
-	const T& operator->() const {
-		return *ptr;
+	const T* operator->() const {
+		if(!ptr) {
+			throw NullPointerException();
+		}
+		return ptr;
 	}
 	
-	T* value() {
+	T* get() {
+		return ptr;
+	}
+	
+	const T* get() const {
 		return ptr;
 	}
 	
@@ -76,11 +97,12 @@ public:
 	}
 	
 	T* clone() const {
-		if(ptr) {
-			return ptr->clone();
-		} else {
-			return 0;
-		}
+		return ptr ? ptr->clone() : 0;
+	}
+	
+	void destroy() {
+		vnl::destroy<T>(ptr);
+		ptr = 0;
 	}
 	
 	uint32_t get_vni_hash() const {
@@ -102,8 +124,9 @@ public:
 	}
 	
 	void from_string(const vnl::String& str) {
-		// TODO
-		assert(false);
+		if(ptr) {
+			ptr->from_string(str);
+		}
 	}
 	
 	void serialize(vnl::io::TypeOutput& out) const {
@@ -119,11 +142,6 @@ public:
 				vnl::destroy(value);
 			}
 		}
-	}
-	
-protected:
-	void destroy() {
-		vnl::destroy<T>(ptr);
 	}
 	
 private:

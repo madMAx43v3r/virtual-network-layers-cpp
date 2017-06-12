@@ -95,9 +95,9 @@ protected:
 			throw NoSuchFieldException();
 		}
 		for(View<T>* view : views) {
-			view->check_update(*row, index, value);
+			view->check_update(*row, index, &value);
 		}
-		row->set_field(index, value);
+		row->set_field(index, &value);
 		if(in.error()) {
 			throw IOException();
 		}

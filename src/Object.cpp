@@ -165,7 +165,11 @@ bool Object::poll(int64_t micros) {
 						timer.active = false;
 						break;
 				}
-				timer.func();
+				try {
+					timer.func();
+				} catch(vnl::Exception& ex) {
+					log(ERROR).out << "Caught " << ex.get_type_name() << " in timer function!" << vnl::endl;
+				}
 				diff = timer.deadline - now;
 				if(diff < 0) {
 					diff = 0;
@@ -190,19 +194,22 @@ bool Object::poll(int64_t micros) {
 }
 
 bool Object::handle(Message* msg) {
-	vnl_input_nodes[msg->src_mac]++;
-	vnl_input_channels[vnl_channel->get_mac()]++;
-	if(msg->msg_id == Packet::MID) {
-		Packet* pkt = (Packet*)msg;
-		if(pkt->proxy) {
-			vnl_input_nodes[pkt->proxy]++;
+	try {
+		vnl_input_nodes[msg->src_mac]++;
+		vnl_input_channels[vnl_channel->get_mac()]++;
+		if(msg->msg_id == Packet::MID) {
+			Packet* pkt = (Packet*)msg;
+			if(pkt->proxy) {
+				vnl_input_nodes[pkt->proxy]++;
+			}
+			return handle(pkt);
+		} else if(msg->msg_id == OutputPin::pin_data_t::MID) {
+			return handle((OutputPin::pin_data_t*)msg);
+		} else if(msg->msg_id == Stream::notify_t::MID) {
+			return handle((Stream::notify_t*)msg);
 		}
-		return handle(pkt);
-	}
-	if(msg->msg_id == OutputPin::pin_data_t::MID) {
-		return handle((OutputPin::pin_data_t*)msg);
-	} else if(msg->msg_id == Stream::notify_t::MID) {
-		return handle((Stream::notify_t*)msg);
+	} catch(vnl::Exception& ex) {
+		log(ERROR).out << "Caught " << ex.get_type_name() << " in handle(vnl::Message*) function!" << vnl::endl;
 	}
 	return false;
 }
@@ -221,23 +228,25 @@ bool Object::handle(Stream::notify_t* notify) {
 }
 
 bool Object::handle(OutputPin::pin_data_t* msg) {
-	if(msg->data && handle_switch(msg->data, msg->dst)) {
-		msg->ack();
-		return true;
+	if(msg->data) {
+		try {
+			handle_switch(msg->data, msg->dst);
+		} catch(vnl::Exception& ex) {
+			log(ERROR).out << "Caught " << ex.get_type_name() << " in handle(const " << msg->data->get_type_name() << "&)" << vnl::endl;
+		}
 	}
 	return false;
 }
 
 bool Object::handle(Packet* pkt) {
-	int64_t& last_seq = vnl_sources[pkt->src_mac xor vnl_channel->get_mac()];
+	int64_t& last_seq = vnl_sources[pkt->src_mac xor vnl_channel->get_mac()];	// TODO: why xor vnl_channel->get_mac() ?
 	if(pkt->seq_num <= last_seq) {
 		if(pkt->pkt_id == Frame::PID) {
 			Frame* result = vnl_frame_buffer.create();
 			result->req_num = ((Frame*)pkt->payload)->req_num;
 			send_async(result, pkt->src_addr);
 		}
-		pkt->ack();
-		return true;
+		return false;
 	}
 	last_seq = pkt->seq_num;
 	
@@ -247,7 +256,13 @@ bool Object::handle(Packet* pkt) {
 	if(pkt->pkt_id == Sample::PID) {
 		res = handle((Sample*)pkt->payload);
 	} else if(pkt->pkt_id == Frame::PID) {
-		res = handle((Frame*)pkt->payload);
+		Frame* frame = (Frame*)pkt->payload;
+		if(frame->type == Frame::CALL || frame->type == Frame::CONST_CALL) {
+			res = handle(frame);
+			vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
+			info.proxy = frame->proxy;
+			info.num_requests++;
+		}
 	}
 	vnl_proxy = tmp_proxy;
 	return res;
@@ -255,7 +270,11 @@ bool Object::handle(Packet* pkt) {
 
 bool Object::handle(Sample* sample) {
 	if(sample->data) {
-		handle_switch(sample->data, sample);
+		try {
+			handle_switch(sample->data, sample);
+		} catch(vnl::Exception& ex) {
+			log(ERROR).out << "Caught " << ex.get_type_name() << " in handle(const " << sample->data->get_type_name() << "&)" << vnl::endl;
+		}
 	}
 	return false;
 }
@@ -265,10 +284,6 @@ bool Object::handle(Frame* frame) {
 	if(result) {
 		send_async(result, frame->src_addr, true);
 	}
-	vnl::info::ClientInfo& info = vnl_clients[frame->src_mac];
-	info.proxy = frame->proxy;
-	info.num_requests++;
-	info.num_errors += !result || result->type == Frame::EXCEPTION;
 	return false;
 }
 

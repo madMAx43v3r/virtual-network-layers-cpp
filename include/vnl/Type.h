@@ -33,6 +33,7 @@ public:
 	virtual uint32_t get_vni_hash() const = 0;
 	virtual const char* get_type_name() const = 0;
 	
+	virtual int get_type_size() const = 0;
 	virtual int get_num_fields() const = 0;
 	virtual int get_field_index(vnl::Hash32 hash) const = 0;
 	virtual const char* get_field_name(int index) const = 0;
@@ -43,23 +44,8 @@ public:
 	virtual void get_field(int index, vnl::Var& var) const = 0;
 	virtual void set_field(int index, const vnl::Var& var) = 0;
 	
-	virtual void from_string(const vnl::String& str) {
-		/* NOT IMPLEMENTED */
-		assert(false);
-	}
-	
-	virtual void to_string_ex(vnl::String& str) const {
-		str << "{";
-		int N = get_num_fields();
-		for(int i = 0; i < N; ++i) {
-			if(i > 0) {
-				str << ", ";
-			}
-			str << "\"" << get_field_name(i) << "\": ";
-			get_field(i, str);
-		}
-		str << "}";
-	}
+	virtual void from_string(const vnl::String& str);
+	virtual void to_string_ex(vnl::String& str) const;
 	
 	vnl::String to_string() const {
 		vnl::String str;
