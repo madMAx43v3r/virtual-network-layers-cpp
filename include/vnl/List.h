@@ -29,6 +29,13 @@ public:
 		append(other);
 	}
 	
+	List(const std::initializer_list<T>& list) : p_front(0), p_back(0), count(0) {
+		assert(sizeof(T) <= TPage::size-16);
+		for(T v : list) {
+			(*this).push_back(v);
+		}
+	}
+
 	~List() {
 		clear();
 	}
@@ -260,13 +267,20 @@ public:
 	}
 	
 	T& operator[](int index) {
+		if(index < 0 || index >= count) {
+			raise_invalid_value(index);
+		}
 		auto iter = begin();
 		for(int i = 0; i < index; ++i) {
 			++iter;
 		}
 		return *iter;
 	}
+
 	const T& operator[](int index) const {
+		if(index < 0 || index >= count) {
+			raise_invalid_value(index);
+		}
 		auto iter = begin();
 		for(int i = 0; i < index; ++i) {
 			++iter;

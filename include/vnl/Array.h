@@ -33,6 +33,7 @@ public:
 	}
 	
 	Array(const std::initializer_list<T>& list) : p_front(0), p_back(0), pos(0), count(0) {
+		assert(M > 0);
 		for(T v : list) {
 			(*this).push_back(v);
 		}
@@ -101,6 +102,19 @@ public:
 		return page->template type_at_index<T>(ei);
 	}
 	
+	const T& operator[](int index) const {
+		if(index < 0 || index >= count) {
+			raise_invalid_value(index);
+		}
+		int pi = index / M;
+		int ei = index % M;
+		TPage* page = p_front;
+		for(int i = 0; i < pi; ++i) {
+			page = page->next;
+		}
+		return page->template type_at_index<T>(ei);
+	}
+
 	Array& operator=(const std::vector<T>& vec) {
 		clear();
 		for(const T& elem : vec) {

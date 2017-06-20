@@ -132,7 +132,7 @@ public:
 	}
 	
 	/*
-	 * Retruns a copy of all entries.
+	 * Returns a copy of all entries.
 	 */
 	Array<vnl::pair<K,V> > entries() const {
 		Array<vnl::pair<K,V> > res;
@@ -143,7 +143,7 @@ public:
 	}
 	
 	/*
-	 * Retruns a copy of all keys.
+	 * Returns a copy of all keys.
 	 */
 	Array<K> keys() const {
 		Array<K> res;
@@ -154,7 +154,7 @@ public:
 	}
 	
 	/*
-	 * Retruns a copy of all values.
+	 * Returns a copy of all values.
 	 */
 	Array<V> values() const {
 		Array<V> res;
@@ -244,7 +244,7 @@ public:
 			}
 			p_row = &(*p_row)->next;
 		}
-		return iterator(&table, pos.index, pos.end, *p_row);
+		return iterator(&table, pos.index, *p_row);
 	}
 	
 	void clear() {
