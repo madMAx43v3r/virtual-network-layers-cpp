@@ -19,6 +19,17 @@ class ByteOutput : public OutputBuffer {
 public:
 	ByteOutput(OutputStream* stream) : OutputBuffer(stream) {}
 	
+	void write(int8_t value) { writeChar(value); }
+	void write(int16_t value) { writeShort(value); }
+	void write(int32_t value) { writeInt(value); }
+	void write(int64_t value) { writeLong(value); }
+	void write(uint8_t value) { writeChar(value); }
+	void write(uint16_t value) { writeShort(value); }
+	void write(uint32_t value) { writeInt(value); }
+	void write(uint64_t value) { writeLong(value); }
+	void write(float value) { writeFloat(value); }
+	void write(double value) { writeDouble(value); }
+	
 	void writeChar(int8_t value) {
 		write_type<int8_t>(value);
 	}
@@ -46,7 +57,7 @@ public:
 	void writeBinary(Page* buf, int len) {
 		while(len > 0) {
 			int n = std::min(len, Page::size);
-			write(buf->mem, n);
+			OutputBuffer::write(buf->mem, n);
 			len -= n;
 			buf = buf->next;
 		}
@@ -61,7 +72,7 @@ public:
 private:
 	template<typename T>
 	void write_type(T data) {
-		write(&data, sizeof(T));
+		OutputBuffer::write(&data, sizeof(T));
 	}
 	
 };

@@ -19,6 +19,17 @@ class ByteInput : public InputBuffer {
 public:
 	ByteInput(InputStream* stream) : InputBuffer(stream) {}
 	
+	void read(int8_t& value) { readChar(value); }
+	void read(int16_t& value) { readShort(value); }
+	void read(int32_t& value) { readInt(value); }
+	void read(int64_t& value) { readLong(value); }
+	void read(uint8_t& value) { readChar(value); }
+	void read(uint16_t& value) { readShort(value); }
+	void read(uint32_t& value) { readInt(value); }
+	void read(uint64_t& value) { readLong(value); }
+	void read(float& value) { readFloat(value); }
+	void read(double& value) { readDouble(value); }
+	
 	void readChar(int8_t& value) {
 		read_type(value);
 	}
@@ -78,7 +89,7 @@ public:
 		Page* buf = first;
 		while(len > 0) {
 			int32_t n = std::min(len, Page::size);
-			read(buf->mem, n);
+			InputBuffer::read(buf->mem, n);
 			len -= n;
 			if(len) {
 				if(!buf->next) {
@@ -94,7 +105,7 @@ public:
 		while(len > 0) {
 			char buf[1024];
 			int n = std::min(len, 1024);
-			read(buf, n);
+			InputBuffer::read(buf, n);
 			str.write(buf, n);
 			len -= n;
 		}
@@ -103,7 +114,7 @@ public:
 private:
 	template<typename T>
 	void read_type(T& data) {
-		read(&data, sizeof(T));
+		InputBuffer::read(&data, sizeof(T));
 	}
 	
 };

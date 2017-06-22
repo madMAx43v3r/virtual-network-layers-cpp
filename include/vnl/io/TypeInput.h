@@ -190,9 +190,9 @@ protected:
 		char buf[1024];
 		while(size > 0 && !error()) {
 			int num = std::min(size, (int)sizeof(buf));
-			read(buf, num);
+			InputBuffer::read(buf, num);
 			if(dst) {
-				dst->write(buf, num);
+				dst->OutputBuffer::write(buf, num);
 			}
 			size -= num;
 		}
