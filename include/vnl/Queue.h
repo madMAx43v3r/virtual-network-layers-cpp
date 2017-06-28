@@ -25,13 +25,9 @@ public:
 	}
 	
 	~Queue() {
-		T tmp;
-		while(pop(tmp));
-		Block* block = p_front;
-		while(block) {
-			Block* next = block->next;
-			block->free();
-			block = next;
+		clear();
+		if(p_front) {
+			p_front->free();
 		}
 	}
 	
@@ -48,11 +44,9 @@ public:
 			p_back = p_front;
 		}
 		if(p_back->write() >= N) {
-			if(!p_back->next_block()) {
-				p_back->next_block() = block_t::create();
-			}
-			p_back = p_back->next_block();
-			p_back->write() = 0;
+			block_t* next = block_t::create();
+			p_back->next_block() = next;
+			p_back = next;
 		}
 		T& ref = p_back->elem(p_back->write()++);
 		new(&ref) T();
@@ -62,62 +56,71 @@ public:
 	}
 	
 	bool pop(T& obj) {
-		if(empty()) {
+		if(!count) {
 			return false;
 		}
 		T& tmp = p_front->elem(p_front->read()++);
-		if(p_front->read() >= N) {
-			if(p_front != p_back) {
-				block_t* tmp = p_front;
-				p_front = p_front->next_block();
-				tmp->next_block() = p_back->next_block();
-				p_back->next_block() = tmp;
-			} else {
-				p_front->write() = 0;
-			}
-			p_front->read() = 0;
-		}
 		obj = tmp;
 		tmp.~T();
+		if(p_front->read() >= N) {
+			block_t* old = p_front;
+			if(p_front == p_back) {
+				p_front = 0;
+				p_back = 0;
+			} else {
+				p_front = p_front->next_block();
+			}
+			old->free();
+		}
 		count--;
 		return true;
 	}
 	
 	T pop() {
 		T obj;
-		pop(obj);
+		if(!pop(obj)) {
+			raise_null_pointer();
+		}
 		return obj;
 	}
 	
 	T& front() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_front->elem(p_front->read());
 	}
 	T& back() {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_back->elem(p_back->write() - 1);
 	}
 	
 	const T& front() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_front->elem(p_front->read());
 	}
 	const T& back() const {
+		if(!count) {
+			raise_null_pointer();
+		}
 		return p_back->elem(p_back->write() - 1);
 	}
 	
-	int size() const {
+	size_t size() const {
 		return count;
-	}
-	
-	void clear() {
-		if(p_front) {
-			p_front->read() = 0;
-			p_front->write() = 0;
-		}
-		p_back = p_front;
-		count = 0;
 	}
 	
 	bool empty() const {
 		return count == 0;
+	}
+	
+	void clear() {
+		T tmp;
+		while(pop(tmp));
 	}
 	
 protected:
@@ -138,11 +141,11 @@ protected:
 private:
 	block_t* p_front = 0;
 	block_t* p_back = 0;
-	int count = 0;
+	size_t count = 0;
 	
 };
 
 
-}
+} // vnl
 
 #endif /* INCLUDE_PHY_QUEUE_H_ */
