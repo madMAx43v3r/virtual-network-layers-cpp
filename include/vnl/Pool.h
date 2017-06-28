@@ -10,8 +10,8 @@
 
 #include <mutex>
 
+#include <vnl/Memory.h>
 #include <vnl/Queue.h>
-#include <vnl/Map.h>
 
 
 namespace vnl {
@@ -39,9 +39,7 @@ public:
 	
 	void destroy(T* obj) {
 		obj->~T();
-#ifdef VNL_MEMORY_DEBUG
 		memset(obj, 0, sizeof(T));
-#endif
 		free_list.push(obj);
 	}
 	
@@ -87,14 +85,13 @@ public:
 	GlobalPool& operator=(const GlobalPool&) = delete;
 	
 	void* alloc(int size) {
-		assert(size <= VNL_PAGE_SIZE);
-		sync.lock();
-		void* obj;
-		if(!table[size].pop(obj)) {
-			obj = memory.alloc(size);
+		if(size <= VNL_BLOCK_SIZE - sizeof(void*)) {
+			return alloc_ex<Block>();
+		} else if(size <= VNL_PAGE_SIZE - sizeof(void*)) {
+			return alloc_ex<Page>();
 		}
-		sync.unlock();
-		return obj;
+		assert(false);
+		return 0;
 	}
 	
 	template<typename T>
@@ -105,23 +102,32 @@ public:
 	template<typename T>
 	void destroy(T* obj, int size) {
 		obj->~T();
-#ifdef VNL_MEMORY_DEBUG
-		memset(obj, 0, size);
-#endif
 		push_back(obj, size);
 	}
 	
 	template<typename T>
 	void push_back(T* obj, int size) {
-		sync.lock();
-		table[size].push(obj);
-		sync.unlock();
+		if(size <= VNL_BLOCK_SIZE - sizeof(void*)) {
+			destroy_ex(*(((Block**)obj) - 1));
+		} else if(size <= VNL_PAGE_SIZE - sizeof(void*)) {
+			destroy_ex(*(((Page**)obj) - 1));
+		}
 	}
 	
 protected:
-	Allocator<Page> memory;
-	Queue<void*> table[VNL_PAGE_SIZE];
-	std::mutex sync;
+	template<typename T>
+	void* alloc_ex() {
+		T* page = T::alloc();
+		page->user = T::size;
+		page->template type_at<void*>(0) = page;
+		return page->mem + sizeof(void*);
+	}
+	
+	template<typename T>
+	void destroy_ex(T* page) {
+		assert(page->user == T::size);
+		page->free();
+	}
 	
 };
 

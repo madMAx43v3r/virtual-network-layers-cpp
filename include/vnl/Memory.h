@@ -124,7 +124,11 @@ public:
 	}
 	
 	char* mem;
-	Memory* next;
+	
+	union {
+		Memory* next;
+		size_t user;
+	};
 	
 	static int num_alloc;
 	static int num_used;
